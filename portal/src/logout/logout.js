@@ -18,7 +18,7 @@ window.setTimeout(async () => {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        'x-IBF-interface': 'portal', // See: services/API-service/src/shared/enum/interface-names.enum.ts
+        'x-IBF-interface': 'portal', // See: services/api-service/src/shared/enum/interface-names.enum.ts
       },
       method: 'POST',
       mode: 'cors',
