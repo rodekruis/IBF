@@ -1,0 +1,31 @@
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AuthGuard } from '@nestjs/passport';
+import { Observable } from 'rxjs';
+
+import { AuthenticatedUserParameters } from '@api-service/src/guards/authenticated-user.decorator';
+
+@Injectable()
+export class AuthenticatedUserGuard
+  extends AuthGuard(['cookie-jwt'])
+  implements CanActivate
+{
+  public constructor(private readonly reflector: Reflector) {
+    super();
+  }
+
+  override canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    const endpointParameters = this.reflector.get<AuthenticatedUserParameters>(
+      'authenticationParameters',
+      context.getHandler(),
+    );
+    const request = context.switchToHttp().getRequest();
+    request.authenticationParameters = endpointParameters;
+    if (!endpointParameters?.isGuarded) {
+      return true;
+    }
+    return super.canActivate(context);
+  }
+}

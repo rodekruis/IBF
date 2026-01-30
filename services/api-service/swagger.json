@@ -1,0 +1,41 @@
+[
+  {
+    "method": "get",
+    "path": "/api/health/health",
+    "params": []
+  },
+  {
+    "method": "get",
+    "path": "/api/health/version",
+    "params": []
+  },
+  {
+    "method": "post",
+    "path": "/api/scripts/reset",
+    "params": [
+      "resetIdentifier",
+      "isApiTests",
+      "script"
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/users",
+    "params": []
+  },
+  {
+    "method": "post",
+    "path": "/api/users/login",
+    "params": []
+  },
+  {
+    "method": "post",
+    "path": "/api/users/logout",
+    "params": []
+  },
+  {
+    "method": "get",
+    "path": "/api/users/current",
+    "params": []
+  }
+]

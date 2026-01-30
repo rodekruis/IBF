@@ -1,0 +1,71 @@
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+
+name: PR linter
+
+on:
+  pull_request:
+    types: [opened, reopened, edited, labeled, unlabeled]
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Don't run this check on dependabot PRs
+    if: contains(github.actor, 'dependabot') == false
+
+    steps:
+      - name: Check PR description and labels
+        id: fetch_pr
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+
+            core.startGroup('Received PR Data')
+            core.info(JSON.stringify(pr.data, null, 4));
+            core.endGroup()
+
+            const prDescription = pr.data.body;
+            const prLabels = pr.data.labels.map(label => label.name);
+
+            if (prLabels.includes('dependencies')) {
+              core.notice('✅ PR contains a "dependencies" label. Do not check on AB#XXXX.');
+            } else if (!/AB#\d{5}/.test(prDescription)) {
+              core.setFailed('Please make sure you have replaced AB#XXXX with a valid DevOps ID in your PR description');
+            } else {
+              core.notice('✅ PR description contains a DevOps ID');
+            }
+
+            const validLabels = [
+              'enhancement',
+              'bugfix',
+              'dependencies',
+              'chore',
+              'ignore-for-release',
+              'other'
+            ];
+
+            if (!prLabels.some(label => validLabels.includes(label))) {
+              core.setFailed('Add one of the following labels to your PR: ' + validLabels.join(', '));
+            } else {
+              core.notice('✅ PR has at least one valid label');
+            }
+
+            return pr.data;
+
+      - name: Check out repository code
+        uses: actions/checkout@v6
+
+      - name: Check that no "XXX:" comments have been left on the PR
+        run: |
+          echo "The following files contain 'XXX:' comments that should be removed:"
+          ! grep -RI --exclude-dir=.git --exclude=\*.{json,md,xml,nvmrc} --exclude=test_pull_request_formatting.yml "XXX:" .
+
+      - name: Check that no "##TODO" comments have been left on the PR
+        run: |
+          echo "The following files contain '##TODO' comments that should be removed:"
+          ! grep -RI --exclude-dir=.git --exclude=\*.{json,md,xml,nvmrc} --exclude=test_pull_request_formatting.yml "##TODO" .

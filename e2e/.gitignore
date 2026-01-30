@@ -1,0 +1,11 @@
+.env
+
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+downloads/
+
+# Playwright screenshots
+screenshots/
+.DS_Store

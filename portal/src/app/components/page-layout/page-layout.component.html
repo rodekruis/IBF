@@ -1,0 +1,51 @@
+<div class="flex min-h-screen flex-col">
+  <app-header [programId]="programId()" />
+  <div class="flex flex-1 flex-col">
+    <div class="flex-1 p-6 lg:px-24">
+      @if (pageTitle()) {
+        @let parentTitle = parentPageTitle();
+        @let parentLink = parentPageLink();
+
+        <div class="flex items-center justify-between pt-1 pb-6">
+          @if (parentTitle) {
+            @if (isPending()) {
+              <p-skeleton
+                width="24rem"
+                height="1.6rem"
+              />
+            } @else {
+              <span class="txt-body-m me-auto inline-flex items-center">
+                @if (parentLink) {
+                  <a
+                    [routerLink]="parentLink"
+                    class="font-normal transition-colors hover:text-purple-700 focus:text-purple-700"
+                    >{{ parentTitle }}</a
+                  >
+                } @else {
+                  <span class="font-normal">{{ parentTitle }}</span>
+                }
+                <i
+                  [class]="
+                    'mx-2 text-sm ' +
+                    rtlHelper.createRtlFriendlyChevronIcon('forward')()
+                  "
+                ></i>
+                {{ pageTitle() }}
+              </span>
+            }
+          } @else {
+            <h1 class="min-w-48">
+              {{ pageTitle() }}
+            </h1>
+          }
+
+          <ng-content select="[header-actions]"></ng-content>
+        </div>
+      }
+
+      <ng-content></ng-content>
+    </div>
+
+    <app-footer />
+  </div>
+</div>

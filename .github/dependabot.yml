@@ -1,0 +1,102 @@
+# See: https://docs.github.com/en/github/administering-a-repository/configuration-options-for-dependency-updates#configuration-options-for-dependabotyml
+version: 2
+
+updates:
+  - directory: '/'
+    package-ecosystem: 'github-actions'
+    schedule:
+      interval: 'monthly'
+
+  - directory: '/'
+    package-ecosystem: 'npm'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+
+  - directory: '/services/api-service'
+    package-ecosystem: npm
+    schedule:
+      interval: monthly
+      day: tuesday
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    groups:
+      development:
+        patterns:
+          - '@swc/*'
+          - '@types/*'
+          - '*eslint*'
+          - '*prettier*'
+      nestjs:
+        patterns: ['@nestjs/*']
+    ignore:
+      # Dependencies below are ordered alphabetically!
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'applicationinsights'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'bwip-js'
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'eslint-plugin-custom-rules' # Local package, no need to check
+      - dependency-name: 'jimp'
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
+
+  - directory: '/portal'
+    package-ecosystem: npm
+    schedule:
+      interval: monthly
+      day: tuesday
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    groups:
+      angular:
+        patterns:
+          - '@angular*'
+          - 'primeng'
+          - 'typescript'
+          - 'zone.js'
+          - '*eslint*'
+          - '*prettier*'
+      AzureMSAL:
+        patterns:
+          - '@azure/msal*' # Combine peer-dependencies
+      dependencies:
+        patterns:
+          - '*'
+        exclude-patterns: # Make sure to exclude all of the groups defined above
+          - '@angular*'
+          - 'primeng'
+          - 'typescript'
+          - 'zone.js'
+          - '@azure/msal*'
+          - '*eslint*'
+          - '*prettier*'
+    ignore:
+      # Dependencies below are ordered alphabetically!
+      - dependency-name: '@angular*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'filesize'
+        update-types: ['version-update:semver-major'] # See: https://www.npmjs.com/package/ngx-filesize
+      - dependency-name: 'primeng'
+        update-types: ['version-update:semver-major']
+
+  - directory: '/e2e'
+    package-ecosystem: npm
+    schedule:
+      interval: monthly
+      day: tuesday
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    groups:
+      dependencies:
+        patterns:
+          - '*'
+    ignore:
+      # Dependencies below are ordered alphabetically!
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
