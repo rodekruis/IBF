@@ -2,9 +2,9 @@ import { HttpStatus } from '@nestjs/common';
 import * as request from 'supertest';
 import TestAgent from 'supertest/lib/agent';
 
-import { env } from '@API-service/src/env';
-import { SeedScript } from '@API-service/src/scripts/enum/seed-script.enum';
-import { CookieNames } from '@API-service/src/shared/enum/cookie.enums';
+import { env } from '@api-service/src/env';
+import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
+import { CookieNames } from '@api-service/src/shared/enum/cookie.enums';
 
 export function getHostname(): string {
   return `${env.EXTERNAL_API_SERVICE_URL}/api`;

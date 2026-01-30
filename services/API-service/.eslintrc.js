@@ -94,7 +94,7 @@ module.exports = {
         'no-relative-import-paths/no-relative-import-paths': [
           'warn',
           {
-            prefix: '@API-service',
+            prefix: '@api-service',
             rootDir: '.',
           },
         ],
@@ -121,7 +121,7 @@ module.exports = {
               // Things that start with a letter (or digit or underscore), or `@` followed by a letter.
               ['^@?\\w'],
               // Alias imports
-              ['^@API-service'],
+              ['^@api-service'],
               // Relative imports.
               // Anything that starts with a dot.
               ['^\\.'],

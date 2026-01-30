@@ -7,7 +7,7 @@ module.exports = {
   collectCoverageFrom: ['src/**/*.ts', '!src/migration/**'],
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
   moduleNameMapper: {
-    '^@API-service/(.*)$': '<rootDir>/$1',
+    '^@api-service/(.*)$': '<rootDir>/$1',
   },
   moduleFileExtensions: ['js', 'ts'],
   transform: {

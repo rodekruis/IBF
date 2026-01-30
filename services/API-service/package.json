@@ -1,12 +1,12 @@
 {
-  "name": "API-service",
+  "name": "api-service",
   "author": "IBF",
   "homepage": "https://github.com/rodekruis/IBF/",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/rodekruis/IBF.git",
-    "directory": "services/API-service"
+    "directory": "services/api-service"
   },
   "main": "index.js",
   "scripts": {
@@ -69,6 +69,7 @@
     "@types/he": "^1.2.3",
     "@types/jsonwebtoken": "^9.0.10",
     "applicationinsights": "^2.9.8",
+    "axios": "^1.13.4",
     "body-parser": "^2.2.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
@@ -85,7 +86,6 @@
     "rxjs": "^7.8.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "twilio": "^5.11.2",
     "typeorm": "npm:@global121/typeorm@1.0.4",
     "typescript": "^5.9.3",
     "ufo": "^1.6.2",

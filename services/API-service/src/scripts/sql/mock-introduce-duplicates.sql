@@ -1,11 +1,11 @@
 WITH RankedRecords AS (
     SELECT id, value, "programRegistrationAttributeId", "registrationId",
            ROW_NUMBER() OVER (PARTITION BY "programRegistrationAttributeId" ORDER BY id) AS rn
-    FROM "API-service".registration_attribute_data
+    FROM "api-service".registration_attribute_data
     WHERE "programRegistrationAttributeId" = $1
 ),
 MockDuplicates AS (
-    UPDATE "API-service".registration_attribute_data rad1
+    UPDATE "api-service".registration_attribute_data rad1
     SET value = rr2.value
     FROM RankedRecords rr1
     JOIN RankedRecords rr2 ON rr2.rn = rr1.rn + 1
@@ -20,7 +20,7 @@ RandomSample AS (
     FROM MockDuplicates
     WHERE RANDOM() < 0.05
 )
-INSERT INTO "API-service".unique_registration_pair ("smallerRegistrationId", "largerRegistrationId")
+INSERT INTO "api-service".unique_registration_pair ("smallerRegistrationId", "largerRegistrationId")
 SELECT smallerRegistrationId, largerRegistrationId
 FROM RandomSample
 ON CONFLICT DO NOTHING;

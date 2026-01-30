@@ -7,18 +7,18 @@ import * as jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
 import { Equal, FindOptionsRelations, Repository } from 'typeorm';
 
-import { IS_DEVELOPMENT } from '@API-service/src/config';
-import { env } from '@API-service/src/env';
-import { CookieNames } from '@API-service/src/shared/enum/cookie.enums';
+import { IS_DEVELOPMENT } from '@api-service/src/config';
+import { env } from '@api-service/src/env';
+import { CookieNames } from '@api-service/src/shared/enum/cookie.enums';
 import {
   INTERFACE_NAME_HEADER,
   InterfaceNames,
-} from '@API-service/src/shared/enum/interface-names.enum';
-import { CookieSettingsDto } from '@API-service/src/user/dto/cookie-settings.dto';
-import { LoginResponseDto } from '@API-service/src/user/dto/login-response.dto';
-import { LoginUserDto } from '@API-service/src/user/dto/login-user.dto';
-import { UserEntity } from '@API-service/src/user/user.entity';
-import { UserData, UserRO } from '@API-service/src/user/user.interface';
+} from '@api-service/src/shared/enum/interface-names.enum';
+import { CookieSettingsDto } from '@api-service/src/user/dto/cookie-settings.dto';
+import { LoginResponseDto } from '@api-service/src/user/dto/login-response.dto';
+import { LoginUserDto } from '@api-service/src/user/dto/login-user.dto';
+import { UserEntity } from '@api-service/src/user/user.entity';
+import { UserData, UserRO } from '@api-service/src/user/user.interface';
 const tokenExpirationDays = 14;
 
 @Injectable({ scope: Scope.REQUEST })

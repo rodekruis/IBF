@@ -1,7 +1,7 @@
 import { inject, Injectable, LOCALE_ID } from '@angular/core';
 
-import { UILanguage } from '@API-service/src/shared/enum/ui-language.enum';
-import { UILanguageTranslation } from '@API-service/src/shared/types/ui-language-translation.type';
+import { UILanguage } from '@api-service/src/shared/enum/ui-language.enum';
+import { UILanguageTranslation } from '@api-service/src/shared/types/ui-language-translation.type';
 
 import { getUILanguageFromLocale, Locale } from '~/utils/locale';
 
@@ -9,7 +9,7 @@ import { getUILanguageFromLocale, Locale } from '~/utils/locale';
  * The TranslatableStringService provides methods to translate localized
  * strings.
  *
- * Certain data structures, mostly DTOs in the API-service use
+ * Certain data structures, mostly DTOs in the api-service use
  * UILanguageTranslation types to store strings in 0..n languages. This service
  * can translate those strings. This can be done one by one using the
  * `translate` method, or for lists of strings using the `commaSeparatedList`

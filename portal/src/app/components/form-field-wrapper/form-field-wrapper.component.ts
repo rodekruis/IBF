@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import { UILanguageTranslation } from '@API-service/src/shared/types/ui-language-translation.type';
+import { UILanguageTranslation } from '@api-service/src/shared/types/ui-language-translation.type';
 
 import { FormErrorComponent } from '~/components/form-error/form-error.component';
 import { InfoTooltipComponent } from '~/components/info-tooltip/info-tooltip.component';

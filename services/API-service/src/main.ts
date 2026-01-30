@@ -7,7 +7,7 @@ import { Request, Response } from 'express';
 import { SpelunkerModule } from 'nestjs-spelunker';
 import fs, { writeFileSync } from 'node:fs';
 
-import { ApplicationModule } from '@API-service/src/app.module';
+import { ApplicationModule } from '@api-service/src/app.module';
 import {
   APP_FAVICON,
   APP_TITLE,
@@ -15,11 +15,11 @@ import {
   IS_DEVELOPMENT,
   SWAGGER_CUSTOM_CSS,
   SWAGGER_CUSTOM_JS,
-} from '@API-service/src/config';
-import { env } from '@API-service/src/env';
-import { INTERFACE_NAME_HEADER } from '@API-service/src/shared/enum/interface-names.enum';
-import { AzureLogService } from '@API-service/src/shared/services/azure-log.service';
-import { ValidationPipeOptions } from '@API-service/src/validation-options/validation-pipe-options.const';
+} from '@api-service/src/config';
+import { env } from '@api-service/src/env';
+import { INTERFACE_NAME_HEADER } from '@api-service/src/shared/enum/interface-names.enum';
+import { AzureLogService } from '@api-service/src/shared/services/azure-log.service';
+import { ValidationPipeOptions } from '@api-service/src/validation-options/validation-pipe-options.const';
 
 import 'multer'; // This is import is required to prevent typing error on the MulterModule
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- This version of AppInsighst still only works with require

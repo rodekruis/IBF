@@ -1,4 +1,4 @@
-import { AssertIso8601Pipe } from '@API-service/src/pipes/assert-iso8601.pipe';
+import { AssertIso8601Pipe } from '@api-service/src/pipes/assert-iso8601.pipe';
 
 describe('AssertIso8601Pipe', () => {
   describe('value is optional', () => {

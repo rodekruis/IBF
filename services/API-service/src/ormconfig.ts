@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { TlsOptions } from 'node:tls';
 import { DataSourceOptions } from 'typeorm';
 
-import { IS_DEVELOPMENT } from '@API-service/src/config';
-import { env } from '@API-service/src/env';
+import { IS_DEVELOPMENT } from '@api-service/src/config';
+import { env } from '@api-service/src/env';
 
 const createSSLConfig = (): boolean | TlsOptions => {
   if (IS_DEVELOPMENT) {
@@ -36,7 +36,7 @@ export const ORMConfig: DataSourceOptions = {
   username: env.POSTGRES_USER,
   password: env.POSTGRES_PASSWORD,
   database: env.POSTGRES_DBNAME,
-  schema: 'API-service',
+  schema: 'api-service',
   entities: ['dist/**/*.entity.js'],
   subscribers: ['dist/**/*.subscriber.js'],
   migrationsTableName: 'custom_migration_table',

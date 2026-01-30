@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { defaultClient, TelemetryClient } from 'applicationinsights';
 import { SeverityLevel } from 'applicationinsights/out/Declarations/Contracts';
 
-import { env } from '@API-service/src/env';
+import { env } from '@api-service/src/env';
 
 @Injectable()
 export class AzureLogService {

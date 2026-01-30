@@ -1,4 +1,4 @@
-import { UserRO } from '@API-service/src/user/user.interface';
+import { UserRO } from '@api-service/src/user/user.interface';
 
 import { Dto } from '~/utils/dto-type';
 

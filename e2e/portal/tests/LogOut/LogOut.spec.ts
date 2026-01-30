@@ -1,7 +1,7 @@
 import { test } from '@playwright/test';
 
-import { SeedScript } from '@API-service/src/scripts/enum/seed-script.enum';
-import { resetDB } from '@API-service/test/helpers/utility.helper';
+import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
+import { resetDB } from '@api-service/test/helpers/utility.helper';
 
 import BasePage from '@ibf-e2e/portal/pages/BasePage';
 import LoginPage from '@ibf-e2e/portal/pages/LoginPage';

@@ -12,14 +12,14 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
-import { THROTTLING_LIMIT_HIGH } from '@API-service/src/config';
-import { AuthenticatedUser } from '@API-service/src/guards/authenticated-user.decorator';
-import { AuthenticatedUserGuard } from '@API-service/src/guards/authenticated-user.guard';
-import { CookieNames } from '@API-service/src/shared/enum/cookie.enums';
-import { LoginUserDto } from '@API-service/src/user/dto/login-user.dto';
-import { UserEntity } from '@API-service/src/user/user.entity';
-import { UserRO } from '@API-service/src/user/user.interface';
-import { UserService } from '@API-service/src/user/user.service';
+import { THROTTLING_LIMIT_HIGH } from '@api-service/src/config';
+import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
+import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
+import { CookieNames } from '@api-service/src/shared/enum/cookie.enums';
+import { LoginUserDto } from '@api-service/src/user/dto/login-user.dto';
+import { UserEntity } from '@api-service/src/user/user.entity';
+import { UserRO } from '@api-service/src/user/user.interface';
+import { UserService } from '@api-service/src/user/user.service';
 
 @ApiTags('users')
 @UseGuards(AuthenticatedUserGuard)

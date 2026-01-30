@@ -9,6 +9,6 @@
   "include": ["**/*.ts"],
   "baseUrl": "./",
   "paths": {
-    "@API-service/*": ["../*"]
+    "@api-service/*": ["../*"]
   }
 }

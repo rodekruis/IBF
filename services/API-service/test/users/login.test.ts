@@ -1,9 +1,9 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { env } from '@API-service/src/env';
-import { SeedScript } from '@API-service/src/scripts/enum/seed-script.enum';
-import { CookieNames } from '@API-service/src/shared/enum/cookie.enums';
-import { getServer, resetDB } from '@API-service/test/helpers/utility.helper';
+import { env } from '@api-service/src/env';
+import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
+import { CookieNames } from '@api-service/src/shared/enum/cookie.enums';
+import { getServer, resetDB } from '@api-service/test/helpers/utility.helper';
 
 describe('/ Users', () => {
   describe('/ Login', () => {

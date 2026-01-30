@@ -1,7 +1,7 @@
 import {
   generateRandomNumerics,
   getRandomInt,
-} from '@API-service/src/utils/random-value.helper';
+} from '@api-service/src/utils/random-value.helper';
 
 describe('random-value.helper', () => {
   describe('getRandomInt', () => {

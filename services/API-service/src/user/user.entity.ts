@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import crypto from 'node:crypto';
 import { BeforeInsert, Column, Entity, Index } from 'typeorm';
 
-import { BaseIbfEntity } from '@API-service/src/base.entity';
+import { BaseIbfEntity } from '@api-service/src/base.entity';
 
 @Entity('user')
 export class UserEntity extends BaseIbfEntity {

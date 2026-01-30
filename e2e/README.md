@@ -125,11 +125,11 @@ Here is a simple example of writing a test using the POM structure:
 ```ts
 import HomePage from '@ibf-e2e/pages/Home/HomePage';
 import LoginPage from '@ibf-e2e/pages/Login/LoginPage';
-import NLRCProgram from '@API-service/src/seed-data/program/program-nlrc-ocw.json';
-import { SeedScript } from '@API-service/src/scripts/enum/seed-script.enum';
-import { seedPaidRegistrations } from '@API-service/test/helpers/registration.helper';
-import { resetDB } from '@API-service/test/helpers/utility.helper';
-import { registrationsOCW } from '@API-service/test/registrations/pagination/pagination-data';
+import NLRCProgram from '@api-service/src/seed-data/program/program-nlrc-ocw.json';
+import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
+import { seedPaidRegistrations } from '@api-service/test/helpers/registration.helper';
+import { resetDB } from '@api-service/test/helpers/utility.helper';
+import { registrationsOCW } from '@api-service/test/registrations/pagination/pagination-data';
 import { test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {

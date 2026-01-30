@@ -1,4 +1,4 @@
-import { ValidationPipeOptions } from '@API-service/src/validation-options/validation-pipe-options.const';
+import { ValidationPipeOptions } from '@api-service/src/validation-options/validation-pipe-options.const';
 
 export const ValidationPipelineOptionsWithoutWhiteList = {
   ...ValidationPipeOptions,

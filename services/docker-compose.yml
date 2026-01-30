@@ -25,9 +25,9 @@ services:
       retries: 3
 
   api-service:
-    container_name: API-service
+    container_name: api-service
     build:
-      context: API-service
+      context: api-service
       target: production
     init: true
     env_file: .env

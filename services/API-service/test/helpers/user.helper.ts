@@ -1,6 +1,6 @@
 import * as request from 'supertest';
 
-import { getServer } from '@API-service/test/helpers/utility.helper';
+import { getServer } from '@api-service/test/helpers/utility.helper';
 
 export async function getAllUsers(
   accessToken: string,

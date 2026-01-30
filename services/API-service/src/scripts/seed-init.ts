@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import crypto from 'node:crypto';
 import { DataSource } from 'typeorm';
 
-import { env } from '@API-service/src/env';
-import { UserEntity } from '@API-service/src/user/user.entity';
+import { env } from '@api-service/src/env';
+import { UserEntity } from '@api-service/src/user/user.entity';
 
 @Injectable()
 export class SeedInit {
@@ -41,9 +41,9 @@ export class SeedInit {
 
   public async dropAll(): Promise<void> {
     const dropTableQueries = await this.dataSource.manager
-      .query(`select 'drop table if exists "API-service"."' || tablename || '" cascade;'
+      .query(`select 'drop table if exists "api-service"."' || tablename || '" cascade;'
         from pg_tables
-        where schemaname = 'API-service'
+        where schemaname = 'api-service'
         and tablename not in ('custom_migration_table');`);
     for (const q of dropTableQueries) {
       for (const key in q) {
@@ -56,7 +56,7 @@ export class SeedInit {
     const tablesToTruncate = await this.dataSource.manager.query(`
     SELECT tablename
     FROM pg_tables
-    WHERE schemaname = 'API-service'
+    WHERE schemaname = 'api-service'
       AND tablename NOT IN ('custom_migration_table');
   `);
 
@@ -64,7 +64,7 @@ export class SeedInit {
       const tableName = table.tablename;
       try {
         await this.dataSource.manager.query(`
-        TRUNCATE TABLE "API-service"."${tableName}" CASCADE;
+        TRUNCATE TABLE "api-service"."${tableName}" CASCADE;
       `);
 
         const sequenceName = `${tableName}_id_seq`;
@@ -72,7 +72,7 @@ export class SeedInit {
 
         if (sequenceExists) {
           await this.dataSource.manager.query(`
-          ALTER SEQUENCE "API-service"."${sequenceName}" RESTART WITH 1;
+          ALTER SEQUENCE "api-service"."${sequenceName}" RESTART WITH 1;
         `);
         }
       } catch (error) {
@@ -86,7 +86,7 @@ export class SeedInit {
     SELECT EXISTS (
       SELECT 1
       FROM pg_sequences
-      WHERE schemaname = 'API-service'
+      WHERE schemaname = 'api-service'
         AND sequencename = '${sequenceName}'
     );
   `);
@@ -96,7 +96,7 @@ export class SeedInit {
 
   private async runAllMigrations(): Promise<void> {
     await this.dataSource.query(
-      'TRUNCATE TABLE "API-service"."custom_migration_table"',
+      'TRUNCATE TABLE "api-service"."custom_migration_table"',
     );
     await this.dataSource.runMigrations({
       transaction: 'all',

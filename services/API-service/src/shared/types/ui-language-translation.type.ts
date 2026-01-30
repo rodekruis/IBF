@@ -1,5 +1,5 @@
-import { UILanguage } from '@API-service/src/shared/enum/ui-language.enum';
-import { Translation } from '@API-service/src/shared/types/translation.type';
+import { UILanguage } from '@api-service/src/shared/enum/ui-language.enum';
+import { Translation } from '@api-service/src/shared/types/translation.type';
 
 /**
  * An object that contains 0..n string translations for languages the UI

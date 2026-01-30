@@ -11,7 +11,7 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "postinstall": "cd ../services/API-service && npm run install:dependencies-for-portal",
+    "postinstall": "cd ../services/api-service && npm run install:dependencies-for-portal",
     "set-env-variables": "node --env-file-if-exists=.env ./_set-env-variables.mjs",
     "build:deployment-configuration": "node --env-file-if-exists=.env ./_build-deployment-configuration.mjs",
     "build:download-translations": "node --env-file-if-exists=.env ./_build-download-translations.mjs",

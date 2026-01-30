@@ -123,7 +123,7 @@ export default tsEslint.config(
             // Things that start with a letter (or digit or underscore), or `@` followed by a letter.
             ['^@?\\w'],
             // Alias imports
-            ['^@API-service'],
+            ['^@api-service'],
             // Local imports
             // Anything that starts with a tilde.
             ['^~'],

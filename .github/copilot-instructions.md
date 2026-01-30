@@ -6,7 +6,7 @@ The IBF Platform is an open-source humanitarian aid platform built by the Nether
 
 **Key Components:**
 
-- `services/API-service`: Main NestJS backend API service
+- `services/api-service`: Main NestJS backend API service
 - `portal`: Angular frontend application
 - `e2e/`: End-to-end testing suite
 
@@ -70,7 +70,7 @@ Check `.vscode/extensions.json` for the complete list of recommended extensions 
 - **ESLint**: Strict TypeScript configuration with custom rules
 - **Import Organization**:
   - External packages first
-  - Alias imports (`@API-service`, `~` for Angular)
+  - Alias imports (`@api-service`, `~` for Angular)
   - Relative imports last
   - Use simple-import-sort for consistent ordering
 
@@ -451,10 +451,10 @@ export class UserProfileComponent implements OnInit {
 npm run test:prettier
 
 # Backend
-cd services/API-service
-docker exec API-service  npm run test:unit:all         # unit tests
-docker exec API-service  npm run test:integration:all         # integration tests
-docker exec API-service npm run test:integration:all -t login.test.ts # specific test file
+cd services/api-service
+docker exec api-service  npm run test:unit:all         # unit tests
+docker exec api-service  npm run test:integration:all         # integration tests
+docker exec api-service npm run test:integration:all -t login.test.ts # specific test file
 npm run typecheck # type checking
 npm run lint # linting
 
@@ -510,7 +510,7 @@ npm run lint # linting
 - Use TypeORM migrations for schema changes
 - Test migrations thoroughly before deployment
 - Keep migration files minimal and focused
-- Always include "API-service" schema in raw SQL queries when referencing tables of the API-service
+- Always include "api-service" schema in raw SQL queries when referencing tables of the api-service
 
 ## Environment & Configuration
 
@@ -569,7 +569,7 @@ npm run test:all           # Run all tests
 
 - [Contributing Guidelines](../docs/CONTRIBUTING.md)
 - [Component Guidelines](../portal/src/app/components/component-guidelines.md)
-- [Service README](../services/API-service/README.md)
+- [Service README](../services/api-service/README.md)
 - [Portal README](../portal/README.md)
 
 ## Instructions for Copilot Agents

@@ -21,7 +21,7 @@ permissions:
   id-token: write
 
 env:
-  workingDirectory: services/API-service/
+  workingDirectory: services/api-service/
 
 jobs:
   path-filter:
@@ -45,7 +45,7 @@ jobs:
             - .github/workflows/test_service_api.yml
             - .github/actions/build-service/action.yml
             - services/.env.example
-            - services/API-service/**
+            - services/api-service/**
             - '!**.md'
 
   test-shard:
@@ -55,8 +55,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: ['1', '2', '3', '4', '5', '6']
-        shardCount: ['6']
+        shard: ['1']
+        shardCount: ['1']
     steps:
       - name: Check out repository code
         uses: actions/checkout@v6
@@ -76,14 +76,14 @@ jobs:
       - name: Run integration tests (inside Docker-container, for Coverage-report)
         working-directory: ${{ env.workingDirectory }}
         run: |
-          docker compose exec API-service npm run test:integration:all -- --shard=${{ matrix.shard }}/${{ matrix.shardCount }}
+          docker compose exec api-service npm run test:integration:all -- --shard=${{ matrix.shard }}/${{ matrix.shardCount }}
 
-      # For more info, see services/API-service/README.md#Integration-test-coverage
-      - name: Generate Coverage-report from API-service
+      # For more info, see services/api-service/README.md#Integration-test-coverage
+      - name: Generate Coverage-report from api-service
         working-directory: ${{ env.workingDirectory }}
         run: |
           curl -d '{"secret":"${{ env.RESET_SECRET }}"}' -H "Content-Type: application/json" -X POST '${{ env.EXTERNAL_API_SERVICE_URL }}/api/test/kill-service' || true
-          docker compose exec API-service npm run coverage:report:integration
+          docker compose exec api-service npm run coverage:report:integration
 
       - uses: actions/upload-artifact@v6
         with:
@@ -171,7 +171,7 @@ jobs:
           command: publish
           oidc: true
           add-prefix: ${{ env.workingDirectory }}
-          tag: API-service
+          tag: api-service
           files: coverage/**/lcov.info
           verbose: true
           skip-errors: false

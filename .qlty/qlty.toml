@@ -41,7 +41,7 @@ exclude_patterns = [
   "**/testdata/**",
   "**/vendor/**",
   # end of defaults
-  "services/API-service/src/migration/**",
+  "services/api-service/src/migration/**",
 ]
 
 test_patterns = [

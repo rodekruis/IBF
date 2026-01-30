@@ -1,4 +1,4 @@
-import { AssertPositiveNumberPipe } from '@API-service/src/pipes/assert-positive-number.pipe';
+import { AssertPositiveNumberPipe } from '@api-service/src/pipes/assert-positive-number.pipe';
 
 describe('ParsePositiveNumberPipe', () => {
   describe('value is optional', () => {

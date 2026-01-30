@@ -14,7 +14,7 @@ updates:
     open-pull-requests-limit: 5
     versioning-strategy: increase
 
-  - directory: '/services/API-service'
+  - directory: '/services/api-service'
     package-ecosystem: npm
     schedule:
       interval: monthly

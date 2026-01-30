@@ -1,4 +1,4 @@
-import { Language } from '@API-service/src/shared/types/language.type';
+import { Language } from '@api-service/src/shared/types/language.type';
 
 /**
  * Example:

@@ -15,7 +15,7 @@ import { catchError, tap } from 'rxjs/operators';
 import {
   INTERFACE_NAME_HEADER,
   InterfaceNames,
-} from '@API-service/src/shared/enum/interface-names.enum';
+} from '@api-service/src/shared/enum/interface-names.enum';
 
 import { getUserFromLocalStorage } from '~/utils/local-storage';
 import { environment } from '~environment';

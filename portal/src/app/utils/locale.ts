@@ -1,6 +1,6 @@
 import { isDevMode } from '@angular/core';
 
-import { UILanguage } from '@API-service/src/shared/enum/ui-language.enum';
+import { UILanguage } from '@api-service/src/shared/enum/ui-language.enum';
 
 /**
  * "locale" in this file always refers to Angular locale IDs, e.g. "en-GB",

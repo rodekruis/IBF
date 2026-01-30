@@ -38,7 +38,7 @@ let contentSecurityPolicy = new Map([
 
 // Required: Set API-origin
 if (process.env.NG_URL_API_SERVICE) {
-  console.info('✅ Set API-origin of the API-service');
+  console.info('✅ Set API-origin of the api-service');
 
   const apiUrl = new URL(process.env.NG_URL_API_SERVICE);
 

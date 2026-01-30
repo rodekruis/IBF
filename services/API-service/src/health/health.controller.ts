@@ -7,8 +7,8 @@ import {
   TypeOrmHealthIndicator,
 } from '@nestjs/terminus';
 
-import { APP_VERSION } from '@API-service/src/config';
-import { GetVersionDto } from '@API-service/src/health/dto/get-version.dto';
+import { APP_VERSION } from '@api-service/src/config';
+import { GetVersionDto } from '@api-service/src/health/dto/get-version.dto';
 
 @ApiTags('instance')
 // TODO: REFACTOR: rename to instance

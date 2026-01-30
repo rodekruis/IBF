@@ -1,4 +1,4 @@
-import { AssertDatePipe } from '@API-service/src/pipes/assert-date.pipe';
+import { AssertDatePipe } from '@api-service/src/pipes/assert-date.pipe';
 
 describe('AssertDatePipe', () => {
   describe('should receive valid options', () => {

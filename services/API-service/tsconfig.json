@@ -26,7 +26,7 @@
     "typeRoots": ["./node_modules/@types"],
     "resolveJsonModule": true,
     "paths": {
-      "@API-service/*": ["./*"],
+      "@api-service/*": ["./*"],
       "typeorm/*": ["./node_modules/typeorm/*"] // Add explicit location of custom TypeORM fork
     }
   },

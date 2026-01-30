@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 
-import { CookieJwtStrategy } from '@API-service/src/strategies/cookie-jwt.strategy';
-import { UserModule } from '@API-service/src/user/user.module';
+import { CookieJwtStrategy } from '@api-service/src/strategies/cookie-jwt.strategy';
+import { UserModule } from '@api-service/src/user/user.module';
 
 @Module({
   imports: [

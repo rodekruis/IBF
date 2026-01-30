@@ -1,7 +1,7 @@
 import {
   maskValueKeepEnd,
   maskValueKeepStart,
-} from '@API-service/src/utils/mask-value.helper';
+} from '@api-service/src/utils/mask-value.helper';
 
 describe('maskValueKeepStart', () => {
   it('should mask the value by replacing all characters except the FIRST N characters with "*"', () => {

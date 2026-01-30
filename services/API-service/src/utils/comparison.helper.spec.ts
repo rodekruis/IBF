@@ -1,4 +1,4 @@
-import { isSameAsString } from '@API-service/src/utils/comparison.helper';
+import { isSameAsString } from '@api-service/src/utils/comparison.helper';
 
 describe('comparison.helper', () => {
   describe('isSameAsString', () => {

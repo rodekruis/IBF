@@ -1,7 +1,7 @@
 import {
   formatPhoneNumber,
   formatWhatsAppNumber,
-} from '@API-service/src/utils/phone-number.helpers';
+} from '@api-service/src/utils/phone-number.helpers';
 
 describe('formatPhoneNumber', () => {
   it('should return a phone-number with "+"-prefix', () => {

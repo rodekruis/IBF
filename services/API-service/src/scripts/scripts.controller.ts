@@ -2,10 +2,10 @@ import { Body, Controller, HttpStatus, Post, Query, Res } from '@nestjs/common';
 import { ApiOperation, ApiProperty, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
-import { env } from '@API-service/src/env';
-import { SeedScript } from '@API-service/src/scripts/enum/seed-script.enum';
-import { ScriptsService } from '@API-service/src/scripts/services/scripts.service';
-import { WrapperType } from '@API-service/src/wrapper.type';
+import { env } from '@api-service/src/env';
+import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
+import { ScriptsService } from '@api-service/src/scripts/services/scripts.service';
+import { WrapperType } from '@api-service/src/wrapper.type';
 export class SecretDto {
   @ApiProperty({ example: 'fill_in_secret' })
   @IsNotEmpty()

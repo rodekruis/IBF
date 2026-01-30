@@ -1,14 +1,12 @@
-import { env } from '@API-service/src/env';
+import { env } from '@api-service/src/env';
 
 export const IS_DEVELOPMENT = env.NODE_ENV === 'development';
-export const IS_TEST = env.NODE_ENV === 'test';
-export const IS_PRODUCTION = env.NODE_ENV === 'production';
 
 // Configure Swagger UI appearance:
 // ---------------------------------------------------------------------------
 export const APP_VERSION = env.GLOBAL_IBF_VERSION!;
 
-let appTitle = 'API-service';
+let appTitle = 'api-service';
 if (env.ENV_NAME) {
   appTitle += ` [${env.ENV_NAME}]`;
 }
@@ -48,18 +46,6 @@ document.body.addEventListener('click', (event) => {
   }
 }, { capture: false, passive: true });
 `;
-
-// Configure Internal and External API URL's
-// ---------------------------------------------------------------------------
-
-const rootApi = `${env.EXTERNAL_API_SERVICE_URL}/api`;
-export const EXTERNAL_API = {
-  rootApi,
-};
-
-// Configure Public Twilio Settings:
-// ---------------------------------------------------------------------------
-export const TWILIO_SANDBOX_WHATSAPP_NUMBER = '+14155238886';
 
 // Throttling presets
 // See: https://www.npmjs.com/package/@nestjs/throttler

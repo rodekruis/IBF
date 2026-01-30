@@ -7,8 +7,8 @@ import fs from 'node:fs';
 import https from 'node:https';
 import { catchError, lastValueFrom, map, of } from 'rxjs';
 
-import { CookieNames } from '@API-service/src/shared/enum/cookie.enums';
-import { maskValueKeepStart } from '@API-service/src/utils/mask-value.helper';
+import { CookieNames } from '@api-service/src/shared/enum/cookie.enums';
+import { maskValueKeepStart } from '@api-service/src/utils/mask-value.helper';
 
 class Request {
   public headers?: Headers;

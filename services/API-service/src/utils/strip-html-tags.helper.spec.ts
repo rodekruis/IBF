@@ -1,4 +1,4 @@
-import { stripHtmlTags } from '@API-service/src/utils/strip-html-tags.helper';
+import { stripHtmlTags } from '@api-service/src/utils/strip-html-tags.helper';
 
 describe('stripHtmlTags', () => {
   it('should strip simple HTML tags', () => {

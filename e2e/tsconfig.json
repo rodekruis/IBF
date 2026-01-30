@@ -20,9 +20,9 @@
     "types": ["express", "node", "jest"],
     "typeRoots": ["./node_modules/@types"],
     "paths": {
-      "@API-service/*": ["./../services/API-service/*"],
+      "@api-service/*": ["./../services/api-service/*"],
       "@ibf-e2e/*": ["./*"],
-      "typeorm/*": ["./../services/API-service/node_modules/typeorm/*"]
+      "typeorm/*": ["./../services/api-service/node_modules/typeorm/*"]
     }
   },
   "include": ["**/*.ts", "**/*.spec.ts", "types/**/*.d.ts"],

@@ -2,7 +2,7 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import { defaultClient, TelemetryClient } from 'applicationinsights';
 import { NextFunction, Request, Response } from 'express';
 
-import { env } from '@API-service/src/env';
+import { env } from '@api-service/src/env';
 
 @Injectable()
 export class AzureLoggerMiddleware implements NestMiddleware {

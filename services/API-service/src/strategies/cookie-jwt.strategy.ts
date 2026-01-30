@@ -8,15 +8,15 @@ import { ContextIdFactory, ModuleRef } from '@nestjs/core';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-jwt';
 
-import { env } from '@API-service/src/env';
-import { AuthenticatedUserParameters } from '@API-service/src/guards/authenticated-user.decorator';
-import { CookieNames } from '@API-service/src/shared/enum/cookie.enums';
+import { env } from '@api-service/src/env';
+import { AuthenticatedUserParameters } from '@api-service/src/guards/authenticated-user.decorator';
+import { CookieNames } from '@api-service/src/shared/enum/cookie.enums';
 import {
   INTERFACE_NAME_HEADER,
   InterfaceNames,
-} from '@API-service/src/shared/enum/interface-names.enum';
-import { UserRequestData } from '@API-service/src/user/user.interface';
-import { UserService } from '@API-service/src/user/user.service';
+} from '@api-service/src/shared/enum/interface-names.enum';
+import { UserRequestData } from '@api-service/src/user/user.interface';
+import { UserService } from '@api-service/src/user/user.service';
 
 @Injectable()
 export class CookieJwtStrategy

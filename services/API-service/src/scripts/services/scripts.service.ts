@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
-import { SEED_CONFIGURATION_SETTINGS } from '@API-service/src/scripts/seed-configuration.const';
-import { SeedConfigurationDto } from '@API-service/src/scripts/seed-configuration.dto';
-import { SeedInit } from '@API-service/src/scripts/seed-init';
+import { SEED_CONFIGURATION_SETTINGS } from '@api-service/src/scripts/seed-configuration.const';
+import { SeedConfigurationDto } from '@api-service/src/scripts/seed-configuration.dto';
+import { SeedInit } from '@api-service/src/scripts/seed-init';
 
 @Injectable()
 export class ScriptsService {

@@ -2,11 +2,11 @@ import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 
-import { ORMConfig } from '@API-service/src/ormconfig';
-import { ScriptsController } from '@API-service/src/scripts/scripts.controller';
-import { SeedInit } from '@API-service/src/scripts/seed-init';
-import { ScriptsService } from '@API-service/src/scripts/services/scripts.service';
-import { CustomHttpService } from '@API-service/src/shared/services/custom-http.service';
+import { ORMConfig } from '@api-service/src/ormconfig';
+import { ScriptsController } from '@api-service/src/scripts/scripts.controller';
+import { SeedInit } from '@api-service/src/scripts/seed-init';
+import { ScriptsService } from '@api-service/src/scripts/services/scripts.service';
+import { CustomHttpService } from '@api-service/src/shared/services/custom-http.service';
 
 @Module({
   imports: [

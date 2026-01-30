@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { Observable } from 'rxjs';
 
-import { AuthenticatedUserParameters } from '@API-service/src/guards/authenticated-user.decorator';
+import { AuthenticatedUserParameters } from '@api-service/src/guards/authenticated-user.decorator';
 
 @Injectable()
 export class AuthenticatedUserGuard

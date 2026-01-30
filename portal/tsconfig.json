@@ -5,7 +5,7 @@
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "@API-service/*": ["./../services/API-service/*"],
+      "@api-service/*": ["./../services/api-service/*"],
       "~environment": ["./src/environments/environment"],
       "~assets": ["./src/assets"],
       "~/*": ["./src/app/*"]

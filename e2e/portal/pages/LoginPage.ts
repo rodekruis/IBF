@@ -1,6 +1,6 @@
 import { Locator, Page } from 'playwright';
 
-import { env } from '@API-service/src/env';
+import { env } from '@api-service/src/env';
 
 import BasePage from './BasePage';
 

@@ -11,7 +11,7 @@ on:
       - .github/workflows/test_service_check_migrations.yml
       - .github/actions/build-service/action.yml
       - services/.env.example
-      - services/API-service/**
+      - services/api-service/**
       - '!**.md'
   push:
     branches:
@@ -20,11 +20,11 @@ on:
       - .github/workflows/test_service_check_migrations.yml
       - .github/actions/build-service/action.yml
       - services/.env.example
-      - services/API-service/**
+      - services/api-service/**
       - '!**.md'
 
 env:
-  workingDirectory: services/API-service/
+  workingDirectory: services/api-service/
 
 jobs:
   test:
@@ -46,7 +46,7 @@ jobs:
       - name: Check that no new migrations are necessary
         working-directory: ${{ env.workingDirectory }}
         run: |
-          docker compose exec API-service npm run test:migration
+          docker compose exec api-service npm run test:migration
 
       - name: Docker logs
         if: always()

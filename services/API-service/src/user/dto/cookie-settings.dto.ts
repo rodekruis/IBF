@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsDate, IsNotEmpty, IsString } from 'class-validator';
 
-import { CookieNames } from '@API-service/src/shared/enum/cookie.enums';
+import { CookieNames } from '@api-service/src/shared/enum/cookie.enums';
 
 export class CookieSettingsDto {
   @ApiProperty({ example: CookieNames.portal })

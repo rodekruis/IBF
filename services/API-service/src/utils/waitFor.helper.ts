@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises';
 
-import { getRandomInt } from '@API-service/src/utils/random-value.helper';
+import { getRandomInt } from '@api-service/src/utils/random-value.helper';
 
 export async function waitFor(timeInMs: number): Promise<void> {
   return setTimeout(timeInMs);

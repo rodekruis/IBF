@@ -2,7 +2,7 @@ import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 
-import { AuthenticatedUserGuard } from '@API-service/src/guards/authenticated-user.guard';
+import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 
 describe('AuthenticatedUserGuard', () => {
   let guard: AuthenticatedUserGuard;

@@ -1,7 +1,7 @@
 import {
   waitFor,
   waitForRandomDelay,
-} from '@API-service/src/utils/waitFor.helper';
+} from '@api-service/src/utils/waitFor.helper';
 
 describe('waitFor helpers', () => {
   it('waitFor - should wait for the specified time', async () => {
