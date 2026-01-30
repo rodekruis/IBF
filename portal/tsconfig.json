@@ -1,0 +1,57 @@
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@API-service/*": ["./../services/API-service/*"],
+      "~environment": ["./src/environments/environment"],
+      "~assets": ["./src/assets"],
+      "~/*": ["./src/app/*"]
+    },
+    "outDir": "./dist/out-tsc",
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "noImplicitAny": false,
+    "useUnknownInCatchVariables": false,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "declaration": false,
+    "experimentalDecorators": true,
+    "moduleResolution": "bundler",
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "useDefineForClassFields": false,
+    "lib": [
+      "dom",
+      "es2024",
+      "ESNext.Array",
+      "ESNext.Collection",
+      "ESNext.Iterator"
+    ],
+    "types": ["@angular/localize", "jasmine", "node"],
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "checkJs": true
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "extendedDiagnostics": {
+      "defaultCategory": "error"
+    },
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  },
+  "exclude": ["node_modules", "www", "coverage", "dist", ".angular"]
+}

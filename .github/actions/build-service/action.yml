@@ -1,0 +1,84 @@
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+# More specific about composite actions: https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions
+
+name: 'Build: Service'
+description: Builds a service for deployment.
+
+#
+# NOTE! - This composite action is used externally!
+#
+# Make sure to verify changes to it will not break unexpectedly in other deployment-workflows.
+# See the "infrastructure"-repository.
+#
+
+inputs:
+  servicePath:
+    description: Location of the service code.
+    required: true
+
+outputs:
+  build_version:
+    description: Specific version of the build service.
+    value: ${{ steps.version.outputs.build_version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js version
+      uses: actions/setup-node@v4
+      with:
+        # See supported Node.js versions: https://github.com/Azure/app-service-linux-docs/blob/master/Runtime_Support/node_support.md
+        node-version-file: ${{ inputs.servicePath }}/.node-version
+        cache: npm
+        cache-dependency-path: ${{ inputs.servicePath }}/package-lock.json
+
+    - name: Install
+      shell: bash
+      working-directory: ${{ inputs.servicePath }}
+      run: |
+        npm ci
+
+    - name: Test
+      shell: bash
+      working-directory: ${{ inputs.servicePath }}
+      run: |
+        npm run typecheck
+        npm run test
+
+    - name: Build
+      shell: bash
+      working-directory: ${{ inputs.servicePath }}
+      run: |
+        npm run build
+
+    - name: Set VERSION of build/deployment
+      shell: bash
+      run: |
+        echo "GLOBAL_IBF_VERSION=$(git describe --tags --dirty --broken)" >> $GITHUB_ENV
+
+    - name: Add VERSION to deployment
+      id: version
+      shell: bash
+      working-directory: ${{ inputs.servicePath }}
+      run: |
+        echo "${{ env.GLOBAL_IBF_VERSION }}" >> ./VERSION.txt
+        echo "build_version=${{ env.GLOBAL_IBF_VERSION }}" >> $GITHUB_OUTPUT
+
+    - name: Reduce build package size
+      shell: bash
+      working-directory: ${{ inputs.servicePath }}
+      run: |
+        npm prune --omit=dev
+        rm -r -f .vscode/
+        rm -r -f test/
+        rm -r -f ./*.md
+
+    - name: Create ZIP package
+      shell: bash
+      working-directory: ${{ inputs.servicePath }}
+      run: zip --quiet --display-globaldots --recurse-paths artifact.zip .
+
+    - name: Verify Build
+      shell: bash
+      working-directory: ${{ inputs.servicePath }}
+      run: test -s artifact.zip

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "lib": ["es2024", "ESNext.Array", "ESNext.Collection", "ESNext.Iterator"],
+    "module": "preserve",
+    "target": "ES2022",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "strictPropertyInitialization": false, // TODO
+    "noImplicitAny": false, // TODO
+    "useUnknownInCatchVariables": false, // TODO
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "outDir": "./dist",
+    "checkJs": true,
+    "resolveJsonModule": true,
+    "types": ["express", "node", "jest"],
+    "typeRoots": ["./node_modules/@types"],
+    "paths": {
+      "@API-service/*": ["./../services/API-service/*"],
+      "@ibf-e2e/*": ["./*"],
+      "typeorm/*": ["./../services/API-service/node_modules/typeorm/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.spec.ts", "types/**/*.d.ts"],
+  "exclude": ["node_modules", "dist"]
+}

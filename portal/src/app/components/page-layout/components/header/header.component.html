@@ -1,0 +1,107 @@
+<p-toolbar>
+  <ng-template pTemplate="start">
+    <p-button
+      icon="pi pi-bars"
+      title="Menu"
+      i18n-title="@@header-menu"
+      ariaLabel="Menu"
+      i18n-ariaLabel="@@header-menu"
+      plain
+      rounded
+      text
+      class="lg:me-9 [&_button]:text-white [&_button:focus]:border-white [&_button:focus]:bg-transparent [&_button:hover]:border-white [&_button:hover]:bg-transparent"
+      (click)="sidebarVisible.set(true)"
+      [attr.aria-controls]="sidebarVisible() ? 'menu' : null"
+      [attr.aria-expanded]="sidebarVisible()"
+      data-testid="sidebar-toggle"
+    />
+    <app-logo />
+  </ng-template>
+  <ng-template pTemplate="end">
+    @if (!!userName()) {
+      <div class="flex items-center lg:px-20">
+        <app-button-menu
+          label="Account"
+          i18n-label="Top-right user-menu@@header-user-menu"
+          [icon]="'pi pi-user'"
+          [menuItems]="userMenuOptions()"
+          class="[&_.p-button-label]:txt-body-m [&_.p-button-label]:font-semibold [&_.p-button-label]:duration-0 [&_button]:text-white [&_button:focus]:border-white [&_button:focus]:bg-transparent [&_button:hover]:border-white [&_button:hover]:bg-transparent"
+          [plain]="true"
+          [text]="true"
+          size="small"
+        >
+          <p
+            menu-start
+            class="border-b-grey-300 mb-2 border-b px-3 py-2"
+          >
+            <ng-container i18n>
+              Logged in as:<br />{{ userName() }}
+            </ng-container>
+          </p>
+        </app-button-menu>
+      </div>
+    }
+  </ng-template>
+</p-toolbar>
+<p-drawer
+  #sideBar
+  [position]="rtlHelper.createPosition('start')()"
+  [(visible)]="sidebarVisible"
+  [closeOnEscape]="true"
+  [showCloseIcon]="false"
+>
+  <ng-template pTemplate="headless">
+    <div
+      id="menu"
+      class="flex size-full flex-col"
+      data-testid="sidebar"
+      pFocusTrap
+      [pFocusTrapDisabled]="!sidebarVisible()"
+      [tabIndex]="-1"
+    >
+      <div class="p-drawer-header p-0">
+        <p-button
+          label="Close"
+          i18n-label="@@generic-close"
+          icon="pi pi-times"
+          [iconPos]="rtlHelper.createPosition('start')()"
+          plain
+          text
+          (click)="sidebarVisible.set(false)"
+          [pAutoFocus]="sidebarVisible()"
+        />
+      </div>
+      <div class="mb-auto">
+        @for (sidebarLink of sidebarLinks(); track $index) {
+          <a
+            [routerLink]="sidebarLink.routerLink"
+            [routerLinkActive]="[
+              'font-bold',
+              'pointer-events-none',
+              'focus:text-black',
+            ]"
+            [ariaCurrentWhenActive]="'page'"
+            class="border-grey-300 font-display hover:text-purple focus:bg-grey-300 focus:text-purple block w-full rounded-none border-t px-6 py-4 transition-colors"
+          >
+            {{ sidebarLink.label }}
+          </a>
+        }
+        <a
+          href="mailto:ibf-support@510.global"
+          class="border-grey-300 font-display hover:text-purple focus:bg-grey-300 focus:text-purple inline-flex w-full items-center border-t px-6 py-4 transition-colors"
+          target="_blank"
+          title="Opens in a new window"
+          i18n-title="@@generic-opens-in-new-window"
+        >
+          <ng-container i18n>Email Support</ng-container>
+          <span class="pi pi-external-link ms-2 text-sm"></span>
+        </a>
+      </div>
+      <div class="px-6">
+        <small class="text-grey-500 block pb-2 text-center">
+          <app-health-widget />
+        </small>
+      </div>
+    </div>
+  </ng-template>
+</p-drawer>

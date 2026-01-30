@@ -1,0 +1,11 @@
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/spec",
+    "types": ["jasmine", "@angular/localize"]
+  },
+  "exclude": ["dist/**"],
+  "include": ["src/**/*.spec.ts", "./*.spec.ts"] // NOTE: This must be 'in-syc' (but NOT exactly the same) with the "test"-section in angular.json
+}

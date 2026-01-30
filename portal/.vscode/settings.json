@@ -1,0 +1,55 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.removeUnusedImports": "explicit"
+  },
+  "eslint.enable": true,
+  "eslint.format.enable": true,
+  "eslint.rules.customizations": [
+    {
+      "rule": "*",
+      "fixable": true,
+      "severity": "info"
+    }
+  ],
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+  "css.customData": [".vscode/tailwind.json"],
+  "regexrobin.rules": [
+    {
+      "regex": "AB#(\\d+)",
+      "tree": { "group": "Azure DevOps backlog items" },
+      "editor": [
+        {
+          "link": "https://dev.azure.com/redcrossnl/IBF/_workitems/edit/$1",
+          "hoverMessage": "Azure DevOps backlog item: **$1**"
+        }
+      ]
+    }
+  ],
+  "tailwindCSS.rootFontSize": 14,
+  "tailwindCSS.showPixelEquivalents": true,
+  "tailwindCSS.classAttributes": [
+    "class",
+    "styleClass",
+    "icon",
+    "ngClass",
+    "class:list"
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "XLF: State": true,
+  "XLF: Xml Format": "prettify-xml"
+}

@@ -1,0 +1,18 @@
+<div class="mt-8">
+  <ng-container i18n>API Version:</ng-container>
+
+  &nbsp;
+
+  @switch (versionInfo.status()) {
+    @case ('pending') {
+      <span>...</span>
+    }
+    @case ('error') {
+      <span i18n>Error: {{ versionInfo.error()?.message }}</span>
+    }
+    <!-- also status === 'success', but "else" logic works, too -->
+    @default {
+      <code>{{ versionInfo.data()?.message }}</code>
+    }
+  }
+</div>

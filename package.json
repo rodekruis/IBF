@@ -1,0 +1,56 @@
+{
+  "name": "IBF",
+  "author": "IBF",
+  "homepage": "https://github.com/rodekruis/IBF",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rodekruis/IBF.git"
+  },
+  "private": true,
+  "scripts": {
+    "start": "echo 'See README.md#getting-started \\n\\n'",
+    "start:all": "npx npm-run-all --npm-path npm --print-label --parallel start:services start:portal",
+    "logs:services": "cd services/ && docker compose logs --follow",
+    "start:services": "cd services/ && docker compose --file=docker-compose.yml --file=docker-compose.development.yml up --build",
+    "start:services:detach": "npm run start:services -- --detach",
+    "start:services:ci": "npm run start:services:detach -- --quiet-pull --wait --wait-timeout 300",
+    "start:services:ci:production": "cd services/ && docker --log-level='warn' compose --file=docker-compose.yml up --detach --build --quiet-pull --wait --wait-timeout 300",
+    "start:services:appmap": "cd services/ && docker compose --file=docker-compose.yml --file=docker-compose.development.yml --file=docker-compose.development-appmap.yml up --detach --build",
+    "start:portal": "npm start --prefix portal/ -- --port=8888",
+    "start:portal:e2e": "npm run start:debug-production --prefix portal/ -- --port=8088",
+    "install:all": "npx npm-run-all --npm-path npm --print-label --sequential install:services install:portal",
+    "install:services": "cd services/ && docker compose --file=docker-compose.yml build",
+    "install:portal": "npm ci --prefix=portal/",
+    "code:all": "code ./ && npx npm-run-all --npm-path npm --parallel code:API-service code:portal",
+    "code:portal": "code ./portal/",
+    "code:API-service": "code ./services/API-service/",
+    "typecheck": "echo 'Not available here! Run inside the sub-folder of a specific package/component.' && exit 0",
+    "test": "echo 'See README.md#testing \\n\\n' && npm run test:all",
+    "test:all": "npx npm-run-all --npm-path npm --print-label --parallel test:prettier test:portal test:services",
+    "test:prettier": "npx prettier --config=./.prettierrc.yml --check \"**/*.{md,json,yml,scss}\"",
+    "test:services": "npx npm-run-all --npm-path npm --print-label --parallel test:API-service",
+    "test:API-service": "cd services/ && docker compose exec API-service npm test",
+    "test:portal": "npm run test:ci --prefix=portal/",
+    "fix:prettier": "npm run test:prettier -- --write",
+    "fix:API-service": "npm run fix --prefix=services/API-service",
+    "fix:portal": "npm run fix --prefix=portal/",
+    "fix:all": "npx npm-run-all --npm-path npm --parallel fix:prettier fix:API-service fix:portal",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@prettier/plugin-xml": "^3.4.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "prettier-plugin-tailwindcss": "^0.7.2"
+  },
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
+  },
+  "optionalDependencies": {
+    "npm-run-all": "^4.1.5"
+  }
+}

@@ -1,0 +1,36 @@
+# Logs
+logs
+*.log
+.DS_Store
+npm-debug.log*
+
+# Dependency directory
+node_modules
+.config/configstore
+
+# Generated assets / caches
+.npm
+.nyc_output
+dist
+coverage
+swagger-spec.json
+
+#IDEs
+.idea
+
+# Certificates
+# Azure database certificate(s)
+cert/DigiCertGlobalRootCA.crt.pem
+cert/DigiCert_Global_Root_CA.pem
+cert/DigiCertGlobalRootCA.pem
+cert/Microsoft_RSA_Root_Certificate_Authority_2017.pem
+cert/Microsoft RSA Root Certificate Authority 2017.pem
+cert/DigiCert_Global_Root_G2.pem
+cert/DigiCertGlobalRootG2.crt.pem
+
+# Compodoc documentation
+documentation
+
+# AppMap
+tmp
+sql_warning.txt

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en-GB" datatype="plaintext" original="ng2.template">
+    <body>
+      <trans-unit id="generic-success" datatype="html">
+        <source>Success</source>
+      </trans-unit>
+      <trans-unit id="generic-error" datatype="html">
+        <source>Error</source>
+      </trans-unit>
+      <trans-unit id="935187492052582731" datatype="html">
+        <source>Submit</source>
+      </trans-unit>
+      <trans-unit id="header-menu" datatype="html">
+        <source>Menu</source>
+      </trans-unit>
+      <trans-unit id="header-user-menu" datatype="html">
+        <source>Account</source>
+        <note priority="1" from="description">Top-right user-menu</note>
+      </trans-unit>
+      <trans-unit id="generic-close" datatype="html">
+        <source>Close</source>
+      </trans-unit>
+      <trans-unit id="generic-opens-in-new-window" datatype="html">
+        <source>Opens in a new window</source>
+      </trans-unit>
+      <trans-unit id="1336542143746897548" datatype="html">
+        <source>Email Support</source>
+      </trans-unit>
+      <trans-unit id="3797778920049399855" datatype="html">
+        <source>Logout</source>
+        <note priority="1" from="description">Menu-item</note>
+      </trans-unit>
+      <trans-unit id="888507803757257524" datatype="html">
+        <source>API Version:</source>
+      </trans-unit>
+      <trans-unit id="5641945527911431559" datatype="html">
+        <source>Error: <x equiv-text="{{ versionInfo.error()?.message }}" id="INTERPOLATION"/></source>
+      </trans-unit>
+      <trans-unit id="generic-required-field" datatype="html">
+        <source>This field is required.</source>
+      </trans-unit>
+      <trans-unit id="6509003407758128100" datatype="html">
+        <source>Cookie policy</source>
+      </trans-unit>
+      <trans-unit id="6305795241980054784" datatype="html">
+        <source>Necessary cookies are required for the basic operation of the platform.</source>
+      </trans-unit>
+      <trans-unit id="1782658553741372004" datatype="html">
+        <source>They do not require explicit consent, and by using our website, you agree to their use. However, you may still manage or block these cookies via your browser settings.</source>
+        <note priority="1" from="description">They=&apos;Necessary cookies&apos;</note>
+      </trans-unit>
+      <trans-unit id="5402301426403064456" datatype="html">
+        <source>Managing Cookies:</source>
+      </trans-unit>
+      <trans-unit id="3743895927280936154" datatype="html">
+        <source>Most web browsers allow you to control cookies through their settings. If you wish to disable cookies, please refer to your browser&apos;s help section. Note that disabling necessary cookies may affect the website&apos;s functionality.</source>
+      </trans-unit>
+      <trans-unit id="165273856698591793" datatype="html">
+        <source>Contact Us:</source>
+      </trans-unit>
+      <trans-unit id="635399988713647542" datatype="html">
+        <source>If you have any questions about our use of necessary cookies, please feel free to contact us at:</source>
+      </trans-unit>
+      <trans-unit id="2336550011721758066" datatype="html">
+        <source>Log in</source>
+      </trans-unit>
+      <trans-unit id="1061597182953948916" datatype="html">
+        <source>Use your work email to log in.</source>
+      </trans-unit>
+      <trans-unit id="1890300073702152532" datatype="html">
+        <source>E-mail</source>
+      </trans-unit>
+      <trans-unit id="138735154290622738" datatype="html">
+        <source>yourname@example.org</source>
+      </trans-unit>
+      <trans-unit id="1431416938026210429" datatype="html">
+        <source>Password</source>
+      </trans-unit>
+      <trans-unit id="8938510541215036054" datatype="html">
+        <source>Enter a valid email address</source>
+      </trans-unit>
+      <trans-unit id="generic-loading" datatype="html">
+        <source>Loading...</source>
+      </trans-unit>
+      <trans-unit id="generic-error-try-again" datatype="html">
+        <source>An unexpected error has occurred. Please try again later.</source>
+      </trans-unit>
+      <trans-unit id="2832894421278390919" datatype="html">
+        <source>Invalid email or password. Double-check your credentials and try again.</source>
+      </trans-unit>
+      <trans-unit id="error-rate-limit" datatype="html">
+        <source>Rate limit exceeded. Please try again later.</source>
+      </trans-unit>
+      <trans-unit id="error-token-expired" datatype="html">
+        <source>Token expired</source>
+      </trans-unit>
+      <trans-unit id="generic-error-with-message" datatype="html">
+        <source>Something went wrong: <x equiv-text="JSON.stringify(errorMessage)" id="errorMessage"/></source>
+      </trans-unit>
+      <trans-unit id="generic-warning" datatype="html">
+        <source>Warning</source>
+      </trans-unit>
+      <trans-unit id="generic-apply" datatype="html">
+        <source>Apply</source>
+      </trans-unit>
+      <trans-unit id="generic-clear" datatype="html">
+        <source>Clear</source>
+      </trans-unit>
+      <trans-unit id="page-title-login" datatype="html">
+        <source>Log in</source>
+      </trans-unit>
+      <trans-unit id="3797627476744587316" datatype="html">
+        <source>Logged in as:<x ctype="lb" equiv-text="&lt;br /&gt;" id="LINE_BREAK"/><x equiv-text="{{ userName() }}" id="INTERPOLATION"/></source>
+      </trans-unit>
+      <trans-unit id="login-image-credit" datatype="html">
+        <source>Image credit: Philippine Red Cross</source>
+        <note priority="1" from="description">Login-page background image credit</note>
+      </trans-unit>
+      <trans-unit id="generic-app-name" datatype="html">
+        <source>IBF Portal</source>
+      </trans-unit>
+      <trans-unit id="4941441939532394435" datatype="html">
+        <source>This field needs to be at least <x equiv-text="min" id="PH"/>.</source>
+      </trans-unit>
+      <trans-unit id="2245261357469609295" datatype="html">
+        <source>This field cannot be longer than <x equiv-text="maxlength" id="PH"/> characters.</source>
+      </trans-unit>
+      <trans-unit id="827790248534548401" datatype="html">
+        <source>An unknown validation error has been found. Check the console for more details.</source>
+      </trans-unit>
+      <trans-unit id="8355761006232718301" datatype="html">
+        <source>This field cannot be shorter than <x equiv-text="minlength" id="PH"/> characters.</source>
+      </trans-unit>
+      <trans-unit id="1581201431976430187" datatype="html">
+        <source>This field cannot be more than <x equiv-text="max" id="PH"/>.</source>
+      </trans-unit>
+      <trans-unit id="page-title-home" datatype="html">
+        <source>Home</source>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

@@ -1,0 +1,19 @@
+
+# IDE / Editor configurations
+**/.vscode/*
+!**/.vscode/extensions.json
+!**/.vscode/settings.json
+
+# Potential sensitive information
+.env
+
+# Third-party code
+node_modules
+
+# TS Build output logs
+*.tsbuildinfo
+
+**/.DS_Store
+
+# created by e2e tests when ran via VSCode extension
+downloads
