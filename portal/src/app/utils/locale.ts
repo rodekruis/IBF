@@ -16,7 +16,7 @@ export enum UILanguage {
   nl = 'nl',
 }
 
-export type Language = UILanguage;
+type Language = UILanguage;
 
 /**
  * Example:
@@ -31,7 +31,7 @@ export type Language = UILanguage;
  * We use Partial<...> here because translations will often be "incomplete" aka:
  * not have a string for each language.
  */
-export type Translation<TLanguage extends Language> = Partial<
+type Translation<TLanguage extends Language> = Partial<
   Record<TLanguage, string>
 >;
 
