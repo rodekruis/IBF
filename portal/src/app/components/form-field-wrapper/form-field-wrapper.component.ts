@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import { UILanguageTranslation } from '@api-service/src/shared/types/ui-language-translation.type';
-
 import { FormErrorComponent } from '~/components/form-error/form-error.component';
 import { InfoTooltipComponent } from '~/components/info-tooltip/info-tooltip.component';
 import { TranslatableStringPipe } from '~/pipes/translatable-string.pipe';
+import { UILanguageTranslation } from '~/utils/locale';
 
 @Component({
   selector: 'app-form-field-wrapper',

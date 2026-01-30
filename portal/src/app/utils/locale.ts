@@ -1,6 +1,62 @@
 import { isDevMode } from '@angular/core';
 
-import { UILanguage } from '@api-service/src/shared/enum/ui-language.enum';
+/////////////////////////////////////////////////////////////////////////
+// Locale and Language related types and functions
+/////////////////////////////////////////////////////////////////////////
+
+// NOTE: The enum and types in this blocks are back-end in 121. Since in the current version of code they are only used in the front-end, they are moved here.
+
+/**
+ * Supported languages for the User Interface.
+ * See: https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
+ * Make sure to use the 2-letter code from the "Set 1"-column.
+ */
+export enum UILanguage {
+  en = 'en',
+  nl = 'nl',
+}
+
+export type Language = UILanguage;
+
+/**
+ * Example:
+ * {
+ *   ar: 'مرحبا'
+ *   en: 'Hello',
+ *   nl: 'Hallo',
+ * };
+ *
+ * TLanguage can be either RegistrationPreferredLanguage or UILanguage.
+ *
+ * We use Partial<...> here because translations will often be "incomplete" aka:
+ * not have a string for each language.
+ */
+export type Translation<TLanguage extends Language> = Partial<
+  Record<TLanguage, string>
+>;
+
+/**
+ * An object that contains 0..n string translations for languages the UI
+ * supports.
+ *
+ * The non-English UI languages will often be incompletely translated because
+ * each time we add a string to the source language (English) it can take some
+ * time for the translations of that string to be completed. This also means
+ * that for any particular field of this type, some languages may be missing.
+ * For the UI languages we prioritize the percentage of non-translated strings
+ * will be low though.
+ *
+ * Example:
+ * {
+ *   ar: 'مرحبا',
+ *   en: 'Hello',
+ * };
+ */
+export type UILanguageTranslation = Translation<UILanguage>;
+
+/////////////////////////////////////////////////////////////////////////
+// Locale and Language related types and functions
+/////////////////////////////////////////////////////////////////////////
 
 /**
  * "locale" in this file always refers to Angular locale IDs, e.g. "en-GB",
