@@ -5,6 +5,8 @@
 
 IBF is a web app to visualize hazard forecasts. It has a [NestJS backend](./services/api-service) and an [Angular frontend](./portal).
 
+Read our [public documentation](https://github.com/rodekruis/IBF-documentation).
+
 ## Getting started
 
 1. Install [NodeJS](https://nodejs.org/en/download)
