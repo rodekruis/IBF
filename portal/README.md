@@ -37,7 +37,7 @@ In "normal" development mode, only 1 language can be used. If you run the portal
 
 #### Translations
 
-Translations are managed via the [Lokalise TMS-service](https://lokalise.com), a paid translation service. The translations live in [`.xlf`](https://en.wikipedia.org/wiki/XLIFF) files, only the source xlf file `messages.xlf` is version controlled, the others, like `messages.ar.xlf`, are not.
+Translations are managed via the [Lokalise TMS-service](https://lokalise.com), a paid translation service. The translations live in [`.xlf`](https://en.wikipedia.org/wiki/XLIFF) files, only the source xlf file `messages.xlf` is version controlled, the others, like `messages.nl.xlf`, are not.
 
 To create a local build using the latest translations, the translation-files need to be downloaded from the Lokalise-API.
 

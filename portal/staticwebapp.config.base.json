@@ -24,28 +24,8 @@
       }
     },
     {
-      "route": "/ar/*",
-      "rewrite": "/ar/index.html"
-    },
-    {
       "route": "/en-GB/*",
       "rewrite": "/en-GB/index.html"
-    },
-    {
-      "route": "/es/*",
-      "rewrite": "/es/index.html"
-    },
-    {
-      "route": "/fr/*",
-      "rewrite": "/fr/index.html"
-    },
-    {
-      "route": "/nl/*",
-      "rewrite": "/nl/index.html"
-    },
-    {
-      "route": "/sk/*",
-      "rewrite": "/sk/index.html"
     },
     {
       "route": "/index.html",

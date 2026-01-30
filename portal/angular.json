@@ -13,29 +13,7 @@
       "root": "",
       "sourceRoot": "src",
       "i18n": {
-        "sourceLocale": "en-GB",
-        "locales": {
-          "ar": {
-            "translation": "src/locale/messages.ar.xlf",
-            "subPath": "ar"
-          },
-          "es": {
-            "translation": "src/locale/messages.es.xlf",
-            "subPath": "es"
-          },
-          "fr": {
-            "translation": "src/locale/messages.fr.xlf",
-            "subPath": "fr"
-          },
-          "nl": {
-            "translation": "src/locale/messages.nl.xlf",
-            "subPath": "nl"
-          },
-          "sk": {
-            "translation": "src/locale/messages.sk.xlf",
-            "subPath": "sk"
-          }
-        }
+        "sourceLocale": "en-GB"
       },
       "prefix": "app",
       "architect": {
@@ -87,7 +65,7 @@
                   "maximumError": "4kB"
                 }
               ],
-              "localize": ["ar", "en", "es", "fr", "nl", "sk"],
+              "localize": ["en"],
               "outputHashing": "all",
               "extractLicenses": true,
               "optimization": {
@@ -110,21 +88,6 @@
                   "with": "src/environments/environment.development.ts"
                 }
               ]
-            },
-            "ar": {
-              "localize": ["ar"]
-            },
-            "es": {
-              "localize": ["es"]
-            },
-            "fr": {
-              "localize": ["fr"]
-            },
-            "nl": {
-              "localize": ["nl"]
-            },
-            "sk": {
-              "localize": ["sk"]
             }
           },
           "defaultConfiguration": "development"
@@ -137,21 +100,6 @@
             },
             "development": {
               "buildTarget": "portal:build:development"
-            },
-            "ar": {
-              "buildTarget": "portal:build:development,ar"
-            },
-            "es": {
-              "buildTarget": "portal:build:development,es"
-            },
-            "fr": {
-              "buildTarget": "portal:build:development,fr"
-            },
-            "nl": {
-              "buildTarget": "portal:build:development,nl"
-            },
-            "sk": {
-              "buildTarget": "portal:build:development,sk"
             }
           },
           "defaultConfiguration": "development"
