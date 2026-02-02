@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "lib": ["es2024", "ESNext.Array", "ESNext.Collection", "ESNext.Iterator"],
+    "module": "preserve",
+    "target": "ES2022",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "strictPropertyInitialization": false, // TODO
+    "noImplicitAny": false, // TODO
+    "useUnknownInCatchVariables": false, // TODO
+    "moduleResolution": "bundler",
+    "declaration": false,
+    "removeComments": true,
+    "noLib": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "allowJs": true,
+    "checkJs": true,
+    "incremental": true,
+    "outDir": "./dist",
+    "types": ["express", "node", "jest"],
+    "typeRoots": ["./node_modules/@types"],
+    "resolveJsonModule": true,
+    "paths": {
+      "@api-service/*": ["./*"],
+      "typeorm/*": ["./node_modules/typeorm/*"] // Add explicit location of custom TypeORM fork
+    }
+  },
+  "watchOptions": {
+    "watchFile": "fixedPollingInterval",
+    "excludeDirectories": ["node_modules", "dist"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["node_modules"]
+}

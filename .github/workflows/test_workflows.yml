@@ -1,0 +1,33 @@
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+
+name: 'Test: Workflows'
+
+on:
+  workflow_dispatch:
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    paths:
+      - '.github/actions/**'
+      - '.github/workflows/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Lint GitHub Action workflows
+        uses: raven-actions/actionlint@v2
+        with:
+          group-result: false
+          shellcheck: true
+          pyflakes: false
+          flags: '-ignore SC2086'
+
+      - name: Lint .env files
+        uses: dotenv-linter/action-dotenv-linter@v2
+        with:
+          reporter: github-code-suggestions
+          dotenv_linter_flags: --skip UnorderedKey

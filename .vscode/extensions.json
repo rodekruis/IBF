@@ -1,0 +1,34 @@
+{
+  "recommendations": [
+    // Sorted alphabetically:
+    "alexkrechik.cucumberautocomplete",
+    "angular.ng-template",
+    "arahata.linter-actionlint",
+    "azurite.azurite",
+    "ban.spellright",
+    "bierner.markdown-mermaid",
+    "bradlc.vscode-tailwindcss",
+    "danlevett.regex-robin",
+    "davidanson.vscode-markdownlint",
+    "dbaeumer.vscode-eslint",
+    "dotiful.dotfiles-syntax-highlighting",
+    "editorconfig.editorconfig",
+    "esbenp.prettier-vscode",
+    "github.vscode-github-actions",
+    "lokalise.i18n-ally",
+    "mechatroner.rainbow-csv",
+    "meganrogge.template-string-converter",
+    "mikestead.dotenv",
+    "ms-azuretools.vscode-azureappservice",
+    "ms-azuretools.vscode-azureresourcegroups",
+    "ms-azuretools.vscode-azurestaticwebapps",
+    "ms-azuretools.vscode-cosmosdb",
+    "ms-azuretools.vscode-docker",
+    "ms-playwright.playwright",
+    "redhat.vscode-yaml",
+    "sburg.vscode-javascript-booster",
+    "sysoev.vscode-open-in-github",
+    "tombonnike.vscode-status-bar-format-toggle",
+    "whtouche.vscode-js-console-utils"
+  ]
+}

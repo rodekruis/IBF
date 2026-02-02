@@ -1,0 +1,26 @@
+<div
+  [attr.data-testid]="dataTestId()"
+  class="mb-4"
+>
+  <!-- eslint-disable-next-line @angular-eslint/template/label-has-associated-control -->
+  <label
+    class="block [&_.p-datepicker]:w-full [&_input]:w-full [&_textarea]:w-full"
+  >
+    <strong class="mb-2 block">
+      @if (isRequired()) {
+        <span class="me-0">*</span>
+      }
+      <span class="ms-0">{{ label() | translatableString }}</span>
+      @let tooltip = labelTooltip();
+      @if (tooltip) {
+        <app-info-tooltip
+          [message]="tooltip"
+          class="ms-1"
+        ></app-info-tooltip>
+      }
+    </strong>
+    <ng-content></ng-content>
+    <app-form-error [error]="errorMessage()" />
+  </label>
+  <ng-content select="[slot='details']"></ng-content>
+</div>

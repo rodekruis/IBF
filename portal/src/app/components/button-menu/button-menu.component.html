@@ -1,0 +1,45 @@
+@if (filteredMenuItems().length > 0) {
+  <p-button
+    (click)="menu.toggle($event)"
+    rounded
+    [outlined]="outlined()"
+    [plain]="plain()"
+    [text]="text()"
+    [size]="size()"
+  >
+    <span class="inline-flex items-center gap-2">
+      @if (icon()) {
+        <span
+          [class]="'p-button-icon ' + icon()"
+          [ngClass]="{
+            'p-button-icon-left': !rtlHelper.isRtl(),
+            'p-button-icon-right': rtlHelper.isRtl(),
+          }"
+        ></span>
+      }
+      <span class="p-button-label">{{ label() }}</span>
+      <span
+        class="p-button-icon pi"
+        [ngClass]="{
+          'pi-chevron-up': menuOpen(),
+          'pi-chevron-down': !menuOpen(),
+          'p-button-icon-left': rtlHelper.isRtl(),
+          'p-button-icon-right': !rtlHelper.isRtl(),
+        }"
+      ></span>
+    </span>
+  </p-button>
+  <p-menu
+    #menu
+    [model]="filteredMenuItems()"
+    [popup]="true"
+    (onShow)="menuOpen.set(true)"
+    (onHide)="menuOpen.set(false)"
+    [appendTo]="'body'"
+    styleClass="mt-3"
+  >
+    <ng-template pTemplate="start">
+      <ng-content select="[menu-start]"></ng-content>
+    </ng-template>
+  </p-menu>
+}

@@ -1,0 +1,108 @@
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+# More specific about composite actions: https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions
+
+name: 'Build: Interface'
+description: Builds an Angular interface.
+
+#
+# NOTE! - This composite action is used externally!
+#
+# Make sure to verify changes to it will not break unexpectedly in other deployment-workflows
+# See the "infrastructure"-repository.
+#
+
+inputs:
+  interfacePath:
+    description: Location of the interface's code. (relative to the repository-root)
+    required: true
+  envIcon:
+    description: Base-64 encoded version/data-URL of the favicon.ico file.
+    required: false
+    default: ''
+
+outputs:
+  build_version:
+    description: Specific version of the build interface.
+    value: ${{ steps.version.outputs.build_version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js version
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: ${{ inputs.interfacePath }}/.node-version
+        cache: npm
+        cache-dependency-path: ${{ inputs.interfacePath }}/package-lock.json
+
+    - name: Set VERSION of build/deployment
+      shell: bash
+      id: build-version
+      run: |
+        echo "NG_BUILD_VERSION=$(git describe --tags --dirty --broken)" >> $GITHUB_ENV
+        echo "version=$NG_BUILD_VERSION" >> $GITHUB_OUTPUT
+        echo "date=$(/bin/date --utc --iso-8601)" >> $GITHUB_OUTPUT
+
+    - name: Install
+      shell: bash
+      working-directory: ${{ inputs.interfacePath }}
+      env:
+        HUSKY: '0'
+      run: |
+        npm ci
+
+    - name: Re-use downloaded translations
+      uses: actions/cache@v4
+      id: cache_translations
+      env:
+        TRANSLATIONS_SOURCE_FILE: ${{ inputs.interfacePath }}/src/locale/messages.xlf
+      with:
+        path: ${{ inputs.interfacePath }}/src/locale/
+        key: translations-${{ hashFiles(env.TRANSLATIONS_SOURCE_FILE) }}-${{ steps.build-version.outputs.date }}
+
+    - name: Download translations
+      if: steps.cache_translations.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: ${{ inputs.interfacePath }}
+      env:
+        NG_DOWNLOAD_TRANSLATIONS_AT_BUILD: true
+        LOKALISE_PROJECT_ID: ${{ env.LOKALISE_PROJECT_ID }}
+        LOKALISE_API_TOKEN: ${{ env.LOKALISE_API_TOKEN }}
+      run: |
+        npm run build:download-translations
+
+    - name: Add environment-specific icon
+      if: ${{ inputs.envIcon }} != ''
+      shell: bash
+      working-directory: ${{ inputs.interfacePath }}
+      run: |
+        echo "${{ inputs.envIcon }}" | sed 's/data:image\/.*;base64,//' | base64 --decode > src/assets/favicon.ico
+
+    - name: Build Portal
+      shell: bash
+      working-directory: ${{ inputs.interfacePath }}
+      env:
+        NG_DOWNLOAD_TRANSLATIONS_AT_BUILD: false
+      run: |
+        npm run build:production
+
+    - name: Add environment-specific icon in well-known location
+      shell: bash
+      working-directory: ${{ inputs.interfacePath }}
+      run: |
+        cp src/assets/favicon.ico www/favicon.ico
+
+    - name: Add VERSION to deployment
+      id: version
+      shell: bash
+      working-directory: ${{ inputs.interfacePath }}
+      run: |
+        echo "${{ env.NG_BUILD_VERSION }}" >> www/VERSION.txt
+        echo '{"schemaVersion": 1,"label":"build","message":"${{ env.NG_BUILD_VERSION }}"}' >> www/VERSION.json
+        echo "build_version=${{ env.NG_BUILD_VERSION }}" >> $GITHUB_OUTPUT
+
+    - name: Output build contents
+      shell: bash
+      working-directory: ${{ inputs.interfacePath }}
+      run: |
+        ls -la www/
