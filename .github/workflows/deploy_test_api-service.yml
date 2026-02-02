@@ -24,7 +24,7 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/deploy_test_service.yml'
+      - '.github/workflows/deploy_test_api-service.yml'
       - 'services/api-service/**'
       - '!*.md'
       - '!*.yml'
