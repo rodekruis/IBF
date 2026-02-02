@@ -12,7 +12,7 @@ on:
 
 jobs:
   deploy_portal:
-    name: 'Build + Deploy: Portal'
+    name: 'Build + Deploy: portal'
     uses: ./.github/workflows/deploy_test_portal.yml
     permissions:
       actions: read # Copy of above
@@ -23,7 +23,7 @@ jobs:
       LOKALISE_API_TOKEN: ${{ secrets.LOKALISE_API_TOKEN }}
 
   deploy_service:
-    name: 'Build + Deploy: api-Service'
+    name: 'Build + Deploy: api-service'
     uses: ./.github/workflows/deploy_test_api-service.yml
     secrets:
       AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
