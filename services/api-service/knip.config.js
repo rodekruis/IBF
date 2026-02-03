@@ -1,12 +1,6 @@
 /** @type {import('knip').KnipConfig} */
 module.exports = {
-  project: ['src/**/*.ts'],
-  ignore: [
-    'src/migration/*.ts', // Migrations don't have an 'entry point'
-    '*.mjs',
-    '*.cjs',
-    '*.js',
-  ],
+  project: ['src/**/*.ts', '!src/migration/*.ts'],
   includeEntryExports: true,
   ignoreBinaries: [
     'open', // Default available on macOS
