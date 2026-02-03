@@ -430,8 +430,8 @@ export class UserProfileComponent implements OnInit {
 
 ### Backend Testing
 
-- **Unit Tests**: Jest configuration in `jest.unit.config.js`
-- **Integration Tests**: Jest configuration in `jest.integration.config.js`
+- **Unit Tests**: Jest configuration in `jest.unit.config.mjs`
+- **Integration Tests**: Jest configuration in `jest.integration.config.mjs`
 - **Coverage**: Separate reports for unit and integration tests
 - **Patterns**: Use helper functions, clean test data, mock external dependencies
 - **Guidelines**

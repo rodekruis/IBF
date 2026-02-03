@@ -1,23 +1,25 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
-module.exports = {
+export default {
   preset: 'ts-jest',
   rootDir: '.',
-  testMatch: ['<rootDir>/**/*.spec.ts'],
+  testMatch: ['<rootDir>/test/**/*.test.ts'],
   coverageReporters: ['json', 'lcov'],
   collectCoverageFrom: ['src/**/*.ts', '!src/migration/**'],
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
   moduleNameMapper: {
     '^@api-service/(.*)$': '<rootDir>/$1',
   },
+  moduleFileExtensions: ['js', 'ts'],
   transform: {
+    '^.+\\.ts?$': ['ts-jest', { tsconfig: '<rootDir>/test/tsconfig.json' }],
     'node_modules/@t3-oss/.+\\.js$': ['ts-jest'],
   },
   transformIgnorePatterns: ['node_modules/(?!@t3-oss)'],
+  testTimeout: 30_000,
   randomize: true,
   verbose: true,
-  reporters: [
-    'jest-ci-spec-reporter',
-    ['github-actions', { silent: false }],
-    'summary',
-  ],
+  reporters: ['default', ['github-actions', { silent: false }], 'summary'],
+  testEnvironmentOptions: {
+    globalsCleanup: 'on',
+  },
 };
