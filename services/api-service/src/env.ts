@@ -66,13 +66,6 @@ export const env = createEnv({
     REDIRECT_PORTAL_URL_HOST: z
       .url()
       .pipe(z.transform((url) => withoutTrailingSlash(url))),
-
-    // Third-party: Twilio
-    MOCK_TWILIO: z.stringbool().default(false),
-    TWILIO_SID: z.string().startsWith('AC'),
-    TWILIO_AUTHTOKEN: z.string(),
-    TWILIO_WHATSAPP_NUMBER: z.string().min(10).regex(/\d+/),
-    TWILIO_MESSAGING_SID: z.string().startsWith('MG'),
   },
 
   createFinalSchema: (shape) =>
