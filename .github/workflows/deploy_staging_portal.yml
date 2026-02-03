@@ -11,22 +11,12 @@ permissions:
 
 on:
   workflow_call:
-    inputs:
-      gitRef:
-        description: 'Version-tag or branch-name'
-        type: string
-        required: true
     secrets:
       AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL:
         required: true
       LOKALISE_API_TOKEN:
         required: true
   workflow_dispatch:
-    inputs:
-      gitRef:
-        description: 'Version-tag or branch-name'
-        type: string
-        required: true
 
 jobs:
   build_and_deploy:
