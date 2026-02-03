@@ -4,8 +4,8 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 import { ORMConfig } from '@api-service/src/ormconfig';
 import { ScriptsController } from '@api-service/src/scripts/scripts.controller';
+import { ScriptsService } from '@api-service/src/scripts/scripts.service';
 import { SeedInit } from '@api-service/src/scripts/seed-init';
-import { ScriptsService } from '@api-service/src/scripts/services/scripts.service';
 import { CustomHttpService } from '@api-service/src/shared/services/custom-http.service';
 
 @Module({

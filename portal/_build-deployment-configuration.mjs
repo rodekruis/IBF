@@ -58,17 +58,6 @@ if (process.env.APPLICATIONINSIGHTS_CONNECTION_STRING) {
   ]);
 }
 
-// Optional: Twilio Flex
-if (shouldBeEnabled(process.env.USE_IN_TWILIO_FLEX_IFRAME)) {
-  console.info('✅ Allow loading the Portal in an iframe on Twilio Flex');
-
-  let frameAncestors = contentSecurityPolicy.get('frame-ancestors') ?? [];
-  contentSecurityPolicy.set('frame-ancestors', [
-    ...frameAncestors,
-    `https://flex.twilio.com`,
-  ]);
-}
-
 /////////////////////////////////////////////////////////////////////////////
 
 // Construct the Content-Security-Policy header-value
