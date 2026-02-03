@@ -8,17 +8,7 @@ permissions:
 
 on:
   workflow_call:
-    inputs:
-      gitRef:
-        description: 'Version-tag or branch-name'
-        type: string
-        required: true
   workflow_dispatch:
-    inputs:
-      gitRef:
-        description: 'Version-tag or branch-name'
-        type: string
-        required: true
 
 jobs:
   deploy_portal:
