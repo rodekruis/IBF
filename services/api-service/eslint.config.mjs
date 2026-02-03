@@ -7,14 +7,15 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import typescript from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import noRelativeImportPaths from 'eslint-plugin-no-relative-import-paths';
-import customRules from './eslint-plugin-custom-rules/index.js';
+import customRules from './eslint-plugin-custom-rules/index.mjs';
+import jest from 'eslint-plugin-jest';
 
 export default [
   {
     ignores: ['dist/', 'tmp/', 'documentation/', 'coverage/', 'knip.config.js'],
   },
   {
-    files: ['*.js'],
+    files: ['**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'script',
@@ -35,7 +36,14 @@ export default [
     },
   },
   {
-    files: ['*.ts'],
+    files: ['**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+    },
+  },
+  {
+    files: ['**/*.ts'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
@@ -61,6 +69,7 @@ export default [
       ...eslintComments.configs.recommended.rules,
       ...promise.configs.recommended.rules,
       ...prettier.configs.recommended.rules,
+      ...n.configs.recommended.rules,
       '@typescript-eslint/interface-name-prefix': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
@@ -137,25 +146,32 @@ export default [
       ],
       'simple-import-sort/exports': 'error',
     },
-    overrides: [
-      {
-        files: ['*.entity.ts'],
-        rules: {
-          'custom-rules/typeorm-cascade-ondelete': 'error',
-        },
-      },
-      {
-        files: ['*.controller.ts'],
-        rules: {
-          'custom-rules/no-method-api-tags': 'error',
-        },
-      },
-      {
-        files: ['*.spec.ts', '*.test.ts'],
-        rules: {
-          // If you want to add Jest rules, import and spread them here
-        },
-      },
-    ],
+  },
+  {
+    files: ['**/*.entity.ts'],
+    plugins: {
+      'custom-rules': customRules,
+    },
+    rules: {
+      'custom-rules/typeorm-cascade-ondelete': 'error',
+    },
+  },
+  {
+    files: ['**/*.controller.ts'],
+    plugins: {
+      'custom-rules': customRules,
+    },
+    rules: {
+      'custom-rules/no-method-api-tags': 'error',
+    },
+  },
+  {
+    files: ['*.spec.ts', '*.test.ts'],
+    plugins: {
+      jest,
+    },
+    rules: {
+      ...jest.configs.recommended.rules,
+    },
   },
 ];
