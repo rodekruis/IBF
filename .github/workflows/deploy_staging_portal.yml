@@ -29,6 +29,7 @@ jobs:
       NG_LOCALES: ${{ vars.NG_LOCALES }}
       NG_DEFAULT_LOCALE: ${{ vars.NG_DEFAULT_LOCALE }}
       NG_URL_API_SERVICE: ${{ vars.NG_URL_API_SERVICE }}
+      MATOMO_CONNECTION_STRING: ${{ vars.MATOMO_CONNECTION_STRING }}
 
     steps:
       - uses: actions/checkout@v6

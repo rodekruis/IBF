@@ -23,6 +23,11 @@ import { LogoComponent } from '~/components/logo/logo.component';
 import { HealthWidgetComponent } from '~/components/page-layout/components/health-widget/health-widget.component';
 import { AuthService } from '~/services/auth.service';
 import { RtlHelperService } from '~/services/rtl-helper.service';
+import {
+  TrackingAction,
+  TrackingCategory,
+  TrackingService,
+} from '~/services/tracking.service';
 
 @Component({
   selector: 'app-header',
@@ -47,6 +52,7 @@ import { RtlHelperService } from '~/services/rtl-helper.service';
 export class HeaderComponent {
   AppRoutes = AppRoutes;
   private authService = inject(AuthService);
+  private trackingService = inject(TrackingService);
   readonly rtlHelper = inject(RtlHelperService);
 
   readonly programId = input<string>();
@@ -58,6 +64,10 @@ export class HeaderComponent {
       label: $localize`:Menu-item:Logout`,
       icon: 'pi pi-sign-out',
       command: () => {
+        this.trackingService.trackEvent({
+          category: TrackingCategory.authentication,
+          action: TrackingAction.clickLogoutButton,
+        });
         void this.authService.logout();
       },
     },

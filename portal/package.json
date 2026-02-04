@@ -58,6 +58,7 @@
     "chart.js": "^4.5.1",
     "chartjs-plugin-datalabels": "^2.2.0",
     "lokalise-file-exchange": "^4.0.2",
+    "ngx-matomo-client": "^8.0.0",
     "primeicons": "^7.0.0",
     "primeng": "^20.4.0",
     "radashi": "^12.7.1",

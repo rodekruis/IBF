@@ -15,4 +15,5 @@ export const environment = {
 
   // Monitoring/Telemetry:
   applicationinsights_connection_string: '',
+  matomo_connection_string: '',
 };
