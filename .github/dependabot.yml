@@ -80,6 +80,10 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: 'filesize'
         update-types: ['version-update:semver-major'] # See: https://www.npmjs.com/package/ngx-filesize
+      - dependency-name: 'ngx-matomo-client' # Requires Angular v21+
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'angular-eslint' # Requires Angular v21+
+        update-types: ['version-update:semver-major']
       - dependency-name: 'primeng'
         update-types: ['version-update:semver-major']
 

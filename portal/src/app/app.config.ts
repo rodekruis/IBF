@@ -28,6 +28,7 @@ import { routes } from '~/app.routes';
 import AppTheme from '~/app.theme';
 import { CustomPageTitleStrategy } from '~/app.title-strategy';
 import { AuthService } from '~/services/auth.service';
+import { TrackingService } from '~/services/tracking.service';
 import { Locale } from '~/utils/locale';
 
 declare module '@tanstack/angular-query-experimental' {
@@ -97,6 +98,7 @@ export const getAppConfig = (locale: Locale): ApplicationConfig => ({
     }),
     provideTanStackQuery(queryClient),
     ...AuthService.APP_PROVIDERS,
+    ...TrackingService.APP_PROVIDERS,
     { provide: TitleStrategy, useClass: CustomPageTitleStrategy },
     { provide: LOCALE_ID, useValue: locale },
     { provide: DEFAULT_CURRENCY_CODE, useValue: 'XXX' },

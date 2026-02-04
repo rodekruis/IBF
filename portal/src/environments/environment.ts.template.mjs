@@ -16,5 +16,6 @@ export const environment = {
 
   // Monitoring/Telemetry:
   applicationinsights_connection_string: '${process.env.APPLICATIONINSIGHTS_CONNECTION_STRING || ''}',
+  matomo_connection_string: '${process.env.MATOMO_CONNECTION_STRING || ''}',
 };
 `;

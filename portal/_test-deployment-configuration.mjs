@@ -8,6 +8,8 @@ import { doesNotMatch, match, ok } from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
+import { parseMatomoConnectionString } from './_matomo.utils.mjs';
+
 const swaConfig = JSON.parse(
   readFileSync('./staticwebapp.config.json', 'utf8'),
 );
@@ -46,3 +48,23 @@ test('Content-Security-Policy configuration whether to allow tracking with Appli
     doesNotMatch(csp, connectSrcCondition);
   }
 });
+
+test(
+  'Content-Security-Policy configuration whether to allow tracking with Matomo',
+  { skip: !process.env.MATOMO_CONNECTION_STRING },
+  () => {
+    const matomoConnectionInfo = parseMatomoConnectionString(
+      process.env.MATOMO_CONNECTION_STRING,
+    );
+
+    const matomoApiOrigin = new URL(matomoConnectionInfo.api).origin;
+    const connectSrcCondition = new RegExp(
+      `connect-src[^;]* ${matomoApiOrigin}`,
+    );
+    match(csp, connectSrcCondition);
+
+    const matomoSdkOrigin = new URL(matomoConnectionInfo.sdk).origin;
+    const scriptSrcCondition = new RegExp(`script-src[^;]* ${matomoSdkOrigin}`);
+    match(csp, scriptSrcCondition);
+  },
+);

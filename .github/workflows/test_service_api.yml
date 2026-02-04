@@ -82,7 +82,6 @@ jobs:
       - name: Generate Coverage-report from api-service
         working-directory: ${{ env.workingDirectory }}
         run: |
-          curl -d '{"secret":"${{ env.RESET_SECRET }}"}' -H "Content-Type: application/json" -X POST '${{ env.EXTERNAL_API_SERVICE_URL }}/api/test/kill-service' || true
           docker compose exec api-service npm run coverage:report:integration
 
       - uses: actions/upload-artifact@v6

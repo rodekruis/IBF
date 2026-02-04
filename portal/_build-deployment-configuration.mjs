@@ -7,6 +7,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 
 import { shouldBeEnabled } from './_env.utils.mjs';
+import { parseMatomoConnectionString } from './_matomo.utils.mjs';
 
 // Set up specifics
 const sourcePath = './staticwebapp.config.base.json';
@@ -56,6 +57,29 @@ if (process.env.APPLICATIONINSIGHTS_CONNECTION_STRING) {
     'https://*.in.applicationinsights.azure.com',
     'https://westeurope.livediagnostics.monitor.azure.com',
   ]);
+}
+
+// Optional: Matomo analytics/metrics
+if (process.env.MATOMO_CONNECTION_STRING) {
+  console.info('✅ Allow tracking with Matomo');
+
+  const matomoConnectionInfo = parseMatomoConnectionString(
+    process.env.MATOMO_CONNECTION_STRING,
+  );
+  console.log('matomoConnectionInfo: ', matomoConnectionInfo);
+
+  if (matomoConnectionInfo && matomoConnectionInfo.api) {
+    const matomoApiOrigin = new URL(matomoConnectionInfo.api).origin;
+    let connectSrc = contentSecurityPolicy.get('connect-src') ?? [];
+    contentSecurityPolicy.set('connect-src', [...connectSrc, matomoApiOrigin]);
+  }
+
+  if (matomoConnectionInfo && matomoConnectionInfo.sdk) {
+    const matomoSdkOrigin = new URL(matomoConnectionInfo.sdk).origin;
+    let scriptSrc = contentSecurityPolicy.get('script-src') ?? [];
+    contentSecurityPolicy.set('script-src', [...scriptSrc, matomoSdkOrigin]);
+  }
+  console.log('contentSecurityPolicy: ', contentSecurityPolicy);
 }
 
 /////////////////////////////////////////////////////////////////////////////
