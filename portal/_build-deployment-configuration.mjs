@@ -66,7 +66,6 @@ if (process.env.MATOMO_CONNECTION_STRING) {
   const matomoConnectionInfo = parseMatomoConnectionString(
     process.env.MATOMO_CONNECTION_STRING,
   );
-  console.log('matomoConnectionInfo: ', matomoConnectionInfo);
 
   if (matomoConnectionInfo && matomoConnectionInfo.api) {
     const matomoApiOrigin = new URL(matomoConnectionInfo.api).origin;
@@ -79,7 +78,6 @@ if (process.env.MATOMO_CONNECTION_STRING) {
     let scriptSrc = contentSecurityPolicy.get('script-src') ?? [];
     contentSecurityPolicy.set('script-src', [...scriptSrc, matomoSdkOrigin]);
   }
-  console.log('contentSecurityPolicy: ', contentSecurityPolicy);
 }
 
 /////////////////////////////////////////////////////////////////////////////
