@@ -34,6 +34,8 @@ const main = async () => {
     case Locale.en:
       await import('@angular/common/locales/global/en-GB');
       break;
+    case Locale.nl:
+      await import('@angular/common/locales/global/nl');
   }
 
   await bootstrapApplication(

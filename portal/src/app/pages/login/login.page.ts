@@ -11,6 +11,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { AppRoutes } from '~/app.routes';
 import { FormErrorComponent } from '~/components/form-error/form-error.component';
+import { LocaleSwitcherComponent } from '~/components/locale-switcher/locale-switcher.component';
 import { LogoComponent } from '~/components/logo/logo.component';
 import { CookieBannerComponent } from '~/pages/login/components/cookie-banner/cookie-banner.component';
 import { AUTH_ERROR_IN_STATE_KEY, AuthService } from '~/services/auth.service';
@@ -24,6 +25,7 @@ import { AUTH_ERROR_IN_STATE_KEY, AuthService } from '~/services/auth.service';
     CookieBannerComponent,
     NgComponentOutlet,
     FormErrorComponent,
+    LocaleSwitcherComponent,
   ],
   templateUrl: './login.page.html',
   styles: ``,
