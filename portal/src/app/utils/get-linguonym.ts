@@ -1,4 +1,4 @@
-import { Language, UILanguage } from '~/utils/locale';
+import type { Language, UILanguage } from '~/utils/locale';
 
 /**
  * Example: the linguonym of "English" in French:
