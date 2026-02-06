@@ -5,7 +5,7 @@ import {
   computed,
   inject,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -26,6 +26,7 @@ import { AUTH_ERROR_IN_STATE_KEY, AuthService } from '~/services/auth.service';
     NgComponentOutlet,
     FormErrorComponent,
     LocaleSwitcherComponent,
+    RouterLink,
   ],
   templateUrl: './login.page.html',
   styles: ``,

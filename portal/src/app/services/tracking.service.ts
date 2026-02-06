@@ -4,6 +4,8 @@ import { parseMatomoConnectionString } from '_matomo.utils.mjs';
 import { MatomoTracker, provideMatomo, withRouter } from 'ngx-matomo-client';
 
 import { AppRoutes } from '~/app.routes';
+import { PrivacyCopyNoTrackingComponent } from '~/components/privacy/privacy-copy-no-tracking.component';
+import { PrivacyCopyTrackingComponent } from '~/components/privacy/privacy-copy-tracking.component';
 import { environment } from '~environment';
 
 /**
@@ -89,6 +91,12 @@ export class TrackingService {
   private readonly tracker = IS_MATOMO_ENABLED()
     ? inject(MatomoTracker)
     : undefined;
+
+  public get PrivacyCopyComponent() {
+    return IS_MATOMO_ENABLED()
+      ? PrivacyCopyTrackingComponent
+      : PrivacyCopyNoTrackingComponent;
+  }
 
   /**
    *
