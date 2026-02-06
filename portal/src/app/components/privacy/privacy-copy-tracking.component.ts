@@ -11,15 +11,11 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
     <p i18n>
       We do not share any personal information with Matomo/InnoCraft Ltd. Our
       use of their service is covered by the
-      <a
-        href="https://matomo.org/matomo-cloud-privacy-policy/"
-        target="_blank"
+      <a href="https://matomo.org/matomo-cloud-privacy-policy/"
         >Matomo Cloud Privacy Policy</a
       >
       and the
-      <a
-        href="https://matomo.org/matomo-cloud-dpa/"
-        target="_blank"
+      <a href="https://matomo.org/matomo-cloud-dpa/"
         >Matomo Cloud Data Processing Agreement</a
       >.
     </p>
