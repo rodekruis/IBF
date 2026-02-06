@@ -19,6 +19,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { AppRoutes } from '~/app.routes';
 import { ButtonMenuComponent } from '~/components/button-menu/button-menu.component';
+import { LocaleSwitcherComponent } from '~/components/locale-switcher/locale-switcher.component';
 import { LogoComponent } from '~/components/logo/logo.component';
 import { HealthWidgetComponent } from '~/components/page-layout/components/health-widget/health-widget.component';
 import { AuthService } from '~/services/auth.service';
@@ -44,6 +45,7 @@ import {
     ButtonMenuComponent,
     RouterLink,
     RouterLinkActive,
+    LocaleSwitcherComponent,
   ],
   providers: [],
   templateUrl: './header.component.html',

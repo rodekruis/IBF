@@ -1,10 +1,17 @@
 import { isDevMode } from '@angular/core';
 
-/////////////////////////////////////////////////////////////////////////
-// Locale and Language related types and functions
-/////////////////////////////////////////////////////////////////////////
+import { getLinguonym } from '~/utils/get-linguonym';
+import { environment } from '~environment';
 
-// NOTE: The enum and types in this blocks are back-end in 121. Since in the current version of code they are only used in the front-end, they are moved here.
+//////////////////////////////////////////////////////////////////
+// START BLOCK: Locale and Language related types and functions //
+//////////////////////////////////////////////////////////////////
+
+/**
+ * NOTE: This locale/language functionality is copied from 121.
+ * There, the enum and types in this block, were defined in the back-end.
+ * Since for now, they are only used in the front-end in IBF, they are moved here.
+ */
 
 /**
  * Supported languages for the User Interface.
@@ -16,7 +23,7 @@ export enum UILanguage {
   nl = 'nl',
 }
 
-type Language = UILanguage;
+export type Language = UILanguage;
 
 /**
  * Example:
@@ -54,10 +61,9 @@ type Translation<TLanguage extends Language> = Partial<
  */
 export type UILanguageTranslation = Translation<UILanguage>;
 
-/////////////////////////////////////////////////////////////////////////
-// Locale and Language related types and functions
-/////////////////////////////////////////////////////////////////////////
-
+////////////////////////////////////////////////////////////////
+// END BLOCK: Locale and Language related types and functions //
+////////////////////////////////////////////////////////////////
 /**
  * "locale" in this file always refers to Angular locale IDs, e.g. "en-GB",
  * "fr", "nl", etc.
@@ -82,6 +88,24 @@ const localeToUILanguageMap: Record<Locale, UILanguage> = {
   [Locale.en]: UILanguage.en,
   [Locale.nl]: UILanguage.nl,
 };
+
+export const getLocaleLabel = (locale: Locale): string => {
+  const uiLanguage = getUILanguageFromLocale(locale);
+  return getLinguonym({
+    languageToDisplayNameOf: uiLanguage,
+    languageToShowNameIn: uiLanguage,
+  });
+};
+
+export const getAvailableLocales = () =>
+  environment.locales
+    .split(',')
+    .map((locale) => locale.trim())
+    .filter(isValidLocale)
+    .map((locale) => ({
+      label: getLocaleLabel(locale),
+      value: locale,
+    }));
 
 /**
  * @param {string} locale - Angular locale id

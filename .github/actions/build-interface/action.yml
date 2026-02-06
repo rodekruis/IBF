@@ -58,7 +58,7 @@ runs:
       shell: bash
       working-directory: ${{ inputs.interfacePath }}
       env:
-        NG_DOWNLOAD_TRANSLATIONS_AT_BUILD: false
+        NG_DOWNLOAD_TRANSLATIONS_AT_BUILD: true
         LOKALISE_PROJECT_ID: ${{ env.LOKALISE_PROJECT_ID }}
         LOKALISE_API_TOKEN: ${{ env.LOKALISE_API_TOKEN }}
       run: |
