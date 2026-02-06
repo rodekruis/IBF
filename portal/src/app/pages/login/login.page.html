@@ -23,6 +23,14 @@
           "
         ></ng-container>
         <app-form-error [error]="authError()" />
+        <p class="mt-2">
+          <a
+            i18n
+            [attr.rel]="'privacy-policy'"
+            [routerLink]="['/', AppRoutes.privacy]"
+            >Read our Privacy notice</a
+          >
+        </p>
       </div>
       <app-locale-switcher />
     </div>
