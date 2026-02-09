@@ -26,7 +26,7 @@ class Pipeline:
         self.country = country
 
         # Initialize empty data sets
-        self.data = DroughtDataSets(country=country, settings=settings)
+        self.data = DroughtDataSets(country=country, settings=settings, secrets=secrets)
 
         # Initialize pipeline modules
         self.load = DroughtLoad(

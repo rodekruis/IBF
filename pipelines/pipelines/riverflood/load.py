@@ -365,15 +365,15 @@ class RiverFloodLoad(Module):
     def get_thresholds_station(self):
         """Get GloFAS station thresholds from config file"""
         data_units = []
-        if not os.path.exists(
-            rf"config/riverflood/{self.country}_station_thresholds.json"
-        ):
+        resource_name = f"{self.country}_station_thresholds.json"
+        file_path = os.path.join(self.data.input_dir, resource_name)
+        self.data.download_from_ckan(resource_name=resource_name, file_path=file_path)
+        # check if file exists after download, in case of error
+        if not os.path.exists(file_path):
             raise FileNotFoundError(
                 f"No station thresholds config file found for country {self.country}"
             )
-        with open(
-            rf"config/riverflood/{self.country}_station_thresholds.json", "r"
-        ) as read_file:
+        with open(file_path, "r") as read_file:
             station_thresholds = json.load(read_file)
             for station in station_thresholds:
                 data_units.append(
@@ -395,23 +395,23 @@ class RiverFloodLoad(Module):
     def save_thresholds_station(self, data: List[ThresholdStationDataUnit]):
         """Save GloFAS station thresholds to config file"""
         # TBI validate before save
-        with open(
-            rf"config/riverflood/{self.country}_station_thresholds.json", "w"
-        ) as file:
+        resource_name = f"{self.country}_station_thresholds.json"
+        file_path = os.path.join(self.data.input_dir, resource_name)
+        with open(file_path, "w") as file:
             json.dump([record.__dict__ for record in data], file)
 
     def get_thresholds_admin(self):
         """Get GloFAS admin area thresholds from config file"""
         data_units = []
-        if not os.path.exists(
-            rf"config/riverflood/{self.country}_admin_thresholds.json"
-        ):
+        resource_name = f"{self.country}_admin_thresholds.json"
+        file_path = os.path.join(self.data.input_dir, resource_name)
+        self.data.download_from_ckan(resource_name=resource_name, file_path=file_path)
+        # check if file exists after download, in case of error
+        if not os.path.exists(file_path):
             raise FileNotFoundError(
-                f"No admin thresholds config file found for country {self.country}"
+                f"No admin thresholds found for country {self.country}"
             )
-        with open(
-            rf"config/riverflood/{self.country}_admin_thresholds.json", "r"
-        ) as read_file:
+        with open(file_path, "r") as read_file:
             admin_thresholds = json.load(read_file)
             for record in admin_thresholds:
                 data_units.append(
@@ -431,7 +431,7 @@ class RiverFloodLoad(Module):
     def save_thresholds_admin(self, data: List[ThresholdDataUnit]):
         """Save GloFAS admin area thresholds to config file"""
         # TBI validate before save
-        with open(
-            rf"config/riverflood/{self.country}_admin_thresholds.json", "w"
-        ) as file:
+        resource_name = f"{self.country}_admin_thresholds.json"
+        file_path = os.path.join(self.data.input_dir, resource_name)
+        with open(file_path, "w") as file:
             json.dump([record.__dict__ for record in data], file)

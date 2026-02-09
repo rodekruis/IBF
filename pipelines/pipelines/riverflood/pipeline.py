@@ -17,7 +17,9 @@ class Pipeline:
         self.country = country
 
         # Initialize empty data sets
-        self.data = RiverFloodDataSets(country=country, settings=settings)
+        self.data = RiverFloodDataSets(
+            country=country, settings=settings, secrets=secrets
+        )
 
         # Initialize pipeline modules
         self.load = RiverFloodLoad(

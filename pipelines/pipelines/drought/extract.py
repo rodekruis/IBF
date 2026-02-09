@@ -84,12 +84,6 @@ class Extract(Module):
             **kwargs,
         )
         self.source = "ECMWF"
-        self.inputPathGrid = "./data/input"
-        self.outputPathGrid = "./data/output"
-        if not os.path.exists(self.inputPathGrid):
-            os.makedirs(self.inputPathGrid)
-        if not os.path.exists(self.outputPathGrid):
-            os.makedirs(self.outputPathGrid)
 
     def get_data(self):
         """Get river discharge data from source and return AdminDataSet"""
@@ -121,7 +115,7 @@ class Extract(Module):
         try:
             self.download_ecmwf_forecast(
                 country,
-                self.inputPathGrid,
+                self.data.input_dir,
                 current_year,
                 current_month,
             )
@@ -256,12 +250,12 @@ class Extract(Module):
 
         logging.info("Extract seasonal forecast for each climate region")
         ds_hindcast, ds_forecast = convert_to_mm_per_month(
-            f"{self.inputPathGrid}/ecmwf_seas5_hindcast_monthly_tp.grib",
-            f"{self.inputPathGrid}/ecmwf_seas5_forecast_monthly_tp.grib",
+            os.path.join(self.data.input_dir, "ecmwf_seas5_hindcast_monthly_tp.grib"),
+            os.path.join(self.data.input_dir, "ecmwf_seas5_forecast_monthly_tp.grib"),
         )
         """
         ds_hindcast = xr.open_dataset(
-            f'{self.inputPathGrid}/ecmwf_seas5_hindcast_monthly_tp.grib',
+            f'{self.data.input_dir}/ecmwf_seas5_hindcast_monthly_tp.grib',
             engine='cfgrib',
             backend_kwargs={'time_dims': ('forecastMonth', 'time')}
         )
@@ -270,7 +264,7 @@ class Extract(Module):
 
         # Load forecast data
         ds_forecast = xr.open_dataset(
-            f'{self.inputPathGrid}/ecmwf_seas5_forecast_monthly_tp.grib',
+            f'{self.data.input_dir}/ecmwf_seas5_forecast_monthly_tp.grib',
             engine='cfgrib',
             backend_kwargs={'time_dims': ('forecastMonth', 'time')}
         )

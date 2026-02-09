@@ -35,6 +35,7 @@ dependencies = [
     "SQLAlchemy",
     "tqdm",
     "xarray",
+    "ckanapi>=4.9",
 ]
 
 [project.urls]

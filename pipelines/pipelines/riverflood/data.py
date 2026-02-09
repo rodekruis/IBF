@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, TypedDict
 from pipelines.core.settings import Settings
+from pipelines.core.secrets import Secrets
 from pipelines.core.data import (
     AdminDataUnit,
     RegionDataUnit,
@@ -136,8 +137,9 @@ class ThresholdStationDataUnit(StationDataUnit):
 class RiverFloodDataSets(DataSets):
     """Datasets used by the river flood pipeline"""
 
-    def __init__(self, country: str, settings: Settings):
-        super().__init__(country)
+    def __init__(self, country: str, settings: Settings, secrets: Secrets):
+        super().__init__(country, secrets)
+
         self.discharge_admin = AdminDataSet(
             country=self.country,
             timestamp=datetime.today(),

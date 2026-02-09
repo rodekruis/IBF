@@ -1,5 +1,10 @@
+import os
 from datetime import datetime
 from typing import List
+from pipelines.core.secrets import Secrets
+from ckanapi import RemoteCKAN
+import logging
+import requests
 
 
 class AdminDataUnit:
@@ -212,5 +217,47 @@ class RegionDataSet:
 class DataSets:
     """Base class for datasets"""
 
-    def __init__(self, country: str):
+    def __init__(self, country: str, secrets: Secrets):
         self.country = country
+        self.secrets = secrets
+        self.data_dir = "data"
+        self.input_dir = os.path.join(self.data_dir, "input")
+        self.output_dir = os.path.join(self.data_dir, "output")
+        os.makedirs(self.input_dir, exist_ok=True)
+        os.makedirs(self.output_dir, exist_ok=True)
+
+    def download_from_ckan(self, resource_name: str, file_path: str):
+        """Download file from HDX"""
+
+        ckan_url = self.secrets.get_secret("CKAN_URL")
+        ckan_key = self.secrets.get_secret("CKAN_KEY")
+
+        ckan = RemoteCKAN(ckan_url, apikey=ckan_key)
+        package = ckan.action.package_show(id="ibf-datasets")
+
+        # find resource by name
+        resource = next(
+            filter(lambda x: x["name"] == resource_name, package["resources"]), None
+        )
+
+        # if resource not found, raise error
+        if not resource:
+            logging.error(f"Resource {resource_name} not found")
+            raise ValueError(f"Resource {resource_name} not found")
+
+        source = resource["download_url"]
+
+        # if file_path is a directory, add filename to path
+        if os.path.isdir(file_path):
+            filename = os.path.basename(source)
+            file_path = os.path.join(file_path, filename)
+
+        headers = {}
+        headers["X-CKAN-API-Key"] = ckan_key
+        headers["Authorization"] = ckan_key
+
+        response = requests.get(source, headers=headers)
+        response.raise_for_status()  # raise an error for bad responses
+
+        with open(file_path, "wb") as f:
+            f.write(response.content)

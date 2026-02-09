@@ -132,18 +132,20 @@ class Forecast(Module):
             secrets_to_check=[],
             **kwargs,
         )
-        self.input_data_path: str = "data/input"
-        self.output_data_path: str = "data/output"
-        self.flood_extent_raster: str = self.output_data_path + "/flood_extent.tif"
-        self.pop_raster: str = self.input_data_path + "/population_density.tif"
-        self.aff_pop_raster: str = self.output_data_path + "/affected_population.tif"
+        self.pop_raster: str = os.path.join(
+            self.data.input_dir, "population_density.tif"
+        )
+        self.flood_extent_raster: str = os.path.join(
+            self.data.output_dir, "flood_extent.tif"
+        )
+        self.aff_pop_raster: str = os.path.join(
+            self.data.output_dir, "affected_population.tif"
+        )
 
     def compute_forecast(self):
         """
         Forecast floods based on river discharge data
         """
-        os.makedirs(self.input_data_path, exist_ok=True)
-        os.makedirs(self.output_data_path, exist_ok=True)
         self.compute_forecast_admin()
         self.compute_forecast_station()
 
@@ -257,8 +259,8 @@ class Forecast(Module):
             os.remove(self.flood_extent_raster)
         flood_rasters = {}
         for rp in [10, 20, 50, 75, 100, 200, 500]:
-            flood_raster_filepath = (
-                self.input_data_path + f"/flood_map_{self.country}_RP{rp}.tif"
+            flood_raster_filepath = os.path.join(
+                self.data.input_dir, f"flood_map_{self.country}_RP{rp}.tif"
             )
             if not os.path.exists(flood_raster_filepath):
                 try:
@@ -317,8 +319,9 @@ class Forecast(Module):
                         flood_rasters[rp], [adm_bounds]
                     )
                     # save the clipped raster
-                    flood_raster_admin_div = (
-                        f"data/output/flood_extent_{forecast_data_unit.pcode}.tif"
+                    flood_raster_admin_div = os.path.join(
+                        self.data.output_dir,
+                        f"flood_extent_{forecast_data_unit.pcode}.tif",
                     )
                     with rasterio.open(
                         flood_raster_admin_div, "w", **flood_raster_meta
@@ -462,9 +465,6 @@ class Forecast(Module):
 
     def __compute_triggers_station(self):
         """Determine if trigger level is reached, its probability, and the alert class"""
-
-        os.makedirs(self.input_data_path, exist_ok=True)
-        os.makedirs(self.output_data_path, exist_ok=True)
 
         trigger_on_lead_time = self.settings.get_country_setting(
             self.country, "trigger-on-lead-time"

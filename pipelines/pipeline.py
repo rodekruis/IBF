@@ -25,13 +25,13 @@ def pipeline(hazard, country, prepare, forecast, send, debug):
         if hazard.lower() == "riverflood":
             pipeline = RiverFloodPipeline(
                 country=country,
-                settings=Settings("config/riverflood/config.yaml"),
+                settings=Settings("config/riverflood.yaml"),
                 secrets=Secrets(".env"),
             )
         elif hazard.lower() == "drought":
             pipeline = DroughtPipeline(
                 country=country,
-                settings=Settings("config/drought/config.yaml"),
+                settings=Settings("config/drought.yaml"),
                 secrets=Secrets(".env"),
             )
         else:

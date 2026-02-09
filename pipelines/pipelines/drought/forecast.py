@@ -102,20 +102,20 @@ class Forecast(Module):
             secrets_to_check=[],
             **kwargs,
         )
-        self.input_data_path: str = "data/input"
-        self.output_data_path: str = "data/output"
-        self.drought_extent_raster: str = (
-            self.output_data_path + "/rainfall_forecast.tif"
+        self.pop_raster: str = os.path.join(
+            self.data.input_dir, "population_density.tif"
+        )
+        self.drought_extent_raster: str = os.path.join(
+            self.data.output_dir, "rainfall_forecast.tif"
         )  # 'rainfall_forecast_0-month changed to drought_extent_raster
-        self.pop_raster: str = self.input_data_path + "/population_density.tif"
-        self.aff_pop_raster: str = self.output_data_path + "/affected_population.tif"
+        self.aff_pop_raster: str = os.path.join(
+            self.data.output_dir, "affected_population.tif"
+        )
 
     def compute_forecast(self, debug: bool = False, datestart: datetime = date.today()):
         """
         Forecast floods based on river discharge data
         """
-        os.makedirs(self.input_data_path, exist_ok=True)
-        os.makedirs(self.output_data_path, exist_ok=True)
         self.compute_forecast_admin(debug=debug, datestart=datestart)
 
     def compute_forecast_admin(
@@ -191,7 +191,10 @@ class Forecast(Module):
                 pcodes = self.data.threshold_climateregion.get_data_unit(
                     _id=climateregion
                 ).pcodes
-                output_file = f"{self.output_data_path}/rlower_tercile_probability_{lead_time}-month_{country}.tif"
+                output_file = os.path.join(
+                    self.data.output_dir,
+                    f"rlower_tercile_probability_{lead_time}-month_{country}.tif",
+                )
 
                 # Open the TIF file as an xarray object
                 rlower_tercile_probability = rioxarray.open_rasterio(output_file)
@@ -286,9 +289,9 @@ class Forecast(Module):
         flood_shapes = []
 
         for lead_time in self.data.forecast_admin.get_lead_times():
-            flood_raster_lead_time = (
-                self.output_data_path
-                + f"/drought_extent_{lead_time}-month_{country}.tif"
+            flood_raster_lead_time = os.path.join(
+                self.data.output_dir,
+                +f"drought_extent_{lead_time}-month_{country}.tif",
             )
             aff_pop_raster_lead_time = self.aff_pop_raster.replace(
                 ".tif", f"_{lead_time}_{country}.tif"

@@ -32,9 +32,6 @@ class Extract(Module):
             **kwargs,
         )
         self.source = "GloFAS"
-        self.inputPathGrid = "./data/input"
-        if not os.path.exists(self.inputPathGrid):
-            os.makedirs(self.inputPathGrid)
 
     def get_data(self):
         """Get river discharge data from source and return AdminDataSet"""
@@ -63,7 +60,7 @@ class Extract(Module):
         for ensemble in range(0, no_ens):
 
             filename_local_sliced = os.path.join(
-                self.inputPathGrid,
+                self.data.input_dir,
                 f"GloFAS_{date}_{country}_{ensemble}.nc",
             )
             if os.path.exists(filename_local_sliced):
@@ -71,7 +68,7 @@ class Extract(Module):
 
             # Download netcdf file
             logging.info(f"downloading GloFAS data for ensemble {ensemble}")
-            filename_local = os.path.join(self.inputPathGrid, f"GloFAS_{ensemble}.nc")
+            filename_local = os.path.join(self.data.input_dir, f"GloFAS_{ensemble}.nc")
             try:
                 self.load.get_from_blob(
                     filename_local,
@@ -156,7 +153,7 @@ class Extract(Module):
                 continue
             for ensemble in range(0, no_ens):
                 filename = os.path.join(
-                    self.inputPathGrid,
+                    self.data.input_dir,
                     f"GloFAS_{date}_{country}_{ensemble}.nc",
                 )
                 if not os.path.exists(filename):
@@ -207,7 +204,7 @@ class Extract(Module):
         discharges_stations = {}
         for ensemble in range(0, no_ens):
             filename = os.path.join(
-                self.inputPathGrid,
+                self.data.input_dir,
                 f"GloFAS_{date}_{country}_{ensemble}.nc",
             )
             if not os.path.exists(filename):

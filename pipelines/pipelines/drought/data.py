@@ -1,10 +1,12 @@
 from datetime import datetime
 from pipelines.core.settings import Settings
+from pipelines.core.secrets import Secrets
 from pipelines.core.data import (
     AdminDataUnit,
     AdminDataSet,
     RegionDataUnit,
     RegionDataSet,
+    DataSets,
 )
 
 
@@ -36,13 +38,17 @@ class ForecastRegionDataUnit(RegionDataUnit):
         self.alert_class: str = kwargs.get("alert_class", None)
 
 
-class DroughtDataSets:
+class DroughtDataSets(DataSets):
     """Collection of datasets used by the pipeline"""
 
     def __init__(
-        self, country: str, settings: Settings, datetime: datetime = datetime.today()
+        self,
+        country: str,
+        settings: Settings,
+        secrets: Secrets,
+        datetime: datetime = datetime.today(),
     ):
-        self.country = country
+        super().__init__(country, secrets)
 
         self.rainfall_climateregion = RegionDataSet(
             country=self.country,
