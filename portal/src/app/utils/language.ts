@@ -1,4 +1,31 @@
-import type { Language, UILanguage } from '~/utils/locale';
+/**
+ * Supported languages for the User Interface.
+ * See: https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
+ * Make sure to use the 2-letter code from the "Set 1"-column.
+ */
+export enum UILanguage {
+  en = 'en',
+  nl = 'nl',
+}
+
+/**
+ * An object that contains 0..n string translations for languages the UI
+ * supports.
+ *
+ * The non-English UI languages will often be incompletely translated because
+ * each time we add a string to the source language (English) it can take some
+ * time for the translations of that string to be completed. This also means
+ * that for any particular field of this type, some languages may be missing.
+ * For the UI languages we prioritize the percentage of non-translated strings
+ * will be low though.
+ *
+ * Example:
+ * {
+ *   ar: 'مرحبا',
+ *   en: 'Hello',
+ * };
+ */
+export type UILanguageTranslation = Partial<Record<UILanguage, string>>;
 
 /**
  * Example: the linguonym of "English" in French:
@@ -9,7 +36,7 @@ export const getLinguonym = ({
   languageToDisplayNameOf,
   languageToShowNameIn,
 }: {
-  languageToDisplayNameOf: Language;
+  languageToDisplayNameOf: UILanguage;
   languageToShowNameIn: UILanguage;
 }): string => {
   const names = new Intl.DisplayNames([languageToShowNameIn], {
