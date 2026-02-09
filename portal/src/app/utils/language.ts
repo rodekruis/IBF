@@ -8,7 +8,10 @@ export enum UILanguage {
   nl = 'nl',
 }
 
-export type Language = UILanguage;
+/**
+ * Type based on enum
+ */
+type Language = UILanguage;
 
 /**
  * Example:
@@ -55,7 +58,7 @@ export const getLinguonym = ({
   languageToDisplayNameOf,
   languageToShowNameIn,
 }: {
-  languageToDisplayNameOf: Language;
+  languageToDisplayNameOf: UILanguage;
   languageToShowNameIn: UILanguage;
 }): string => {
   const names = new Intl.DisplayNames([languageToShowNameIn], {
