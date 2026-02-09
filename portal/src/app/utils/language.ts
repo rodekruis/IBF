@@ -9,28 +9,6 @@ export enum UILanguage {
 }
 
 /**
- * Type based on enum
- */
-type Language = UILanguage;
-
-/**
- * Example:
- * {
- *   ar: 'مرحبا'
- *   en: 'Hello',
- *   nl: 'Hallo',
- * };
- *
- * TLanguage can be either RegistrationPreferredLanguage or UILanguage.
- *
- * We use Partial<...> here because translations will often be "incomplete" aka:
- * not have a string for each language.
- */
-type Translation<TLanguage extends Language> = Partial<
-  Record<TLanguage, string>
->;
-
-/**
  * An object that contains 0..n string translations for languages the UI
  * supports.
  *
@@ -47,7 +25,7 @@ type Translation<TLanguage extends Language> = Partial<
  *   en: 'Hello',
  * };
  */
-export type UILanguageTranslation = Translation<UILanguage>;
+export type UILanguageTranslation = Partial<Record<UILanguage, string>>;
 
 /**
  * Example: the linguonym of "English" in French:
