@@ -1,50 +1,64 @@
 [project]
 name = "pipelines"
 version = "0.1.0"
-authors = [
-  {name="Jacopo Margutti", email="jmargutti@redcross.nl" },
-]
 description = "Forecast hazards impact on people and assets."
-readme = "README.md"
+authors = [{ name = "Jacopo Margutti", email = "jmargutti@redcross.nl" }]
 requires-python = ">=3.13,<4"
+readme = "README.md"
 license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "azure-identity",
+    "azure-cosmos",
+    "azure-keyvault-secrets",
+    "azure-storage-blob",
+    "beautifulsoup4",
+    "black",
+    "cdsapi",
+    "certifi",
+    "cfgrib",
+    "fiona>=1.10b2",
+    "GeoAlchemy2",
+    "geopandas",
+    "netCDF4",
+    "pandas",
+    "PyYAML",
+    "python-dotenv",
+    "rasterio",
+    "rasterstats>=0.20.0",
+    "rioxarray",
+    "scipy",
+    "SQLAlchemy",
+    "tqdm",
+    "xarray",
+]
 
 [project.urls]
 Homepage = "https://github.com/rodekruis/IBF/tree/main/pipelines"
 
-[tool.poetry]
-packages = [
-    { include = "core", from = "pipelines" },
-    { include = "drought", from = "pipelines" },
-    { include = "riverflood", from = "pipelines" },
+[tool.hatch.build.targets.sdist]
+include = [
+    "pipelines/core",
+    "pipelines/drought",
+    "pipelines/riverflood",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.13,<4"
-azure-identity = "*"
-azure-cosmos = "*"
-azure-keyvault-secrets = "*"
-azure-storage-blob = "*"
-beautifulsoup4 = "*"
-black = "*"
-cdsapi = "*"
-certifi = "*"
-cfgrib = "*"
-fiona = ">=1.10b2"
-GeoAlchemy2 = "*"
-geopandas = "*"
-netCDF4 = "*"
-pandas = "*"
-PyYAML = "*"
-python-dotenv = "*"
-rasterio = "*"
-rasterstats = ">=0.20.0"
-rioxarray = "*"
-scipy = "*"
-SQLAlchemy = "*"
-tqdm = "*"
-xarray = "*"
+[tool.hatch.build.targets.wheel]
+include = [
+    "pipelines/core",
+    "pipelines/drought",
+    "pipelines/riverflood",
+]
+
+[tool.hatch.build.targets.wheel.sources]
+"pipelines/core" = "core"
+"pipelines/drought" = "drought"
+"pipelines/riverflood" = "riverflood"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
