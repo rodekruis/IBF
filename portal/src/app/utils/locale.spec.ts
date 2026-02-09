@@ -1,6 +1,7 @@
 import { enableProdMode } from '@angular/core';
 
-import { getLocaleForInitialization, Locale, UILanguage } from '~/utils/locale';
+import { UILanguage } from '~/utils/language';
+import { getLocaleForInitialization, Locale } from '~/utils/locale';
 
 describe('getLocaleForInitialization', () => {
   beforeEach(() => {

@@ -68,9 +68,6 @@
       <trans-unit id="1061597182953948916" datatype="html">
         <source>Use your work email to log in.</source>
       </trans-unit>
-      <trans-unit id="1890300073702152532" datatype="html">
-        <source>E-mail</source>
-      </trans-unit>
       <trans-unit id="138735154290622738" datatype="html">
         <source>yourname@example.org</source>
       </trans-unit>
@@ -159,12 +156,6 @@
       <trans-unit id="1369610904910546430" datatype="html">
         <source>Who we share information with</source>
       </trans-unit>
-      <trans-unit id="2099469692592361098" datatype="html">
-        <source>Personal information: e-mail and name.</source>
-      </trans-unit>
-      <trans-unit id="2114848494510177632" datatype="html">
-        <source>Your e-mail address and/or your (full) name.</source>
-      </trans-unit>
       <trans-unit id="2378622458638065888" datatype="html">
         <source>How to contact us</source>
       </trans-unit>
@@ -204,17 +195,26 @@
       <trans-unit id="7509825160805284263" datatype="html">
         <source>Personal information: IP-address.</source>
       </trans-unit>
-      <trans-unit id="7770796883201595016" datatype="html">
-        <source>We retain your e-mail address for as long as a program is stored on the IBF Platform.</source>
-      </trans-unit>
-      <trans-unit id="8451285368311264318" datatype="html">
-        <source>We retain your e-mail address and name for as long as you are a user associated with a program on the IBF Platform.</source>
-      </trans-unit>
       <trans-unit id="page-title-privacy" datatype="html">
         <source>Privacy</source>
       </trans-unit>
       <trans-unit id="privacy-notice-last-updated" datatype="html">
         <source>Last updated: <x ctype="x-time" equiv-text="&lt;time [attr.datetime]=&quot;lastUpdated | date: &apos;yyyy-MM-dd&apos;&quot;&gt;" id="START_TAG_TIME"/><x equiv-text="{{ lastUpdated | date: &apos;shortDate&apos; }}" id="INTERPOLATION"/><x ctype="x-time" equiv-text="&lt;/time&gt;" id="CLOSE_TAG_TIME"/></source>
+      </trans-unit>
+      <trans-unit id="4768749765465246664" datatype="html">
+        <source>Email</source>
+      </trans-unit>
+      <trans-unit id="4770087101604615464" datatype="html">
+        <source>We retain your email address for as long as a program is stored on the IBF Platform.</source>
+      </trans-unit>
+      <trans-unit id="4855789482966798421" datatype="html">
+        <source>We retain your email address and name for as long as you are a user associated with a program on the IBF Platform.</source>
+      </trans-unit>
+      <trans-unit id="6523245520605019212" datatype="html">
+        <source>Your email address and/or your (full) name.</source>
+      </trans-unit>
+      <trans-unit id="8582735875523504404" datatype="html">
+        <source>Personal information: email and name.</source>
       </trans-unit>
     </body>
   </file>
