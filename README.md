@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > This is the repo for IBF v2, which is not in MVP-state yet. Find the old IBF-system repo [here](https://github.com/rodekruis/IBF-system).
 
-IBF is a web app to visualize hazard forecasts. It has a [NestJS backend](./services/api-service) and an [Angular frontend](./portal).
+IBF is a web app to visualize hazard forecasts. It has a [NestJS backend](./services/api-service), an [Angular frontend](./portal), and [data pipelines](./pipelines).
 
 Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 
@@ -24,6 +24,13 @@ Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 - `npm run install:portal`
 - `npm run start:portal`
 - Open [http://localhost:8888](http://localhost:8888) in a web browser to check if the IBF-portal is running
+
+6. Start pipelines
+
+- Install [uv](https://docs.astral.sh/uv/getting-started/installation)
+- `cp pipelines/.env.example pipelines/.env`
+- `uv sync`
+- `uv run pipeline.py --hazard drought --country KEN`
 
 ---
 
