@@ -3,14 +3,12 @@ import { enableProdMode } from '@angular/core';
 import { getLocaleForInitialization, Locale, UILanguage } from '~/utils/locale';
 
 describe('getLocaleForInitialization', () => {
-  beforeEach(() => {
+  beforeAll(() => {
     enableProdMode();
     Object.defineProperty(window, 'localStorage', {
       value: {
         getItem: jest.fn(),
         setItem: jest.fn(),
-        removeItem: jest.fn(),
-        clear: jest.fn(),
       },
       writable: true,
     });
