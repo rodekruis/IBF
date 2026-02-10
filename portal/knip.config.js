@@ -1,13 +1,11 @@
 /** @type {import('knip').KnipConfig} */
 module.exports = {
   ignoreDependencies: [
-    '@angular/platform-browser-dynamic', // Probably not 100% required
     'primeicons',
     // Known issues with devDependencies:
     'autoprefixer',
     // Known issues with Unlisted dependencies:
     '@angular-eslint/builder',
-    '@angular-devkit/build-angular',
   ],
   includeEntryExports: true,
   project: [

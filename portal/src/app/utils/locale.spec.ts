@@ -4,8 +4,15 @@ import { UILanguage } from '~/utils/language';
 import { getLocaleForInitialization, Locale } from '~/utils/locale';
 
 describe('getLocaleForInitialization', () => {
-  beforeEach(() => {
+  beforeAll(() => {
     enableProdMode();
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: jest.fn(),
+        setItem: jest.fn(),
+      },
+      writable: true,
+    });
   });
 
   it('should throw an error when an invalid default locale is passed in', () => {
@@ -14,7 +21,7 @@ describe('getLocaleForInitialization', () => {
         defaultLocale: 'nonsense',
         urlLocale: 'en-GB',
       });
-    }).toThrowError('Invalid default locale "nonsense" found in environment.');
+    }).toThrow('Invalid default locale "nonsense" found in environment.');
   });
 
   it('should throw an error when an invalid url locale is passed in', () => {
@@ -23,11 +30,11 @@ describe('getLocaleForInitialization', () => {
         defaultLocale: 'en-GB',
         urlLocale: 'nonsense',
       });
-    }).toThrowError('Invalid locale "nonsense" found in URL: /context.html');
+    }).toThrow('Invalid locale "nonsense" found in URL:');
   });
 
   it('should default to the urlLocale whenever there is weirdness saved in local storage', () => {
-    spyOn(window.localStorage, 'getItem').and.callFake(() => 'nonsense');
+    (window.localStorage.getItem as jest.Mock).mockReturnValue('nonsense');
 
     const localeInfo = getLocaleForInitialization({
       defaultLocale: 'en-GB',
@@ -38,7 +45,7 @@ describe('getLocaleForInitialization', () => {
   });
 
   it('should use the default locale when there is nothing saved in local storage', () => {
-    spyOn(window.localStorage, 'getItem').and.callFake(() => null);
+    (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
 
     let localeInfo = getLocaleForInitialization({
       defaultLocale: 'en-GB',
@@ -56,7 +63,7 @@ describe('getLocaleForInitialization', () => {
   });
 
   it('should prompt to change language when the local storage locale is out of sync with the url locale', () => {
-    spyOn(window.localStorage, 'getItem').and.callFake(() => UILanguage.nl);
+    (window.localStorage.getItem as jest.Mock).mockReturnValue(UILanguage.nl);
 
     const localeInfo = getLocaleForInitialization({
       defaultLocale: 'en-GB',
@@ -70,7 +77,7 @@ describe('getLocaleForInitialization', () => {
   });
 
   it('should prompt to change language when the local storage locale does not exist and the url locale does not match the default locale', () => {
-    spyOn(window.localStorage, 'getItem').and.callFake(() => null);
+    (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
 
     const localeInfo = getLocaleForInitialization({
       defaultLocale: UILanguage.nl,
