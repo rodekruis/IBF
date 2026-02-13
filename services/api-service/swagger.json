@@ -1,17 +1,17 @@
 [
   {
     "method": "get",
-    "path": "/api/health/health",
+    "path": "/api/instance/health",
     "params": []
   },
   {
     "method": "get",
-    "path": "/api/health/version",
+    "path": "/api/instance/version",
     "params": []
   },
   {
     "method": "post",
-    "path": "/api/scripts/reset",
+    "path": "/api/instance/reset",
     "params": [
       "resetIdentifier",
       "isApiTests",

@@ -14,7 +14,7 @@ export class SecretDto {
 }
 
 @ApiTags('instance')
-@Controller('scripts')
+@Controller('instance')
 export class ScriptsController {
   public constructor(private readonly scriptsService: ScriptsService) {}
 

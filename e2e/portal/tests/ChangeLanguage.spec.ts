@@ -5,7 +5,7 @@ import LoginPage from '@ibf-e2e/portal/pages/LoginPage';
 import BasePage from '@ibf-e2e/portal/pages/BasePage';
 
 test.beforeEach(async ({ page }) => {
-  await resetDB(SeedScript.productionInitialState, __filename);
+  await resetDB(SeedScript.initialState, __filename);
 
   // Login
   const loginPage = new LoginPage(page);

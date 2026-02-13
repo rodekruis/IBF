@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["api-service"]
+}
+
+model User {
+  @@schema("api-service")
+
+  id          Int      @id @default(autoincrement())
+  created     DateTime @default(now())
+  updated     DateTime @updatedAt
+
+  username    String?   @unique
+  password    String
+  admin       Boolean  @default(false)
+  salt        String?
+  lastLogin   DateTime?
+  displayName String
+
+  @@index([created])
+  @@index([username])
+}
