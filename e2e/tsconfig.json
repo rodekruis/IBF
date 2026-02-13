@@ -21,8 +21,7 @@
     "typeRoots": ["./node_modules/@types"],
     "paths": {
       "@api-service/*": ["./../services/api-service/*"],
-      "@ibf-e2e/*": ["./*"],
-      "typeorm/*": ["./../services/api-service/node_modules/typeorm/*"]
+      "@ibf-e2e/*": ["./*"]
     }
   },
   "include": ["**/*.ts", "**/*.spec.ts", "types/**/*.d.ts"],

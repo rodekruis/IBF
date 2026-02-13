@@ -1,3 +1,3 @@
 export enum SeedScript {
-  productionInitialState = 'production-initial-state',
+  initialState = 'initial-state',
 }

@@ -1,14 +1,19 @@
-import { HttpStatus, Inject, Injectable, Scope } from '@nestjs/common';
-import { HttpException } from '@nestjs/common/exceptions/http.exception';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Scope,
+} from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { InjectRepository } from '@nestjs/typeorm';
+import { User } from '@prisma/client';
 import { Request } from 'express';
 import * as jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
-import { Equal, FindOptionsRelations, Repository } from 'typeorm';
 
 import { IS_DEVELOPMENT } from '@api-service/src/config';
 import { env } from '@api-service/src/env';
+import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import { CookieNames } from '@api-service/src/shared/enum/cookie.enums';
 import {
   INTERFACE_NAME_HEADER,
@@ -17,16 +22,15 @@ import {
 import { CookieSettingsDto } from '@api-service/src/user/dto/cookie-settings.dto';
 import { LoginResponseDto } from '@api-service/src/user/dto/login-response.dto';
 import { LoginUserDto } from '@api-service/src/user/dto/login-user.dto';
-import { UserEntity } from '@api-service/src/user/user.entity';
 import { UserData, UserRO } from '@api-service/src/user/user.interface';
 const tokenExpirationDays = 14;
 
 @Injectable({ scope: Scope.REQUEST })
 export class UserService {
-  @InjectRepository(UserEntity)
-  private readonly userRepository: Repository<UserEntity>;
-
-  public constructor(@Inject(REQUEST) private readonly request: Request) {}
+  public constructor(
+    @Inject(REQUEST) private readonly request: Request,
+    private prisma: PrismaService,
+  ) {}
 
   public async login(loginUserDto: LoginUserDto): Promise<LoginResponseDto> {
     const userEntity = await this.matchPassword(loginUserDto);
@@ -40,7 +44,10 @@ export class UserService {
 
     const cookieSettings = this.buildCookieByRequest(token);
     userEntity.lastLogin = new Date();
-    await this.userRepository.save(userEntity);
+    await this.prisma.user.update({
+      where: { id: userEntity.id },
+      data: { lastLogin: userEntity.lastLogin },
+    });
     return { userRo: user, cookieSettings, token };
   }
 
@@ -48,14 +55,12 @@ export class UserService {
     username: string,
     displayName: string | null,
     password: string,
-  ): Promise<UserEntity> {
+  ): Promise<User> {
     username = username.toLowerCase();
     // check uniqueness of email
-    const qb = this.userRepository
-      .createQueryBuilder('user')
-      .where('user.username = :username', { username });
-
-    const user = await qb.getOne();
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+    });
 
     if (user) {
       const errors = { username: `Username: '${username}' must be unique.` };
@@ -66,16 +71,30 @@ export class UserService {
     }
 
     // create new user
-    const newUser = new UserEntity();
-    newUser.username = username;
-    newUser.password = password;
-    newUser.displayName = displayName || username.split('@')[0];
-    return await this.userRepository.save(newUser);
+    const { hash, salt } = this.hashPassword(password);
+    const newUser = await this.prisma.user.create({
+      data: {
+        username,
+        password: hash,
+        salt,
+        displayName: displayName || username.split('@')[0],
+      },
+    });
+
+    return newUser;
   }
 
-  public async findById(id: number): Promise<UserEntity> {
-    const user = await this.userRepository.findOne({
-      where: { id: Equal(id) },
+  private hashPassword(password: string): { hash: string; salt: string } {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto
+      .pbkdf2Sync(password, salt, 1, 32, 'sha256')
+      .toString('hex');
+    return { hash, salt };
+  }
+
+  public async findById(id: number): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
     });
 
     if (!user) {
@@ -86,13 +105,9 @@ export class UserService {
     return user;
   }
 
-  public async findByUsernameOrThrow(
-    username: string,
-    relations?: FindOptionsRelations<UserEntity>,
-  ): Promise<UserEntity> {
-    const user = await this.userRepository.findOne({
-      where: { username: Equal(username) },
-      relations,
+  public async findByUsernameOrThrow(username: string): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: { username },
     });
 
     if (!user) {
@@ -104,8 +119,8 @@ export class UserService {
   }
 
   public async getUserRoByUsernameOrThrow(username: string): Promise<UserRO> {
-    const user = await this.userRepository.findOne({
-      where: { username: Equal(username) },
+    const user = await this.prisma.user.findUnique({
+      where: { username },
     });
     if (!user) {
       const errors = `User not found'`;
@@ -115,7 +130,7 @@ export class UserService {
     return await this.buildUserRO(user);
   }
 
-  public generateJWT(user: UserEntity): string {
+  public generateJWT(user: User): string {
     const today = new Date();
     const exp = new Date(today);
     exp.setDate(today.getDate() + tokenExpirationDays);
@@ -155,7 +170,7 @@ export class UserService {
     };
   }
 
-  public async buildUserRO(user: UserEntity): Promise<UserRO> {
+  public async buildUserRO(user: User): Promise<UserRO> {
     const userData: UserData = {
       id: user.id,
       username: user.username ?? undefined,
@@ -180,15 +195,12 @@ export class UserService {
     };
   }
 
-  public async matchPassword(
-    loginUserDto: LoginUserDto,
-  ): Promise<UserEntity | null> {
+  public async matchPassword(loginUserDto: LoginUserDto): Promise<User | null> {
     const username = loginUserDto.username.toLowerCase();
-    const saltCheck = await this.userRepository
-      .createQueryBuilder('user')
-      .addSelect('user.salt')
-      .where({ username })
-      .getOne();
+    const saltCheck = await this.prisma.user.findUnique({
+      where: { username },
+      select: { salt: true },
+    });
 
     if (!saltCheck) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
@@ -204,17 +216,15 @@ export class UserService {
             .toString('hex')
         : crypto.createHmac('sha256', loginUserDto.password).digest('hex'),
     };
-    const userEntity = await this.userRepository
-      .createQueryBuilder('user')
-      .addSelect('password')
-      .where(findOneOptions)
-      .getOne();
+    const userEntity = await this.prisma.user.findFirst({
+      where: findOneOptions,
+    });
 
     return userEntity;
   }
 
   public async getUsers() {
-    return await this.userRepository.find({
+    return await this.prisma.user.findMany({
       select: {
         id: true,
         username: true,
