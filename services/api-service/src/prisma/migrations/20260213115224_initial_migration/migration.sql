@@ -10,7 +10,7 @@ CREATE TABLE "user" (
     "lastLogin" TIMESTAMP(3),
     "displayName" TEXT NOT NULL,
 
-    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "user_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
