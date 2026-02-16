@@ -12,9 +12,17 @@ See instructions to get started in the main [`README`](../../README.md#getting-s
 
 This service uses [Prisma](https://www.prisma.io/) with a PostgreSQL database.
 
+### Datamodel changes
+
+- Datamodel changes are made in the `schema.prisma` file.
+- And are subsequently persisted in the database by running `docker exec api-service npm run prisma:migrate:dev <migration-file-name>`
+- The prestart commands in `package.json` all contain the commands:
+  - `prisma generate`, which generates the Prisma client (in the node_modules folder), which contains e.g. types specific to your datamodel.
+  - `prisma migrate deploy`, which runs any pending migrations. Note that these run on start/restart, but not on any recompile on change.
+
 ### Seed the database
 
-You can seed the database by using the `api/reset` endpoint from the Swagger UI.
+You can seed the database by using the `api/instance/reset` endpoint from the Swagger UI.
 
 ### API Sign-up/Log-in
 
@@ -25,7 +33,7 @@ You can seed the database by using the `api/reset` endpoint from the Swagger UI.
 
 ## API
 
-- Access the Swagger UI via: <http://localhost:3000/docs/>
+- Access the Swagger UI via: <http://localhost:4000/docs/>
 - A JSON-document will be generated at [`swagger.json`](./swagger.json). You can use it to get a 'diff' view API changes between different version of the platform.
 - A graph will be generated when run in development-mode at [`module-dependencies.md`](./module-dependencies.md).
   It can be viewed with <https://mermaid.live/> or the VSCode-extension: [Markdown Preview Mermaid Support](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid)
@@ -37,12 +45,6 @@ Make sure to update any dependencies from _within_ the Docker-container, with:
     docker compose exec api-service  npm install --save <package-name>
 
 ---
-
-## External services
-
-### FSP-specific instructions
-
-For FSP-specific instructions, see the README.md in each individual FSP-folder, e.g. for [Intersolve](./src/fsp-integrations/integrations/intersolve/README.md)
 
 ## Development
 

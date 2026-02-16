@@ -121,14 +121,13 @@ See AB#789012
 
 **Standard Abbreviations:**
 
-- **Fsp**: Financial Service Provider (only abbreviation allowed in codebase)
 - All other domain concepts must be written in full
 
 ### Naming Conventions
 
 **General Rules:**
 
-- Use full names, no abbreviations (except "Fsp")
+- Use full names, no abbreviations
 - Let IDE auto-complete instead of typing long names
 - Class names are plural for Modules, Controllers, Services
 - Class names are singular for Entities and Repositories
@@ -140,7 +139,6 @@ See AB#789012
 - Module: `ProgramsModule` → `programs.module.ts`
 - Service: `ProgramsService` → `programs.service.ts`
 - Entity: `ProgramEntity` → `program.entity.ts`
-- Repository: `FinancialServiceProviderRepository` → `fsp.repository.ts`
 - Enum: `DefaultUserRole` (not `DefaultUserRoleEnum`)
 
 ### Branch Naming
@@ -226,7 +224,7 @@ export class ProgramsController {
 - Add `OrThrow` suffix when functions deliberately throw expected errors
 - Functions returning data from IBF start with "get", not "find"
 - External system functions can use "retrieve" or other descriptive verbs
-- Use full names, no abbreviations (except documented domain abbreviations like "Fsp")
+- Use full names, no abbreviations (except documented domain abbreviations)
 
 **Interface Conventions:**
 
