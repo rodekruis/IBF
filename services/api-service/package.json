@@ -39,7 +39,7 @@
     "coverage:open:combined": "open coverage/combined/lcov-report/index.html",
     "prisma": "npx prisma --config=src/prisma/prisma.config.ts",
     "prisma:generate": "npm run prisma generate",
-    "prisma:migrate:dev": "npm run prisma migrate dev --name",
+    "prisma:migrate:dev": "npm run prisma migrate dev -- --name",
     "prisma:migrate:deploy": "npm run prisma migrate deploy",
     "prisma:prepare": "npm run prisma:generate && npm run prisma:migrate:deploy",
     "test:migration": "npm run prisma migrate status --exit-code",
