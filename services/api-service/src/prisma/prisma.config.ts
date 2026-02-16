@@ -2,7 +2,6 @@
 
 const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
 
-// ##TODO: add ssl + test
 export const DATABASE_URL =
   'postgresql://' +
   process.env.POSTGRES_USER +

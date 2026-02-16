@@ -118,9 +118,6 @@ jobs:
         working-directory: ${{ env.workingDirectory }}
         run: 'npm ci'
 
-      - name: Generate Prisma Client
-        run: npm run prisma:generate
-
       - name: Lint
         working-directory: ${{ env.workingDirectory }}
         run: 'npm run lint'
