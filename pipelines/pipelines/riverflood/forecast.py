@@ -1,22 +1,23 @@
+import os
+import shutil
+from typing import List
+
+import numpy as np
+import pandas as pd
+import rasterio
+from pipelines.core.logger import logger
 from pipelines.core.module import Module
 from pipelines.riverflood.data import (
-    ForecastDataUnit,
     FloodForecast,
+    ForecastDataUnit,
     ForecastStationDataUnit,
 )
-from pipelines.core.logger import logger
-from typing import List
+from rasterio.features import shapes
+from rasterio.mask import mask
+from rasterio.merge import merge
+from rasterstats import zonal_stats
 from shapely import Polygon
 from shapely.geometry import shape
-import pandas as pd
-from rasterstats import zonal_stats
-import os
-import numpy as np
-import rasterio
-from rasterio.merge import merge
-from rasterio.mask import mask
-from rasterio.features import shapes
-import shutil
 
 
 def merge_rasters(raster_filepaths: list) -> tuple:

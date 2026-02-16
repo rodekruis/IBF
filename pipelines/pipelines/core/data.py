@@ -1,10 +1,11 @@
+import logging
 import os
 from datetime import datetime
 from typing import List
-from pipelines.core.secrets import Secrets
-from ckanapi import RemoteCKAN
-import logging
+
 import requests
+from ckanapi import RemoteCKAN
+from pipelines.core.secrets import Secrets
 
 
 class AdminDataUnit:

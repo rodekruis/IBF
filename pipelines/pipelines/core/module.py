@@ -1,7 +1,7 @@
+from pipelines.core.data import DataSets
 from pipelines.core.load import Load
 from pipelines.core.secrets import Secrets
 from pipelines.core.settings import Settings
-from pipelines.core.data import DataSets
 
 
 class Module:

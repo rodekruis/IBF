@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import time
+from urllib.error import HTTPError
 
+import geopandas as gpd
+import requests
+from azure.core.exceptions import ResourceNotFoundError
+from azure.storage.blob import BlobServiceClient
+from pipelines.core.logger import logger
 from pipelines.core.secrets import Secrets
 from pipelines.core.settings import Settings
-from pipelines.core.logger import logger
-
-from urllib.error import HTTPError
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import requests
-import geopandas as gpd
-from azure.storage.blob import BlobServiceClient
-from azure.core.exceptions import ResourceNotFoundError
 
 
 class Load:

@@ -1,13 +1,14 @@
-from pipelines.core.module import Module
-from pipelines.riverflood.data import DischargeDataUnit, DischargeStationDataUnit
+import itertools
+import logging
 import os
 from datetime import datetime, timedelta
+
 import pandas as pd
-import xarray as xr
-from rasterstats import zonal_stats
 import rasterio
-import logging
-import itertools
+import xarray as xr
+from pipelines.core.module import Module
+from pipelines.riverflood.data import DischargeDataUnit, DischargeStationDataUnit
+from rasterstats import zonal_stats
 
 supported_sources = ["GloFAS"]
 

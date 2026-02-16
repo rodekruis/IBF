@@ -1,7 +1,8 @@
 import os
-import yaml
-from urllib.parse import urlparse
 from typing import List
+from urllib.parse import urlparse
+
+import yaml
 
 
 def is_url(x):

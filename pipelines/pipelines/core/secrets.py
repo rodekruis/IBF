@@ -1,11 +1,12 @@
+import json
 import os
 from enum import Enum
-from dotenv import load_dotenv
-import json
+from urllib.parse import urlparse
+
 import yaml
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
-from urllib.parse import urlparse
+from dotenv import load_dotenv
 
 
 def is_url(x):

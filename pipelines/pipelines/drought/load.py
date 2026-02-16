@@ -1,31 +1,32 @@
 from __future__ import annotations
 
-import os.path
 import copy
-import time
-import os
 import json
+import logging
+import os
+import os.path
+import shutil
+import time
+import urllib.request
+from datetime import date, datetime, timedelta
+from itertools import product
+from urllib.error import HTTPError
+
+import azure.cosmos.cosmos_client as cosmos_client
 import cdsapi
-from pipelines.core.module import Module
+import geopandas as gpd
+import requests
+from azure.core.exceptions import ResourceNotFoundError
+from azure.storage.blob import BlobServiceClient
 from pipelines.core.data import (
     AdminDataSet,
     AdminDataUnit,
     RegionDataSet,
     RegionDataUnit,
 )
-from urllib.error import HTTPError
-import urllib.request, json
-from datetime import datetime, timedelta, date
-import azure.cosmos.cosmos_client as cosmos_client
-import logging
+from pipelines.core.module import Module
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import requests
-import geopandas as gpd
-import shutil
-from itertools import product
-from azure.storage.blob import BlobServiceClient
-from azure.core.exceptions import ResourceNotFoundError
 
 COSMOS_DATA_TYPES = [
     "climate-region",

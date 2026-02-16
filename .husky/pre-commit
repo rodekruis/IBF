@@ -23,5 +23,6 @@ fi
 
 log "Running lint-staged"
 npx lint-staged
+uvx ufmt format **/*.py
 
 log "All done"

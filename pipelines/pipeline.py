@@ -1,10 +1,10 @@
 import logging
 
-from pipelines.riverflood.pipeline import Pipeline as RiverFloodPipeline
-from pipelines.drought.pipeline import Pipeline as DroughtPipeline
+import click
 from pipelines.core.secrets import Secrets
 from pipelines.core.settings import Settings
-import click
+from pipelines.drought.pipeline import Pipeline as DroughtPipeline
+from pipelines.riverflood.pipeline import Pipeline as RiverFloodPipeline
 
 
 @click.command()
