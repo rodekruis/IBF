@@ -34,3 +34,6 @@ documentation
 # AppMap
 tmp
 sql_warning.txt
+
+# Prisma generated client
+src/generated/prisma
