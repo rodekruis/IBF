@@ -42,7 +42,7 @@
     "prisma:migrate:dev": "npm run prisma migrate dev -- --name",
     "prisma:migrate:deploy": "npm run prisma migrate deploy",
     "prisma:prepare": "npm run prisma:generate && npm run prisma:migrate:deploy",
-    "test:migration": "npm run prisma migrate status --exit-code",
+    "test:migration": "npm run prisma migrate diff -- --from-migrations src/prisma/migrations --to-schema src/prisma/schema.prisma --exit-code",
     "knip": "knip",
     "knip:fix": "knip --fix-type files,exports,types",
     "typecheck": "tsc --noEmit",
