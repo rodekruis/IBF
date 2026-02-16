@@ -23,6 +23,7 @@ import { CookieSettingsDto } from '@api-service/src/user/dto/cookie-settings.dto
 import { LoginResponseDto } from '@api-service/src/user/dto/login-response.dto';
 import { LoginUserDto } from '@api-service/src/user/dto/login-user.dto';
 import { UserData, UserRO } from '@api-service/src/user/user.interface';
+import { hashPassword } from '@api-service/src/utils/hash-password.helper';
 const tokenExpirationDays = 14;
 
 @Injectable({ scope: Scope.REQUEST })
@@ -71,7 +72,7 @@ export class UserService {
     }
 
     // create new user
-    const { hash, salt } = this.hashPassword(password);
+    const { hash, salt } = hashPassword(password);
     const newUser = await this.prisma.user.create({
       data: {
         username,
@@ -82,14 +83,6 @@ export class UserService {
     });
 
     return newUser;
-  }
-
-  private hashPassword(password: string): { hash: string; salt: string } {
-    const salt = crypto.randomBytes(16).toString('hex');
-    const hash = crypto
-      .pbkdf2Sync(password, salt, 1, 32, 'sha256')
-      .toString('hex');
-    return { hash, salt };
   }
 
   public async findById(id: number): Promise<User> {

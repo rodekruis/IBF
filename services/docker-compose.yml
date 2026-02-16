@@ -12,7 +12,7 @@ services:
       - './postgresql.conf:/etc/postgresql.conf'
       - './init.sql:/docker-entrypoint-initdb.d/init.sql'
     ports:
-      - '5436:${POSTGRES_PORT}'
+      - '5436:5432'
     restart: unless-stopped
     healthcheck:
       test:

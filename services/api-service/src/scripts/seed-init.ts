@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import crypto from 'node:crypto';
 
 import { env } from '@api-service/src/env';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
+import { hashPassword } from '@api-service/src/utils/hash-password.helper';
 
 @Injectable()
 export class SeedInit {
@@ -22,12 +22,14 @@ export class SeedInit {
   }
 
   private async createAdminUser(): Promise<void> {
+    const { hash, salt } = hashPassword(
+      env.USERCONFIG_API_SERVICE_PASSWORD_ADMIN,
+    );
     await this.prisma.user.create({
       data: {
         username: env.USERCONFIG_API_SERVICE_EMAIL_ADMIN,
-        password: crypto
-          .createHmac('sha256', env.USERCONFIG_API_SERVICE_PASSWORD_ADMIN)
-          .digest('hex'),
+        password: hash,
+        salt,
         admin: true,
         displayName: env.USERCONFIG_API_SERVICE_EMAIL_ADMIN.split('@')[0],
       },
