@@ -1,0 +1,23 @@
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+
+name: 'Test: Formatting Python (with ufmt)'
+
+on:
+  workflow_dispatch:
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    paths:
+      - '.github/workflows/test_formatting_python.yml'
+      - '**.py'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: omnilib/ufmt@action-v1
+        with:
+          path: '**/*.py'
+          python-version: '3.14'
