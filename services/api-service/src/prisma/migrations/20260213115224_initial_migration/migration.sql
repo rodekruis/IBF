@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "User" (
+CREATE TABLE "user" (
     "id" SERIAL NOT NULL,
     "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated" TIMESTAMP(3) NOT NULL,
@@ -14,10 +14,10 @@ CREATE TABLE "User" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+CREATE UNIQUE INDEX "user_username_key" ON "user"("username");
 
 -- CreateIndex
-CREATE INDEX "User_created_idx" ON "User"("created");
+CREATE INDEX "user_created_idx" ON "user"("created");
 
 -- CreateIndex
-CREATE INDEX "User_username_idx" ON "User"("username");
+CREATE INDEX "user_username_idx" ON "user"("username");

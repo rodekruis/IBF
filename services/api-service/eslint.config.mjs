@@ -12,14 +12,7 @@ import jest from 'eslint-plugin-jest';
 
 export default [
   {
-    ignores: [
-      'dist/',
-      'tmp/',
-      'documentation/',
-      'coverage/',
-      'knip.config.js',
-      'src/generated/prisma/',
-    ],
+    ignores: ['dist/', 'tmp/', 'documentation/', 'coverage/', 'knip.config.js'],
   },
   {
     files: ['**/*.js'],
