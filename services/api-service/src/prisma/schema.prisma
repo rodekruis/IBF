@@ -20,7 +20,6 @@ model User {
   salt        String?
   lastLogin   DateTime?
   displayName String
-  testCol     String?
 
   @@index([created])
   @@index([username])
