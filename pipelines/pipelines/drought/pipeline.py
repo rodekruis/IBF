@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 
 from pipelines.core.secrets import Secrets
@@ -68,7 +67,6 @@ class Pipeline:
             self.forecast.compute_forecast(debug=debug, datestart=datestart)
 
         if send:
-            logging.info("send data to IBF API")
             self.load.send_to_ibf_api(
                 forecast_data=self.data.forecast_admin,
                 threshold_climateregion=self.data.threshold_climateregion,

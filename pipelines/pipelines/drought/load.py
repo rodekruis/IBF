@@ -109,6 +109,7 @@ class DroughtLoad(DroughtModule):
         upload_time: datetime = datetime.now(),
     ):
         """Send drought forecast data to IBF API"""
+        logging.info("send data to IBF API")
 
         country = forecast_data.country
         # trigger_on_lead_time = self.settings.get_country_setting( country, "trigger-on-lead-time"    )
