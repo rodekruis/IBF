@@ -81,7 +81,7 @@ class RiverFloodLoad(Module):
 
             # determine events
             events = {}
-            for lead_time in range(1, 8):
+            for lead_time in range(0, 8):
                 if (
                     self.data.forecast_station.get_data_unit(
                         station_code, lead_time
@@ -89,7 +89,7 @@ class RiverFloodLoad(Module):
                     != "no"
                 ):
                     events[lead_time] = "alert"
-            for lead_time in range(1, 8):
+            for lead_time in range(0, 8):
                 if self.data.forecast_station.get_data_unit(
                     station_code, lead_time
                 ).triggered:
