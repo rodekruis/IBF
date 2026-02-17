@@ -1,26 +1,21 @@
-import json
 import logging
-from datetime import date, datetime, timedelta
+from datetime import datetime
 
 from pipelines.core.secrets import Secrets
 from pipelines.core.settings import Settings
+from pipelines.core.logger import logger
 from pipelines.drought.data import DroughtDataSets
 from pipelines.drought.extract import Extract
 from pipelines.drought.forecast import Forecast
 from pipelines.drought.load import DroughtLoad
-
-logger = logging.getLogger()
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
-logging.getLogger("requests").setLevel(logging.WARNING)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("azure").setLevel(logging.WARNING)
-logging.getLogger("requests_oauthlib").setLevel(logging.WARNING)
 
 
 class Pipeline:
     """Drought data pipeline"""
 
     def __init__(self, settings: Settings, secrets: Secrets, country: str):
+        logger.info(f"Initializing drought pipeline for {country}")
+
         self.settings = settings
         if country not in [c["name"] for c in self.settings.get_setting("countries")]:
             raise ValueError(f"No config found for country {country}")
@@ -57,22 +52,19 @@ class Pipeline:
         forecast: bool = True,
         send: bool = True,
         debug: bool = False,  # debug mode with specific datestart of data
-        datestart: datetime = date.today(),
+        datestart: datetime = datetime.now(),
     ):
         """Run the drought pipeline"""
 
         if prepare:
-            logging.info("prepare ecmwf data")
             self.extract.prepare_ecmwf_data(
                 country=self.country, debug=debug, datestart=datestart
             )
 
         if forecast:
-            logging.info(f"extract ecmwf data")
             self.extract.extract_ecmwf_data(
                 country=self.country, debug=debug, datestart=datestart
             )
-            logging.info("forecast drought")
             self.forecast.compute_forecast(debug=debug, datestart=datestart)
 
         if send:

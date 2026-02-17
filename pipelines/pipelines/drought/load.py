@@ -24,7 +24,7 @@ from pipelines.core.data import (
     RegionDataSet,
     RegionDataUnit,
 )
-from pipelines.core.module import Module
+from pipelines.drought.module import DroughtModule
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -94,7 +94,7 @@ def forecast_trigger_status(triggered: bool, trigger_class: str):
         return 0
 
 
-class DroughtLoad(Module):
+class DroughtLoad(DroughtModule):
     """Download/upload data from/to a data storage"""
 
     def __init__(self, **kwargs):

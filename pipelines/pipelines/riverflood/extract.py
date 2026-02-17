@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import rasterio
 import xarray as xr
-from pipelines.core.module import Module
+from pipelines.riverflood.module import RiverFloodModule
 from pipelines.riverflood.data import DischargeDataUnit, DischargeStationDataUnit
 from rasterstats import zonal_stats
 
@@ -23,7 +23,7 @@ def slice_netcdf_file(nc_file: xr.Dataset, country_bounds: list):
     return var_data
 
 
-class Extract(Module):
+class Extract(RiverFloodModule):
     """Extract river discharge data from external sources"""
 
     def __init__(self, **kwargs):
@@ -48,7 +48,7 @@ class Extract(Module):
         """
         For each ensemble member, download the global NetCDF file and slice it to the extent of the country
         """
-        logging.info(f"start preparing GloFAS data for country {country}")
+        logging.info(f"preparing GloFAS data for country {country}")
         country_gdf = self.load.get_adm_boundaries(adm_level=1)
         no_ens = self.settings.get_setting("no_ensemble_members")
         date = datetime.today().strftime("%Y%m%d")
@@ -105,6 +105,7 @@ class Extract(Module):
         Download GloFAS data for each ensemble member
         and extract river discharge data per admin division and station
         """
+        logging.info(f"extracting GloFAS data for country {country}")
         # Download pre-processed NetCDF files for each ensemble member
         no_ens = self.settings.get_setting("no_ensemble_members")
         date = datetime.today().strftime("%Y%m%d")
@@ -127,8 +128,6 @@ class Extract(Module):
         #     )
 
         # Extract data from NetCDF files
-        logging.info("Extract admin-level river discharge from GloFAS data")
-
         discharges = {}
         for adm_level in self.data.discharge_admin.adm_levels:
             try:

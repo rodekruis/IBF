@@ -1,12 +1,12 @@
 import os
+import logging
 import shutil
 from typing import List
 
 import numpy as np
 import pandas as pd
 import rasterio
-from pipelines.core.logger import logger
-from pipelines.core.module import Module
+from pipelines.riverflood.module import RiverFloodModule
 from pipelines.riverflood.data import (
     FloodForecast,
     ForecastDataUnit,
@@ -122,7 +122,7 @@ def classify_alert(
     return alert_class
 
 
-class Forecast(Module):
+class Forecast(RiverFloodModule):
     """
     Forecast flood events based on river discharge data
     """
@@ -143,13 +143,6 @@ class Forecast(Module):
             self.data.output_dir, "affected_population.tif"
         )
 
-    def compute_forecast(self):
-        """
-        Forecast floods based on river discharge data
-        """
-        self.compute_forecast_admin()
-        self.compute_forecast_station()
-
     def compute_forecast_admin(self):
         """
         Forecast floods per admin division based on river discharge data
@@ -157,6 +150,7 @@ class Forecast(Module):
         2. compute flood extent
         3. compute people affected
         """
+        logging.info("compute forecast for admin divisions")
         self.__compute_triggers()
         self.__compute_flood_extent()
         if any([x.triggered for x in self.data.forecast_admin.data_units]):
@@ -251,7 +245,7 @@ class Forecast(Module):
                     alert_class=alert_class,
                 )
                 self.data.forecast_admin.upsert_data_unit(forecast_data_unit)
-                
+
         # check if any lower admin division is triggered but the upper one isn't, if so, trigger the upper one as well
         gdf_adms = {}
         for adm_level in self.data.forecast_admin.adm_levels:
@@ -305,7 +299,7 @@ class Forecast(Module):
                         f"/flood-maps/{self.country}/flood_map_{self.country}_RP{rp}.tif",
                     )
                 except FileNotFoundError:
-                    logger.warning(
+                    logging.warning(
                         f"Flood map for {self.country} with RP {rp} not found, skipping exposure calculation."
                     )
                     return None
@@ -492,14 +486,8 @@ class Forecast(Module):
                             forecast_data_unit.pop_affected_perc = 0.0
 
     def compute_forecast_station(self):
-        """
-        Forecast floods per GloFAS station based on river discharge data
-        1. determine if trigger level is reached, with which probability, and alert class
-        """
-        self.__compute_triggers_station()
-
-    def __compute_triggers_station(self):
         """Determine if trigger level is reached, its probability, and the alert class"""
+        logging.info("compute forecast for stations")
 
         trigger_on_lead_time = self.settings.get_country_setting(
             self.country, "trigger-on-lead-time"

@@ -1,6 +1,5 @@
 import logging
 import os
-import time
 import warnings
 from calendar import monthrange
 from datetime import datetime
@@ -13,7 +12,7 @@ import rasterio
 import rioxarray
 import xarray as xr
 from dateutil.relativedelta import relativedelta
-from pipelines.core.module import Module
+from pipelines.drought.module import DroughtModule
 from pipelines.drought.data import ForecastRegionDataUnit
 from pipelines.drought.utils import replace_year_month
 from rasterio.crs import CRS
@@ -75,7 +74,7 @@ def convert_to_mm_per_month(hindcast, forecast):
     return ds, ds2
 
 
-class Extract(Module):
+class Extract(DroughtModule):
     """Extract river discharge data from external sources"""
 
     def __init__(self, **kwargs):
@@ -85,6 +84,19 @@ class Extract(Module):
             **kwargs,
         )
         self.source = "ECMWF"
+        self.source_params = {
+            "originating_centre": "ecmwf",
+            "system": "51",
+            "variable": ["total_precipitation"],
+            "product_type": ["monthly_mean"],
+            "leadtime_month": ["1", "2", "3", "4", "5", "6"],
+            "data_format": "grib",
+        }
+
+        filename_forecast = "ecmwf_seas5_forecast_monthly_tp.grib"
+        self.filepath_forecast = os.path.join(self.data.input_dir, filename_forecast)
+        filename_hindcast = "ecmwf_seas5_hindcast_monthly_tp.grib"
+        self.filepath_hindcast = os.path.join(self.data.input_dir, filename_hindcast)
 
     def get_data(self):
         """Get river discharge data from source and return AdminDataSet"""
@@ -93,35 +105,27 @@ class Extract(Module):
                 f"Source {self.source} is not supported, supported sources are: {supported_sources}"
             )
         if self.source == "ECMWF":
-            self.prepare_ecmwf_data()
-            self.extract_ecmwf_data()
+            self.prepare_ecmwf_data(self.country)
+            self.extract_ecmwf_data(self.country)
 
     def prepare_ecmwf_data(
-        self, country: str = None, debug: bool = False, datestart: datetime = None
+        self, country: str, debug: bool = False, datestart: datetime = datetime.now()
     ):
-        """
-        download ecmwf data to the extent of the country
-        """
-        if country is None:
-            country = self.country
-        logging.info(
-            f"start preparing ECMWF seasonal forecast data for country {country}"
-        )
+        """download ecmwf data to the extent of the country"""
+        logging.info(f"preparing ECMWF data for country {country}")
 
-        current_year = datestart.strftime("%Y")
-        current_month = datestart.strftime("%m")
+        current_year = datestart.year
+        current_month = datestart.month
 
-        # Download netcdf file
-        logging.info(f"downloading ecmwf data ")
         try:
-            self.download_ecmwf_forecast(
-                country,
-                self.data.input_dir,
-                current_year,
-                current_month,
-            )
+            if os.path.exists(self.filepath_forecast) and os.path.exists(
+                self.filepath_hindcast
+            ):
+                logging.warning("ECMWF data already exists, skipping prepare")
+            else:
+                self.download_ecmwf_data(current_year, current_month, debug)
         except FileNotFoundError:
-            logging.warning(f"downloading ECMWF file failed")
+            logging.error(f"downloading ECMWF data failed")
 
         logging.info("finished downloading ECMWF data")
 
@@ -129,7 +133,7 @@ class Extract(Module):
         percentage = ds.where(ds < 0).notnull().sum(dim="number") / ds.sizes["number"]
         return (percentage > threshold).astype(int)
 
-    def save_to_geotiff(self, data_array, country: str = None, prefix: str = None):
+    def save_to_geotiff(self, data_array, country: str, prefix: str):
         """
         Save each forecast month of the data array to a separate GeoTIFF file.
 
@@ -153,15 +157,14 @@ class Extract(Module):
         )
 
         # Loop through each forecast month and save to a separate GeoTIFF file
-        for i, month in enumerate(forecast_months):
+        for month in forecast_months:
             lead_time = month - 1
-            output_file = (
-                f"{self.outputPathGrid}/{prefix}_{lead_time}-month_{country}.tif"
-            )
+            filename_output = f"{prefix}_{lead_time}-month_{country}.tif"
+            filepath_output = os.path.join(self.data.output_dir, filename_output)
             data = data_array.sel(forecastMonth=month).values
 
             with rasterio.open(
-                output_file,
+                filepath_output,
                 "w",
                 driver="GTiff",
                 height=data.shape[0],
@@ -212,20 +215,17 @@ class Extract(Module):
         return subset
 
     def extract_ecmwf_data(
-        self, country: str = None, debug: bool = False, datestart: datetime = None
+        self, country: str, debug: bool = False, datestart: datetime = datetime.now()
     ):
         """
         extract seasonal rainfall forecastand extract it per climate region
         """
-        if country is None:
-            country = self.country
-
+        logging.info(f"extracting ECMWF data for country {country}")
         current_year = datestart.year
         current_month = datestart.month
         data_timestamp = replace_year_month(datetime.now(), current_year, current_month)
 
         ### admin_level
-        logging.info(f"Extract ecmwf data for country {country}")
         admin_level_ = self.settings.get_country_setting(country, "admin-levels")
         triggermodel = self.settings.get_country_setting(country, "trigger_model")[
             "model"
@@ -251,8 +251,8 @@ class Extract(Module):
 
         logging.info("Extract seasonal forecast for each climate region")
         ds_hindcast, ds_forecast = convert_to_mm_per_month(
-            os.path.join(self.data.input_dir, "ecmwf_seas5_hindcast_monthly_tp.grib"),
-            os.path.join(self.data.input_dir, "ecmwf_seas5_forecast_monthly_tp.grib"),
+            self.filepath_hindcast,
+            self.filepath_forecast,
         )
         """
         ds_hindcast = xr.open_dataset(
@@ -394,14 +394,9 @@ class Extract(Module):
                 )
 
             # Get the extent of the filtered geofile
-            try:
-                lon_min, lat_min, lon_max, lat_max = (
-                    filtered_gdf.total_bounds
-                )  # [minx, miny, maxx, maxy]
-            except ValueError as e:
-                logging.error(
-                    f"Error in extracting extent of the filtered geofile: {e}"
-                )
+            lon_min, lat_min, lon_max, lat_max = (
+                filtered_gdf.total_bounds
+            )  # [minx, miny, maxx, maxy]
 
             sub_region = (lat_max, lon_min, lat_min, lon_max)
 
@@ -485,10 +480,17 @@ class Extract(Module):
 
             for month in forecastData["tercile_lower"].keys():
                 lead_time = month - 1
-                lower_tercile_file = f"{self.outputPathGrid}/rlower_tercile_probability_{lead_time}-month_{country}.tif"
+                filename_lower_tercile = (
+                    f"rlower_tercile_probability_{lead_time}-month_{country}.tif"
+                )
+                filepath_lower_tercile = os.path.join(
+                    self.data.output_dir, filename_lower_tercile
+                )
 
                 # Open the TIF file as an xarray object
-                rlower_tercile_probability = rioxarray.open_rasterio(lower_tercile_file)
+                rlower_tercile_probability = rioxarray.open_rasterio(
+                    filepath_lower_tercile
+                )
                 gdf1 = filtered_gdf
                 clipped_regional_mean = rlower_tercile_probability.rio.clip(
                     gdf1.geometry, gdf1.crs, drop=True, all_touched=True
@@ -604,15 +606,15 @@ class Extract(Module):
                 longitudes[1] - longitudes[0],
                 latitudes[0] - latitudes[1],
             )
-            prefix = "rlower_tercile_probability"
-            temp_output = f"{self.outputPathGrid}/temp_{prefix}.tif"
-            output_file = (
-                f"{self.outputPathGrid}/{prefix}_{lead_time}-month_{country}.tif"
+            filename_prefix = "rlower_tercile_probability"
+            filename_output_temp = f"{filename_prefix}_temp.tif"
+            filepath_output_temp = os.path.join(
+                self.data.output_dir, filename_output_temp
             )
             data = resampled_regional_mean.values
 
             with rasterio.open(
-                temp_output,
+                filepath_output_temp,
                 "w",
                 driver="GTiff",
                 height=data.shape[0],
@@ -631,7 +633,7 @@ class Extract(Module):
             admin_gdf = admin_gdf.to_crs("EPSG:4326")  # Ensure CRS matches raster
 
             # Clip using rasterio.mask
-            with rasterio.open(temp_output) as src:
+            with rasterio.open(filepath_output_temp) as src:
                 clipped_image, clipped_transform = mask(
                     src, admin_gdf.geometry, crop=True
                 )
@@ -646,17 +648,21 @@ class Extract(Module):
                 }
             )
 
+            filename_output = f"{filename_prefix}_{lead_time}-month_{country}.tif"
+            filepath_output = os.path.join(self.data.output_dir, filename_output)
+
             # Save clipped raster
-            with rasterio.open(output_file, "w", **clipped_meta) as dst:
+            with rasterio.open(filepath_output, "w", **clipped_meta) as dst:
                 dst.write(clipped_image)
-            prefix = "drought_extent"  #'drought_extent'
-            output_file = (
-                f"{self.outputPathGrid}/{prefix}_{lead_time}-month_{country}.tif"
+
+            filename_prefix = "drought_extent"  #'drought_extent'
+            filename_output_temp = f"{filename_prefix}_temp.tif"
+            filepath_output_temp = os.path.join(
+                self.data.output_dir, filename_output_temp
             )
-            temp_output = f"{self.outputPathGrid}/temp_{prefix}.tif"
             data = binary_clipped_regional_mean.values
             with rasterio.open(
-                temp_output,
+                filepath_output_temp,
                 "w",
                 driver="GTiff",
                 height=data.shape[0],
@@ -669,7 +675,7 @@ class Extract(Module):
                 dst.write(data, 1)
 
             # Clip using rasterio.mask
-            with rasterio.open(temp_output) as src:
+            with rasterio.open(filepath_output_temp) as src:
                 clipped_image, clipped_transform = mask(
                     src, admin_gdf.geometry, crop=True
                 )
@@ -684,9 +690,14 @@ class Extract(Module):
                 }
             )
 
+            filename_output = f"{filename_prefix}_{lead_time}-month_{country}.tif"
+            filepath_output = os.path.join(self.data.output_dir, filename_output)
+
             # Save clipped raster
-            with rasterio.open(output_file, "w", **clipped_meta) as dst:
+            with rasterio.open(filepath_output, "w", **clipped_meta) as dst:
                 dst.write(clipped_image)
+
+        # TODO: check if the next 12 lines can be removed
 
         # Combine results into new DataArrays
         quantile_ds = xr.concat(drought_extent_maps, dim="forecastMonth")
@@ -699,89 +710,78 @@ class Extract(Module):
                 "probability": probability_ds,
             }
         )
+
         return raster_files
 
-    def download_ecmwf_forecast(self, country, data_dir, current_year, current_month):
+    def download_ecmwf_data(self, current_year, current_month, debug):
         """Download ECMWF seasonal hindcast data for historical period
         Args:
-            country (str): Country name
-            data_dir (str): Directory to save data
             current_year (str): Current year
             current_month (str): Current month
+            debug (bool): Uses mock data for debugging if True, otherwise downloads real data
         """
+
+        logging.info(f"downloading ECMWF data")
+
         gdf = self.load.get_adm_boundaries(1)
 
         min_x, min_y, max_x, max_y = gdf.total_bounds
+        area = [
+            int(x) for x in [max_y + 1, min_x - 1, min_y - 1, max_x + 1]
+        ]  # North, West, South, East
 
-        KEY = os.getenv("CDSAPI_KEY")
-        URL = "https://cds.climate.copernicus.eu/api"
-
-        c = cdsapi.Client(url=URL, key=KEY, wait_until_complete=False, delete=False)
-
-        # Forecast data request
+        # TODO: move hardcodede urls to configs
+        key = os.getenv("CDSAPI_KEY")
+        url = "https://cds.climate.copernicus.eu/api"
         dataset = "seasonal-monthly-single-levels"
-        request = {
-            "originating_centre": "ecmwf",
-            "system": "51",
-            "variable": ["total_precipitation"],
-            "product_type": ["monthly_mean"],
-            "year": [current_year],
-            "month": [current_month],
-            "leadtime_month": ["1", "2", "3", "4", "5", "6"],
-            "data_format": "grib",
-            "area": [
-                int(x) for x in [max_y + 1, min_x - 1, min_y - 1, max_x + 1]
-            ],  # North, West, South, East
-        }
-        target = f"{data_dir}/ecmwf_seas5_forecast_monthly_tp.grib"
-        c.retrieve(dataset, request, target)
 
-        sleep = 30
-        time.sleep(sleep)
+        cdsapi_client = cdsapi.Client(
+            url=url, key=key, wait_until_complete=False, delete=False
+        )
+        if os.path.exists(self.filepath_forecast):
+            logging.warning(
+                f"ECMWF forecast data already exists at {self.filepath_forecast}, skipping download"
+            )
+        else:
+            if debug:
+                self.data.download_from_ckan(
+                    resource_name="mock_ecmwf_seas5_forecast_monthly_tp.grib",
+                    file_path=self.filepath_forecast,
+                )
+            else:
+                logging.info(
+                    f"downloading ECMWF {current_year}-{current_month} forecast to {self.filepath_forecast}"
+                )
 
-        request = {
-            "originating_centre": "ecmwf",
-            "system": "51",
-            "variable": ["total_precipitation"],
-            "product_type": ["monthly_mean"],
-            "year": [
-                "1991",
-                "1992",
-                "1993",
-                "1994",
-                "1995",
-                "1996",
-                "1997",
-                "1998",
-                "1999",
-                "2000",
-                "2001",
-                "2002",
-                "2003",
-                "2004",
-                "2005",
-                "2006",
-                "2007",
-                "2008",
-                "2009",
-                "2010",
-                "2011",
-                "2012",
-                "2013",
-                "2014",
-                "2015",
-                "2016",
-                "2017",
-                "2018",
-                "2019",
-                "2020",
-            ],
-            "month": ["03"],
-            "leadtime_month": ["1", "2", "3", "4", "5", "6"],
-            "data_format": "grib",
-            "area": [
-                int(x) for x in [max_y + 1, min_x - 1, min_y - 1, max_x + 1]
-            ],  # North, West, South, East
-        }
-        target = f"{data_dir}/ecmwf_seas5_hindcast_monthly_tp.grib"
-        c.retrieve(dataset, request, target)
+                request = {
+                    **self.source_params,
+                    "year": [current_year],
+                    "month": [current_month],
+                    "area": area,
+                }
+                cdsapi_client.retrieve(dataset, request, self.filepath_forecast)
+
+        if os.path.exists(self.filepath_hindcast):
+            logging.warning(
+                f"ECMWF hindcast data already exists at {self.filepath_hindcast}, skipping download"
+            )
+        else:
+            if debug:
+                self.data.download_from_ckan(
+                    resource_name="mock_ecmwf_seas5_hindcast_monthly_tp.grib",
+                    file_path=self.filepath_hindcast,
+                )
+            else:
+                logging.info(
+                    f"downloading ECMWF 1991-2020 hindcast to {self.filepath_hindcast}"
+                )
+
+                request = {
+                    **self.source_params,
+                    "year": [
+                        str(year) for year in range(1991, 2021)
+                    ],  # ["1991", "1992", ... , "2020"]
+                    "month": ["03"],
+                    "area": area,
+                }
+                cdsapi_client.retrieve(dataset, request, self.filepath_hindcast)

@@ -12,9 +12,9 @@ class Module:
         settings: Settings,
         secrets: Secrets,
         country: str,
+        data: DataSets,
         settings_to_check: list = [],
         secrets_to_check: list = [],
-        data: DataSets = None,
     ):
         self.country = country
         self.settings_to_check = settings_to_check

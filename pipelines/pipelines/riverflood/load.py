@@ -9,7 +9,7 @@ from typing import List
 
 import geopandas as gpd
 from pipelines.core.data import AdminDataSet, RegionDataSet
-from pipelines.core.module import Module
+from pipelines.riverflood.module import RiverFloodModule
 from pipelines.riverflood.data import ThresholdDataUnit, ThresholdStationDataUnit
 
 
@@ -30,7 +30,7 @@ def alert_class_to_severity(alert_class: str, triggered: bool) -> float:
         raise ValueError(f"Invalid alert class {alert_class}")
 
 
-class RiverFloodLoad(Module):
+class RiverFloodLoad(RiverFloodModule):
     """Download/upload data from/to a data storage"""
 
     def __init__(self, **kwargs):
@@ -38,17 +38,22 @@ class RiverFloodLoad(Module):
 
     def get_stations(self) -> list[dict]:
         """Get GloFAS stations from IBF app"""
-        stations = self.ibf_api_request(
-            "GET" f"point-data/glofas_stations/{self.country}",
+        stations = self.load.ibf_api_request(
+            "GET",
+            f"point-data/glofas_stations/{self.country}",
             parameters={
                 "disasterType": "flood",
                 "pointDataCategory": "glofas_stations",
                 "countryCodeISO3": self.country,
             },
         )
+        if stations is None:
+            logging.warning(f"No station data found for country {self.country}")
+            return []
+
         gdf_stations = gpd.GeoDataFrame.from_features(stations["features"])
         stations = []
-        for ix, row in gdf_stations.iterrows():
+        for _ix, row in gdf_stations.iterrows():
             station = {
                 "stationCode": row["stationCode"],
                 "stationName": row["stationName"],
@@ -65,6 +70,7 @@ class RiverFloodLoad(Module):
         upload_time: str = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
     ):
         """Send flood forecast data to IBF API"""
+        logging.info("send data to IBF API")
 
         trigger_on_lead_time = self.settings.get_country_setting(
             self.country, "trigger-on-lead-time"

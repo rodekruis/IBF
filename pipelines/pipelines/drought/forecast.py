@@ -1,13 +1,14 @@
 import os
+import logging
 import warnings
-from datetime import date, datetime, timedelta
+from datetime import datetime
 from typing import List
 
 import numpy as np
 import pandas as pd
 import rasterio
 import rioxarray
-from pipelines.core.module import Module
+from pipelines.drought.module import DroughtModule
 from pipelines.drought.data import ForecastAdminDataUnit, ForecastRegionDataUnit
 from pipelines.drought.load import DroughtLoad
 from pipelines.drought.utils import replace_year_month
@@ -89,7 +90,7 @@ def classify_alert(
     return alert_class
 
 
-class Forecast(Module):
+class Forecast(DroughtModule):
     """
     Forecast flood events based on river discharge data
     """
@@ -110,14 +111,8 @@ class Forecast(Module):
             self.data.output_dir, "affected_population.tif"
         )
 
-    def compute_forecast(self, debug: bool = False, datestart: datetime = date.today()):
-        """
-        Forecast floods based on river discharge data
-        """
-        self.compute_forecast_admin(debug=debug, datestart=datestart)
-
-    def compute_forecast_admin(
-        self, debug: bool = False, datestart: datetime = date.today()
+    def compute_forecast(
+        self, debug: bool = False, datestart: datetime = datetime.today()
     ):
         """
         Forecast drought per climate region based on different models for now ecmwf seasonal rainfall forecast is implmented
@@ -125,12 +120,13 @@ class Forecast(Module):
         2. compute drought extent
         3. compute people affected
         """
+        logging.info("computing forecast")
         self.__compute_triggers(debug=debug, datestart=datestart)
         if any([x.triggered for x in self.data.forecast_admin.data_units]):
             self.__compute_affected_pop()
 
     def __compute_triggers(
-        self, debug: bool = False, datestart: datetime = date.today()
+        self, debug: bool = False, datestart: datetime = datetime.today()
     ):
         """Determine if trigger level is reached, its probability, and the alert class"""
 
@@ -166,7 +162,7 @@ class Forecast(Module):
         )
 
         climate_regions = {}
-        current_month = date.today().strftime(
+        current_month = datetime.today().strftime(
             "%b"
         )  # 'Feb' for February check if this can be passed from settings climate_regions should come form settings file
         admin_levels = self.settings.get_country_setting(country, "admin-levels")
@@ -283,13 +279,13 @@ class Forecast(Module):
         country = self.data.forecast_admin.country
 
         # get population density raster
-        self.load.get_population_density(country, self.pop_raster)
+        self.load.get_population_density(self.pop_raster)
         flood_shapes = []
 
         for lead_time in self.data.forecast_admin.get_lead_times():
             flood_raster_lead_time = os.path.join(
                 self.data.output_dir,
-                +f"drought_extent_{lead_time}-month_{country}.tif",
+                f"drought_extent_{lead_time}-month_{country}.tif",
             )
             aff_pop_raster_lead_time = self.aff_pop_raster.replace(
                 ".tif", f"_{lead_time}_{country}.tif"
