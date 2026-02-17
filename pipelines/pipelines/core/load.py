@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import time
 from urllib.error import HTTPError
 
@@ -153,6 +154,8 @@ class Load:
 
     def get_from_blob(self, local_path: str, blob_path: str):
         """Get file from Azure Blob Storage"""
+        logging.info(f"downloading azure blob {blob_path} to {local_path}")
+
         blob_client = self.__get_blob_service_client(blob_path)
 
         with open(local_path, "wb") as download_file:

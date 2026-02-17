@@ -228,7 +228,8 @@ class DataSets:
         os.makedirs(self.output_dir, exist_ok=True)
 
     def download_from_ckan(self, resource_name: str, file_path: str):
-        """Download file from HDX"""
+        """Download file from CKAN"""
+        logging.info(f"downloading CKAN resource {resource_name} to {file_path}")
 
         ckan_url = self.secrets.get_secret("CKAN_URL")
         ckan_key = self.secrets.get_secret("CKAN_KEY")
