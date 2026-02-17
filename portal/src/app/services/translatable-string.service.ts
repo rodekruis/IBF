@@ -1,11 +1,7 @@
 import { inject, Injectable, LOCALE_ID } from '@angular/core';
 
-import {
-  getUILanguageFromLocale,
-  Locale,
-  UILanguage,
-  UILanguageTranslation,
-} from '~/utils/locale';
+import { UILanguage, UILanguageTranslation } from '~/utils/language';
+import { getUILanguageFromLocale, Locale } from '~/utils/locale';
 
 /**
  * The TranslatableStringService provides methods to translate localized

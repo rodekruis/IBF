@@ -13,7 +13,7 @@ class LoginPage extends BasePage {
   constructor(page: Page) {
     super(page);
     this.page = page;
-    this.usernameInput = this.page.getByLabel('E-mail');
+    this.usernameInput = this.page.getByLabel('Email');
     this.passwordInput = this.page.getByLabel('Password');
     this.loginButton = this.page.getByRole('button', { name: 'Log in' });
   }

@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { FormErrorComponent } from '~/components/form-error/form-error.component';
 import { InfoTooltipComponent } from '~/components/info-tooltip/info-tooltip.component';
 import { TranslatableStringPipe } from '~/pipes/translatable-string.pipe';
-import { UILanguageTranslation } from '~/utils/locale';
+import { UILanguageTranslation } from '~/utils/language';
 
 @Component({
   selector: 'app-form-field-wrapper',

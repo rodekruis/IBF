@@ -6,6 +6,7 @@ export enum AppRoutes {
   authCallback = 'auth-callback',
   home = 'home',
   login = 'login',
+  privacy = 'privacy',
 }
 export const routes: Routes = [
   {
@@ -13,6 +14,14 @@ export const routes: Routes = [
     title: $localize`:@@page-title-login:Log in`,
     loadComponent: () =>
       import('~/pages/login/login.page').then((x) => x.LoginPageComponent),
+  },
+  {
+    path: AppRoutes.privacy,
+    title: $localize`:@@page-title-privacy:Privacy`,
+    loadComponent: () =>
+      import('~/pages/privacy/privacy.page').then(
+        (x) => x.PrivacyPageComponent,
+      ),
   },
   {
     path: AppRoutes.authCallback,

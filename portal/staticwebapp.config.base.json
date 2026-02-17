@@ -28,6 +28,10 @@
       "rewrite": "/en-GB/index.html"
     },
     {
+      "route": "/nl/*",
+      "rewrite": "/nl/index.html"
+    },
+    {
       "route": "/index.html",
       "redirect": "/en-GB/index.html"
     }
