@@ -14,14 +14,12 @@
 # Key Components:
 # - `countries`: Country-specific configurations for drought risk analysis, including trigger models, thresholds, and seasonal lead times.
 
-
-droughts: 
+droughts:
   #no_ensemble_members: 51  # number of ensemble members to consider
   #minimum_for_drought_extent: 0.01  # drought extent for now is defined as binary 0/1 hence this is not unsed however it can be used to define the minimum threshold for drought extent
- 
 
 auxiliary:
-  worldpop_url: https://data.worldpop.org/GIS/Population/Global_2000_2020_Constrained/2020/maxar_v1/
+  worldpop_url: https://data.worldpop.org/GIS/Population/Global_2021_2022_1km_UNadj/constrained/2022
 
 databases:
   blob_container: ibfdatapipelines
@@ -40,7 +38,7 @@ countries:
       min: 0.65
       med: 0.75
       max: 0.85
-    trigger_model: 
+    trigger_model:
       model: seasonal_rainfall_forecast_3m
       trigger-on-minimum-probability: 0.4
       trigger-on-minimum-admin-area-in-drought-extent: 0.4
@@ -49,33 +47,33 @@ countries:
       - name: National
         climate-region-code: 1
         leadtime:
-          Jan: 
-            - MAM: "2-month"
-          Feb: 
-            - MAM: "1-month"
-          Mar: 
-            - MAM: "0-month"
-          Apr: 
-            - MAM: "0-month"
-          May: 
-            - MAM: "0-month"
-          Jun: 
-            - OND: "4-month"
-          Jul: 
-            - OND: "3-month"
-          Aug: 
-            - OND: "2-month"
-          Sep: 
-            - OND: "1-month"
-          Oct: 
-            - OND: "0-month"
-          Nov: 
-            - OND: "0-month"
-          Dec: 
-            - MAM: "3-month"
-            - OND: "0-month"
+          Jan:
+            - MAM: '2-month'
+          Feb:
+            - MAM: '1-month'
+          Mar:
+            - MAM: '0-month'
+          Apr:
+            - MAM: '0-month'
+          May:
+            - MAM: '0-month'
+          Jun:
+            - OND: '4-month'
+          Jul:
+            - OND: '3-month'
+          Aug:
+            - OND: '2-month'
+          Sep:
+            - OND: '1-month'
+          Oct:
+            - OND: '0-month'
+          Nov:
+            - OND: '0-month'
+          Dec:
+            - MAM: '3-month'
+            - OND: '0-month'
   - name: LSO
-    admin-levels: 
+    admin-levels:
       - 1
     pipeline-will-trigger-portal: disable
     classify-alert-on: disable
@@ -83,39 +81,39 @@ countries:
       min: 0.65
       med: 0.75
       max: 0.85
-    trigger_model: 
+    trigger_model:
       model: seasonal_rainfall_forecast_3m
-      trigger-on-minimum-probability: 0.4 # based on ensamble member probability compared against lower tercile 
-      trigger-on-minimum-admin-area-in-drought-extent: 0.4 #for drought extent(grid) overlap with  admin polygons 
+      trigger-on-minimum-probability: 0.4 # based on ensamble member probability compared against lower tercile
+      trigger-on-minimum-admin-area-in-drought-extent: 0.4 #for drought extent(grid) overlap with  admin polygons
       tercile_treshold: 0.33
     climate_region:
       - name: National
         climate-region-code: 1
         leadtime:
-          Jan: 
-            - Drought: "0-month"
-          Feb: 
-            - Drought: "0-month"
-          Mar: 
-            - Drought: "0-month"
-          Apr: 
-            - Drought: "6-month"
-          May: 
-            - Drought: "5-month"
-          Jun: 
-            - Drought: "4-month"
-          Jul: 
-            - Drought: "3-month"
-          Aug: 
-            - Drought: "2-month"
-          Sep: 
-            - Drought: "1-month"
-          Oct: 
-            - Drought: "0-month"
-          Nov: 
-            - Drought: "0-month"
-          Dec: 
-            - Drought: "0-month"
+          Jan:
+            - Drought: '0-month'
+          Feb:
+            - Drought: '0-month'
+          Mar:
+            - Drought: '0-month'
+          Apr:
+            - Drought: '6-month'
+          May:
+            - Drought: '5-month'
+          Jun:
+            - Drought: '4-month'
+          Jul:
+            - Drought: '3-month'
+          Aug:
+            - Drought: '2-month'
+          Sep:
+            - Drought: '1-month'
+          Oct:
+            - Drought: '0-month'
+          Nov:
+            - Drought: '0-month'
+          Dec:
+            - Drought: '0-month'
   - name: UGA
     admin-levels:
       - 2
@@ -125,39 +123,39 @@ countries:
       min: 0.65
       med: 0.75
       max: 0.85
-    trigger_model: 
+    trigger_model:
       model: seasonal_rainfall_forecast
-      trigger-on-minimum-probability: 0.4 # based on ensamble member probability compared against lower tercile 
+      trigger-on-minimum-probability: 0.4 # based on ensamble member probability compared against lower tercile
       trigger-on-minimum-admin-area-in-drought-extent: 0.4 #for drought extent(grid) overlap with  admin polygons
-      tercile_treshold: 0.33 
+      tercile_treshold: 0.33
     climate_region:
       - name: National
         climate-region-code: 1
         leadtime:
-          Jan: 
-            - Long_Rains: "2-month"
-          Feb: 
-            - Long_Rains: "1-month"
-          Mar: 
-            - Long_Rains: "0-month"
-          Apr: 
-            - Long_Rains: "0-month"
-          May: 
-            - Long_Rains: "0-month"
-          Jun: 
-            - Long_Rains: "0-month"
-          Jul: 
-            - short_Rains: "3-month"
-          Aug: 
-            - short_Rains: "2-month"
-          Sep: 
-            - short_Rains: "1-month"
-          Oct: 
-            - short_Rains: "0-month"
-          Nov: 
-            - short_Rains: "0-month"
-          Dec: 
-            - Long_Rains: "3-month"
+          Jan:
+            - Long_Rains: '2-month'
+          Feb:
+            - Long_Rains: '1-month'
+          Mar:
+            - Long_Rains: '0-month'
+          Apr:
+            - Long_Rains: '0-month'
+          May:
+            - Long_Rains: '0-month'
+          Jun:
+            - Long_Rains: '0-month'
+          Jul:
+            - short_Rains: '3-month'
+          Aug:
+            - short_Rains: '2-month'
+          Sep:
+            - short_Rains: '1-month'
+          Oct:
+            - short_Rains: '0-month'
+          Nov:
+            - short_Rains: '0-month'
+          Dec:
+            - Long_Rains: '3-month'
   - name: ETH
     admin-levels:
       - 2
@@ -167,126 +165,126 @@ countries:
       min: 0.65
       med: 0.75
       max: 0.85
-    trigger_model: 
+    trigger_model:
       model: seasonal_rainfall_forecast_3m
-      trigger-on-minimum-probability: 0.4 # based on ensamble member probability compared against lower tercile 
+      trigger-on-minimum-probability: 0.4 # based on ensamble member probability compared against lower tercile
       trigger-on-minimum-admin-area-in-drought-extent: 0.4 #for drought extent(grid) overlap with  admin polygons
-      tercile_treshold: 0.33 
+      tercile_treshold: 0.33
     climate_region:
       - name: Meher
         climate-region-code: 1
         leadtime:
-          Jan: 
-            - JAS: "5-month"
-          Feb: 
-            - JAS: "4-month"
-          Mar: 
-            - JAS: "3-month"
-          Apr: 
-            - JAS: "2-month"
-          May: 
-            - JAS: "1-month"
-          Jun: 
-            - JAS: "0-month"
-          Jul: 
-            - JAS: "0-month"
-          Aug: 
-            - JAS: "0-month"
-          Sep: 
-            - JAS: "0-month"
-          Oct: 
-            - JAS: "8-month"
-          Nov: 
-            - JAS: "7-month"
-          Dec: 
-            - JAS: "6-month"
+          Jan:
+            - JAS: '5-month'
+          Feb:
+            - JAS: '4-month'
+          Mar:
+            - JAS: '3-month'
+          Apr:
+            - JAS: '2-month'
+          May:
+            - JAS: '1-month'
+          Jun:
+            - JAS: '0-month'
+          Jul:
+            - JAS: '0-month'
+          Aug:
+            - JAS: '0-month'
+          Sep:
+            - JAS: '0-month'
+          Oct:
+            - JAS: '8-month'
+          Nov:
+            - JAS: '7-month'
+          Dec:
+            - JAS: '6-month'
       - name: Belg
         climate-region-code: 2
         leadtime:
-          Jan: 
-            - MAM: "1-month"
-          Feb: 
-            - MAM: "0-month"
-          Mar: 
-            - MAM: "0-month"
-            - JAS: "3-month"
-          Apr: 
-            - MAM: "0-month"
-            - JAS: "2-month"
-          May: 
-            - MAM: "0-month"
-            - JAS: "1-month"
-          Jun: 
-            - JAS: "0-month"
-          Jul: 
-            - JAS: "0-month"
-          Aug: 
-            - JAS: "0-month"
-          Sep: 
-            - JAS: "0-month"
-          Oct: 
-            - MAM: "4-month"
-          Nov: 
-            - MAM: "3-month"
-          Dec: 
-            - MAM: "2-month"
+          Jan:
+            - MAM: '1-month'
+          Feb:
+            - MAM: '0-month'
+          Mar:
+            - MAM: '0-month'
+            - JAS: '3-month'
+          Apr:
+            - MAM: '0-month'
+            - JAS: '2-month'
+          May:
+            - MAM: '0-month'
+            - JAS: '1-month'
+          Jun:
+            - JAS: '0-month'
+          Jul:
+            - JAS: '0-month'
+          Aug:
+            - JAS: '0-month'
+          Sep:
+            - JAS: '0-month'
+          Oct:
+            - MAM: '4-month'
+          Nov:
+            - MAM: '3-month'
+          Dec:
+            - MAM: '2-month'
       - name: Northern
         climate-region-code: 3
         leadtime:
-          Jan: 
-            - MAM: "2-month"
-          Feb: 
-            - MAM: "1-month"
+          Jan:
+            - MAM: '2-month'
+          Feb:
+            - MAM: '1-month'
           Mar:
-            - MAM: "0-month"
+            - MAM: '0-month'
           Apr:
-            - MAM: "0-month"
-            - JAS: "3-month"
+            - MAM: '0-month'
+            - JAS: '3-month'
           May:
-            - MAM: "0-month"
-            - JAS: "2-month"
-          Jun: 
-            - JAS: "1-month"
-          Jul: 
-            - JAS: "0-month"
-          Aug: 
-            - JAS: "0-month"
-          Sep: 
-            - JAS: "0-month"
-          Oct: 
-            - MAM: "5-month"
-          Nov: 
-            - MAM: "4-month"
-          Dec: 
-            - MAM: "3-month"
+            - MAM: '0-month'
+            - JAS: '2-month'
+          Jun:
+            - JAS: '1-month'
+          Jul:
+            - JAS: '0-month'
+          Aug:
+            - JAS: '0-month'
+          Sep:
+            - JAS: '0-month'
+          Oct:
+            - MAM: '5-month'
+          Nov:
+            - MAM: '4-month'
+          Dec:
+            - MAM: '3-month'
       - name: Southern
         climate-region-code: 4
         leadtime:
-          Jan: 
-            - MAM: "2-month"
-          Feb: 
-            - MAM: "1-month"
+          Jan:
+            - MAM: '2-month'
+          Feb:
+            - MAM: '1-month'
           Mar:
-            - MAM: "0-month"
+            - MAM: '0-month'
           Apr:
-            - MAM: "0-month"
+            - MAM: '0-month'
           May:
-            - MAM: "0-month"
-          Jun: 
-            - OND: "4-month"
-          Jul: 
-            - OND: "3-month"
-          Aug: 
-            - OND: "2-month"
-          Sep: 
-            - OND: "1-month"
-          Oct: 
-            - OND: "0-month"
-          Nov: 
-            - OND: "0-month"
-          Dec: 
-            - OND: "0-month"
-            - MAM: "3-month"
+            - MAM: '0-month'
+          Jun:
+            - OND: '4-month'
+          Jul:
+            - OND: '3-month'
+          Aug:
+            - OND: '2-month'
+          Sep:
+            - OND: '1-month'
+          Oct:
+            - OND: '0-month'
+          Nov:
+            - OND: '0-month'
+          Dec:
+            - OND: '0-month'
+            - MAM: '3-month'
 
   - name: ZWE
     admin-levels:
@@ -297,36 +295,36 @@ countries:
       min: 0.65
       med: 0.75
       max: 0.85
-    trigger_model: 
+    trigger_model:
       model: seasonal_rainfall_forecast
-      trigger-on-minimum-probability: 0.4 # based on ensamble member probability compared against lower tercile 
-      trigger-on-minimum-admin-area-in-drought-extent: 0.4 #for drought extent(grid) overlap with  admin polygons 
+      trigger-on-minimum-probability: 0.4 # based on ensamble member probability compared against lower tercile
+      trigger-on-minimum-admin-area-in-drought-extent: 0.4 #for drought extent(grid) overlap with  admin polygons
       tercile_treshold: 0.33
     climate_region:
       - name: National
         climate-region-code: 1
         leadtime:
-          Jan: 
-            - Drought: "0-month"
-          Feb: 
-            - Drought: "0-month"
-          Mar: 
-            - Drought: "0-month"
-          Apr: 
-            - Drought: "6-month"
-          May: 
-            - Drought: "5-month"
-          Jun: 
-            - Drought: "4-month"
-          Jul: 
-            - Drought: "3-month"
-          Aug: 
-            - Drought: "2-month"
-          Sep: 
-            - Drought: "1-month"
-          Oct: 
-            - Drought: "0-month"
-          Nov: 
-            - Drought: "0-month"
-          Dec: 
-            - Drought: "0-month"
+          Jan:
+            - Drought: '0-month'
+          Feb:
+            - Drought: '0-month'
+          Mar:
+            - Drought: '0-month'
+          Apr:
+            - Drought: '6-month'
+          May:
+            - Drought: '5-month'
+          Jun:
+            - Drought: '4-month'
+          Jul:
+            - Drought: '3-month'
+          Aug:
+            - Drought: '2-month'
+          Sep:
+            - Drought: '1-month'
+          Oct:
+            - Drought: '0-month'
+          Nov:
+            - Drought: '0-month'
+          Dec:
+            - Drought: '0-month'
