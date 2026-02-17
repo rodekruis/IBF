@@ -111,6 +111,15 @@ class RiverFloodLoad(Module):
                 if event_name == "" or event_name == "None" or event_name == "Na":
                     event_name = str(station_code)
 
+                # if already sent data for this event for a previous lead time, or severity is lower, break
+                if (
+                    event_type == last_event_type
+                    or (last_event_type == "trigger" and event_type == "alert")
+                ) and lead_time_event > last_event_lead_time:
+                    break
+                else:
+                    last_event_type, last_event_lead_time = event_type, lead_time_event
+
                 logging.info(
                     f"event {event_name}, type '{event_type}', lead time {lead_time_event}"
                 )
