@@ -36,7 +36,7 @@
       "ESNext.Collection",
       "ESNext.Iterator"
     ],
-    "types": ["@angular/localize", "jasmine", "node"],
+    "types": ["@angular/localize", "jest", "node"],
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

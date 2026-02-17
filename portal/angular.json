@@ -13,7 +13,13 @@
       "root": "",
       "sourceRoot": "src",
       "i18n": {
-        "sourceLocale": "en-GB"
+        "sourceLocale": "en-GB",
+        "locales": {
+          "nl": {
+            "translation": "src/locale/messages.nl.xlf",
+            "subPath": "nl"
+          }
+        }
       },
       "prefix": "app",
       "architect": {
@@ -65,7 +71,7 @@
                   "maximumError": "4kB"
                 }
               ],
-              "localize": ["en"],
+              "localize": ["en", "nl"],
               "outputHashing": "all",
               "extractLicenses": true,
               "optimization": {
@@ -88,6 +94,9 @@
                   "with": "src/environments/environment.development.ts"
                 }
               ]
+            },
+            "nl": {
+              "localize": ["nl"]
             }
           },
           "defaultConfiguration": "development"
@@ -100,6 +109,9 @@
             },
             "development": {
               "buildTarget": "portal:build:development"
+            },
+            "nl": {
+              "buildTarget": "portal:build:development,nl"
             }
           },
           "defaultConfiguration": "development"
@@ -120,31 +132,6 @@
             "sourceFile": "messages.xlf",
             "targetFiles": [],
             "trim": true
-          }
-        },
-        "test": {
-          "builder": "@angular/build:karma",
-          "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing",
-              "@angular/localize/init"
-            ],
-            "tsConfig": "tsconfig.spec.json",
-            "include": ["src/**/*.spec.ts", "./*.spec.ts"],
-            "inlineStyleLanguage": "css",
-            "codeCoverage": true,
-            "progress": true,
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "src/assets/",
-                "output": "/assets/"
-              }
-            ],
-            "styles": ["src/styles.css"],
-            "scripts": [],
-            "karmaConfig": "karma.conf.js"
           }
         },
         "lint": {
