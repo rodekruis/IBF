@@ -110,7 +110,7 @@ class AdminDataSet:
             return bdu
 
     def upsert_data_unit(self, data_unit: AdminDataUnit):
-        """Add data unit; if it already exists, update it"""
+        """Add data unit; if it exists, update it"""
         if not self.data_units:
             self.data_units = [data_unit]
         if hasattr(data_unit, "lead_time"):
@@ -181,7 +181,7 @@ class RegionDataSet:
             return bdu
 
     def upsert_data_unit(self, data_unit: RegionDataUnit):
-        """Add data unit; if it already exists, update it"""
+        """Add data unit; if it exists, update it"""
         if not self.data_units:
             self.data_units = [data_unit]
         if hasattr(data_unit, "lead_time"):
@@ -249,10 +249,10 @@ class DataSets:
 
         source = resource["download_url"]
 
-        # if file_path is a directory, add filename to path
+        # if file path is a directory, add file name to path
         if os.path.isdir(file_path):
-            filename = os.path.basename(source)
-            file_path = os.path.join(file_path, filename)
+            file_name = os.path.basename(source)
+            file_path = os.path.join(file_path, file_name)
 
         headers = {}
         headers["X-CKAN-API-Key"] = ckan_key

@@ -1,3 +1,4 @@
+from pprint import pprint
 import itertools
 import logging
 import os
@@ -54,46 +55,46 @@ class Extract(RiverFloodModule):
         date = datetime.today().strftime("%Y%m%d")
 
         for ensemble in range(0, no_ens):
-            filename_local = f"GloFAS_{ensemble}.nc"
-            filepath_local = os.path.join(self.data.input_dir, filename_local)
+            file_name_local = f"GloFAS_{ensemble}.nc"
+            file_path_local = os.path.join(self.data.input_dir, file_name_local)
 
             # NOTE: flag to slide data or reuse existing sliced data
             update_slice = False
 
-            if os.path.exists(filepath_local):
-                logging.warning(f"{filepath_local} already exists, skipping")
+            if os.path.exists(file_path_local):
+                logging.warning(f"file {file_path_local} exists, skipping")
             else:
                 if debug:
                     self.data.download_from_ckan(
-                        resource_name="mock_GloFAS.nc", file_path=filepath_local
+                        resource_name="mock_GloFAS.nc", file_path=file_path_local
                     )
                 else:
                     blob_storage_path = self.settings.get_setting("blob_storage_path")
-                    filename_remote = f"dis_{'{:02d}'.format(ensemble)}_{date}00.nc"
-                    filepath_remote = os.path.join(
-                        blob_storage_path, "glofas-data", date, filename_remote
+                    file_name_remote = f"dis_{'{:02d}'.format(ensemble)}_{date}00.nc"
+                    file_path_remote = os.path.join(
+                        blob_storage_path, "glofas-data", date, file_name_remote
                     )
-                    self.load.get_from_blob(filepath_local, filepath_remote)
+                    self.load.get_from_blob(file_path_local, file_path_remote)
                 update_slice = True
 
-            filename_local_sliced = f"GloFAS_{date}_{country}_{ensemble}.nc"
-            filepath_local_sliced = os.path.join(
-                self.data.input_dir, filename_local_sliced
+            file_name_local_sliced = f"GloFAS_{date}_{country}_{ensemble}.nc"
+            file_path_local_sliced = os.path.join(
+                self.data.input_dir, file_name_local_sliced
             )
-            if os.path.exists(filepath_local_sliced) and not update_slice:
-                logging.warning(f"reuse file {filepath_local_sliced}")
+            if os.path.exists(file_path_local_sliced) and not update_slice:
+                logging.warning(f"file {file_path_local_sliced} exists, skipping")
             else:
                 logging.info(f"slicing GloFAS data for ensemble {ensemble}")
-                nc_file = xr.open_dataset(filepath_local)
+                nc_file = xr.open_dataset(file_path_local)
                 # slice netcdf file to country boundaries
                 country_bounds = country_gdf.total_bounds
                 nc_file_sliced = slice_netcdf_file(nc_file, country_bounds)
-                nc_file_sliced.to_netcdf(filepath_local_sliced)
+                nc_file_sliced.to_netcdf(file_path_local_sliced)
                 nc_file.close()
 
                 if not debug:
                     # NOTE: remove global NetCDF file to save space in prod
-                    os.remove(filepath_local)
+                    os.remove(file_path_local)
 
             if debug:
                 # NOTE: exit after first ensemble in debug mode
@@ -109,20 +110,17 @@ class Extract(RiverFloodModule):
         # Download pre-processed NetCDF files for each ensemble member
         no_ens = self.settings.get_setting("no_ensemble_members")
         date = datetime.today().strftime("%Y%m%d")
-        if debug:
-            no_ens = 1
-            date = (datetime.today() - timedelta(days=1)).strftime("%Y%m%d")
 
         # # Download permanent water bodies and crop around country
         # country_gdf = self.load.get_adm_boundaries(country=country, adm_level=1)
         # country_gdf = country_gdf.to_crs("EPSG:4326")
-        # lake_filepath = "data/updates/HydroLAKES_polys_v10.gdb"
-        # if not os.path.exists(lake_filepath):
+        # lake_file_path = "data/updates/HydroLAKES_polys_v10.gdb"
+        # if not os.path.exists(lake_file_path):
         #     self.load.get_from_blob(
-        #         lake_filepath,
+        #         lake_file_path,
         #         f"{self.settings.get_setting('blob_storage_path')}/lakes/HydroLAKES_polys_v10.gdb",
         #     )
-        # lake_gdf = gpd.read_file(lake_filepath)
+        # lake_gdf = gpd.read_file(lake_file_path)
         # lake_country_gdf = gpd.clip(
         #         lake_gdf, country_gdf.total_bounds, keep_geom_type=True
         #     )
@@ -130,47 +128,44 @@ class Extract(RiverFloodModule):
         # Extract data from NetCDF files
         discharges = {}
         for adm_level in self.data.discharge_admin.adm_levels:
-            try:
-                country_gdf = self.load.get_adm_boundaries(adm_level=adm_level)
-            except AttributeError:
-                logging.error(
-                    f"Country {country} does not have admin level {adm_level}, skipping"
-                )
-                continue
+            country_gdf = self.load.get_adm_boundaries(adm_level=adm_level)
+
             for ensemble in range(0, no_ens):
-                filename = os.path.join(
+                file_name = os.path.join(
                     self.data.input_dir,
                     f"GloFAS_{date}_{country}_{ensemble}.nc",
                 )
-                if not os.path.exists(filename):
-                    logging.warning(
-                        f"Country-specific NetCDF file of ensemble {ensemble} not found, skipping"
-                    )
-                    continue
-                for lead_time in range(0, 8):
-                    with rasterio.open(filename) as src:
-                        raster_array = src.read(lead_time + 1)
-                        transform = src.transform
-                    # Perform zonal statistics for admin divisions
-                    stats = zonal_stats(
-                        country_gdf,
-                        raster_array,
-                        affine=transform,
-                        stats=["max", "median"],
-                        all_touched=True,
-                        nodata=0.0,
-                    )
-                    dis = pd.concat([country_gdf, pd.DataFrame(stats)], axis=1)
-                    for ix, row in dis.iterrows():
-                        key = f'{row[f"adm{adm_level}_pcode"]}_{lead_time}'
-                        if key not in discharges.keys():
-                            discharges[key] = []
-                        discharge = row["max"]
-                        if lead_time == 5:
-                            discharge = discharge * 1000.0
-                        discharges[key].append(
-                            discharge if not pd.isna(discharge) else 0.0
+                if os.path.exists(file_name):
+                    for lead_time in range(0, 8):
+                        with rasterio.open(file_name) as src:
+                            raster_array = src.read(lead_time + 1)
+                            transform = src.transform
+                        # Perform zonal statistics for admin divisions
+                        stats = zonal_stats(
+                            country_gdf,
+                            raster_array,
+                            affine=transform,
+                            stats=["max", "median"],
+                            all_touched=True,
+                            nodata=0.0,
                         )
+                        dis = pd.concat([country_gdf, pd.DataFrame(stats)], axis=1)
+                        for ix, row in dis.iterrows():
+                            key = f'{row[f"adm{adm_level}_pcode"]}_{lead_time}'
+                            if key not in discharges.keys():
+                                discharges[key] = []
+                            discharge = row["max"]
+                            if lead_time == 5:
+                                discharge = discharge * 1000.0
+                            discharges[key].append(
+                                discharge if not pd.isna(discharge) else 0.0
+                            )
+                else:
+                    logging.warning(f"file {file_name} not found, skipping")
+
+                if debug:
+                    # NOTE: exit after first ensemble in debug mode
+                    break
 
             for lead_time, pcode in itertools.product(
                 range(0, 8), list(country_gdf[f"adm{adm_level}_pcode"].unique())
@@ -189,34 +184,39 @@ class Extract(RiverFloodModule):
 
         discharges_stations = {}
         for ensemble in range(0, no_ens):
-            filename = os.path.join(
+            file_name = os.path.join(
                 self.data.input_dir,
                 f"GloFAS_{date}_{country}_{ensemble}.nc",
             )
-            if not os.path.exists(filename):
-                logging.warning(
-                    f"Country-specific NetCDF file of ensemble {ensemble} not found, skipping"
-                )
-                continue
-            with rasterio.open(filename) as src:
-                for station_code in self.data.threshold_station.get_ids():
-                    station = self.data.threshold_station.get_data_unit(
-                        station_code
-                    )  # get station information from preloaded thresholds
-                    coords = [(float(station.lon), float(station.lat))]
-                    for lead_time in range(0, 8):
-                        # Extract data for stations
-                        discharge = float(
-                            [x[0] for x in src.sample(coords, indexes=lead_time + 1)][0]
-                        )
-                        if lead_time == 5:
-                            discharge = discharge * 1000.0
-                        key = f"{station_code}_{lead_time}"
-                        if key not in discharges_stations.keys():
-                            discharges_stations[key] = []
-                        discharges_stations[key].append(
-                            discharge if not pd.isna(discharge) else 0.0
-                        )
+            if os.path.exists(file_name):
+                with rasterio.open(file_name) as src:
+                    for station_code in self.data.threshold_station.get_ids():
+                        station = self.data.threshold_station.get_data_unit(
+                            station_code
+                        )  # get station information from preloaded thresholds
+                        coords = [(float(station.lon), float(station.lat))]
+                        for lead_time in range(0, 8):
+                            # Extract data for stations
+                            discharge = float(
+                                [
+                                    x[0]
+                                    for x in src.sample(coords, indexes=lead_time + 1)
+                                ][0]
+                            )
+                            if lead_time == 5:
+                                discharge = discharge * 1000.0
+                            key = f"{station_code}_{lead_time}"
+                            if key not in discharges_stations.keys():
+                                discharges_stations[key] = []
+                            discharges_stations[key].append(
+                                discharge if not pd.isna(discharge) else 0.0
+                            )
+            else:
+                logging.warning(f"file {file_name} not found, skipping")
+
+            if debug:
+                # NOTE: exit after first ensemble in debug mode
+                break
 
         for station_code in self.data.threshold_station.get_ids():
             station = self.data.threshold_station.get_data_unit(station_code)

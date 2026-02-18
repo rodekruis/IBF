@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 import logging
 import time
+import shutil
 from urllib.error import HTTPError
 
 import geopandas as gpd
@@ -23,6 +25,7 @@ class Load:
         self.settings = self.check_settings(settings)
         self.secrets = self.check_secrets(secrets)
         self.rasters_sent = []
+        self.login_token = None
 
     def check_settings(self, settings: Settings):
         """Check settings"""
@@ -39,6 +42,7 @@ class Load:
             raise TypeError(f"invalid format of secrets, use secrets.Secrets")
         secrets.check_secrets(
             [
+                "ENVIRONMENT",
                 "BLOB_ACCOUNT_NAME",
                 "BLOB_ACCOUNT_KEY",
                 "IBF_API_URL",
@@ -77,16 +81,22 @@ class Load:
         return gdf_adm_boundaries
 
     def __ibf_api_authenticate(self):
+        if self.login_token is not None:
+            return self.login_token
+
         no_attempts, attempt, login_response = 5, 0, None
         while attempt < no_attempts:
             try:
+                login_url = self.secrets.get_secret("IBF_API_URL") + "user/login"
+                logger.info(f"POST {login_url}")
                 login_response = requests.post(
-                    self.secrets.get_secret("IBF_API_URL") + "user/login",
+                    login_url,
                     data=[
                         ("email", self.secrets.get_secret("IBF_API_USER")),
                         ("password", self.secrets.get_secret("IBF_API_PASSWORD")),
                     ],
                 )
+                logger.info(f"POST {login_url} {login_response.status_code}")
                 break
             except requests.exceptions.ConnectionError:
                 attempt += 1
@@ -96,9 +106,16 @@ class Load:
                 time.sleep(60)
         if not login_response:
             raise ConnectionError("IBF API not available")
-        return login_response.json()["user"]["token"]
+
+        self.login_token = login_response.json()["user"]["token"]
+        return self.login_token
 
     def ibf_api_request(self, method, path, parameters=None, body=None, files=None):
+        method = method.upper()
+        url = self.secrets.get_secret("IBF_API_URL") + path
+        logger.info(f"{method} {url}")
+
+        # prep headers
         token = self.__ibf_api_authenticate()
         headers = {
             "Authorization": "Bearer " + token,
@@ -107,32 +124,40 @@ class Load:
         if body is not None:
             headers["Content-Type"] = "application/json"
             headers["Accept"] = "application/json"
+
+        # make request
         session = requests.Session()
         retry = Retry(connect=3, backoff_factor=0.5)
         adapter = HTTPAdapter(max_retries=retry)
         session.mount("http://", adapter)
         session.mount("https://", adapter)
-        if method.upper() == "POST":
-            r = session.post(
-                self.secrets.get_secret("IBF_API_URL") + path,
+        if method == "POST":
+            response = session.post(
+                url,
                 json=body,
                 files=files,
                 headers=headers,
             )
-        elif method.upper() == "GET":
-            r = session.get(
-                self.secrets.get_secret("IBF_API_URL") + path,
+        elif method == "GET":
+            response = session.get(
+                url,
                 headers=headers,
                 params=parameters,
             )
         else:
             raise KeyError(f"Method {method} is not supported for IBF API")
-        if r.status_code >= 400:
+
+        # check for errors
+        if response.status_code >= 400:
             raise ValueError(
-                f"Error in IBF API POST request: {r.status_code}, {r.text}"
+                f"Error in IBF API {method} request: {response.status_code}, {response.text}"
             )
-        if method.upper() == "GET":
-            return r.json()
+
+        # return response
+        try:
+            return response.json()
+        except:
+            return response
 
     def __get_blob_service_client(self, blob_path: str):
         """Get service client for Azure Blob Storage"""
@@ -145,10 +170,11 @@ class Load:
         container = self.settings.get_setting("blob_container")
         return blob_service_client.get_blob_client(container=container, blob=blob_path)
 
-    def save_to_blob(self, local_path: str, file_dir_blob: str):
+    def save_to_blob(self, local_path: str, blob_path: str):
         """Save file to Azure Blob Storage"""
         # upload to Azure Blob Storage
-        blob_client = self.__get_blob_service_client(file_dir_blob)
+        logger.info(f"Uploading {local_path} to Azure Blob Storage {blob_path}")
+        blob_client = self.__get_blob_service_client(blob_path)
         with open(local_path, "rb") as upload_file:
             blob_client.upload_blob(upload_file, overwrite=True)
 
@@ -165,3 +191,15 @@ class Load:
                 raise FileNotFoundError(
                     f"File {blob_path} not found in Azure Blob Storage"
                 )
+
+    def send_to_blob_storage(self, file_name: str = "forecast"):
+        """Send forecast data to Azure Blob Storage"""
+
+        output_path = os.path.join("data", "output")
+        file_path = os.path.join("data", file_name)
+        archive_path = shutil.make_archive(file_path, "zip", output_path)
+
+        environment = self.secrets.get_secret("ENVIRONMENT")
+        blob_path = os.path.join(environment, f"{file_name}.zip")
+
+        self.save_to_blob(local_path=archive_path, blob_path=blob_path)

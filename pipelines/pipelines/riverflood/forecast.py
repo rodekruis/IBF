@@ -20,12 +20,12 @@ from shapely import Polygon
 from shapely.geometry import shape
 
 
-def merge_rasters(raster_filepaths: list) -> tuple:
+def merge_rasters(raster_file_paths: list) -> tuple:
     """Merge rasters into a single one, return the merged raster and its metadata"""
-    if len(raster_filepaths) > 0:
-        with rasterio.open(raster_filepaths[0]) as src:
+    if len(raster_file_paths) > 0:
+        with rasterio.open(raster_file_paths[0]) as src:
             out_meta = src.meta.copy()
-    mosaic, out_trans = merge(raster_filepaths)
+    mosaic, out_trans = merge(raster_file_paths)
     out_meta.update(
         {
             "driver": "GTiff",
@@ -38,11 +38,11 @@ def merge_rasters(raster_filepaths: list) -> tuple:
 
 
 def clip_raster(
-    raster_filepath: str, shapes: List[Polygon], invert: bool = False
+    raster_file_path: str, shapes: List[Polygon], invert: bool = False
 ) -> tuple:
     """Clip raster with a list of polygons, return the clipped raster and its metadata"""
     crop = True if not invert else False
-    with rasterio.open(raster_filepath) as src:
+    with rasterio.open(raster_file_path) as src:
         outImage, out_transform = mask(src, shapes, crop=crop, invert=invert)
         outMeta = src.meta.copy()
     outMeta.update(
@@ -249,9 +249,7 @@ class Forecast(RiverFloodModule):
         # check if any lower admin division is triggered but the upper one isn't, if so, trigger the upper one as well
         gdf_adms = {}
         for adm_level in self.data.forecast_admin.adm_levels:
-            gdf_adm = self.load.get_adm_boundaries(
-                self.data.forecast_admin.country, adm_level
-            )
+            gdf_adm = self.load.get_adm_boundaries(adm_level)
             gdf_adms[adm_level] = gdf_adm
         for adm_level in self.data.forecast_admin.adm_levels:
             for forecast_data_unit in self.data.forecast_admin.get_data_units(
@@ -288,13 +286,13 @@ class Forecast(RiverFloodModule):
             os.remove(self.flood_extent_raster)
         flood_rasters = {}
         for rp in [10, 20, 50, 75, 100, 200, 500]:
-            flood_raster_filepath = os.path.join(
+            flood_raster_file_path = os.path.join(
                 self.data.input_dir, f"flood_map_{self.country}_RP{rp}.tif"
             )
-            if not os.path.exists(flood_raster_filepath):
+            if not os.path.exists(flood_raster_file_path):
                 try:
                     self.load.get_from_blob(
-                        flood_raster_filepath,
+                        flood_raster_file_path,
                         f"{self.settings.get_setting('blob_storage_path')}"
                         f"/flood-maps/{self.country}/flood_map_{self.country}_RP{rp}.tif",
                     )
@@ -303,7 +301,7 @@ class Forecast(RiverFloodModule):
                         f"Flood map for {self.country} with RP {rp} not found, skipping exposure calculation."
                     )
                     return None
-            flood_rasters[rp] = flood_raster_filepath
+            flood_rasters[rp] = flood_raster_file_path
 
         # create empty raster
         empty_raster = self.flood_extent_raster.replace(".tif", "_empty.tif")

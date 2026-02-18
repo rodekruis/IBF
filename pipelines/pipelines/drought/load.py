@@ -3,14 +3,8 @@ from __future__ import annotations
 import copy
 import json
 import logging
-import os
-import os.path
 import shutil
-import time
-import urllib.request
-from datetime import date, datetime, timedelta
-from itertools import product
-from urllib.error import HTTPError
+from datetime import datetime
 
 import azure.cosmos.cosmos_client as cosmos_client
 import cdsapi
@@ -24,7 +18,8 @@ from pipelines.core.data import (
     RegionDataSet,
     RegionDataUnit,
 )
-from pipelines.drought.module import DroughtModule
+from pipelines.drought.data import DroughtDataSets
+from pipelines.core.load import Load
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -94,11 +89,17 @@ def forecast_trigger_status(triggered: bool, trigger_class: str):
         return 0
 
 
-class DroughtLoad(DroughtModule):
+class DroughtLoad(Load):
     """Download/upload data from/to a data storage"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, data: DroughtDataSets, **kwargs):
         super().__init__(**kwargs)
+        self.data = data
+
+        # load thresholds
+        self.data.threshold_climateregion = self.get_pipeline_data(
+            data_type="climate-region", country=self.country
+        )
 
     def send_to_ibf_api(
         self,
@@ -224,7 +225,7 @@ class DroughtLoad(DroughtModule):
                             with open(statsPath, "w") as fp:
                                 json.dump(body, fp)
 
-                            self.load.ibf_api_request(
+                            self.ibf_api_request(
                                 "POST", "admin-area-dynamic-data/exposure", body=body
                             )
                     processed_pcodes = list(set(processed_pcodes))
@@ -251,7 +252,7 @@ class DroughtLoad(DroughtModule):
             )
             self.rasters_sent.append(rain_rp)
             files = {"file": open(rain_rp, "rb")}
-            self.load.ibf_api_request(
+            self.ibf_api_request(
                 "POST", "admin-area-dynamic-data/raster/drought", files=files
             )
 
@@ -286,7 +287,7 @@ class DroughtLoad(DroughtModule):
                             "eventName": None,  # this is a specific check IBF uses to establish no-trigger
                             "date": upload_time_str,
                         }
-                        self.load.ibf_api_request(
+                        self.ibf_api_request(
                             "POST", "admin-area-dynamic-data/exposure", body=body
                         )
 
@@ -307,7 +308,8 @@ class DroughtLoad(DroughtModule):
             "disasterType": disasterType,
             "date": upload_time_str,
         }
-        self.load.ibf_api_request("POST", "events/process", body=body)
+
+        self.ibf_api_request("POST", "events/process", body=body)
 
     def get_pipeline_data(
         self,
@@ -318,7 +320,7 @@ class DroughtLoad(DroughtModule):
         adm_level=None,
         pcode=None,
         lead_time=None,
-    ) -> AdminDataSet:
+    ) -> RegionDataSet:
         """Download pipeline datasets from Cosmos DB"""
         if data_type not in COSMOS_DATA_TYPES:
             raise ValueError(
@@ -422,7 +424,7 @@ class DroughtLoad(DroughtModule):
         return valid_events_and_leadtimes
 
     def get_events_and_leadtimes_by_region_and_month(
-        sef, climate_regions_settings, climate_region_code, month_abb
+        self, climate_regions_settings, climate_region_code, month_abb
     ):
         return next(
             (

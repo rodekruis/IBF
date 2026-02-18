@@ -19,14 +19,17 @@ class Pipeline:
         if country not in [c["name"] for c in self.settings.get_setting("countries")]:
             raise ValueError(f"No config found for country {country}")
         self.country = country
+        self.hazard = "drought"
 
         # Initialize empty data sets
         self.data = DroughtDataSets(country=country, settings=settings, secrets=secrets)
 
-        # Initialize pipeline modules
+        # Initialize data loaders
         self.load = DroughtLoad(
             country=country, settings=settings, secrets=secrets, data=self.data
         )
+
+        # Initialize pipeline modules
         self.extract = Extract(
             country=country,
             settings=settings,
@@ -38,11 +41,6 @@ class Pipeline:
             settings=settings,
             secrets=secrets,
             data=self.data,
-        )
-
-        # Load thresholds
-        self.data.threshold_climateregion = self.load.get_pipeline_data(
-            data_type="climate-region", country=self.country
         )
 
     def run(

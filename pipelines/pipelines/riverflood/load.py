@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import csv
 import logging
 import os.path
 import shutil
@@ -9,8 +10,26 @@ from typing import List
 
 import geopandas as gpd
 from pipelines.core.data import AdminDataSet, RegionDataSet
-from pipelines.riverflood.module import RiverFloodModule
-from pipelines.riverflood.data import ThresholdDataUnit, ThresholdStationDataUnit
+from pipelines.core.load import Load
+from pipelines.riverflood.data import (
+    ThresholdDataUnit,
+    ThresholdStationDataUnit,
+    RiverFloodDataSets,
+)
+
+AREA_INDICATORS = [
+    "population_affected",
+    "population_affected_percentage",
+    "forecast_severity",
+    "forecast_trigger",
+]
+
+STATION_INDICATORS = [
+    "forecastLevel",
+    "eapAlertClass",
+    "forecastReturnPeriod",
+    "triggerLevel",
+]
 
 
 def alert_class_to_severity(alert_class: str, triggered: bool) -> float:
@@ -30,15 +49,20 @@ def alert_class_to_severity(alert_class: str, triggered: bool) -> float:
         raise ValueError(f"Invalid alert class {alert_class}")
 
 
-class RiverFloodLoad(RiverFloodModule):
+class RiverFloodLoad(Load):
     """Download/upload data from/to a data storage"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, data: RiverFloodDataSets, **kwargs):
         super().__init__(**kwargs)
+        self.data = data
+
+        # load thresholds
+        self.data.threshold_admin = self.get_thresholds_admin()
+        self.data.threshold_station = self.get_thresholds_station()
 
     def get_stations(self) -> list[dict]:
         """Get GloFAS stations from IBF app"""
-        stations = self.load.ibf_api_request(
+        stations = self.ibf_api_request(
             "GET",
             f"point-data/glofas_stations/{self.country}",
             parameters={
@@ -72,6 +96,8 @@ class RiverFloodLoad(RiverFloodModule):
         """Send flood forecast data to IBF API"""
         logging.info("send data to IBF API")
 
+        events_json = []
+
         trigger_on_lead_time = self.settings.get_country_setting(
             self.country, "trigger-on-lead-time"
         )
@@ -104,6 +130,7 @@ class RiverFloodLoad(RiverFloodModule):
             if not events:
                 continue
             events = dict(sorted(events.items()))
+            last_event_type, last_event_lead_time = "", 0
 
             for lead_time_event, event_type in events.items():
 
@@ -134,17 +161,19 @@ class RiverFloodLoad(RiverFloodModule):
                 )
                 threshold_station = threshold_station_data.get_data_unit(station_code)
 
+                lead_time = f"{lead_time_event}-day"
+
+                alert_areas = {}
+
                 # send exposure data: admin-area-dynamic-data/exposure
-                indicators = [
-                    "population_affected",
-                    "population_affected_percentage",
-                    "forecast_severity",
-                    "forecast_trigger",
-                ]
-                for indicator in indicators:
+                for indicator in AREA_INDICATORS:
                     for adm_level in forecast_station.pcodes.keys():
                         exposure_pcodes = []
                         for pcode in forecast_station.pcodes[adm_level]:
+
+                            if pcode not in alert_areas:
+                                alert_areas[pcode] = {"admin_level": int(adm_level)}
+
                             forecast_admin = self.data.forecast_admin.get_data_unit(
                                 pcode, lead_time_event
                             )
@@ -176,9 +205,10 @@ class RiverFloodLoad(RiverFloodModule):
                                 {"placeCode": pcode, "amount": amount}
                             )
                             processed_pcodes.append(pcode)
+                            alert_areas[pcode][indicator] = amount
                         body = {
                             "countryCodeISO3": self.country,
-                            "leadTime": f"{lead_time_event}-day",
+                            "leadTime": lead_time,
                             "dynamicIndicator": indicator,
                             "adminLevel": int(adm_level),
                             "exposurePlaceCodes": exposure_pcodes,
@@ -186,24 +216,21 @@ class RiverFloodLoad(RiverFloodModule):
                             "eventName": event_name,
                             "date": upload_time,
                         }
-                        self.load.ibf_api_request(
+                        self.ibf_api_request(
                             "POST", "admin-area-dynamic-data/exposure", body=body
                         )
                 processed_pcodes = list(set(processed_pcodes))
 
+                glofas_stations = {}
+
                 # GloFAS station data: point-data/dynamic
                 # 1 call per alert/triggered station, and 1 overall (to same endpoint) for all other stations
                 if event_type != "none":
-                    station_forecasts = {
-                        "forecastLevel": [],
-                        "eapAlertClass": [],
-                        "forecastReturnPeriod": [],
-                        "triggerLevel": [],
-                    }
+                    station_forecasts = {key: [] for key in STATION_INDICATORS}
                     discharge_station = self.data.discharge_station.get_data_unit(
                         station_code, lead_time_event
                     )
-                    for indicator in station_forecasts.keys():
+                    for indicator in STATION_INDICATORS:
                         value = None
                         if indicator == "forecastLevel":
                             value = int(discharge_station.discharge_mean or 0)
@@ -219,10 +246,15 @@ class RiverFloodLoad(RiverFloodModule):
                                     trigger_on_return_period
                                 )
                             )
+
+                        if station_code not in glofas_stations:
+                            glofas_stations[station_code] = {}
+
                         station_data = {"fid": station_code, "value": value}
                         station_forecasts[indicator].append(station_data)
+                        glofas_stations[station_code][indicator] = value
                         body = {
-                            "leadTime": f"{lead_time_event}-day",
+                            "leadTime": lead_time,
                             "key": indicator,
                             "dynamicPointData": station_forecasts[indicator],
                             "pointDataCategory": "glofas_stations",
@@ -230,10 +262,20 @@ class RiverFloodLoad(RiverFloodModule):
                             "countryCodeISO3": self.country,
                             "date": upload_time,
                         }
-                        self.load.ibf_api_request(
-                            "POST", "point-data/dynamic", body=body
-                        )
+                        self.ibf_api_request("POST", "point-data/dynamic", body=body)
                     processed_stations.append(station_code)
+
+                events_json.append(
+                    {
+                        "event_name": event_name,
+                        "date": upload_time,
+                        "country": self.country,
+                        "hazard": "flood",
+                        "lead_time": lead_time,
+                        "alert_areas": alert_areas,
+                        "glofas_stations": glofas_stations,
+                    }
+                )
 
             # send alerts per lead time: event/alerts-per-lead-time
             alerts_per_lead_time = []
@@ -260,7 +302,9 @@ class RiverFloodLoad(RiverFloodModule):
                 "eventName": event_name,
                 "date": upload_time,
             }
-            self.load.ibf_api_request("POST", "event/alerts-per-lead-time", body=body)
+            self.ibf_api_request("POST", "event/alerts-per-lead-time", body=body)
+
+        self.export_to_json_and_csv(events_json)
 
         # END OF EVENT LOOP
         ###############################################################################################################
@@ -280,19 +324,13 @@ class RiverFloodLoad(RiverFloodModule):
                     flood_extent_new,
                 )
             files = {"file": open(flood_extent_new, "rb")}
-            self.load.ibf_api_request(
+            self.ibf_api_request(
                 "POST", "admin-area-dynamic-data/raster/floods", files=files
             )
 
         # send empty exposure data
         if len(processed_pcodes) == 0:
-            indicators = [
-                "population_affected",
-                "population_affected_percentage",
-                "forecast_severity",
-                "forecast_trigger",
-            ]
-            for indicator in indicators:
+            for indicator in AREA_INDICATORS:
                 for adm_level in self.data.forecast_admin.adm_levels:
                     exposure_pcodes = []
                     for pcode in self.data.forecast_admin.get_pcodes(
@@ -321,18 +359,13 @@ class RiverFloodLoad(RiverFloodModule):
                         "eventName": None,  # this is a specific check IBF uses to establish no-trigger
                         "date": upload_time,
                     }
-                    self.load.ibf_api_request(
+                    self.ibf_api_request(
                         "POST", "admin-area-dynamic-data/exposure", body=body
                     )
 
         # send GloFAS station data for all other stations
-        station_forecasts = {
-            "forecastLevel": [],
-            "eapAlertClass": [],
-            "forecastReturnPeriod": [],
-            "triggerLevel": [],
-        }
-        for indicator in station_forecasts.keys():
+        station_forecasts = {key: [] for key in STATION_INDICATORS}
+        for indicator in STATION_INDICATORS:
             for station_code in self.data.forecast_station.get_ids():
                 if station_code not in processed_stations:
                     discharge_station = self.data.discharge_station.get_data_unit(
@@ -367,7 +400,7 @@ class RiverFloodLoad(RiverFloodModule):
                 "countryCodeISO3": self.country,
                 "date": upload_time,
             }
-            self.load.ibf_api_request("POST", "point-data/dynamic", body=body)
+            self.ibf_api_request("POST", "point-data/dynamic", body=body)
 
         # process events: events/process
         body = {
@@ -375,19 +408,22 @@ class RiverFloodLoad(RiverFloodModule):
             "disasterType": "floods",
             "date": upload_time,
         }
-        self.load.ibf_api_request("POST", "events/process", body=body)
+        self.ibf_api_request("POST", "events/process", body=body)
 
     def get_thresholds_station(self):
         """Get GloFAS station thresholds from config file"""
         data_units = []
+
         resource_name = f"{self.country}_station_thresholds.json"
         file_path = os.path.join(self.data.input_dir, resource_name)
-        self.data.download_from_ckan(resource_name=resource_name, file_path=file_path)
-        # check if file exists after download, in case of error
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(
-                f"No station thresholds config file found for country {self.country}"
+
+        if os.path.exists(file_path):
+            logging.warning(f"file {file_path} exists, skipping")
+        else:
+            self.data.download_from_ckan(
+                resource_name=resource_name, file_path=file_path
             )
+
         with open(file_path, "r") as read_file:
             station_thresholds = json.load(read_file)
             for station in station_thresholds:
@@ -401,10 +437,12 @@ class RiverFloodLoad(RiverFloodModule):
                         thresholds=station["thresholds"],
                     )
                 )
+
         dataset = RegionDataSet(
             country=self.country,
             data_units=data_units,
         )
+
         return dataset
 
     def save_thresholds_station(self, data: List[ThresholdStationDataUnit]):
@@ -418,14 +456,17 @@ class RiverFloodLoad(RiverFloodModule):
     def get_thresholds_admin(self):
         """Get GloFAS admin area thresholds from config file"""
         data_units = []
+
         resource_name = f"{self.country}_admin_thresholds.json"
         file_path = os.path.join(self.data.input_dir, resource_name)
-        self.data.download_from_ckan(resource_name=resource_name, file_path=file_path)
-        # check if file exists after download, in case of error
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(
-                f"No admin thresholds found for country {self.country}"
+
+        if os.path.exists(file_path):
+            logging.warning(f"file {file_path} exists, skipping")
+        else:
+            self.data.download_from_ckan(
+                resource_name=resource_name, file_path=file_path
             )
+
         with open(file_path, "r") as read_file:
             admin_thresholds = json.load(read_file)
             for record in admin_thresholds:
@@ -436,11 +477,13 @@ class RiverFloodLoad(RiverFloodModule):
                         thresholds=record["thresholds"],
                     )
                 )
+
         dataset = AdminDataSet(
             country=self.country,
             timestamp=datetime.now(),
             data_units=data_units,
         )
+
         return dataset
 
     def save_thresholds_admin(self, data: List[ThresholdDataUnit]):
@@ -450,3 +493,68 @@ class RiverFloodLoad(RiverFloodModule):
         file_path = os.path.join(self.data.input_dir, resource_name)
         with open(file_path, "w") as file:
             json.dump([record.__dict__ for record in data], file)
+
+    def export_to_json_and_csv(self, events: list[dict]):
+        with open(f"{self.data.output_dir}/events.json", "w") as f:
+            json.dump(events, f, indent=2)
+
+        with open(f"{self.data.output_dir}/events.csv", "w", newline="") as f:
+            writer = csv.writer(f, lineterminator="\n")
+            writer.writerow(["event_name", "date", "country", "hazard", "lead_time"])
+            for event in events:
+                writer.writerow(
+                    [
+                        event.get("event_name"),
+                        event.get("date"),
+                        event.get("country"),
+                        event.get("hazard"),
+                        event.get("lead_time"),
+                    ]
+                )
+
+        with open(f"{self.data.output_dir}/alert-areas.csv", "w", newline="") as f:
+            writer = csv.writer(f, lineterminator="\n")
+            writer.writerow(
+                [
+                    "event_name",
+                    "admin_level",
+                    "place_code",
+                ]
+                + AREA_INDICATORS
+            )
+            for event in events:
+                for place_code, alert_area in event.get("alert_areas", {}).items():
+                    writer.writerow(
+                        [
+                            event.get("event_name"),
+                            alert_area.get("admin_level"),
+                            place_code,
+                            *[
+                                alert_area.get(indicator)
+                                for indicator in AREA_INDICATORS
+                            ],
+                        ]
+                    )
+
+        with open(f"{self.data.output_dir}/glofas-stations.csv", "w", newline="") as f:
+            writer = csv.writer(f, lineterminator="\n")
+            writer.writerow(
+                [
+                    "event_name",
+                    "glofas_station",
+                ]
+                + STATION_INDICATORS
+            )
+
+            for event in events:
+                for station_code, station in event.get("glofas_stations", {}).items():
+                    writer.writerow(
+                        [
+                            event.get("event_name"),
+                            station_code,
+                            *[
+                                station.get(indicator)
+                                for indicator in STATION_INDICATORS
+                            ],
+                        ]
+                    )

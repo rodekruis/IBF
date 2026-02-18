@@ -23,11 +23,11 @@ warnings.simplefilter("ignore", category=RuntimeWarning)
 
 
 def clip_raster(
-    raster_filepath: str, shapes: List[Polygon], invert: bool = False
+    raster_file_path: str, shapes: List[Polygon], invert: bool = False
 ) -> tuple:
     """Clip raster with a list of polygons, return the clipped raster and its metadata"""
     crop = True if not invert else False
-    with rasterio.open(raster_filepath) as src:
+    with rasterio.open(raster_file_path) as src:
         outImage, out_transform = mask(src, shapes, crop=crop, invert=invert)
         outMeta = src.meta.copy()
     outMeta.update(

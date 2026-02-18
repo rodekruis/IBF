@@ -13,6 +13,7 @@ class Module:
         secrets: Secrets,
         country: str,
         data: DataSets,
+        load: Load,
         settings_to_check: list = [],
         secrets_to_check: list = [],
     ):
@@ -24,7 +25,7 @@ class Module:
         self.secrets_to_check = secrets_to_check
         self.secrets = self.check_secrets(secrets)
         self.data = data
-        self.load = Load(country=country, settings=settings, secrets=secrets)
+        self.load = load
 
     def check_settings(self, settings: Settings):
         """Check settings"""

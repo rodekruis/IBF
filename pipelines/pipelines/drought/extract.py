@@ -93,10 +93,10 @@ class Extract(DroughtModule):
             "data_format": "grib",
         }
 
-        filename_forecast = "ecmwf_seas5_forecast_monthly_tp.grib"
-        self.filepath_forecast = os.path.join(self.data.input_dir, filename_forecast)
-        filename_hindcast = "ecmwf_seas5_hindcast_monthly_tp.grib"
-        self.filepath_hindcast = os.path.join(self.data.input_dir, filename_hindcast)
+        file_name_forecast = "ecmwf_seas5_forecast_monthly_tp.grib"
+        self.file_path_forecast = os.path.join(self.data.input_dir, file_name_forecast)
+        file_name_hindcast = "ecmwf_seas5_hindcast_monthly_tp.grib"
+        self.file_path_hindcast = os.path.join(self.data.input_dir, file_name_hindcast)
 
     def get_data(self):
         """Get river discharge data from source and return AdminDataSet"""
@@ -118,10 +118,10 @@ class Extract(DroughtModule):
         current_month = datestart.month
 
         try:
-            if os.path.exists(self.filepath_forecast) and os.path.exists(
-                self.filepath_hindcast
+            if os.path.exists(self.file_path_forecast) and os.path.exists(
+                self.file_path_hindcast
             ):
-                logging.warning("ECMWF data already exists, skipping prepare")
+                logging.warning("ECMWF data exists, skipping")
             else:
                 self.download_ecmwf_data(current_year, current_month, debug)
         except FileNotFoundError:
@@ -159,12 +159,12 @@ class Extract(DroughtModule):
         # Loop through each forecast month and save to a separate GeoTIFF file
         for month in forecast_months:
             lead_time = month - 1
-            filename_output = f"{prefix}_{lead_time}-month_{country}.tif"
-            filepath_output = os.path.join(self.data.output_dir, filename_output)
+            file_name_output = f"{prefix}_{lead_time}-month_{country}.tif"
+            file_path_output = os.path.join(self.data.output_dir, file_name_output)
             data = data_array.sel(forecastMonth=month).values
 
             with rasterio.open(
-                filepath_output,
+                file_path_output,
                 "w",
                 driver="GTiff",
                 height=data.shape[0],
@@ -251,8 +251,8 @@ class Extract(DroughtModule):
 
         logging.info("Extract seasonal forecast for each climate region")
         ds_hindcast, ds_forecast = convert_to_mm_per_month(
-            self.filepath_hindcast,
-            self.filepath_forecast,
+            self.file_path_hindcast,
+            self.file_path_forecast,
         )
         """
         ds_hindcast = xr.open_dataset(
@@ -480,16 +480,16 @@ class Extract(DroughtModule):
 
             for month in forecastData["tercile_lower"].keys():
                 lead_time = month - 1
-                filename_lower_tercile = (
+                file_name_lower_tercile = (
                     f"rlower_tercile_probability_{lead_time}-month_{country}.tif"
                 )
-                filepath_lower_tercile = os.path.join(
-                    self.data.output_dir, filename_lower_tercile
+                file_path_lower_tercile = os.path.join(
+                    self.data.output_dir, file_name_lower_tercile
                 )
 
                 # Open the TIF file as an xarray object
                 rlower_tercile_probability = rioxarray.open_rasterio(
-                    filepath_lower_tercile
+                    file_path_lower_tercile
                 )
                 gdf1 = filtered_gdf
                 clipped_regional_mean = rlower_tercile_probability.rio.clip(
@@ -606,15 +606,15 @@ class Extract(DroughtModule):
                 longitudes[1] - longitudes[0],
                 latitudes[0] - latitudes[1],
             )
-            filename_prefix = "rlower_tercile_probability"
-            filename_output_temp = f"{filename_prefix}_temp.tif"
-            filepath_output_temp = os.path.join(
-                self.data.output_dir, filename_output_temp
+            file_name_prefix = "rlower_tercile_probability"
+            file_name_output_temp = f"{file_name_prefix}_temp.tif"
+            file_path_output_temp = os.path.join(
+                self.data.output_dir, file_name_output_temp
             )
             data = resampled_regional_mean.values
 
             with rasterio.open(
-                filepath_output_temp,
+                file_path_output_temp,
                 "w",
                 driver="GTiff",
                 height=data.shape[0],
@@ -633,7 +633,7 @@ class Extract(DroughtModule):
             admin_gdf = admin_gdf.to_crs("EPSG:4326")  # Ensure CRS matches raster
 
             # Clip using rasterio.mask
-            with rasterio.open(filepath_output_temp) as src:
+            with rasterio.open(file_path_output_temp) as src:
                 clipped_image, clipped_transform = mask(
                     src, admin_gdf.geometry, crop=True
                 )
@@ -648,21 +648,21 @@ class Extract(DroughtModule):
                 }
             )
 
-            filename_output = f"{filename_prefix}_{lead_time}-month_{country}.tif"
-            filepath_output = os.path.join(self.data.output_dir, filename_output)
+            file_name_output = f"{file_name_prefix}_{lead_time}-month_{country}.tif"
+            file_path_output = os.path.join(self.data.output_dir, file_name_output)
 
             # Save clipped raster
-            with rasterio.open(filepath_output, "w", **clipped_meta) as dst:
+            with rasterio.open(file_path_output, "w", **clipped_meta) as dst:
                 dst.write(clipped_image)
 
-            filename_prefix = "drought_extent"  #'drought_extent'
-            filename_output_temp = f"{filename_prefix}_temp.tif"
-            filepath_output_temp = os.path.join(
-                self.data.output_dir, filename_output_temp
+            file_name_prefix = "drought_extent"  #'drought_extent'
+            file_name_output_temp = f"{file_name_prefix}_temp.tif"
+            file_path_output_temp = os.path.join(
+                self.data.output_dir, file_name_output_temp
             )
             data = binary_clipped_regional_mean.values
             with rasterio.open(
-                filepath_output_temp,
+                file_path_output_temp,
                 "w",
                 driver="GTiff",
                 height=data.shape[0],
@@ -675,7 +675,7 @@ class Extract(DroughtModule):
                 dst.write(data, 1)
 
             # Clip using rasterio.mask
-            with rasterio.open(filepath_output_temp) as src:
+            with rasterio.open(file_path_output_temp) as src:
                 clipped_image, clipped_transform = mask(
                     src, admin_gdf.geometry, crop=True
                 )
@@ -690,11 +690,11 @@ class Extract(DroughtModule):
                 }
             )
 
-            filename_output = f"{filename_prefix}_{lead_time}-month_{country}.tif"
-            filepath_output = os.path.join(self.data.output_dir, filename_output)
+            file_name_output = f"{file_name_prefix}_{lead_time}-month_{country}.tif"
+            file_path_output = os.path.join(self.data.output_dir, file_name_output)
 
             # Save clipped raster
-            with rasterio.open(filepath_output, "w", **clipped_meta) as dst:
+            with rasterio.open(file_path_output, "w", **clipped_meta) as dst:
                 dst.write(clipped_image)
 
         # TODO: check if the next 12 lines can be removed
@@ -738,19 +738,19 @@ class Extract(DroughtModule):
         cdsapi_client = cdsapi.Client(
             url=url, key=key, wait_until_complete=False, delete=False
         )
-        if os.path.exists(self.filepath_forecast):
+        if os.path.exists(self.file_path_forecast):
             logging.warning(
-                f"ECMWF forecast data already exists at {self.filepath_forecast}, skipping download"
+                f"ECMWF forecast {self.file_path_forecast} exists, skipping"
             )
         else:
             if debug:
                 self.data.download_from_ckan(
                     resource_name="mock_ecmwf_seas5_forecast_monthly_tp.grib",
-                    file_path=self.filepath_forecast,
+                    file_path=self.file_path_forecast,
                 )
             else:
                 logging.info(
-                    f"downloading ECMWF {current_year}-{current_month} forecast to {self.filepath_forecast}"
+                    f"downloading ECMWF {current_year}-{current_month} forecast to {self.file_path_forecast}"
                 )
 
                 request = {
@@ -759,21 +759,21 @@ class Extract(DroughtModule):
                     "month": [current_month],
                     "area": area,
                 }
-                cdsapi_client.retrieve(dataset, request, self.filepath_forecast)
+                cdsapi_client.retrieve(dataset, request, self.file_path_forecast)
 
-        if os.path.exists(self.filepath_hindcast):
+        if os.path.exists(self.file_path_hindcast):
             logging.warning(
-                f"ECMWF hindcast data already exists at {self.filepath_hindcast}, skipping download"
+                f"ECMWF hindcast {self.file_path_hindcast} exists, skipping"
             )
         else:
             if debug:
                 self.data.download_from_ckan(
                     resource_name="mock_ecmwf_seas5_hindcast_monthly_tp.grib",
-                    file_path=self.filepath_hindcast,
+                    file_path=self.file_path_hindcast,
                 )
             else:
                 logging.info(
-                    f"downloading ECMWF 1991-2020 hindcast to {self.filepath_hindcast}"
+                    f"downloading ECMWF 1991-2020 hindcast to {self.file_path_hindcast}"
                 )
 
                 request = {
@@ -784,4 +784,4 @@ class Extract(DroughtModule):
                     "month": ["03"],
                     "area": area,
                 }
-                cdsapi_client.retrieve(dataset, request, self.filepath_hindcast)
+                cdsapi_client.retrieve(dataset, request, self.file_path_hindcast)
