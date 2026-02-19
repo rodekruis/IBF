@@ -15,11 +15,19 @@ from pipelines.riverflood.pipeline import Pipeline as RiverFloodPipeline
 @click.option("--send", help="send to IBF", default=False, is_flag=True)
 @click.option(
     "--debug",
-    help="debug mode: process only one ensemble member from yesterday",
+    "-d",
+    help="run pipeline in debug mode",
     default=False,
     is_flag=True,
 )
-def pipeline(hazard, country, prepare, forecast, send, debug):
+@click.option(
+    "--no-cache",
+    "-nc",
+    help="ignore cache",
+    default=False,
+    is_flag=True,
+)
+def pipeline(hazard, country, prepare, forecast, send, debug, no_cache):
     country = country.upper()
     try:
         if hazard.lower() == "riverflood":
@@ -28,6 +36,7 @@ def pipeline(hazard, country, prepare, forecast, send, debug):
                 hazard=hazard,
                 settings=Settings("pipelines/riverflood/config.yaml"),
                 secrets=Secrets(".env"),
+                no_cache=no_cache,
             )
         elif hazard.lower() == "drought":
             pipeline = DroughtPipeline(
@@ -35,6 +44,7 @@ def pipeline(hazard, country, prepare, forecast, send, debug):
                 hazard=hazard,
                 settings=Settings("pipelines/drought/config.yaml"),
                 secrets=Secrets(".env"),
+                no_cache=no_cache,
             )
         else:
             raise ValueError(f"Hazard {hazard} not supported.")

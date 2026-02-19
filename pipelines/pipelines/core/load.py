@@ -26,12 +26,14 @@ class Load:
         country: str,
         hazard: str,
         data: DataSets,
+        no_cache: bool,
         settings: Settings,
         secrets: Secrets,
     ):
         self.country = country
         self.hazard = hazard
         self.data = data
+        self.no_cache = no_cache
         self.settings = self.check_settings(settings)
         self.secrets = self.check_secrets(secrets)
         self.rasters_sent = []

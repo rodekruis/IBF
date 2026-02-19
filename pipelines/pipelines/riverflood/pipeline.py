@@ -11,7 +11,14 @@ from pipelines.riverflood.load import RiverFloodLoad
 class Pipeline:
     """River flood data pipeline"""
 
-    def __init__(self, settings: Settings, secrets: Secrets, country: str, hazard: str):
+    def __init__(
+        self,
+        settings: Settings,
+        secrets: Secrets,
+        country: str,
+        hazard: str,
+        no_cache: bool,
+    ):
         logger.info(f"Initializing {hazard} pipeline for {country}")
 
         self.settings = settings
@@ -32,6 +39,7 @@ class Pipeline:
             settings=settings,
             secrets=secrets,
             data=self.data,
+            no_cache=no_cache,
         )
 
         # Initialize pipeline modules

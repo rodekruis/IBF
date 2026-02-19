@@ -417,7 +417,7 @@ class RiverFloodLoad(Load):
         resource_name = f"{self.country}_station_thresholds.json"
         file_path = os.path.join(self.data.input_dir, resource_name)
 
-        if os.path.exists(file_path):
+        if os.path.exists(file_path) and not self.no_cache:
             logging.warning(f"file {file_path} exists, skipping")
         else:
             self.data.download_from_ckan(
@@ -460,7 +460,7 @@ class RiverFloodLoad(Load):
         resource_name = f"{self.country}_admin_thresholds.json"
         file_path = os.path.join(self.data.input_dir, resource_name)
 
-        if os.path.exists(file_path):
+        if os.path.exists(file_path) and not self.no_cache:
             logging.warning(f"file {file_path} exists, skipping")
         else:
             self.data.download_from_ckan(

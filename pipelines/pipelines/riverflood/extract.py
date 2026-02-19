@@ -61,7 +61,7 @@ class Extract(RiverFloodModule):
             # NOTE: flag to slide data or reuse existing sliced data
             update_slice = False
 
-            if os.path.exists(file_path_local):
+            if os.path.exists(file_path_local) and not self.load.no_cache:
                 logging.warning(f"file {file_path_local} exists, skipping")
             else:
                 if debug:
@@ -81,7 +81,12 @@ class Extract(RiverFloodModule):
             file_path_local_sliced = os.path.join(
                 self.data.input_dir, file_name_local_sliced
             )
-            if os.path.exists(file_path_local_sliced) and not update_slice:
+
+            if (
+                os.path.exists(file_path_local_sliced)
+                and not update_slice
+                and not self.load.no_cache
+            ):
                 logging.warning(f"file {file_path_local_sliced} exists, skipping")
             else:
                 logging.info(f"slicing GloFAS data for ensemble {ensemble}")

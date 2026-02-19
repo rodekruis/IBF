@@ -12,7 +12,14 @@ from pipelines.drought.load import DroughtLoad
 class Pipeline:
     """Drought data pipeline"""
 
-    def __init__(self, settings: Settings, secrets: Secrets, country: str, hazard: str):
+    def __init__(
+        self,
+        settings: Settings,
+        secrets: Secrets,
+        country: str,
+        hazard: str,
+        no_cache: bool,
+    ):
         logger.info(f"Initializing {hazard} pipeline for {country}")
 
         self.settings = settings
@@ -33,6 +40,7 @@ class Pipeline:
             settings=settings,
             secrets=secrets,
             data=self.data,
+            no_cache=no_cache,
         )
 
         # Initialize pipeline modules
@@ -54,7 +62,7 @@ class Pipeline:
         prepare: bool = True,
         forecast: bool = True,
         send: bool = True,
-        debug: bool = False,  # debug mode with specific datestart of data
+        debug: bool = False,
         datestart: datetime = datetime.now(),
     ):
         """Run the drought pipeline"""

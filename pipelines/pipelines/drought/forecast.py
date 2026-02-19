@@ -165,6 +165,7 @@ class Forecast(DroughtModule):
             "%b"
         )  # 'Feb' for February check if this can be passed from settings climate_regions should come form settings file
         admin_levels = self.settings.get_country_setting(country, "admin-levels")
+        admin_boundaries = {}
         """
         for entry in self.settings.get_country_setting(country,"Climate_Region"):
 
@@ -193,7 +194,12 @@ class Forecast(DroughtModule):
                 rlower_tercile_probability = rioxarray.open_rasterio(output_file)
                 for adm_level in admin_levels:
                     climateRegionPcodes = pcodes[f"{adm_level}"]
-                    admin_boundary = self.load.get_adm_boundaries(adm_level)
+
+                    if adm_level not in admin_boundaries:
+                        admin_boundaries[adm_level] = self.load.get_adm_boundaries(
+                            adm_level
+                        )
+
                     climate_data_unit = self.data.rainfall_climateregion.get_data_unit(
                         climateregion, lead_time
                     )
@@ -230,7 +236,9 @@ class Forecast(DroughtModule):
                     )
 
                     for pcode in climateRegionPcodes:
-                        gdf1 = admin_boundary.query(f"adm{adm_level}_pcode == @pcode")
+                        gdf1 = admin_boundaries[adm_level].query(
+                            f"adm{adm_level}_pcode == @pcode"
+                        )
                         clipped_regional_mean = rlower_tercile_probability.rio.clip(
                             gdf1.geometry, gdf1.crs, drop=True, all_touched=True
                         )

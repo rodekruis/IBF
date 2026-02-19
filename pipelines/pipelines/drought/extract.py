@@ -118,8 +118,10 @@ class Extract(DroughtModule):
         current_month = datestart.month
 
         try:
-            if os.path.exists(self.file_path_forecast) and os.path.exists(
-                self.file_path_hindcast
+            if (
+                os.path.exists(self.file_path_forecast)
+                and os.path.exists(self.file_path_hindcast)
+                and not self.load.no_cache
             ):
                 logging.warning("ECMWF data exists, skipping")
             else:
@@ -738,7 +740,7 @@ class Extract(DroughtModule):
         cdsapi_client = cdsapi.Client(
             url=url, key=key, wait_until_complete=False, delete=False
         )
-        if os.path.exists(self.file_path_forecast):
+        if os.path.exists(self.file_path_forecast) and not self.load.no_cache:
             logging.warning(
                 f"ECMWF forecast {self.file_path_forecast} exists, skipping"
             )
@@ -761,7 +763,7 @@ class Extract(DroughtModule):
                 }
                 cdsapi_client.retrieve(dataset, request, self.file_path_forecast)
 
-        if os.path.exists(self.file_path_hindcast):
+        if os.path.exists(self.file_path_hindcast) and not self.load.no_cache:
             logging.warning(
                 f"ECMWF hindcast {self.file_path_hindcast} exists, skipping"
             )
