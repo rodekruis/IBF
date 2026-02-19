@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import csv
 import json
 import logging
 import shutil
@@ -27,6 +28,12 @@ COSMOS_DATA_TYPES = [
     "climate-region",
     "seasonal-rainfall-forecast",
     "seasonal-rainfall-forecast-climate-region",
+]
+
+AREA_INDICATORS = [
+    "population_affected",
+    "forecast_severity",
+    "forecast_trigger",
 ]
 
 
@@ -112,16 +119,11 @@ class DroughtLoad(Load):
         """Send drought forecast data to IBF API"""
         logging.info("send data to IBF API")
 
+        events_json = []
+
         country = forecast_data.country
         # trigger_on_lead_time = self.settings.get_country_setting( country, "trigger-on-lead-time"    )
         admin_levels = self.settings.get_country_setting(country, "admin-levels")
-        disasterType = "drought"
-        indicators = [
-            "population_affected",
-            # "population_affected_percentage",
-            "forecast_trigger",
-            "forecast_severity",
-        ]
         pipeline_will_trigger_portal = self.settings.get_country_setting(
             country, "pipeline-will-trigger-portal"
         )  # TODO: make varname more descriptive
@@ -166,6 +168,10 @@ class DroughtLoad(Load):
                     lead_time_event in possible_lead_times
                     and lead_time_event in lead_times_with_alert_or_trigger
                 ):
+                    lead_time = f"{lead_time_event}-month"
+
+                    alert_areas = {}
+
                     season_name = next(
                         (
                             k
@@ -174,19 +180,27 @@ class DroughtLoad(Load):
                         ),
                         None,
                     )
+
                     if climateregion.name.lower().split("_")[0] == "national":
                         event_name = f"{season_name}_National"
                     else:
                         event_name = (
                             f"{climateregion.name} {season_name}_{climateregion.name}"
                         )
-                    for indicator in indicators:
+
+                    for indicator in AREA_INDICATORS:
                         for adm_level in admin_levels:
                             exposure_pcodes = []
-                            for pcode in pcodes[f"{adm_level}"]:
+                            for pcode in pcodes[
+                                str(adm_level)  # TODO: check if str cast is needed
+                            ]:
                                 forecast_admin = forecast_data.get_data_unit(
                                     pcode=pcode, lead_time=lead_time_event
                                 )
+
+                                if pcode not in alert_areas:
+                                    alert_areas[pcode] = {"admin_level": int(adm_level)}
+
                                 amount = None
                                 if indicator == "population_affected":
                                     amount = forecast_admin.pop_affected
@@ -203,20 +217,21 @@ class DroughtLoad(Load):
                                     {"placeCode": pcode, "amount": amount}
                                 )
                                 processed_pcodes.append(pcode)
+                                alert_areas[pcode][indicator] = amount
 
                             body = {
                                 "countryCodeISO3": country,
-                                "leadTime": f"{lead_time_event}-month",
+                                "leadTime": lead_time,
                                 "dynamicIndicator": indicator,
                                 "adminLevel": int(adm_level),
                                 "exposurePlaceCodes": exposure_pcodes,
-                                "disasterType": disasterType,
+                                "disasterType": self.hazard,
                                 "eventName": event_name,
                                 "date": upload_time_str,
                             }
                             statsPath = drought_extent.replace(
                                 ".tif",
-                                f"_{event_name}_{lead_time_event}-month_{country}_{adm_level}.json",
+                                f"_{event_name}_{lead_time}_{country}_{adm_level}.json",
                             )
                             statsPath = statsPath.replace(
                                 "rainfall_forecast", f"{indicator}"
@@ -229,6 +244,19 @@ class DroughtLoad(Load):
                                 "POST", "admin-area-dynamic-data/exposure", body=body
                             )
                     processed_pcodes = list(set(processed_pcodes))
+
+                    events_json.append(
+                        {
+                            "event_name": event_name,
+                            "date": upload_time,
+                            "country": self.country,
+                            "hazard": "flood",
+                            "lead_time": lead_time,
+                            "alert_areas": alert_areas,
+                        }
+                    )
+
+        self.export_to_json_and_csv(events_json)
 
         # END OF EVENT LOOP
         ###############################################################################################################
@@ -260,7 +288,7 @@ class DroughtLoad(Load):
         if len(processed_pcodes) == 0:
             logging.info(f"send empty exposure data")
             for lead_time in set(all_possible_lead_times):
-                for indicator in indicators:
+                for indicator in AREA_INDICATORS:
                     for adm_level in admin_levels:
                         exposure_pcodes = []
                         for pcode in forecast_data.get_pcodes(adm_level=adm_level):
@@ -283,7 +311,7 @@ class DroughtLoad(Load):
                             "dynamicIndicator": indicator,
                             "adminLevel": adm_level,
                             "exposurePlaceCodes": exposure_pcodes,
-                            "disasterType": disasterType,
+                            "disasterType": self.hazard,
                             "eventName": None,  # this is a specific check IBF uses to establish no-trigger
                             "date": upload_time_str,
                         }
@@ -305,7 +333,7 @@ class DroughtLoad(Load):
         # send notification
         body = {
             "countryCodeISO3": country,
-            "disasterType": disasterType,
+            "disasterType": self.hazard,
             "date": upload_time_str,
         }
 
@@ -433,3 +461,45 @@ class DroughtLoad(Load):
                 if cr["climate-region-code"] == climate_region_code
             )
         )["leadtime"][month_abb]
+
+    def export_to_json_and_csv(self, events: list[dict]):
+        with open(f"{self.data.output_dir}/events.json", "w") as f:
+            json.dump(events, f, indent=2)
+
+        with open(f"{self.data.output_dir}/events.csv", "w", newline="") as f:
+            writer = csv.writer(f, lineterminator="\n")
+            writer.writerow(["event_name", "date", "country", "hazard", "lead_time"])
+            for event in events:
+                writer.writerow(
+                    [
+                        event.get("event_name"),
+                        event.get("date"),
+                        event.get("country"),
+                        event.get("hazard"),
+                        event.get("lead_time"),
+                    ]
+                )
+
+        with open(f"{self.data.output_dir}/alert-areas.csv", "w", newline="") as f:
+            writer = csv.writer(f, lineterminator="\n")
+            writer.writerow(
+                [
+                    "event_name",
+                    "admin_level",
+                    "place_code",
+                ]
+                + AREA_INDICATORS
+            )
+            for event in events:
+                for place_code, alert_area in event.get("alert_areas", {}).items():
+                    writer.writerow(
+                        [
+                            event.get("event_name"),
+                            alert_area.get("admin_level"),
+                            place_code,
+                            *[
+                                alert_area.get(indicator)
+                                for indicator in AREA_INDICATORS
+                            ],
+                        ]
+                    )

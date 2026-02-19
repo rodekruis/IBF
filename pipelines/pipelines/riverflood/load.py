@@ -66,7 +66,7 @@ class RiverFloodLoad(Load):
             "GET",
             f"point-data/glofas_stations/{self.country}",
             parameters={
-                "disasterType": "flood",
+                "disasterType": "floods",
                 "pointDataCategory": "glofas_stations",
                 "countryCodeISO3": self.country,
             },
