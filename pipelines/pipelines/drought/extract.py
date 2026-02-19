@@ -179,7 +179,7 @@ class Extract(DroughtModule):
             # we discussed with IBF team that we will not upload
             """
             if month == 1:
-                output_file_zero = f"{self.outputPathGrid}/{prefix}_0-month_{country}.tif"
+                output_file_zero = f"{self.data.output_dir}/{prefix}_0-month_{country}.tif"
                 data_zero = data_array.sel(forecastMonth=month).values
 
                 with rasterio.open(

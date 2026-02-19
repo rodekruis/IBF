@@ -12,21 +12,27 @@ from pipelines.drought.load import DroughtLoad
 class Pipeline:
     """Drought data pipeline"""
 
-    def __init__(self, settings: Settings, secrets: Secrets, country: str):
-        logger.info(f"Initializing drought pipeline for {country}")
+    def __init__(self, settings: Settings, secrets: Secrets, country: str, hazard: str):
+        logger.info(f"Initializing {hazard} pipeline for {country}")
 
         self.settings = settings
         if country not in [c["name"] for c in self.settings.get_setting("countries")]:
             raise ValueError(f"No config found for country {country}")
         self.country = country
-        self.hazard = "drought"
+        self.hazard = hazard
 
         # Initialize empty data sets
-        self.data = DroughtDataSets(country=country, settings=settings, secrets=secrets)
+        self.data = DroughtDataSets(
+            country=country, hazard=hazard, settings=settings, secrets=secrets
+        )
 
         # Initialize data loaders
         self.load = DroughtLoad(
-            country=country, settings=settings, secrets=secrets, data=self.data
+            country=country,
+            hazard=hazard,
+            settings=settings,
+            secrets=secrets,
+            data=self.data,
         )
 
         # Initialize pipeline modules
@@ -34,13 +40,13 @@ class Pipeline:
             country=country,
             settings=settings,
             secrets=secrets,
-            data=self.data,
+            load=self.load,
         )
         self.forecast = Forecast(
             country=country,
             settings=settings,
             secrets=secrets,
-            data=self.data,
+            load=self.load,
         )
 
     def run(

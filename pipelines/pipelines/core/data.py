@@ -218,12 +218,17 @@ class RegionDataSet:
 class DataSets:
     """Base class for datasets"""
 
-    def __init__(self, country: str, secrets: Secrets):
+    def __init__(self, country: str, hazard: str, secrets: Secrets):
         self.country = country
+        self.hazard = hazard
         self.secrets = secrets
         self.data_dir = "data"
         self.input_dir = os.path.join(self.data_dir, "input")
-        self.output_dir = os.path.join(self.data_dir, "output")
+        self.output_dir = os.path.join(
+            self.data_dir,
+            "output",
+            f"{self.country}_{self.hazard}_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        )
         os.makedirs(self.input_dir, exist_ok=True)
         os.makedirs(self.output_dir, exist_ok=True)
 

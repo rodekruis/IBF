@@ -10,6 +10,7 @@ import geopandas as gpd
 import requests
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.blob import BlobServiceClient
+from pipelines.core.data import DataSets
 from pipelines.core.logger import logger
 from pipelines.core.secrets import Secrets
 from pipelines.core.settings import Settings
@@ -20,8 +21,17 @@ from urllib3.util.retry import Retry
 class Load:
     """Download/upload data from/to a data storage"""
 
-    def __init__(self, country: str, settings: Settings, secrets: Secrets):
+    def __init__(
+        self,
+        country: str,
+        hazard: str,
+        data: DataSets,
+        settings: Settings,
+        secrets: Secrets,
+    ):
         self.country = country
+        self.hazard = hazard
+        self.data = data
         self.settings = self.check_settings(settings)
         self.secrets = self.check_secrets(secrets)
         self.rasters_sent = []

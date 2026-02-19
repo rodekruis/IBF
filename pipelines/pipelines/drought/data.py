@@ -45,11 +45,12 @@ class DroughtDataSets(DataSets):
     def __init__(
         self,
         country: str,
+        hazard: str,
         settings: Settings,
         secrets: Secrets,
         datetime: datetime = datetime.today(),
     ):
-        super().__init__(country, secrets)
+        super().__init__(country, hazard, secrets)
 
         self.rainfall_climateregion = RegionDataSet(
             country=self.country,

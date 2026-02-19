@@ -10,7 +10,6 @@ import rasterio
 import rioxarray
 from pipelines.drought.module import DroughtModule
 from pipelines.drought.data import ForecastAdminDataUnit, ForecastRegionDataUnit
-from pipelines.drought.load import DroughtLoad
 from pipelines.drought.utils import replace_year_month
 from rasterio.features import shapes
 from rasterio.mask import mask

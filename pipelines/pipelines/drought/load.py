@@ -93,7 +93,7 @@ class DroughtLoad(Load):
     """Download/upload data from/to a data storage"""
 
     def __init__(self, data: DroughtDataSets, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(data=data, **kwargs)
         self.data = data
 
         # load thresholds

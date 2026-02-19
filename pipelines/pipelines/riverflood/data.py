@@ -138,8 +138,8 @@ class ThresholdStationDataUnit(StationDataUnit):
 class RiverFloodDataSets(DataSets):
     """Datasets used by the river flood pipeline"""
 
-    def __init__(self, country: str, settings: Settings, secrets: Secrets):
-        super().__init__(country, secrets)
+    def __init__(self, country: str, hazard: str, settings: Settings, secrets: Secrets):
+        super().__init__(country, hazard, secrets)
 
         self.discharge_admin = AdminDataSet(
             country=self.country,

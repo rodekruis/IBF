@@ -11,23 +11,27 @@ from pipelines.riverflood.load import RiverFloodLoad
 class Pipeline:
     """River flood data pipeline"""
 
-    def __init__(self, settings: Settings, secrets: Secrets, country: str):
-        logger.info(f"Initializing river flood pipeline for {country}")
+    def __init__(self, settings: Settings, secrets: Secrets, country: str, hazard: str):
+        logger.info(f"Initializing {hazard} pipeline for {country}")
 
         self.settings = settings
         if country not in [c["name"] for c in self.settings.get_setting("countries")]:
             raise ValueError(f"No config found for country {country}")
         self.country = country
-        self.hazard = "river-flood"
+        self.hazard = hazard
 
         # Initialize empty data sets
         self.data = RiverFloodDataSets(
-            country=country, settings=settings, secrets=secrets
+            country=country, hazard=hazard, settings=settings, secrets=secrets
         )
 
         # Initialize data loaders
         self.load = RiverFloodLoad(
-            country=country, settings=settings, secrets=secrets, data=self.data
+            country=country,
+            hazard=hazard,
+            settings=settings,
+            secrets=secrets,
+            data=self.data,
         )
 
         # Initialize pipeline modules
@@ -35,14 +39,12 @@ class Pipeline:
             country=country,
             settings=settings,
             secrets=secrets,
-            data=self.data,
             load=self.load,
         )
         self.forecast = Forecast(
             country=country,
             settings=settings,
             secrets=secrets,
-            data=self.data,
             load=self.load,
         )
 
