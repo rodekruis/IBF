@@ -3,7 +3,7 @@ import { SeedConfigurationDto } from '@api-service/src/scripts/seed-configuratio
 
 export const SEED_CONFIGURATION_SETTINGS: SeedConfigurationDto[] = [
   {
-    name: SeedScript.productionInitialState,
+    name: SeedScript.initialState,
     seedAdminOnly: true,
   },
 ];

@@ -1,9 +1,6 @@
 /** @type {import('knip').KnipConfig} */
 module.exports = {
-  project: [
-    'src/**/*.ts',
-    '!src/migration/*.ts', // Migrations don't have an 'entry point'
-  ],
+  project: ['src/**/*.ts'],
   includeEntryExports: true,
   ignoreBinaries: [
     'open', // Default available on macOS

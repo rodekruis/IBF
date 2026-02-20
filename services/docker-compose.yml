@@ -43,3 +43,14 @@ services:
         required: true
         restart: true
     restart: on-failure
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'curl',
+          '-f',
+          'http://localhost:${PORT_API_SERVICE}/api/instance/health',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10

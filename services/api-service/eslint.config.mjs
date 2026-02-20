@@ -123,21 +123,6 @@ export default [
           rootDir: '.',
         },
       ],
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector:
-            "ObjectExpression > .properties[key.name='where'] > .value > .properties:not(:has(CallExpression)), ObjectExpression > .properties[key.name='where'] > .value > .properties > .value > .properties:not(:has(CallExpression))",
-          message:
-            'Unsafe where condition, that can leak data. Use Equal() instead.',
-        },
-        {
-          selector:
-            "ObjectExpression > .properties[key.name='andWhere'] > .value > .properties:not(:has(CallExpression)), ObjectExpression > .properties[key.name='where'] > .value > .properties > .value > .properties:not(:has(CallExpression))",
-          message:
-            'Unsafe where condition, that can leak data. Use Equal() instead.',
-        },
-      ],
       'simple-import-sort/imports': [
         'error',
         {
@@ -145,15 +130,10 @@ export default [
         },
       ],
       'simple-import-sort/exports': 'error',
-    },
-  },
-  {
-    files: ['**/*.entity.ts'],
-    plugins: {
-      'custom-rules': customRules,
-    },
-    rules: {
-      'custom-rules/typeorm-cascade-ondelete': 'error',
+      'eslint-comments/disable-enable-pair': [
+        'error',
+        { allowWholeFile: true },
+      ],
     },
   },
   {

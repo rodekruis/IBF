@@ -19,7 +19,7 @@ export function resetDB(
   resetIdentifier: string,
 ): Promise<request.Response> {
   return getServer()
-    .post('/scripts/reset')
+    .post('/instance/reset')
     .query({
       script: seedScript,
       isApiTests: true,

@@ -31,7 +31,7 @@ Check `.vscode/extensions.json` for the complete list of recommended extensions 
 ### Backend Services (Node.js/TypeScript)
 
 - **Framework**: NestJS with TypeScript
-- **Database**: PostgreSQL with TypeORM
+- **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: JWT with role-based access control
 - **API**: RESTful APIs with OpenAPI/Swagger documentation
 - **Testing**: Jest for unit and integration tests
@@ -121,14 +121,13 @@ See AB#789012
 
 **Standard Abbreviations:**
 
-- **Fsp**: Financial Service Provider (only abbreviation allowed in codebase)
 - All other domain concepts must be written in full
 
 ### Naming Conventions
 
 **General Rules:**
 
-- Use full names, no abbreviations (except "Fsp")
+- Use full names, no abbreviations
 - Let IDE auto-complete instead of typing long names
 - Class names are plural for Modules, Controllers, Services
 - Class names are singular for Entities and Repositories
@@ -140,7 +139,6 @@ See AB#789012
 - Module: `ProgramsModule` → `programs.module.ts`
 - Service: `ProgramsService` → `programs.service.ts`
 - Entity: `ProgramEntity` → `program.entity.ts`
-- Repository: `FinancialServiceProviderRepository` → `fsp.repository.ts`
 - Enum: `DefaultUserRole` (not `DefaultUserRoleEnum`)
 
 ### Branch Naming
@@ -226,7 +224,7 @@ export class ProgramsController {
 - Add `OrThrow` suffix when functions deliberately throw expected errors
 - Functions returning data from IBF start with "get", not "find"
 - External system functions can use "retrieve" or other descriptive verbs
-- Use full names, no abbreviations (except documented domain abbreviations like "Fsp")
+- Use full names, no abbreviations (except documented domain abbreviations)
 
 **Interface Conventions:**
 
@@ -267,7 +265,7 @@ export class ProgramsController {
 - Use 3rd Normal Form (3NF) for database design
 - Entities belong to specific NestJS modules
 - Only owning module and dependent modules can import entities
-- All data access via Custom Repositories (no TypeORM outside repositories)
+- All data access via Custom Repositories (no Prisma outside repositories)
 - Entities can only be created/updated/deleted within owning module
 
 **Entity Naming:**
@@ -507,7 +505,7 @@ npm run lint # linting
 
 ### Database Migrations
 
-- Use TypeORM migrations for schema changes
+- Use Prisma migrations for schema changes
 - Test migrations thoroughly before deployment
 - Keep migration files minimal and focused
 - Always include "api-service" schema in raw SQL queries when referencing tables of the api-service
@@ -561,9 +559,6 @@ npm run test:all           # Run all tests
 - ❌ Direct database access from controllers
 - ❌ Missing error handling in async operations
 - ❌ Circular dependencies between modules
-- ❌ Unsafe TypeORM where conditions
-- ❌ Using TypeORM's `queryBuilder` without using table aliases
-- ❌ Using TypeORM's `queryBuilder` when `.find`, `.save` or any of the other repository methods would suffice
 
 ## Additional Resources
 
