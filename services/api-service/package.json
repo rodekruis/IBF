@@ -12,6 +12,7 @@
   "scripts": {
     "lint": "eslint \"**/*.{ts,js}\"",
     "fix": "npm run lint -- --fix",
+    "prebuild": "npm run prisma:generate",
     "build": "nest build --path=tsconfig.json",
     "start": "GLOBAL_IBF_VERSION=$(test -f \"VERSION.txt\" && cat VERSION.txt || echo $GLOBAL_IBF_VERSION)  node dist/main.js",
     "start:dev": "nodemon --config nodemon.json --watch src/**/*.json --watch src/**/*.csv --exec npm run start:dev:nest",
