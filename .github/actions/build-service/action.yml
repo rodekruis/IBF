@@ -31,6 +31,12 @@ runs:
       run: |
         npm ci
 
+    - name: Generate Prisma
+      shell: bash
+      working-directory: ${{ inputs.servicePath }}
+      run: |
+        npm run prisma:generate
+
     - name: Test
       shell: bash
       working-directory: ${{ inputs.servicePath }}
