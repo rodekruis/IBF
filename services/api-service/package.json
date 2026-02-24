@@ -37,7 +37,7 @@
     "coverage:open:unit": "open coverage/unit/lcov-report/index.html",
     "coverage:open:integration": "open coverage/integration/lcov-report/index.html",
     "coverage:open:combined": "open coverage/combined/lcov-report/index.html",
-    "prisma": "./node_modules/.bin/prisma --config=src/prisma/prisma.config.ts",
+    "prisma": "npx prisma --config=src/prisma/prisma.config.ts",
     "prisma:generate": "npm run prisma generate",
     "prisma:migrate:dev": "npm run prisma migrate dev -- --name",
     "prisma:migrate:deploy": "npm run prisma migrate deploy",
