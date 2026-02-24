@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import os
 import logging
-import time
+
+import os
 import shutil
+import time
 from urllib.error import HTTPError
 
 import geopandas as gpd

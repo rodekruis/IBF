@@ -3,6 +3,11 @@
 # git hook to run a command before actually committing when running `git commit`:
 #
 
+# Ensure ~/.local/bin is available in non-interactive Git hook environments.
+# VS Code (and other GUI Git clients) do not load the user's shell profile,
+# so tools like `uvx` installed in ~/.local/bin would otherwise not be found.
+export PATH="$HOME/.local/bin:$PATH"
+
 ORANGE='\033[0;33m'
 NC='\033[0m' # No Color
 
