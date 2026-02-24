@@ -19,8 +19,8 @@ from pipelines.core.data import (
     RegionDataSet,
     RegionDataUnit,
 )
-from pipelines.drought.data import DroughtDataSets
 from pipelines.core.load import Load
+from pipelines.drought.data import DroughtDataSets
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 

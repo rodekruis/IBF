@@ -23,6 +23,7 @@ fi
 
 log "Running lint-staged"
 npx lint-staged
+export PATH="$HOME/.local/bin:$PATH"
 uvx ufmt format **/*.py
 
 log "All done"

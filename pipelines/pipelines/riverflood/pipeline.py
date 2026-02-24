@@ -1,7 +1,8 @@
 from datetime import datetime
+
+from pipelines.core.logger import logger
 from pipelines.core.secrets import Secrets
 from pipelines.core.settings import Settings
-from pipelines.core.logger import logger
 from pipelines.riverflood.data import RiverFloodDataSets
 from pipelines.riverflood.extract import Extract
 from pipelines.riverflood.forecast import Forecast

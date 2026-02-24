@@ -1,8 +1,9 @@
 from datetime import datetime
 
+from pipelines.core.logger import logger
+
 from pipelines.core.secrets import Secrets
 from pipelines.core.settings import Settings
-from pipelines.core.logger import logger
 from pipelines.drought.data import DroughtDataSets
 from pipelines.drought.extract import Extract
 from pipelines.drought.forecast import Forecast

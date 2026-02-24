@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import json
 import csv
+
+import json
 import logging
 import os.path
 import shutil
@@ -12,9 +13,9 @@ import geopandas as gpd
 from pipelines.core.data import AdminDataSet, RegionDataSet
 from pipelines.core.load import Load
 from pipelines.riverflood.data import (
+    RiverFloodDataSets,
     ThresholdDataUnit,
     ThresholdStationDataUnit,
-    RiverFloodDataSets,
 )
 
 AREA_INDICATORS = [
