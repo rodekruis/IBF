@@ -14,12 +14,9 @@ const baseUrl =
   '/';
 
 const schemaName = 'api-service';
-const composedUrl =
+export const DATABASE_URL =
   `${baseUrl}${process.env.POSTGRES_DBNAME}?schema=${schemaName}` +
   (IS_DEVELOPMENT ? '' : '&sslmode=verify-full');
-
-// process.env.DATABASE_URL is only provided as GitHub environment secret for the 'prisma migration deploy' step in the build pipeline, so that the Prisma CLI can connect to the database and apply the migrations. For local development, we compose the DATABASE_URL from the individual environment variables.
-export const DATABASE_URL = process.env.DATABASE_URL ?? composedUrl;
 
 // This is needed for diffing the migrations with Prisma
 const shadowDbName = 'ibf-shadow-db';
