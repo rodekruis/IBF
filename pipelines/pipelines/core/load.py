@@ -63,7 +63,6 @@ class Load:
                 # "IBF_API_PASSWORD",
                 "GITHUB_DATA_BASE_URL",
                 "SEED_DATA_LOCAL_PATH",
-
             ]
         )
         return secrets
