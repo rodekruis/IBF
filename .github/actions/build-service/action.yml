@@ -8,6 +8,9 @@ inputs:
   servicePath:
     description: Location of the service code.
     required: true
+  databaseUrl:
+    description: Database connection string, used for applying pending Prisma migrations during the build.
+    required: true
 
 outputs:
   build_version:
@@ -62,6 +65,14 @@ runs:
       run: |
         echo "${{ env.GLOBAL_IBF_VERSION }}" >> ./VERSION.txt
         echo "build_version=${{ env.GLOBAL_IBF_VERSION }}" >> $GITHUB_OUTPUT
+
+    - name: Apply pending Prisma migrations
+      shell: bash
+      working-directory: ${{ inputs.servicePath }}
+      run: |
+        npm run prisma:migrate:deploy
+      env:
+        DATABASE_URL: ${{ inputs.databaseUrl }}
 
     - name: Reduce build package size
       shell: bash

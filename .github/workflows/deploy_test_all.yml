@@ -27,3 +27,4 @@ jobs:
     uses: ./.github/workflows/deploy_test_api-service.yml
     secrets:
       AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
