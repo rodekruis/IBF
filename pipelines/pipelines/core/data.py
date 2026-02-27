@@ -4,7 +4,6 @@ import os
 from datetime import datetime
 from typing import List
 
-import requests
 from pipelines.core.secrets import Secrets
 
 
@@ -234,9 +233,6 @@ class DataSets:
 
     def download_from_github(self, path_in_repo: str, file_path: str):
         base_url = os.environ.get("SEED_DATA_LOCAL_PATH")
-        if not base_url:
-            raise ValueError("GITHUB_DATA_BASE_URL is not set in the environment")
-
         local_path = os.path.join(base_url, path_in_repo)
         logging.info(f"Copying local resource {local_path} to {file_path}")
         with open(local_path, "rb") as f:

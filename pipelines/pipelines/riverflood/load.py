@@ -62,9 +62,9 @@ class RiverFloodLoad(Load):
         self.data.threshold_station = self.get_thresholds_station()
 
     def get_stations(self) -> list[dict]:
-        # This code is currently not used, but could be needed later.
         """Get GloFAS stations"""
-        stations = self.get_station_thresholds()
+        # This code is currently not used, but could be needed later.
+        stations = self.get_thresholds_station()
 
         return stations
 
