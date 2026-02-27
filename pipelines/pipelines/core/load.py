@@ -58,9 +58,12 @@ class Load:
                 "ENVIRONMENT",
                 "BLOB_ACCOUNT_NAME",
                 "BLOB_ACCOUNT_KEY",
-                "IBF_API_URL",
-                "IBF_API_USER",
-                "IBF_API_PASSWORD",
+                # "IBF_API_URL",
+                # "IBF_API_USER",
+                # "IBF_API_PASSWORD",
+                "GITHUB_DATA_BASE_URL",
+                "SEED_DATA_LOCAL_PATH",
+
             ]
         )
         return secrets
@@ -78,11 +81,13 @@ class Load:
             file.write(r.content)
 
     def get_adm_boundaries(self, adm_level: int) -> gpd.GeoDataFrame:
-        """Get admin areas from IBF API"""
+        """Get admin areas"""
+        resource_name = f"{self.country}_adm{adm_level}.json"
+        file_path = os.path.join(self.data.input_dir, resource_name)
         try:
-            adm_boundaries = self.ibf_api_request(
-                "GET",
-                f"admin-areas/{self.country}/{adm_level}",
+            adm_boundaries = self.data.download_from_github(
+                path_in_repo=f"admin-areas/{resource_name}",
+                file_path=file_path,
             )
         except HTTPError:
             raise FileNotFoundError(

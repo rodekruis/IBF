@@ -129,7 +129,7 @@ class Scenario:
                         DischargeDataUnit(
                             adm_level=adm_level,
                             lead_time=lead_time,
-                            pcode=row[f"adm{adm_level}_pcode"],
+                            pcode=row[f"ADM{adm_level}_PCODE"],
                             discharge_ensemble=[0.01] * self.noEns,
                         )
                     )

@@ -237,7 +237,7 @@ class Forecast(DroughtModule):
 
                     for pcode in climateRegionPcodes:
                         gdf1 = admin_boundaries[adm_level].query(
-                            f"adm{adm_level}_pcode == @pcode"
+                            f"ADM{adm_level}_PCODE == @pcode"
                         )
                         clipped_regional_mean = rlower_tercile_probability.rio.clip(
                             gdf1.geometry, gdf1.crs, drop=True, all_touched=True
@@ -359,7 +359,7 @@ class Forecast(DroughtModule):
                         nodata=0.0,
                     )
                     gdf_aff_pop = pd.concat([gdf_adm, pd.DataFrame(stats)], axis=1)
-                    gdf_aff_pop.index = gdf_aff_pop[f"adm{adm_lvl}_pcode"]
+                    gdf_aff_pop.index = gdf_aff_pop[f"ADM{adm_lvl}_PCODE"]
 
                     # perform zonal statistics on population density raster (to compute % aff pop)
                     with rasterio.open(self.pop_raster) as src:
@@ -375,7 +375,7 @@ class Forecast(DroughtModule):
                         nodata=0.0,
                     )
                     gdf_pop = pd.concat([gdf_adm, pd.DataFrame(stats)], axis=1)
-                    gdf_pop.index = gdf_pop[f"adm{adm_lvl}_pcode"]
+                    gdf_pop.index = gdf_pop[f"ADM{adm_lvl}_PCODE"]
 
                 # add affected population to forecast data units
 

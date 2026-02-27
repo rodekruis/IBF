@@ -62,30 +62,9 @@ class RiverFloodLoad(Load):
         self.data.threshold_station = self.get_thresholds_station()
 
     def get_stations(self) -> list[dict]:
-        """Get GloFAS stations from IBF app"""
-        stations = self.ibf_api_request(
-            "GET",
-            f"point-data/glofas_stations/{self.country}",
-            parameters={
-                "disasterType": "floods",
-                "pointDataCategory": "glofas_stations",
-                "countryCodeISO3": self.country,
-            },
-        )
-        if stations is None:
-            logging.warning(f"No station data found for country {self.country}")
-            return []
-
-        gdf_stations = gpd.GeoDataFrame.from_features(stations["features"])
-        stations = []
-        for _ix, row in gdf_stations.iterrows():
-            station = {
-                "stationCode": row["stationCode"],
-                "stationName": row["stationName"],
-                "lat": row["geometry"].y,
-                "lon": row["geometry"].x,
-            }
-            stations.append(station)
+        # This code is currently not used, but could be needed later.
+        """Get GloFAS stations"""
+        stations = self.get_station_thresholds()
 
         return stations
 
@@ -217,9 +196,9 @@ class RiverFloodLoad(Load):
                             "eventName": event_name,
                             "date": upload_time,
                         }
-                        self.ibf_api_request(
-                            "POST", "admin-area-dynamic-data/exposure", body=body
-                        )
+                        # self.ibf_api_request(
+                        #     "POST", "admin-area-dynamic-data/exposure", body=body
+                        # )
                 processed_pcodes = list(set(processed_pcodes))
 
                 glofas_stations = {}
@@ -263,7 +242,7 @@ class RiverFloodLoad(Load):
                             "countryCodeISO3": self.country,
                             "date": upload_time,
                         }
-                        self.ibf_api_request("POST", "point-data/dynamic", body=body)
+                        # self.ibf_api_request("POST", "point-data/dynamic", body=body)
                     processed_stations.append(station_code)
 
                 events_json.append(
@@ -303,7 +282,7 @@ class RiverFloodLoad(Load):
                 "eventName": event_name,
                 "date": upload_time,
             }
-            self.ibf_api_request("POST", "event/alerts-per-lead-time", body=body)
+            # self.ibf_api_request("POST", "event/alerts-per-lead-time", body=body)
 
         self.export_to_json_and_csv(events_json)
 
@@ -325,9 +304,9 @@ class RiverFloodLoad(Load):
                     flood_extent_new,
                 )
             files = {"file": open(flood_extent_new, "rb")}
-            self.ibf_api_request(
-                "POST", "admin-area-dynamic-data/raster/floods", files=files
-            )
+            # self.ibf_api_request(
+            #     "POST", "admin-area-dynamic-data/raster/floods", files=files
+            # )
 
         # send empty exposure data
         if len(processed_pcodes) == 0:
@@ -360,9 +339,9 @@ class RiverFloodLoad(Load):
                         "eventName": None,  # this is a specific check IBF uses to establish no-trigger
                         "date": upload_time,
                     }
-                    self.ibf_api_request(
-                        "POST", "admin-area-dynamic-data/exposure", body=body
-                    )
+                    # self.ibf_api_request(
+                    #     "POST", "admin-area-dynamic-data/exposure", body=body
+                    # )
 
         # send GloFAS station data for all other stations
         station_forecasts = {key: [] for key in STATION_INDICATORS}
@@ -401,7 +380,7 @@ class RiverFloodLoad(Load):
                 "countryCodeISO3": self.country,
                 "date": upload_time,
             }
-            self.ibf_api_request("POST", "point-data/dynamic", body=body)
+            # self.ibf_api_request("POST", "point-data/dynamic", body=body)
 
         # process events: events/process
         body = {
@@ -409,7 +388,7 @@ class RiverFloodLoad(Load):
             "disasterType": "floods",
             "date": upload_time,
         }
-        self.ibf_api_request("POST", "events/process", body=body)
+        # self.ibf_api_request("POST", "events/process", body=body)
 
     def get_thresholds_station(self):
         """Get GloFAS station thresholds from config file"""
@@ -421,8 +400,8 @@ class RiverFloodLoad(Load):
         if os.path.exists(file_path) and not self.no_cache:
             logging.warning(f"file {file_path} exists, skipping")
         else:
-            self.data.download_from_ckan(
-                resource_name=resource_name, file_path=file_path
+            self.data.download_from_github(
+                path_in_repo=f"pipelines/{resource_name}", file_path=file_path
             )
 
         with open(file_path, "r") as read_file:
@@ -464,8 +443,8 @@ class RiverFloodLoad(Load):
         if os.path.exists(file_path) and not self.no_cache:
             logging.warning(f"file {file_path} exists, skipping")
         else:
-            self.data.download_from_ckan(
-                resource_name=resource_name, file_path=file_path
+            self.data.download_from_github(
+                path_in_repo=f"pipelines/{resource_name}", file_path=file_path
             )
 
         with open(file_path, "r") as read_file:

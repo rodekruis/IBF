@@ -1,10 +1,10 @@
+import json
 import logging
 import os
 from datetime import datetime
 from typing import List
 
 import requests
-from ckanapi import RemoteCKAN
 from pipelines.core.secrets import Secrets
 
 
@@ -232,39 +232,25 @@ class DataSets:
         os.makedirs(self.input_dir, exist_ok=True)
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def download_from_ckan(self, resource_name: str, file_path: str):
-        """Download file from CKAN"""
-        logging.info(f"downloading CKAN resource {resource_name} to {file_path}")
+    def download_from_github(self, path_in_repo: str, file_path: str):
+        base_url = os.environ.get("SEED_DATA_LOCAL_PATH")
+        if not base_url:
+            raise ValueError("GITHUB_DATA_BASE_URL is not set in the environment")
 
-        ckan_url = self.secrets.get_secret("CKAN_URL")
-        ckan_key = self.secrets.get_secret("CKAN_KEY")
+        local_path = os.path.join(base_url, path_in_repo)
+        logging.info(f"Copying local resource {local_path} to {file_path}")
+        with open(local_path, "rb") as f:
+            content = f.read()
 
-        ckan = RemoteCKAN(ckan_url, apikey=ckan_key)
-        package = ckan.action.package_show(id="ibf-datasets")
-
-        # find resource by name
-        resource = next(
-            filter(lambda x: x["name"] == resource_name, package["resources"]), None
-        )
-
-        # if resource not found, raise error
-        if not resource:
-            logging.error(f"Resource {resource_name} not found")
-            raise ValueError(f"Resource {resource_name} not found")
-
-        source = resource["download_url"]
-
-        # if file path is a directory, add file name to path
         if os.path.isdir(file_path):
-            file_name = os.path.basename(source)
+            file_name = os.path.basename(path_in_repo)
             file_path = os.path.join(file_path, file_name)
 
-        headers = {}
-        headers["X-CKAN-API-Key"] = ckan_key
-        headers["Authorization"] = ckan_key
-
-        response = requests.get(source, headers=headers)
-        response.raise_for_status()  # raise an error for bad responses
-
         with open(file_path, "wb") as f:
-            f.write(response.content)
+            f.write(content)
+
+        # Return parsed JSON if file is .json
+        if file_path.endswith(".json"):
+            with open(file_path, "r") as f:
+                return json.load(f)
+        return file_path

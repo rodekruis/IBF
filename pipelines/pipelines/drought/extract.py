@@ -386,9 +386,9 @@ class Extract(DroughtModule):
             geofile = self.load.get_adm_boundaries(admin_level_)
             climateRegionPcodes = pcodes[f"{admin_level_}"]
             filtered_gdf = geofile[
-                geofile[f"adm{admin_level_}_pcode"].isin(climateRegionPcodes)
+                geofile[f"ADM{admin_level_}_PCODE"].isin(climateRegionPcodes)
             ]
-            filtered_gdf["placeCode"] = filtered_gdf[f"adm{admin_level_}_pcode"]
+            filtered_gdf["placeCode"] = filtered_gdf[f"ADM{admin_level_}_PCODE"]
 
             if filtered_gdf.empty:
                 raise ValueError(
@@ -746,8 +746,8 @@ class Extract(DroughtModule):
             )
         else:
             if debug:
-                self.data.download_from_ckan(
-                    resource_name="mock_ecmwf_seas5_forecast_monthly_tp.grib",
+                self.data.download_from_github(
+                    path_in_repo="pipelines/mock_ecmwf_seas5_forecast_monthly_tp.grib",
                     file_path=self.file_path_forecast,
                 )
             else:
@@ -769,8 +769,8 @@ class Extract(DroughtModule):
             )
         else:
             if debug:
-                self.data.download_from_ckan(
-                    resource_name="mock_ecmwf_seas5_hindcast_monthly_tp.grib",
+                self.data.download_from_github(
+                    path_in_repo="pipelines/mock_ecmwf_seas5_hindcast_monthly_tp.grib",
                     file_path=self.file_path_hindcast,
                 )
             else:
