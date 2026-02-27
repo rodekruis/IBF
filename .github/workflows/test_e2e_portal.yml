@@ -33,17 +33,16 @@ jobs:
         id: filter
         with:
           paths: |
+            - '.github/workflows/test_e2e_portal.yml'
             - 'e2e/**'
-  # NOTE: temporarily switched off.
-  #            - '.github/workflows/test_e2e_portal.yml'
-  #            - 'services/.env.example'
-  #            - 'services/**'
-  #            - '!services/**.test.ts'
-  #            - '!services/**.spec.ts'
-  #            - 'portal/**'
-  #            - '!portal/**.test.ts'
-  #            - '!portal/**.spec.ts'
-  #            - '!**.md'
+            - 'services/.env.example'
+            - 'services/**'
+            - '!services/**.test.ts'
+            - '!services/**.spec.ts'
+            - 'portal/**'
+            - '!portal/**.test.ts'
+            - '!portal/**.spec.ts'
+            - '!**.md'
 
   lint-code:
     needs: path-filter
@@ -104,7 +103,7 @@ jobs:
 
       - name: Run Services with Docker
         run: |
-          npm run start:services:ci
+          npm run start:services:ci:production
 
       - name: Run Portal
         working-directory: ./portal
