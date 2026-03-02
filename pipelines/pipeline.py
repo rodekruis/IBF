@@ -1,52 +1,10 @@
 import logging
-import os
-import subprocess
 
 import click
-from dotenv import load_dotenv
 from pipelines.core.secrets import Secrets
 from pipelines.core.settings import Settings
 from pipelines.drought.pipeline import Pipeline as DroughtPipeline
 from pipelines.riverflood.pipeline import Pipeline as RiverFloodPipeline
-
-
-def clone_data_repo():
-    load_dotenv()
-    local_path = os.environ.get("SEED_DATA_LOCAL_PATH")
-    repo_url = os.environ.get("GITHUB_DATA_BASE_URL")
-    branch = "main"
-    if not local_path:
-        raise ValueError("SEED_DATA_LOCAL_PATH environment variable is not set.")
-    if not repo_url:
-        raise ValueError("GITHUB_DATA_BASE_URL environment variable is not set.")
-
-    if not os.path.exists(local_path):
-        logging.info(f"Cloning data repo {repo_url} into {local_path}")
-        subprocess.run(
-            ["git", "clone", "--branch", branch, repo_url, local_path],
-            check=True,
-        )
-        # Pull LFS files
-        subprocess.run(
-            ["git", "lfs", "pull"],
-            cwd=local_path,
-            check=True,
-        )
-    else:
-        logging.info(
-            f"Data repo already exists at {local_path}, pulling latest changes"
-        )
-        subprocess.run(
-            ["git", "pull"],
-            cwd=local_path,
-            check=True,
-        )
-        subprocess.run(
-            ["git", "lfs", "pull"],
-            cwd=local_path,
-            check=True,
-        )
-
 
 @click.command()
 @click.option("--hazard", help="hazard name", default="riverflood")
@@ -69,7 +27,6 @@ def clone_data_repo():
     is_flag=True,
 )
 def pipeline(hazard, country, prepare, forecast, send, debug, no_cache):
-    clone_data_repo()
     country = country.upper()
     try:
         if hazard.lower() == "riverflood":

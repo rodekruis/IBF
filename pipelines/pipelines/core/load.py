@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 import os
+import subprocess
 import shutil
 import time
 from urllib.error import HTTPError
@@ -37,6 +38,7 @@ class Load:
         self.no_cache = no_cache
         self.settings = self.check_settings(settings)
         self.secrets = self.check_secrets(secrets)
+        self.clone_data_repo()
         self.rasters_sent = []
         self.login_token = None
 
@@ -66,6 +68,42 @@ class Load:
             ]
         )
         return secrets
+
+    def clone_data_repo(self):
+        local_path = os.environ.get("SEED_DATA_LOCAL_PATH")
+        repo_url = os.environ.get("GITHUB_DATA_BASE_URL")
+        branch = "main"
+        if not local_path:
+            raise ValueError("SEED_DATA_LOCAL_PATH environment variable is not set.")
+        if not repo_url:
+            raise ValueError("GITHUB_DATA_BASE_URL environment variable is not set.")
+
+        if not os.path.exists(local_path):
+            logging.info(f"Cloning data repo {repo_url} into {local_path}")
+            subprocess.run(
+                ["git", "clone", "--branch", branch, repo_url, local_path],
+                check=True,
+            )
+            # Pull LFS files
+            subprocess.run(
+                ["git", "lfs", "pull"],
+                cwd=local_path,
+                check=True,
+            )
+        else:
+            logging.info(
+                f"Data repo already exists at {local_path}, pulling latest changes"
+            )
+            subprocess.run(
+                ["git", "pull"],
+                cwd=local_path,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "lfs", "pull"],
+                cwd=local_path,
+                check=True,
+            )
 
     def get_population_density(self, file_path: str):
         """Get population density data from worldpop and save to file_path"""
