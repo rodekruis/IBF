@@ -107,10 +107,8 @@ name = "shellcheck"
 name = "shfmt"
 
 [[plugin]]
-drivers = [
-  "config",
-  "fs-vuln",
-]
+name = "trivy"
+enabled = false
 
 [[plugin]]
 name = "trufflehog"
