@@ -9,23 +9,27 @@ Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 
 ## Getting started
 
-1. Install [NodeJS](https://nodejs.org/en/download)
-2. Install [Docker](https://docs.docker.com/get-docker)
-3. Clone source code: `git clone https://github.com/rodekruis/IBF.git`
-4. Start api-service
+1. Setup
+
+- Install [NodeJS](https://nodejs.org/en/download)
+- Install [Docker](https://docs.docker.com/get-docker)
+- Install [git-lfs](https://git-lfs.com) and initialize through `git lfs install`
+- Clone source code: `git clone https://github.com/rodekruis/IBF.git`
+
+2. Start api-service
 
 - Setup env variables `cp services/.env.example services/.env`
 - Start api-service `npm run start:services:detach`
 - Open [http://localhost:4000/docs](http://localhost:4000/docs) in a web browser to access the api-service documentation
 
-5. Start portal
+3. Start portal
 
 - `cp portal/.env.example portal/.env`
 - `npm run install:portal`
 - `npm run start:portal`
 - Open [http://localhost:8888](http://localhost:8888) in a web browser to check if the IBF-portal is running
 
-6. Start pipelines
+4. Start pipelines
 
 - Install [uv](https://docs.astral.sh/uv/getting-started/installation)
 - `cd pipelines`

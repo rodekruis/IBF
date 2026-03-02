@@ -279,7 +279,7 @@ class DroughtLoad(Load):
                 rainf_extent, drought_extent_new.replace("rainfall_forecast", "rain_rp")
             )
             self.rasters_sent.append(rain_rp)
-            files = {"file": open(rain_rp, "rb")}
+            # files = {"file": open(rain_rp, "rb")}
             # self.ibf_api_request(
             #     "POST", "admin-area-dynamic-data/raster/drought", files=files
             # )
