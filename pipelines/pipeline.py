@@ -6,6 +6,7 @@ from pipelines.core.settings import Settings
 from pipelines.drought.pipeline import Pipeline as DroughtPipeline
 from pipelines.riverflood.pipeline import Pipeline as RiverFloodPipeline
 
+
 @click.command()
 @click.option("--hazard", help="hazard name", default="riverflood")
 @click.option("--country", help="country ISO3", default="UGA")

@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 
 import os
-import subprocess
 import shutil
+import subprocess
 import time
 from urllib.error import HTTPError
 
