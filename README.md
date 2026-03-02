@@ -33,9 +33,8 @@ Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 
 - Install [uv](https://docs.astral.sh/uv/getting-started/installation)
 - `cd pipelines`
-- `cp .env.example .env` and fill in correct values. (NOTE: for CKAN_KEY get an API-token from the used CKAN, such as HDX)
-- `uv sync`
-- `uv pip install cfgrib` (even though listed as dependency, this needs a separate install for now)
+- `cp .env.example .env` and fill in correct values.
+- `./uv-sync.sh`
 - `uv run pipeline.py --hazard drought --country KEN --prepare --forecast --send --debug`
 
 ---
