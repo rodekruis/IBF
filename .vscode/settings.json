@@ -12,6 +12,10 @@
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "omnilib.ufmt"
+  },
   "eslint.enable": true,
   "eslint.format.enable": true,
   "eslint.rules.customizations": [
