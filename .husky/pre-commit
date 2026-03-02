@@ -27,13 +27,14 @@ if [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ]; then
 fi
 
 log "Running lint-staged"
+
+# STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$')
+# if [ -n "$STAGED_FILES" ]; then
+#   uvx ufmt format $STAGED_FILES
+#   git add $STAGED_FILES
+# fi
+
+
 npx lint-staged
-
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$')
-
-if [ -n "$STAGED_FILES" ]; then
-  uvx ufmt format $STAGED_FILES
-  git add $STAGED_FILES
-fi
 
 log "All done"
