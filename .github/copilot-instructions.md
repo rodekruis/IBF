@@ -7,8 +7,7 @@ The IBF Platform is an open-source humanitarian aid platform built by the Nether
 **Key Components:**
 
 - `services/api-service`: Main NestJS backend API service
-- `portal`: Angular frontend application
-- `e2e/`: End-to-end testing suite
+- `pipelines`: Data pipelines for hazard forecasts in Python
 
 ## VSCode Integration
 
@@ -317,7 +316,6 @@ export class ProgramsController {
 - Test real API interactions and component integration
 - Use SuperAgent for API testing
 - Place in `/test` folder
-- Run with: `npm run test:e2e:all`
 
 **Testing Strategy:**
 
@@ -440,7 +438,6 @@ export class UserProfileComponent implements OnInit {
 - **Unit Tests**: Jest with Angular testing utilities
 - **Component Tests**: Test component behavior and rendering
 - **Service Tests**: Mock HTTP calls and test business logic
-- **E2E Tests**: Playwright tests in `e2e/` directory
 
 ### Testing Commands
 
@@ -453,11 +450,6 @@ cd services/api-service
 docker exec api-service  npm run test:unit:all         # unit tests
 docker exec api-service  npm run test:integration:all         # integration tests
 docker exec api-service npm run test:integration:all -t login.test.ts # specific test file
-npm run typecheck # type checking
-npm run lint # linting
-
-cd portal
-npm run test:all # run all tests
 npm run typecheck # type checking
 npm run lint # linting
 
@@ -518,7 +510,6 @@ npm run lint # linting
 # Setup
 npm run install:all         # Install all dependencies
 npm run start:services      # Start backend services
-npm run start:portal        # Start Angular dev server
 
 # Code Quality
 npm run fix:all            # Fix linting issues
@@ -563,9 +554,7 @@ npm run test:all           # Run all tests
 ## Additional Resources
 
 - [Contributing Guidelines](../docs/CONTRIBUTING.md)
-- [Component Guidelines](../portal/src/app/components/component-guidelines.md)
 - [Service README](../services/api-service/README.md)
-- [Portal README](../portal/README.md)
 
 ## Instructions for Copilot Agents
 

@@ -45,8 +45,7 @@
     "knip": "knip",
     "knip:fix": "knip --fix-type files,exports,types",
     "typecheck": "tsc --noEmit",
-    "typecheck:dev": "tsc --noEmit --watch",
-    "install:dependencies-for-portal": "npm install"
+    "typecheck:dev": "tsc --noEmit --watch"
   },
   "private": true,
   "engines": {
