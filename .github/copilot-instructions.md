@@ -2,7 +2,7 @@
 
 ## Repository Overview
 
-The IBF Platform is an open-source humanitarian aid platform built by the Netherlands Red Cross for managing Cash Based Assistance programs. It consists of multiple TypeScript services and an Angular frontend, designed for scalability and humanitarian use cases.
+IBF is a web app to visualize hazard forecasts. It consists of Python pipelines, Nest.js/TypeScript back-end services and a React frontend, which is in a separate repo. This repository contains the pipelines and backend services.
 
 **Key Components:**
 
@@ -36,15 +36,6 @@ Check `.vscode/extensions.json` for the complete list of recommended extensions 
 - **Testing**: Jest for unit and integration tests
 - **Containerization**: Docker and Docker Compose
 
-### Frontend (Angular)
-
-- **Framework**: Angular 20+ with TypeScript
-- **UI Library**: PrimeNG components
-- **Styling**: Tailwind CSS utility classes
-- **State Management**: angular services and tanstack-query
-- **Testing**: Jest and Karma
-- **Build**: Angular CLI with production optimizations
-
 ### Development Tools
 
 - **Code Quality**: ESLint, Prettier, Husky pre-commit hooks
@@ -69,7 +60,6 @@ Check `.vscode/extensions.json` for the complete list of recommended extensions 
 - **ESLint**: Strict TypeScript configuration with custom rules
 - **Import Organization**:
   - External packages first
-  - Alias imports (`@api-service`, `~` for Angular)
   - Relative imports last
   - Use simple-import-sort for consistent ordering
 
@@ -151,7 +141,6 @@ Use pattern: `username/description-of-change` (strongly encouraged)
 ### Pull Request Guidelines
 
 - Keep PRs small and focused on single responsibility
-- Separate frontend and backend changes when possible
 - Include Azure DevOps task references in PR descriptions
 - Follow the PR template for consistency
 - **Draft PRs**: Use draft status until ready for review
@@ -325,29 +314,6 @@ export class ProgramsController {
 - Integration tests provide depth (real-world behavior)
 - Refactor complex units into smaller, testable functions
 
-## Frontend Patterns (Angular)
-
-### File & Folder Structure
-
-**Desired Structure:**
-
-```
-app
-├── components
-│   └── component-name/
-├── directives
-├── models
-│   ├── model-name.api.model.ts
-│   └── model-name.model.ts
-├── pages/
-│   └── page-name/
-│       ├── components/
-│       │   └── page-specific-component/
-│       ├── page-name.component.html
-│       └── page-name.component.ts
-└── services
-```
-
 **Organization Rules:**
 
 - No new top-level folders should be added to `app/`
@@ -400,28 +366,6 @@ export class UserProfileComponent implements OnInit {
 - Add global rules to `styles.scss` for PrimeNG components used in multiple places (should be done very sparingly - ideally avoided)
 - Use `*-start`/`*-end` instead of `*-left`/`*-right` for RTL support
 
-**Template Guidelines:**
-
-- **Control Flow**: Use new `@if` and `@for` syntax over `*ngIf`/`*ngFor`
-- **i18n**: All user-facing text must be internationalized using Lokalise
-- **Templates**: Keep inline templates under 20 lines
-- Support RTL languages in positioning and margins
-
-### State Management
-
-- Use Angular services for shared state
-- Use tanstack-query for state management and data fetching
-- Handle loading states and error conditions
-
-### Internationalization (i18n)
-
-**Translation Process:**
-
-- Translations managed through Lokalise TMS-service
-- Latest translations downloaded at every build/deployment
-- Language configuration managed per-instance via GitHub environment variables
-- All user-facing text must be internationalized
-
 ## Testing Approach
 
 ### Backend Testing
@@ -432,12 +376,6 @@ export class UserProfileComponent implements OnInit {
 - **Patterns**: Use helper functions, clean test data, mock external dependencies
 - **Guidelines**
   - Do not test private methods directly
-
-### Frontend Testing
-
-- **Unit Tests**: Jest with Angular testing utilities
-- **Component Tests**: Test component behavior and rendering
-- **Service Tests**: Mock HTTP calls and test business logic
 
 ### Testing Commands
 
@@ -493,7 +431,7 @@ npm run lint # linting
 - Use native `Headers` object for HTTP headers
 - Pass URL object instance directly to fetch
 - Set Headers object as `headers` property value
-- Exception: Use framework-specific tooling when available (e.g., Angular HttpClient)
+- Exception: Use framework-specific tooling when available
 
 ### Database Migrations
 
@@ -537,13 +475,6 @@ npm run test:all           # Run all tests
 - ❌ Breaking changes without proper versioning
 - ❌ Skipping tests for new functionality
 - ❌ Hardcoded values instead of configuration
-
-### Angular Specific
-
-- ❌ Using deprecated lifecycle methods
-- ❌ Not implementing OnPush change detection
-- ❌ Creating non-standalone components
-- ❌ Missing i18n for user-facing strings
 
 ### Backend Specific
 

@@ -1,11 +1,6 @@
 # See .gitignore
 coverage/
 
-# Angular related files
-.angular/
-www/
-dist/
-
 # Exclude (generated) files
 package-lock.json
 
