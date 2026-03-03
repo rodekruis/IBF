@@ -92,7 +92,7 @@
   "devDependencies": {
     "@automock/adapters.nestjs": "^2.1.0",
     "@compodoc/compodoc": "^1.1.32",
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^9.39.2",
     "@nestjs/cli": "^11.0.14",
     "@swc/cli": "^0.8.0",
     "@swc/core": "^1.15.17",
@@ -104,7 +104,7 @@
     "@types/passport-jwt": "^4.0.1",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
-    "eslint": "^10.0.2",
+    "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-custom-rules": "file:./eslint-plugin-custom-rules/",
     "eslint-plugin-eslint-comments": "^3.2.0",

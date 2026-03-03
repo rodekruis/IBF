@@ -43,3 +43,9 @@ updates:
       - dependency-name: 'jimp'
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
+      - dependency-name: eslint # eslint v10 has conflict with eslint-plugin-eslint-comments
+        update-types:
+          - version-update:semver-major
+      - dependency-name: '@eslint/js'
+        update-types:
+          - version-update:semver-major
