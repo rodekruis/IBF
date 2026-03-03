@@ -30,6 +30,8 @@ updates:
           - '*prettier*'
       nestjs:
         patterns: ['@nestjs/*']
+      prisma:
+        patterns: ['@prisma/*', 'prisma']
     ignore:
       # Dependencies below are ordered alphabetically!
       - dependency-name: '@types/node'
