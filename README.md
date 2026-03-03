@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > This is the repo for IBF v2, which is not in MVP-state yet. Find the old IBF-system repo [here](https://github.com/rodekruis/IBF-system).
 
-IBF is a web app to visualize hazard forecasts. It has a [NestJS backend](./services/api-service), an [Angular frontend](./portal), and [data pipelines](./pipelines).
+IBF is a web app to visualize hazard forecasts. It has [data pipelines](./pipelines), a [NestJS backend](./services/api-service), and a React frontend, which is in a [separate repo](https://github.com/rodekruis/go-web-app/tree/ibf-main).
 
 Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 
@@ -22,12 +22,7 @@ Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 - Start api-service `npm run start:services:detach`
 - Open [http://localhost:4000/docs](http://localhost:4000/docs) in a web browser to access the api-service documentation
 
-3. Start portal
-
-- `cp portal/.env.example portal/.env`
-- `npm run install:portal`
-- `npm run start:portal`
-- Open [http://localhost:8888](http://localhost:8888) in a web browser to check if the IBF-portal is running
+3. Start portal > see [separate repo](https://github.com/rodekruis/go-web-app/tree/ibf-main)
 
 4. Start pipelines
 

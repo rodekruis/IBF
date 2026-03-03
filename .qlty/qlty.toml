@@ -41,7 +41,7 @@ exclude_patterns = [
   "**/testdata/**",
   "**/vendor/**",
   # end of defaults
-  "services/api-service/src/migration/**",
+  "services/api-service/src/prisma/migrations/**",
 ]
 
 test_patterns = [
@@ -108,10 +108,7 @@ name = "shfmt"
 
 [[plugin]]
 name = "trivy"
-drivers = [
-  "config",
-  "fs-vuln",
-]
+enabled = false
 
 [[plugin]]
 name = "trufflehog"

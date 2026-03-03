@@ -30,6 +30,8 @@ updates:
           - '*prettier*'
       nestjs:
         patterns: ['@nestjs/*']
+      prisma:
+        patterns: ['@prisma/*', 'prisma']
     ignore:
       # Dependencies below are ordered alphabetically!
       - dependency-name: '@types/node'
@@ -41,64 +43,9 @@ updates:
       - dependency-name: 'jimp'
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
-
-  - directory: '/portal'
-    package-ecosystem: npm
-    schedule:
-      interval: monthly
-      day: tuesday
-    open-pull-requests-limit: 5
-    versioning-strategy: increase
-    groups:
-      angular:
-        patterns:
-          - '@angular*'
-          - 'primeng'
-          - 'typescript'
-          - 'zone.js'
-          - '*eslint*'
-          - '*prettier*'
-      AzureMSAL:
-        patterns:
-          - '@azure/msal*' # Combine peer-dependencies
-      dependencies:
-        patterns:
-          - '*'
-        exclude-patterns: # Make sure to exclude all of the groups defined above
-          - '@angular*'
-          - 'primeng'
-          - 'typescript'
-          - 'zone.js'
-          - '@azure/msal*'
-          - '*eslint*'
-          - '*prettier*'
-    ignore:
-      # Dependencies below are ordered alphabetically!
-      - dependency-name: '@angular*'
-        update-types: ['version-update:semver-major']
-      - dependency-name: '@types/node'
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'filesize'
-        update-types: ['version-update:semver-major'] # See: https://www.npmjs.com/package/ngx-filesize
-      - dependency-name: 'ngx-matomo-client' # Requires Angular v21+
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'angular-eslint' # Requires Angular v21+
-        update-types: ['version-update:semver-major']
-      - dependency-name: 'primeng'
-        update-types: ['version-update:semver-major']
-
-  - directory: '/e2e'
-    package-ecosystem: npm
-    schedule:
-      interval: monthly
-      day: tuesday
-    open-pull-requests-limit: 5
-    versioning-strategy: increase
-    groups:
-      dependencies:
-        patterns:
-          - '*'
-    ignore:
-      # Dependencies below are ordered alphabetically!
-      - dependency-name: '@types/node'
-        update-types: ['version-update:semver-major']
+      - dependency-name: eslint # eslint v10 has conflict with eslint-plugin-eslint-comments
+        update-types:
+          - version-update:semver-major
+      - dependency-name: '@eslint/js'
+        update-types:
+          - version-update:semver-major

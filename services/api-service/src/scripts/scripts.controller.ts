@@ -6,7 +6,8 @@ import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { ScriptsService } from '@api-service/src/scripts/scripts.service';
 import { WrapperType } from '@api-service/src/wrapper.type';
-export class SecretDto {
+
+class SecretDto {
   @ApiProperty({ example: 'fill_in_secret' })
   @IsNotEmpty()
   @IsString()
