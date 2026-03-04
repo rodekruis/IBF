@@ -260,7 +260,7 @@ class Forecast(DroughtModule):
                             )
 
                         clipped_regional_mean = rlower_tercile_probability.rio.clip(
-                            gdf1.geometry, gdf1.crs, drop=True, all_touched=True
+                            gdf_clip.geometry, raster_crs, drop=True, all_touched=True
                         )
 
                         if np.isnan(clipped_regional_mean.values).all():

@@ -372,13 +372,14 @@ class DroughtLoad(Load):
                 True if country is None else None
             ),  # country must be the partition key
         )
-        if len(list(records_query)) == 0:
+        records_query_results = list(records_query)
+        if len(records_query_results) == 0:
             raise KeyError(
                 f"No Cosmos records of type '{data_type}' found for country {country} in date range "
                 f"{start_date} - {end_date}."
             )
         records = []
-        for record in records_query:
+        for record in records_query_results:
             records.append(copy.deepcopy(record))
         datasets = []
         countries = list(set([record["country"] for record in records]))
