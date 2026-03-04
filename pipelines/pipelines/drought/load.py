@@ -240,9 +240,9 @@ class DroughtLoad(Load):
                             with open(statsPath, "w") as fp:
                                 json.dump(body, fp)
 
-                            self.ibf_api_request(
-                                "POST", "admin-area-dynamic-data/exposure", body=body
-                            )
+                            # self.ibf_api_request(
+                            #     "POST", "admin-area-dynamic-data/exposure", body=body
+                            # )
                     processed_pcodes = list(set(processed_pcodes))
 
                     events_json.append(
@@ -279,10 +279,10 @@ class DroughtLoad(Load):
                 rainf_extent, drought_extent_new.replace("rainfall_forecast", "rain_rp")
             )
             self.rasters_sent.append(rain_rp)
-            files = {"file": open(rain_rp, "rb")}
-            self.ibf_api_request(
-                "POST", "admin-area-dynamic-data/raster/drought", files=files
-            )
+            # files = {"file": open(rain_rp, "rb")}
+            # self.ibf_api_request(
+            #     "POST", "admin-area-dynamic-data/raster/drought", files=files
+            # )
 
         # send empty exposure data
         if len(processed_pcodes) == 0:
@@ -315,9 +315,9 @@ class DroughtLoad(Load):
                             "eventName": None,  # this is a specific check IBF uses to establish no-trigger
                             "date": upload_time_str,
                         }
-                        self.ibf_api_request(
-                            "POST", "admin-area-dynamic-data/exposure", body=body
-                        )
+                        # self.ibf_api_request(
+                        #     "POST", "admin-area-dynamic-data/exposure", body=body
+                        # )
 
                         statsPath = drought_extent.replace(
                             ".tif",
@@ -337,7 +337,7 @@ class DroughtLoad(Load):
             "date": upload_time_str,
         }
 
-        self.ibf_api_request("POST", "events/process", body=body)
+        # self.ibf_api_request("POST", "events/process", body=body)
 
     def get_pipeline_data(
         self,

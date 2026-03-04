@@ -260,9 +260,9 @@ class Forecast(RiverFloodModule):
                     if lower_adm_level in self.data.forecast_admin.adm_levels:
                         # get lower admin divisions contained in the current admin division
                         pcodes_in_current_adm = gdf_adms[lower_adm_level][
-                            gdf_adms[lower_adm_level][f"adm{adm_level}_pcode"]
+                            gdf_adms[lower_adm_level][f"ADM{adm_level}_PCODE"]
                             == forecast_data_unit.pcode
-                        ][f"adm{lower_adm_level}_pcode"].tolist()
+                        ][f"ADM{lower_adm_level}_PCODE"].tolist()
                         lower_forecast_data_units = (
                             self.data.forecast_admin.get_data_units(
                                 adm_level=lower_adm_level,
@@ -320,7 +320,7 @@ class Forecast(RiverFloodModule):
         except AttributeError:
             adm_lvl = self.data.forecast_admin.adm_levels[-2]
             gdf_adm = self.load.get_adm_boundaries(adm_lvl)
-        gdf_adm.index = gdf_adm[f"adm{adm_lvl}_pcode"]
+        gdf_adm.index = gdf_adm[f"ADM{adm_lvl}_PCODE"]
 
         for lead_time in self.data.forecast_admin.get_lead_times():
 
@@ -441,7 +441,7 @@ class Forecast(RiverFloodModule):
                         nodata=0.0,
                     )
                     gdf_aff_pop = pd.concat([gdf_adm, pd.DataFrame(stats)], axis=1)
-                    gdf_aff_pop.index = gdf_aff_pop[f"adm{adm_lvl}_pcode"]
+                    gdf_aff_pop.index = gdf_aff_pop[f"ADM{adm_lvl}_PCODE"]
 
                     # perform zonal statistics on population density raster (to compute % aff pop)
                     with rasterio.open(self.pop_raster) as src:
@@ -457,7 +457,7 @@ class Forecast(RiverFloodModule):
                         nodata=0.0,
                     )
                     gdf_pop = pd.concat([gdf_adm, pd.DataFrame(stats)], axis=1)
-                    gdf_pop.index = gdf_pop[f"adm{adm_lvl}_pcode"]
+                    gdf_pop.index = gdf_pop[f"ADM{adm_lvl}_PCODE"]
 
                 # add affected population to forecast data units
                 for forecast_data_unit in self.data.forecast_admin.get_data_units(

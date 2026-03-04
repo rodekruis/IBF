@@ -65,8 +65,9 @@ class Extract(RiverFloodModule):
                 logging.warning(f"file {file_path_local} exists, skipping")
             else:
                 if debug:
-                    self.data.download_from_ckan(
-                        resource_name="mock_GloFAS.nc", file_path=file_path_local
+                    self.data.download_from_github(
+                        path_in_repo="pipelines/mock_GloFAS.nc",
+                        file_path=file_path_local,
                     )
                 else:
                     blob_storage_path = self.settings.get_setting("blob_storage_path")
@@ -156,7 +157,7 @@ class Extract(RiverFloodModule):
                         )
                         dis = pd.concat([country_gdf, pd.DataFrame(stats)], axis=1)
                         for ix, row in dis.iterrows():
-                            key = f'{row[f"adm{adm_level}_pcode"]}_{lead_time}'
+                            key = f'{row[f"ADM{adm_level}_PCODE"]}_{lead_time}'
                             if key not in discharges.keys():
                                 discharges[key] = []
                             discharge = row["max"]
@@ -173,7 +174,7 @@ class Extract(RiverFloodModule):
                     break
 
             for lead_time, pcode in itertools.product(
-                range(0, 8), list(country_gdf[f"adm{adm_level}_pcode"].unique())
+                range(0, 8), list(country_gdf[f"ADM{adm_level}_PCODE"].unique())
             ):
                 key = f"{pcode}_{lead_time}"
                 self.data.discharge_admin.upsert_data_unit(
