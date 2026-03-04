@@ -73,8 +73,8 @@ class RiverFloodLoad(Load):
         flood_extent: str = None,
         upload_time: str = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
     ):
-        """Send flood forecast data to IBF API"""
-        logging.info("send data to IBF API")
+        """Send flood forecast data"""
+        logging.info("send data")
 
         events_json = []
 
