@@ -108,7 +108,9 @@ name = "shfmt"
 
 [[plugin]]
 name = "trivy"
-enabled = false
+drivers = [
+  "config"
+]
 
 [[plugin]]
 name = "trufflehog"
