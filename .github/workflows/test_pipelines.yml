@@ -61,9 +61,4 @@ jobs:
           BLOB_ACCOUNT_KEY: ${{ secrets.PIPELINES_BLOB_ACCOUNT_KEY }}
           COSMOS_KEY: ${{ secrets.PIPELINES_COSMOS_KEY }}
           CDSAPI_KEY: ${{ secrets.PIPELINES_CDSAPI_KEY }}
-          PYTHONFAULTHANDLER: '1'
-          PYTHONUNBUFFERED: '1'
-          OMP_NUM_THREADS: '1'
-          OPENBLAS_NUM_THREADS: '1'
-          MKL_NUM_THREADS: '1'
         run: uv run -m pytest "${{ matrix.test_node }}"
