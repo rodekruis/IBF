@@ -1,7 +1,7 @@
 from datetime import datetime
 
+import geopandas as gpd
 from pipelines.core.logger import logger
-
 from pipelines.core.secrets import Secrets
 from pipelines.core.settings import Settings
 from pipelines.drought.data import DroughtDataSets
@@ -67,6 +67,9 @@ class Pipeline:
         datestart: datetime = datetime.now(),
     ):
         """Run the drought pipeline"""
+
+        # This is meant as a fix for the test_pipeline_drought_eth test being flaky on CI
+        gpd.options.io_engine = "fiona"
 
         if prepare:
             self.extract.prepare_ecmwf_data(
