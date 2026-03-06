@@ -1,0 +1,58 @@
+
+services:
+  pg_tileserv:
+    image: pramsey/pg_tileserv:20250131
+    container_name: pg_tileserv
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://admin:eee@postgis_db/postgres
+    depends_on:
+      postgis_db:
+        condition: service_healthy
+    ports:
+      - 7800:7800
+
+  pg_featureserv:
+    image: pramsey/pg_featureserv:20250917
+    container_name: pg_featureserv
+    restart: unless-stopped
+    platform: linux/amd64
+    environment:
+      DATABASE_URL: postgres://{POSTGRES_USER}:eee@postgis_db/postgres
+      PGFS_DATABASE_FUNCTIONINCLUDES: postgisftw
+    volumes:
+      - ./settings/pg_featureserv.json:/config.json:ro
+    command: ["--config", "/config.json"]
+    depends_on:
+      postgis_db:
+        condition: service_healthy
+    ports:
+      - "9000:9000"
+
+  postgis_db:
+    image: postgis/postgis:16-3.5
+    container_name: postgis_db
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: eee
+    ports:
+      - "5432:5432"
+    volumes:
+      # for pg_tileserve
+      #   - ./demodata:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+      # for pg_featureserv
+      - ./data:/work
+      - postgis_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  postgis_db:

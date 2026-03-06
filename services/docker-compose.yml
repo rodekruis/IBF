@@ -1,7 +1,7 @@
 services:
   ibf-db:
     container_name: ibf-db
-    image: 'postgres:14'
+    image: 'postgis/postgis:14-3.4'
     init: true
     env_file: .env
     environment:
@@ -54,3 +54,37 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  # Map vector tile service
+  pg_tileserv:
+    image: pramsey/pg_tileserv:20250131
+    container_name: pg_tileserv
+    #platform: linux/amd64
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@ibf-db/${POSTGRES_DBNAME}
+    depends_on:
+      ibf-db:
+        condition: service_healthy
+    ports:
+      - 7800:7800
+
+  # Map vector and point data service
+  pg_featureserv:
+    image: pramsey/pg_featureserv:20250917
+    container_name: pg_featureserv
+    #platform: linux/amd64
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@ibf-db/${POSTGRES_DBNAME}
+      PGFS_DATABASE_FUNCTIONINCLUDES: postgisftw
+    volumes:
+      - ./settings/pg_featureserv.json:/config.json:ro
+    command: ["--config", "/config.json"]
+    depends_on:
+      ibf-db:
+        condition: service_healthy
+    ports:
+      - "9000:9000"
