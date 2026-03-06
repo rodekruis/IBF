@@ -2,7 +2,11 @@ import json
 import logging
 import os
 from datetime import datetime
+from pathlib import Path
 from typing import List
+from urllib.parse import quote
+
+import requests
 
 from pipelines.core.secrets import Secrets
 
@@ -231,22 +235,48 @@ class DataSets:
         os.makedirs(self.input_dir, exist_ok=True)
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def download_from_github(self, path_in_repo: str, file_path: str):
-        base_url = os.environ.get("SEED_DATA_LOCAL_PATH")
-        local_path = os.path.join(base_url, path_in_repo)
-        logging.info(f"Copying local resource {local_path} to {file_path}")
-        with open(local_path, "rb") as f:
-            content = f.read()
+    def _build_raw_github_url(self, path_in_repo: str) -> str:
+        cleaned_parts = [quote(part) for part in Path(path_in_repo).parts]
+        cleaned_path = "/".join(cleaned_parts)
+        base_url = os.environ.get("GITHUB_DATA_BASE_URL")
+        return f"{base_url}/{cleaned_path}"
 
-        if os.path.isdir(file_path):
-            file_name = os.path.basename(path_in_repo)
-            file_path = os.path.join(file_path, file_name)
+    def _is_binary_target(self, target_path: Path) -> bool:
+        return target_path.suffix.lower() in {
+            ".nc",
+            ".grib",
+            ".grb",
+            ".tif",
+            ".tiff",
+            ".zip",
+            ".gz",
+            ".bz2",
+            ".xz",
+            ".parquet",
+            ".feather",
+            ".gpkg",
+            ".gdb",
+        }
 
-        with open(file_path, "wb") as f:
-            f.write(content)
+    def download_from_github(
+        self, path_in_repo: str, file_path: str, binary: bool | None = None
+    ) -> str:
+        target_path = Path(file_path)
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        is_binary = self._is_binary_target(target_path) if binary is None else binary
 
-        # Return parsed JSON if file is .json
-        if file_path.endswith(".json"):
-            with open(file_path, "r") as f:
-                return json.load(f)
-        return file_path
+        url = self._build_raw_github_url(path_in_repo)
+        response = requests.get(url, timeout=120)
+        response.raise_for_status()
+
+        if is_binary:
+            target_path.write_bytes(response.content)
+            return str(target_path)
+
+        target_path.write_text(response.text, encoding="utf-8")
+
+        if target_path.suffix.lower() == ".json":
+            with target_path.open("r", encoding="utf-8") as json_file:
+                return json.load(json_file)
+
+        return str(target_path)

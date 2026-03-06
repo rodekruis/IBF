@@ -13,7 +13,6 @@ Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 
 - Install [NodeJS](https://nodejs.org/en/download)
 - Install [Docker](https://docs.docker.com/get-docker)
-- Install [git-lfs](https://git-lfs.com) and initialize through `git lfs install`
 - Clone source code: `git clone https://github.com/rodekruis/IBF.git`
 
 2. Start api-service

@@ -1,0 +1,64 @@
+name: Pipelines integration tests
+
+on:
+  workflow_dispatch:
+  merge_group:
+    types: [checks_requested]
+  pull_request:
+    paths:
+      - 'pipelines/**'
+      - '.github/workflows/test_pipelines.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'pipelines/**'
+      - '.github/workflows/test_pipelines.yml'
+
+# This is needed for qlty to authenticate with OIDC
+# https://docs.qlty.sh/coverage/quickstart#github-actions
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test_node:
+          - test/test_pipeline_integration.py::test_pipeline_riverflood_ken
+          - test/test_pipeline_integration.py::test_pipeline_drought_eth
+    defaults:
+      run:
+        working-directory: pipelines
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gdal-bin libgdal-dev
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: ./uv-sync.sh
+
+      - name: Prepare environment
+        run: cp .env.example .env
+
+      - name: Run integration shard
+        env:
+          BLOB_ACCOUNT_KEY: ${{ secrets.PIPELINES_BLOB_ACCOUNT_KEY }}
+          COSMOS_KEY: ${{ secrets.PIPELINES_COSMOS_KEY }}
+          CDSAPI_KEY: ${{ secrets.PIPELINES_CDSAPI_KEY }}
+        run: uv run -m pytest "${{ matrix.test_node }}"
