@@ -41,7 +41,7 @@ jobs:
         run: ./uv-sync.sh
 
       - name: Check code formatting
-        run: uvx ufmt format **/*.py
+        run: uvx ufmt format .
 
       - name: Run python-knip
         run: uv run python-knip
