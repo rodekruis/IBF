@@ -60,14 +60,14 @@ class Extract(RiverFloodModule):
 
             # NOTE: flag to slide data or reuse existing sliced data
             update_slice = False
-
             if os.path.exists(file_path_local) and not self.load.no_cache:
                 logging.warning(f"file {file_path_local} exists, skipping")
             else:
                 if debug:
                     self.data.download_from_github(
-                        path_in_repo="pipelines/mock_GloFAS.nc",
+                        path_in_repo=f"pipelines/mock_glofas_{country}.nc",
                         file_path=file_path_local,
+                        binary=True,
                     )
                 else:
                     blob_storage_path = self.settings.get_setting("blob_storage_path")
