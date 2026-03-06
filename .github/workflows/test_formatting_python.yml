@@ -21,6 +21,12 @@ jobs:
         working-directory: pipelines
 
     steps:
+      - name: Check code formatting
+        uses: omnilib/ufmt@action-v1
+        with:
+          path: '**/*.py'
+          python-version: '3.12'
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -39,9 +45,6 @@ jobs:
 
       - name: Install dependencies
         run: ./uv-sync.sh
-
-      - name: Check code formatting
-        run: uvx ufmt format .
 
       - name: Run python-knip
         run: uv run python-knip
