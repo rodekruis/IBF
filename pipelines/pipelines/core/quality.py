@@ -10,7 +10,7 @@ def run_command(command: list[str]) -> int:
 def main() -> None:
     checks: list[list[str]] = [
         ["deptry", "."],
-        ["ruff", "check", "pipeline.py", "pipelines", "test", "--fix"],
+        ["ruff", "check", "pipeline.py", "pipelines", "test"],
         ["vulture", "pipeline.py", "pipelines", "test", "--min-confidence", "80"],
     ]
 

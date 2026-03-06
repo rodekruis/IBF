@@ -95,7 +95,10 @@ class Scenario:
             self.country, "admin-levels"
         )
 
-        self.pipe.settings.get_country_setting(self.country, "trigger-on-lead-time")
+        # Not used, but keep due to lack of understanding
+        # trigger_on_lead_time = self.pipe.settings.get_country_setting(
+        #     self.country, "trigger-on-lead-time"
+        # )
         trigger_on_return_period = self.pipe.settings.get_country_setting(
             self.country, "trigger-on-return-period"
         )

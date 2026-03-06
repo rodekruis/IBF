@@ -32,10 +32,10 @@ class Settings:
             setting_value = self.settings[setting]
         else:
             for key in self.settings.keys():
-                if type(self.settings[key]) is dict:
+                if isinstance(self.settings[key], dict):
                     if setting in self.settings[key].keys():
                         setting_value = self.settings[key][setting]
-                elif type(self.settings[key]) is list:
+                elif isinstance(self.settings[key], list):
                     for i in range(len(self.settings[key])):
                         if setting in self.settings[key][i].keys():
                             setting_value = self.settings[key][i][setting]

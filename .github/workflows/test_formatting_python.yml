@@ -9,7 +9,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/test_formatting_python.yml'
-      - '**.py'
+      - '**/*.py'
 
 jobs:
   test:

@@ -475,9 +475,10 @@ class Extract(DroughtModule):
                 "triggerForecast"
             ].gt(trigger_on_minimum_probability)
             tercile_seasonal_prc_df.index = range(1, len(tercile_seasonal_prc_df) + 1)
-            tercile_seasonal_prc_df[["triggerForecast", "triggerStatus"]].to_dict(
-                orient="index"
-            )
+            # TODO: Not used, but keep due to lack of understanding
+            # data_dict = tercile_seasonal_prc_df[
+            #     ["triggerForecast", "triggerStatus"]
+            # ].to_dict(orient="index")
 
             for month in forecastData["tercile_lower"].keys():
                 lead_time = month - 1
