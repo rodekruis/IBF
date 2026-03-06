@@ -30,13 +30,13 @@ class Module:
     def check_settings(self, settings: Settings):
         """Check settings"""
         if not isinstance(settings, Settings):
-            raise TypeError(f"invalid format of settings, use settings.Settings")
+            raise TypeError("invalid format of settings, use settings.Settings")
         settings.check_settings(self.settings_to_check)
         return settings
 
     def check_secrets(self, secrets: Secrets):
         """Check secrets for storage"""
         if not isinstance(secrets, Secrets):
-            raise TypeError(f"invalid format of secrets, use secrets.Secrets")
+            raise TypeError("invalid format of secrets, use secrets.Secrets")
         secrets.check_secrets(self.secrets_to_check)
         return secrets

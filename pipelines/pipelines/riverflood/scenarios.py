@@ -1,13 +1,8 @@
 import ast
 import random
 
-from floodpipeline.data import (
-    AdminDataSet,
-    DischargeDataUnit,
-    DischargeStationDataUnit,
-    StationDataSet,
-)
-from floodpipeline.pipeline import Pipeline
+from pipelines.riverflood.data import DischargeDataUnit, DischargeStationDataUnit
+from pipelines.riverflood.pipeline import Pipeline
 
 
 def get_ensemble_likelihood(ensemble, threshold):
@@ -93,16 +88,17 @@ class Scenario:
 
     def get_discharge_scenario(self, events):
         """Get river discharge data for a given country based on scenario"""
-        if type(events) == str:
+        if type(events) is str:
             events = ast.literal_eval(events)
 
         adm_levels = self.pipe.settings.get_country_setting(
             self.country, "admin-levels"
         )
 
-        trigger_on_lead_time = self.pipe.settings.get_country_setting(
-            self.country, "trigger-on-lead-time"
-        )
+        # Not used, but keep due to lack of understanding
+        # trigger_on_lead_time = self.pipe.settings.get_country_setting(
+        #     self.country, "trigger-on-lead-time"
+        # )
         trigger_on_return_period = self.pipe.settings.get_country_setting(
             self.country, "trigger-on-return-period"
         )

@@ -8,11 +8,6 @@ import shutil
 from datetime import datetime
 
 import azure.cosmos.cosmos_client as cosmos_client
-import cdsapi
-import geopandas as gpd
-import requests
-from azure.core.exceptions import ResourceNotFoundError
-from azure.storage.blob import BlobServiceClient
 from pipelines.core.data import (
     AdminDataSet,
     AdminDataUnit,
@@ -21,8 +16,6 @@ from pipelines.core.data import (
 )
 from pipelines.core.load import Load
 from pipelines.drought.data import DroughtDataSets
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 COSMOS_DATA_TYPES = [
     "climate-region",
@@ -286,7 +279,7 @@ class DroughtLoad(Load):
 
         # send empty exposure data
         if len(processed_pcodes) == 0:
-            logging.info(f"send empty exposure data")
+            logging.info("send empty exposure data")
             for lead_time in set(all_possible_lead_times):
                 for indicator in AREA_INDICATORS:
                     for adm_level in admin_levels:

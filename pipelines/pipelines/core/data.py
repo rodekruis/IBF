@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 from datetime import datetime
 from pathlib import Path
@@ -7,7 +6,6 @@ from typing import List
 from urllib.parse import quote
 
 import requests
-
 from pipelines.core.secrets import Secrets
 
 
