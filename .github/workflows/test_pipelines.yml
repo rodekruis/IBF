@@ -40,7 +40,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install system dependencies
         run: |
@@ -61,4 +61,9 @@ jobs:
           BLOB_ACCOUNT_KEY: ${{ secrets.PIPELINES_BLOB_ACCOUNT_KEY }}
           COSMOS_KEY: ${{ secrets.PIPELINES_COSMOS_KEY }}
           CDSAPI_KEY: ${{ secrets.PIPELINES_CDSAPI_KEY }}
+          PYTHONFAULTHANDLER: '1'
+          PYTHONUNBUFFERED: '1'
+          OMP_NUM_THREADS: '1'
+          OPENBLAS_NUM_THREADS: '1'
+          MKL_NUM_THREADS: '1'
         run: uv run -m pytest "${{ matrix.test_node }}"
