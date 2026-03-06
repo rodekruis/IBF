@@ -1,3 +1,4 @@
+import argparse
 import subprocess
 import sys
 
@@ -7,13 +8,27 @@ def run_command(command: list[str]) -> int:
     return result.returncode
 
 
-def main() -> None:
-    checks: list[list[str]] = [
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--fix", action="store_true")
+    return parser.parse_args()
+
+
+def build_checks(fix: bool) -> list[list[str]]:
+    ruff_command = ["ruff", "check", "pipeline.py", "pipelines", "test"]
+    if fix:
+        ruff_command.append("--fix")
+
+    return [
         ["deptry", "."],
-        ["ruff", "check", "pipeline.py", "pipelines", "test"],
+        ruff_command,
         ["vulture", "pipeline.py", "pipelines", "test", "--min-confidence", "80"],
     ]
 
+
+def main() -> None:
+    args = parse_args()
+    checks = build_checks(args.fix)
     failed = False
 
     for command in checks:
