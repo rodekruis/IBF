@@ -2,12 +2,13 @@
 name = "pipelines"
 version = "0.1.0"
 description = "Forecast hazards impact on people and assets."
-authors = [{ name = "Jacopo Margutti", email = "jmargutti@redcross.nl" }]
-requires-python = ">=3.13,<4"
+authors = [{ name = "IBF", email = "ibf-devops@redcross.nl" }]
+requires-python = ">=3.12,<4"
 readme = "README.md"
 license = "Apache-2.0"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
