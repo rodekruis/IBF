@@ -70,8 +70,8 @@ def classify_alert(
     alert_class = "no"
     if classify_alert_on == "return-period":
         if (
-            type(alert_on_return_period) != dict
-            and type(alert_on_minimum_probability) != float
+            type(alert_on_return_period) is not dict
+            and type(alert_on_minimum_probability) is not float
         ):
             raise ValueError(
                 "to classify alerts on return period, alert-on-return-period should be a dictionary "
@@ -89,8 +89,8 @@ def classify_alert(
                 alert_class = class_
     elif classify_alert_on == "probability":
         if (
-            type(alert_on_minimum_probability) != dict
-            and type(alert_on_return_period) != float
+            type(alert_on_minimum_probability) is not dict
+            and type(alert_on_return_period) is not float
         ):
             raise ValueError(
                 "to classify alerts on minimum probability, alert-on-minimum-probability should be a dictionary "
@@ -109,9 +109,9 @@ def classify_alert(
             ):
                 alert_class = class_
     elif classify_alert_on == "disable":
-        if triggered and type(alert_on_return_period) == dict:
+        if triggered and type(alert_on_return_period) is dict:
             alert_class = max(alert_on_return_period, key=alert_on_return_period.get)
-        elif triggered and type(alert_on_minimum_probability) == dict:
+        elif triggered and type(alert_on_minimum_probability) is dict:
             alert_class = max(
                 alert_on_minimum_probability, key=alert_on_minimum_probability.get
             )

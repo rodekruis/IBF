@@ -1,8 +1,7 @@
 import itertools
 import logging
 import os
-from datetime import datetime, timedelta
-from pprint import pprint
+from datetime import datetime
 
 import pandas as pd
 import rasterio

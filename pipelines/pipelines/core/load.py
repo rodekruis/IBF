@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import logging
-
 import os
 import shutil
-import subprocess
 import time
 from urllib.error import HTTPError
 
@@ -44,7 +42,7 @@ class Load:
     def check_settings(self, settings: Settings):
         """Check settings"""
         if not isinstance(settings, Settings):
-            raise TypeError(f"invalid format of settings, use settings.Settings")
+            raise TypeError("invalid format of settings, use settings.Settings")
         settings.check_settings(
             ["postgresql_server", "postgresql_port", "postgresql_database"]
         )
@@ -53,7 +51,7 @@ class Load:
     def check_secrets(self, secrets: Secrets):
         """Check secrets for storage"""
         if not isinstance(secrets, Secrets):
-            raise TypeError(f"invalid format of secrets, use secrets.Secrets")
+            raise TypeError("invalid format of secrets, use secrets.Secrets")
         secrets.check_secrets(
             [
                 "ENVIRONMENT",
@@ -173,7 +171,7 @@ class Load:
         # return response
         try:
             return response.json()
-        except:
+        except ValueError:
             return response
 
     def __get_blob_service_client(self, blob_path: str):

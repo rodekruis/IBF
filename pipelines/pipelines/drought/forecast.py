@@ -13,7 +13,6 @@ from pipelines.drought.module import DroughtModule
 from pipelines.drought.utils import replace_year_month
 from rasterio.features import shapes
 from rasterio.mask import mask
-from rasterio.merge import merge
 from rasterstats import zonal_stats
 from shapely import Polygon
 from shapely.geometry import box, shape
@@ -160,7 +159,6 @@ class Forecast(DroughtModule):
             country, "alert-on-minimum-probability"
         )
 
-        climate_regions = {}
         current_month = datetime.today().strftime(
             "%b"
         )  # 'Feb' for February check if this can be passed from settings climate_regions should come form settings file

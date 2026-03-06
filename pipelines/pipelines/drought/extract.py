@@ -18,7 +18,6 @@ from pipelines.drought.utils import replace_year_month
 from rasterio.crs import CRS
 from rasterio.mask import mask
 from rasterio.transform import from_origin
-from rasterstats import zonal_stats
 
 warnings.simplefilter("ignore", category=RuntimeWarning)
 
@@ -127,7 +126,7 @@ class Extract(DroughtModule):
             else:
                 self.download_ecmwf_data(current_year, current_month, debug)
         except FileNotFoundError:
-            logging.error(f"downloading ECMWF data failed")
+            logging.error("downloading ECMWF data failed")
 
         logging.info("finished downloading ECMWF data")
 
@@ -293,7 +292,7 @@ class Extract(DroughtModule):
         )
 
         if triggermodel == "seasonal_rainfall_forecast":
-            trigger_df = self.compare_forecast_to_historical_lower_tercile(
+            self.compare_forecast_to_historical_lower_tercile(
                 country, ds_hindcast, ds_forecast, trigger_on_minimum_probability
             )
             tprate_forecast = ds_forecast["tprate"]
@@ -319,7 +318,7 @@ class Extract(DroughtModule):
             anomalies_tp.attrs["long_name"] = "Total precipitation anomaly"
 
         elif triggermodel == "seasonal_rainfall_forecast_3m":
-            trigger_df = self.compare_forecast_to_historical_lower_tercile(
+            self.compare_forecast_to_historical_lower_tercile(
                 country,
                 ds_hindcast_3m,
                 seas5_forecast_3m,
@@ -476,9 +475,9 @@ class Extract(DroughtModule):
                 "triggerForecast"
             ].gt(trigger_on_minimum_probability)
             tercile_seasonal_prc_df.index = range(1, len(tercile_seasonal_prc_df) + 1)
-            data_dict = tercile_seasonal_prc_df[
-                ["triggerForecast", "triggerStatus"]
-            ].to_dict(orient="index")
+            tercile_seasonal_prc_df[["triggerForecast", "triggerStatus"]].to_dict(
+                orient="index"
+            )
 
             for month in forecastData["tercile_lower"].keys():
                 lead_time = month - 1
@@ -706,7 +705,7 @@ class Extract(DroughtModule):
         probability_ds = xr.concat(probability_maps, dim="forecastMonth")
 
         # Save results to a new dataset
-        output_ds = xr.Dataset(
+        xr.Dataset(
             {
                 "quantile_33": quantile_ds,
                 "probability": probability_ds,
@@ -723,7 +722,7 @@ class Extract(DroughtModule):
             debug (bool): Uses mock data for debugging if True, otherwise downloads real data
         """
 
-        logging.info(f"downloading ECMWF data")
+        logging.info("downloading ECMWF data")
 
         gdf = self.load.get_adm_boundaries(1)
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import csv
-
 import json
 import logging
 import os.path
@@ -9,7 +8,6 @@ import shutil
 from datetime import datetime
 from typing import List
 
-import geopandas as gpd
 from pipelines.core.data import AdminDataSet, RegionDataSet
 from pipelines.core.load import Load
 from pipelines.riverflood.data import (
@@ -186,16 +184,16 @@ class RiverFloodLoad(Load):
                             )
                             processed_pcodes.append(pcode)
                             alert_areas[pcode][indicator] = amount
-                        body = {
-                            "countryCodeISO3": self.country,
-                            "leadTime": lead_time,
-                            "dynamicIndicator": indicator,
-                            "adminLevel": int(adm_level),
-                            "exposurePlaceCodes": exposure_pcodes,
-                            "disasterType": "floods",
-                            "eventName": event_name,
-                            "date": upload_time,
-                        }
+                        # body = {
+                        #     "countryCodeISO3": self.country,
+                        #     "leadTime": lead_time,
+                        #     "dynamicIndicator": indicator,
+                        #     "adminLevel": int(adm_level),
+                        #     "exposurePlaceCodes": exposure_pcodes,
+                        #     "disasterType": "floods",
+                        #     "eventName": event_name,
+                        #     "date": upload_time,
+                        # }
                         # self.ibf_api_request(
                         #     "POST", "admin-area-dynamic-data/exposure", body=body
                         # )
@@ -233,15 +231,15 @@ class RiverFloodLoad(Load):
                         station_data = {"fid": station_code, "value": value}
                         station_forecasts[indicator].append(station_data)
                         glofas_stations[station_code][indicator] = value
-                        body = {
-                            "leadTime": lead_time,
-                            "key": indicator,
-                            "dynamicPointData": station_forecasts[indicator],
-                            "pointDataCategory": "glofas_stations",
-                            "disasterType": "floods",
-                            "countryCodeISO3": self.country,
-                            "date": upload_time,
-                        }
+                        # body = {
+                        #     "leadTime": lead_time,
+                        #     "key": indicator,
+                        #     "dynamicPointData": station_forecasts[indicator],
+                        #     "pointDataCategory": "glofas_stations",
+                        #     "disasterType": "floods",
+                        #     "countryCodeISO3": self.country,
+                        #     "date": upload_time,
+                        # }
                         # self.ibf_api_request("POST", "point-data/dynamic", body=body)
                     processed_stations.append(station_code)
 
@@ -275,13 +273,13 @@ class RiverFloodLoad(Load):
                         "forecastTrigger": is_trigger,
                     }
                 )
-            body = {
-                "countryCodeISO3": self.country,
-                "alertsPerLeadTime": alerts_per_lead_time,
-                "disasterType": "floods",
-                "eventName": event_name,
-                "date": upload_time,
-            }
+            # body = {
+            #     "countryCodeISO3": self.country,
+            #     "alertsPerLeadTime": alerts_per_lead_time,
+            #     "disasterType": "floods",
+            #     "eventName": event_name,
+            #     "date": upload_time,
+            # }
             # self.ibf_api_request("POST", "event/alerts-per-lead-time", body=body)
 
         self.export_to_json_and_csv(events_json)
@@ -300,10 +298,10 @@ class RiverFloodLoad(Load):
                 )
             else:
                 shutil.copy(
-                    flood_extent.replace(".tif", f"_empty.tif"),
+                    flood_extent.replace(".tif", "_empty.tif"),
                     flood_extent_new,
                 )
-            files = {"file": open(flood_extent_new, "rb")}
+            # files = {"file": open(flood_extent_new, "rb")}
             # self.ibf_api_request(
             #     "POST", "admin-area-dynamic-data/raster/floods", files=files
             # )
@@ -329,16 +327,16 @@ class RiverFloodLoad(Load):
                             exposure_pcodes.append(
                                 {"placeCode": pcode, "amount": amount}
                             )
-                    body = {
-                        "countryCodeISO3": self.country,
-                        "leadTime": "1-day",  # this is a specific check IBF uses to establish no-trigger
-                        "dynamicIndicator": indicator,
-                        "adminLevel": adm_level,
-                        "exposurePlaceCodes": exposure_pcodes,
-                        "disasterType": "floods",
-                        "eventName": None,  # this is a specific check IBF uses to establish no-trigger
-                        "date": upload_time,
-                    }
+                    # body = {
+                    #     "countryCodeISO3": self.country,
+                    #     "leadTime": "1-day",  # this is a specific check IBF uses to establish no-trigger
+                    #     "dynamicIndicator": indicator,
+                    #     "adminLevel": adm_level,
+                    #     "exposurePlaceCodes": exposure_pcodes,
+                    #     "disasterType": "floods",
+                    #     "eventName": None,  # this is a specific check IBF uses to establish no-trigger
+                    #     "date": upload_time,
+                    # }
                     # self.ibf_api_request(
                     #     "POST", "admin-area-dynamic-data/exposure", body=body
                     # )
@@ -371,23 +369,23 @@ class RiverFloodLoad(Load):
                     station_data = {"fid": station_code, "value": value}
                     station_forecasts[indicator].append(station_data)
 
-            body = {
-                "leadTime": f"7-day",
-                "key": indicator,
-                "dynamicPointData": station_forecasts[indicator],
-                "pointDataCategory": "glofas_stations",
-                "disasterType": "floods",
-                "countryCodeISO3": self.country,
-                "date": upload_time,
-            }
+            # body = {
+            #     "leadTime": "7-day",
+            #     "key": indicator,
+            #     "dynamicPointData": station_forecasts[indicator],
+            #     "pointDataCategory": "glofas_stations",
+            #     "disasterType": "floods",
+            #     "countryCodeISO3": self.country,
+            #     "date": upload_time,
+            # }
             # self.ibf_api_request("POST", "point-data/dynamic", body=body)
 
         # process events: events/process
-        body = {
-            "countryCodeISO3": self.country,
-            "disasterType": "floods",
-            "date": upload_time,
-        }
+        # body = {
+        #     "countryCodeISO3": self.country,
+        #     "disasterType": "floods",
+        #     "date": upload_time,
+        # }
         # self.ibf_api_request("POST", "events/process", body=body)
 
     def get_thresholds_station(self):
