@@ -116,8 +116,8 @@ class DroughtLoad(Load):
         drought_extent: str = None,
         upload_time: datetime = datetime.now(),
     ):
-        """Send drought forecast data to IBF API"""
-        logging.info("send data to IBF API")
+        """Send drought forecast data"""
+        logging.info("send data")
 
         events_json = []
 
@@ -248,7 +248,7 @@ class DroughtLoad(Load):
                     events_json.append(
                         {
                             "event_name": event_name,
-                            "date": upload_time,
+                            "date": upload_time_str,
                             "country": self.country,
                             "hazard": "flood",
                             "lead_time": lead_time,
@@ -372,8 +372,14 @@ class DroughtLoad(Load):
                 True if country is None else None
             ),  # country must be the partition key
         )
+        records_query_results = list(records_query)
+        if len(records_query_results) == 0:
+            raise KeyError(
+                f"No Cosmos records of type '{data_type}' found for country {country} in date range "
+                f"{start_date} - {end_date}."
+            )
         records = []
-        for record in records_query:
+        for record in records_query_results:
             records.append(copy.deepcopy(record))
         datasets = []
         countries = list(set([record["country"] for record in records]))

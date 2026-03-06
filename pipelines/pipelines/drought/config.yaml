@@ -76,6 +76,7 @@ countries:
           Dec:
             - MAM: '3-month'
             - OND: '0-month'
+
   - name: LSO
     admin-levels:
       - 1
@@ -118,6 +119,7 @@ countries:
             - Drought: '0-month'
           Dec:
             - Drought: '0-month'
+
   - name: UGA
     admin-levels:
       - 2
@@ -160,6 +162,7 @@ countries:
             - short_Rains: '0-month'
           Dec:
             - Long_Rains: '3-month'
+
   - name: ETH
     admin-levels:
       - 2

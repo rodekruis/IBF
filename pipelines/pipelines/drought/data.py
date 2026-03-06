@@ -19,6 +19,8 @@ class ForecastAdminDataUnit(AdminDataUnit):
         self.forecast: list = kwargs.get("forecast", None)
         self.triggered: bool = kwargs.get("triggered", None)
         self.alert_class: str = kwargs.get("alert_class", None)
+        self.pop_affected: int = kwargs.get("pop_affected", 0)
+        self.pop_affected_perc: float = kwargs.get("pop_affected_perc", 0.0)
 
 
 class ForecastRegionDataUnit(RegionDataUnit):

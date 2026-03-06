@@ -16,7 +16,7 @@ from rasterio.mask import mask
 from rasterio.merge import merge
 from rasterstats import zonal_stats
 from shapely import Polygon
-from shapely.geometry import shape
+from shapely.geometry import box, shape
 
 warnings.simplefilter("ignore", category=RuntimeWarning)
 
@@ -239,9 +239,35 @@ class Forecast(DroughtModule):
                         gdf1 = admin_boundaries[adm_level].query(
                             f"ADM{adm_level}_PCODE == @pcode"
                         )
+
+                        raster_crs = rlower_tercile_probability.rio.crs
+                        gdf_clip = gdf1.to_crs(raster_crs)
+                        gdf_clip = gdf_clip[gdf_clip.geometry.notna()]
+                        gdf_clip = gdf_clip[~gdf_clip.geometry.is_empty]
+
+                        if gdf_clip.empty:
+                            raise ValueError(
+                                "No valid geometries available for clipping."
+                            )
+
+                        raster_bbox = box(*rlower_tercile_probability.rio.bounds())
+                        vector_union = gdf_clip.geometry.union_all()
+
+                        if not raster_bbox.intersects(vector_union):
+                            raise ValueError(
+                                f"Clip skipped: no intersection. Raster bounds={rlower_tercile_probability.rio.bounds()}, "
+                                f"Vector bounds={gdf_clip.total_bounds.tolist()}"
+                            )
+
                         clipped_regional_mean = rlower_tercile_probability.rio.clip(
-                            gdf1.geometry, gdf1.crs, drop=True, all_touched=True
+                            gdf_clip.geometry, raster_crs, drop=True, all_touched=True
                         )
+
+                        if np.isnan(clipped_regional_mean.values).all():
+                            raise ValueError(
+                                "Clip succeeded but all pixels in clipped area are nodata."
+                            )
+
                         likelihood = round(
                             np.nanmedian(clipped_regional_mean.values), 2
                         )
