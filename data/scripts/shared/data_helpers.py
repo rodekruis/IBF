@@ -9,8 +9,7 @@ from dotenv import load_dotenv
 # Countries we should be fetching data for.
 # Note : this list is limited for dev work so we don't slow ourselves down with too much data.
 target_countries_iso_a3 = {
-    "KEN"
-    #"ETH", "KEN", "MWI", "PHL", "ZMB"
+    "ETH", "KEN", "MWI", "PHL", "ZMB"
 }
 
 def get_seed_data_repo_path():

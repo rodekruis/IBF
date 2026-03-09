@@ -1,5 +1,6 @@
 """
 This script fetches the various country data and feature data from the IFRC GO API
+It writes some directly to file, and processes others that need to be cleaned up.
 """
 
 import json
@@ -8,170 +9,97 @@ from shared.data_helpers import get_seed_data_repo_path
 from shared.download_helpers import download_json_source
 from pydantic import BaseModel
 
+# Results can be larger than 26,000. Set query limit 99999 to get all. Set to lower when debugging
+results_limit = 99999
+
 # Dict of output filenames and data query sources
 sources = {
-    "hospital_locs": "https://goadmin.ifrc.org/api/v2/health-local-units/?limit=99999",
-    "country_overview": "https://goadmin.ifrc.org/api/v2/country/?limit=99999",
-    "rc_locs": "https://goadmin.ifrc.org/api/v2/public-local-units/?limit=99999",
-    "admin2_overview": "https://goadmin.ifrc.org/api/v2/admin2/?limit=99999",
-    "admin1_overview": "https://goadmin.ifrc.org/api/v2/district/?limit=99999",
+    "hospital_locs": f"https://goadmin.ifrc.org/api/v2/health-local-units/?limit={results_limit}",
+    "country_overview": f"https://goadmin.ifrc.org/api/v2/country/?limit={results_limit}",
+    "rc_locs": f"https://goadmin.ifrc.org/api/v2/public-local-units/?limit={results_limit}",
+    "admin2_overview": f"https://goadmin.ifrc.org/api/v2/admin2/?limit={results_limit}",
+    "admin1_overview": f"https://goadmin.ifrc.org/api/v2/district/?limit={results_limit}",
 }
 
+# Output Dir
+BASE_REPO_DIR = get_seed_data_repo_path()
+DATA_DIR = Path(BASE_REPO_DIR) / "country-data"
+
+""" Data structure for extracting extent and center data """
 class ExtentData(BaseModel):
     name_en: str
     admin_level: int
     iso: str
     code: str
     center: list[float]
-    extents: list[float]
+    extents: list[list[float]]
 
-def get_extent_data(admin_level : int, source):
-    output = {}
+"""
+Extract the extent data.
+Some data is missing in admin 0 and admin 1, so it needs special handling.
+"""
+def get_extent_data(admin_level: int, source) -> list[ExtentData]:
+    output = []
 
-    # make a list of ExtenData based on the source data
-    # The admin level is added from the above arg admin_level
-    # For admin level 0, if ISO is null, skip. Also write ISO as both code and iso.
-    # write the name/country name as name_en
-    # For center, get the 2 floats from "centroid"
-    # for extents, there are 5 points in bbox. Get only the first 4
-    # example output is in the file in comments. "See Sample Admin level 0", etc.
-    # full sample data is in ../sampledata/
+    for item in source.get("results", []):
+        # For admin level 0, there are lots of "Region" extents.
+        # The ISO is null on those, so skip them
+        # Field names also differ between admin levels.
+        if admin_level == 0:
+            iso = item.get("iso")
+            if not iso:
+                continue
+            code = iso
+            name_en = item.get("name", "")
+        else:
+            iso = item.get("country_iso") or ""
+            code = item.get("code")
+            name_en = item.get("name")
+            if not code or not name_en:
+                print(f"Warning: Skipping item with missing code or name - {item}")
+                continue
+
+        # Get center from centroid coordinates
+        centroid = item.get("centroid") or {}
+        center = centroid.get("coordinates")
+        if not center:
+            print(f"Warning: No centroid coordinates for {name_en} ({code})")
+            # use default, since we can just calculate this from the extents.
+            center = [0.0, 0.0]
+
+        # Get first 4 points from bbox (5th point repeats the first)
+        bbox = item.get("bbox") or {}
+        coords = (bbox.get("coordinates") or [[]])[0]
+        if not coords:
+            print(f"Warning: No bbox coordinates for {name_en} ({code})")
+            continue
+        extents = coords[:4]
+
+        # Round floats to 4 decimals (about 11 meters accuracy)
+        center = [round(c, 4) for c in center]
+        extents = [[round(coord, 4) for coord in point] for point in extents]
+
+        # For admin 2, there is no country code. Get it from the first two letters of the code.
+        if admin_level == 2 and not iso and code and len(code) >= 2:
+            iso = code[:2]
+
+        extent_data = ExtentData(
+            name_en=name_en,
+            admin_level=admin_level,
+            iso=iso,
+            code=code,
+            center=center,
+            extents=extents,
+        )
+        
+        output.append(extent_data)
+
     return output
 
-#Sample Admin level 0
-"""
-      "iso": "AF",
-      "iso3": "AFG",
-      "bbox": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              60.503889000065236,
-              29.377476867128088
-            ],
-            [
-              74.87943118675915,
-              29.377476867128088
-            ],
-            [
-              74.87943118675915,
-              38.48893683918417
-            ],
-            [
-              60.503889000065236,
-              38.48893683918417
-            ],
-            [
-              60.503889000065236,
-              29.377476867128088
-            ]
-          ]
-        ]
-      },
-      "centroid": {
-        "type": "Point",
-        "coordinates": [
-          67.709953,
-          33.93911
-        ]
-      },
-      "name": "Afghanistan"
-"""
-
-#Sample Admin level 1
-"""
-
-      "name": "Ordino",
-      "code": "AD001",
-      "country_iso": "AD",
-      "country_iso3": "AND",
-      "bbox": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              1.45964684658635,
-              42.5517616271341
-            ],
-            [
-              1.60640966847476,
-              42.5517616271341
-            ],
-            [
-              1.60640966847476,
-              42.6587066652962
-            ],
-            [
-              1.45964684658635,
-              42.6587066652962
-            ],
-            [
-              1.45964684658635,
-              42.5517616271341
-            ]
-          ]
-        ]
-      },
-      "centroid": {
-        "type": "Point",
-        "coordinates": [
-          1.531076061808509,
-          42.61149239930336
-        ]
-      },
-      """
-#Sample Admin level 2
-"""
-
-      "name": "Kabul",
-      "code": "AF0101",
-      "bbox": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              68.9910513780001,
-              34.4254471610001
-            ],
-            [
-              69.340645695,
-              34.4254471610001
-            ],
-            [
-              69.340645695,
-              34.6451104010001
-            ],
-            [
-              68.9910513780001,
-              34.6451104010001
-            ],
-            [
-              68.9910513780001,
-              34.4254471610001
-            ]
-          ]
-        ]
-      },
-      "centroid": {
-        "type": "Point",
-        "coordinates": [
-          69.13517911835672,
-          34.52543790036686
-        ]
-      },
-    },
-"""
-
-# Create Data directory if it doesn't exist
-BASE_REPO_DIR = get_seed_data_repo_path()
-DATA_DIR = Path(BASE_REPO_DIR) / "temp"
-
-def get_zoom_extents():
-    return 0
 
 if __name__ == "__main__":
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+
     raw_data = {}
     output_data = {}
 
@@ -182,6 +110,15 @@ if __name__ == "__main__":
     # Hospital and RC locations need no processing, and can be output as is
     output_data["hospital_locs"] = raw_data["hospital_locs"]
     output_data["rc_locs"] = raw_data["rc_locs"]
+
+    # Process extent data
+    # serializable_data = [item.model_dump() for item in data]
+    extent_data_0 = get_extent_data(0, raw_data["country_overview"])
+    extent_data_1 = get_extent_data(1, raw_data["admin1_overview"])
+    extent_data_2 = get_extent_data(2, raw_data["admin2_overview"])
+    output_data["admin0_extents"] = [item.model_dump() for item in extent_data_0]
+    output_data["admin1_extents"] = [item.model_dump() for item in extent_data_1]
+    output_data["admin2_extents"] = [item.model_dump() for item in extent_data_2]
     
 
     # Save to file, overwriting the existing file
