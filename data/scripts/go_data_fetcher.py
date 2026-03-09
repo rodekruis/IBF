@@ -9,16 +9,17 @@ from shared.data_helpers import get_seed_data_repo_path
 from shared.download_helpers import download_json_source
 from pydantic import BaseModel
 
-# Results can be larger than 26,000. Set query limit 99999 to get all. Set to lower when debugging
+# Results can be larger than 26,000. Set query limit 99999 to get all. Set to lower when debugging.
 results_limit = 99999
 
-# Dict of output filenames and data query sources
+# Dict of data names and data query sources
+# The data names are for our reference (and are used for the output file name).
 sources = {
-    "hospital_locs": f"https://goadmin.ifrc.org/api/v2/health-local-units/?limit={results_limit}",
-    "country_overview": f"https://goadmin.ifrc.org/api/v2/country/?limit={results_limit}",
     "rc_locs": f"https://goadmin.ifrc.org/api/v2/public-local-units/?limit={results_limit}",
-    "admin2_overview": f"https://goadmin.ifrc.org/api/v2/admin2/?limit={results_limit}",
-    "admin1_overview": f"https://goadmin.ifrc.org/api/v2/district/?limit={results_limit}",
+    "hospital_locs": f"https://goadmin.ifrc.org/api/v2/health-local-units/?limit={results_limit}",
+    "admin0_extents": f"https://goadmin.ifrc.org/api/v2/country/?limit={results_limit}",
+    "admin1_extents": f"https://goadmin.ifrc.org/api/v2/district/?limit={results_limit}",
+    "admin2_extents": f"https://goadmin.ifrc.org/api/v2/admin2/?limit={results_limit}",
 }
 
 # Output Dir
@@ -71,6 +72,7 @@ def get_extent_data(admin_level: int, source) -> list[ExtentData]:
         bbox = item.get("bbox") or {}
         coords = (bbox.get("coordinates") or [[]])[0]
         if not coords:
+            # If there are coordinates here, then there is no data to extract. Skip this item.
             print(f"Warning: No bbox coordinates for {name_en} ({code})")
             continue
         extents = coords[:4]
@@ -113,9 +115,9 @@ if __name__ == "__main__":
 
     # Process extent data
     # serializable_data = [item.model_dump() for item in data]
-    extent_data_0 = get_extent_data(0, raw_data["country_overview"])
-    extent_data_1 = get_extent_data(1, raw_data["admin1_overview"])
-    extent_data_2 = get_extent_data(2, raw_data["admin2_overview"])
+    extent_data_0 = get_extent_data(0, raw_data["admin0_extents"])
+    extent_data_1 = get_extent_data(1, raw_data["admin1_extents"])
+    extent_data_2 = get_extent_data(2, raw_data["admin2_extents"])
     output_data["admin0_extents"] = [item.model_dump() for item in extent_data_0]
     output_data["admin1_extents"] = [item.model_dump() for item in extent_data_1]
     output_data["admin2_extents"] = [item.model_dump() for item in extent_data_2]
