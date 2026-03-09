@@ -16,7 +16,10 @@ from pathlib import Path
 import json
 from PIL import Image
 
-
+# URL for the population data
+# If a new model comes out, update this.
+# See the WorldPop webiste for more information:
+# https://hub.worldpop.org/geodata/listing?id=77
 BASE_URL = "ftp://ftp.worldpop.org/GIS/Population_Density/Global_2000_2020_1km_UNadj/2020/"
 
 # Output dirs
@@ -50,4 +53,3 @@ if __name__ == "__main__":
             bw_img.save(bw_path, optimize=True)
         else:
             print(f"Error: Failed to download data for {name} from {url}")
-

@@ -43,12 +43,13 @@ def get_extent_data(admin_level: int, source) -> list[ExtentData]:
     output = []
 
     for item in source.get("results", []):
-        # For admin level 0, there are lots of "Region" extents.
-        # The ISO is null on those, so skip them
-        # Field names also differ between admin levels.
+        # Get names and relevant codes.
+        # The fields differ between admin levels.
         if admin_level == 0:
             iso = item.get("iso")
             if not iso:
+                # For admin level 0, there are lots of "Region" extents.
+                # The ISO is null on those, so skip them
                 continue
             code = iso
             name_en = item.get("name", "")
@@ -114,14 +115,13 @@ if __name__ == "__main__":
     output_data["rc_locs"] = raw_data["rc_locs"]
 
     # Process extent data
-    # serializable_data = [item.model_dump() for item in data]
     extent_data_0 = get_extent_data(0, raw_data["admin0_extents"])
     extent_data_1 = get_extent_data(1, raw_data["admin1_extents"])
     extent_data_2 = get_extent_data(2, raw_data["admin2_extents"])
+    # Serialize the data models for output to file
     output_data["admin0_extents"] = [item.model_dump() for item in extent_data_0]
     output_data["admin1_extents"] = [item.model_dump() for item in extent_data_1]
     output_data["admin2_extents"] = [item.model_dump() for item in extent_data_2]
-    
 
     # Save to file, overwriting the existing file
     for name, data in output_data.items():
