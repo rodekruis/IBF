@@ -16,6 +16,7 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "omnilib.ufmt"
   },
+  "python.analysis.extraPaths": ["./pipelines"],
   "eslint.enable": true,
   "eslint.format.enable": true,
   "eslint.rules.customizations": [

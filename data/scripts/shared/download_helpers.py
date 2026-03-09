@@ -23,7 +23,7 @@ def download_binary_object(url : str):
         print(f"Error: Failed to download from '{url}'. Status: {status_code}, error: {e}")
     return None
 
-def download_json_source(name : str, url : str, path : Path):
+def download_json_source(name : str, url : str):
     print(f"Downloading {name} from {url}...")
 
     # Get data
@@ -52,12 +52,7 @@ def download_json_source(name : str, url : str, path : Path):
             print(f"  -- {actual_count} out of {expected_count} items parsed.")
     else:
         print(f"Error: {name} returned no results.")
+    
+    return data
 
-    # Save to file, overwriting an existing file
-
-    output_file = path / f"{name}.json"
-    with open(output_file, "w", encoding="utf-8") as f:
-        # ensure_ascii=False to preserve non-ASCII chars
-        json.dump(data, f, indent=2, ensure_ascii=False)
-    print(f"  -- Data saved to {output_file}")
     
