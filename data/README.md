@@ -5,4 +5,4 @@ See the scripts in `/scripts/` and the summaries in them for the purpose.
 
 ### Python dependencies
 
-```pip3 install requests, pillow, rasterio```
+```pip3 install requests, pillow, rasterio, dotenv```
