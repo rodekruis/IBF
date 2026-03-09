@@ -59,7 +59,7 @@ services:
   pg_tileserv:
     image: pramsey/pg_tileserv:20250131
     container_name: pg_tileserv
-    #platform: linux/amd64
+    platform: linux/amd64
     restart: unless-stopped
     env_file: .env
     environment:
@@ -74,7 +74,7 @@ services:
   pg_featureserv:
     image: pramsey/pg_featureserv:20250917
     container_name: pg_featureserv
-    #platform: linux/amd64
+    platform: linux/amd64
     restart: unless-stopped
     env_file: .env
     environment:
