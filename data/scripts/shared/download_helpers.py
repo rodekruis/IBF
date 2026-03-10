@@ -4,7 +4,6 @@ Helper functions for downloading
 
 import requests
 import json
-from pathlib import Path
 from urllib.request import urlopen
 from urllib.error import URLError
 
@@ -51,7 +50,7 @@ def download_json_source(name : str, url : str):
         else:
             print(f"  -- {actual_count} out of {expected_count} items parsed.")
     else:
-        print(f"Error: {name} returned no results.")
+        print(f"Error: {name} returned no results or did not contain keys 'count' and 'results'.")
     
     return data
 

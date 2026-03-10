@@ -23,9 +23,9 @@ def colorize_image_array(img_array: bytes, color1 : tuple, color2: tuple, log_sc
 
     # optional: convert the data to logarithmic scale
     if log_scale:
+        # np.log1p performs log(1 + x)
+        # Since PNG values are non-negative, np.log1p will also return non-negative values
         img_bw = np.log1p(img_bw)
-        # Since values under 1 will be negative now, set these to 0
-        img_bw[img_bw < 0] = 0  # log(1 + x) to handle zero values
 
     # Normalize to 0-1 range for color interpolation
     img_max = np.nanmax(img_bw)
@@ -104,16 +104,16 @@ def geotiff_to_array(tif_data: bytes):
             if src.nodata is not None and src.nodata > 0:
                 print(f"Error: Only NoData values of 0 or less are supported. NoData value: {src.nodata}.")
 
-            # Normalize data to 0-255
-            norm_data = (reproj_data / reproj_data.max()) * 255
+            # Normalize data to 0-254 (if it has values above 0)
+            # 0-254 is used, since 1 is added later (bringing the max to 255)
+            # in order to offset data from the NoData value of 0.
+            if reproj_data.max() > 0:
+                norm_data = (reproj_data / reproj_data.max()) * 254
+            else:
+                norm_data = reproj_data
 
             # Set 0 as the new nodata value, and make other data start at 1
-            for i in range(norm_data.shape[0]):
-                for j in range(norm_data.shape[1]):
-                    if norm_data[i, j] < 0:
-                        norm_data[i, j] = 0
-                    else:
-                        norm_data[i, j] += 1
+            norm_data = np.where(norm_data < 0, 0, norm_data + 1)
 
             # cast to uint8 for PNG output
             img_array_bw = norm_data.astype(np.uint8)
