@@ -83,7 +83,7 @@ services:
       PGFS_SERVER_DEBUG: ${PGFS_SERVER_DEBUG}
     volumes:
       - ./settings/pg_featureserv.json:/config.json:ro
-    command: ["--config", "/config.json"]
+    command: ['--config', '/config.json']
     depends_on:
       ibf-db:
         condition: service_healthy
