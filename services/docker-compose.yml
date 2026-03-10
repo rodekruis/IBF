@@ -68,7 +68,7 @@ services:
       ibf-db:
         condition: service_healthy
     ports:
-      - 7800:7800
+      - '7800:7800'
 
   # Map vector and point data service
   pg_featureserv:
@@ -80,6 +80,7 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@ibf-db/${POSTGRES_DBNAME}
       PGFS_DATABASE_FUNCTIONINCLUDES: postgisftw
+      PGFS_SERVER_DEBUG: ${PGFS_SERVER_DEBUG}
     volumes:
       - ./settings/pg_featureserv.json:/config.json:ro
     command: ["--config", "/config.json"]
@@ -87,4 +88,4 @@ services:
       ibf-db:
         condition: service_healthy
     ports:
-      - "9000:9000"
+      - '9000:9000'

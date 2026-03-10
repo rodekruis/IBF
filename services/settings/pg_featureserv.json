@@ -3,9 +3,6 @@
     "LimitDefault": 1000
   },
   "Server": {
-    "Debug" : true,
-    "TransformFunctions": [
-      "ST_Simplify"
-    ]
+    "TransformFunctions": ["ST_Simplify"]
   }
 }
