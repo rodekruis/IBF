@@ -24,6 +24,7 @@ dependencies = [
     "netCDF4",
     "numpy",
     "pandas",
+    "pydantic",
     "PyYAML",
     "python-dotenv",
     "python-dateutil",
