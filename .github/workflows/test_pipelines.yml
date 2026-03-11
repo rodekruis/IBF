@@ -6,13 +6,13 @@ on:
     types: [checks_requested]
   pull_request:
     paths:
-      - 'data/pipelines/**'
+      - 'data/**'
       - '.github/workflows/test_pipelines.yml'
   push:
     branches:
       - main
     paths:
-      - 'data/pipelines/**'
+      - 'data/**'
       - '.github/workflows/test_pipelines.yml'
 
 # This is needed for qlty to authenticate with OIDC
