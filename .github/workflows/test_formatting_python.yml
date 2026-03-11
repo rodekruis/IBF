@@ -18,7 +18,7 @@ jobs:
       contents: read
     defaults:
       run:
-        working-directory: pipelines
+        working-directory: data
 
     steps:
       - name: Check code formatting

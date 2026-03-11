@@ -9,5 +9,5 @@ package-lock.json
 **/module-dependencies.md
 
 # Exclude pipeline data and venv files
-pipelines/data
-pipelines/.venv
+data/data
+data/.venv
