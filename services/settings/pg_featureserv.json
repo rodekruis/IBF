@@ -1,0 +1,8 @@
+{
+  "Paging": {
+    "LimitDefault": 1000
+  },
+  "Server": {
+    "TransformFunctions": ["ST_Simplify"]
+  }
+}
