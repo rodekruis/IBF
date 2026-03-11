@@ -1,7 +1,8 @@
 services:
   ibf-db:
     container_name: ibf-db
-    image: 'postgis/postgis:14-3.4'
+    image: 'postgis/postgis:17-3.5'
+    platform: linux/amd64
     init: true
     env_file: .env
     environment:
