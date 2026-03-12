@@ -18,12 +18,12 @@ target_admin_levels = [0, 1, 2, 3]
 
 # Output Dir
 BASE_REPO_DIR = get_seed_data_repo_path()
-DATA_DIR = Path(BASE_REPO_DIR) / "admin-areas-v2"
+DATA_DIR = Path(BASE_REPO_DIR) / "admin-areas-gadm"
 
 if __name__ == "__main__":
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    # make a dict of sources for each amdin level for each country in target_countries_iso_a3
+    # make a dict of sources for each admin level for each country in target_countries_iso_a3
     # and a dict of output data with the same key
     sources = {}
     output = {}
