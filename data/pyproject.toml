@@ -25,6 +25,7 @@ dependencies = [
     "numpy",
     "pandas",
     "pillow",
+    "psycopg[binary]",
     "pydantic",
     "PyYAML",
     "python-dotenv",
@@ -37,12 +38,12 @@ dependencies = [
     "shapely",
     "urllib3",
     "xarray",
-#    "beautifulsoup4", # not currently used, but leaving in due to lack of understanding
-#    "certifi",
-#    "fiona>=1.10b2",
-#    "GeoAlchemy2",
-#    "SQLAlchemy",
-#    "tqdm",
+    #    "beautifulsoup4", # not currently used, but leaving in due to lack of understanding
+    #    "certifi",
+    #    "fiona>=1.10b2",
+    #    "GeoAlchemy2",
+    #    "SQLAlchemy",
+    #    "tqdm",
 ]
 
 [project.urls]

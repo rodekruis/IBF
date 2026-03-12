@@ -4,11 +4,7 @@ The frontend uses PNG in EPSG:3857, so this script also converts the files for t
 The geo metadata is saved as JSON.
 """
 
-# Add pipelines to path for imports
-import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "pipelines"))
-
 from shared.data_helpers import get_seed_data_repo_path, target_countries_iso_a3
 from shared.download_helpers import download_binary_object
 from shared.image_helpers import geotiff_to_array
