@@ -3,12 +3,9 @@ Colorizes greyscale PNGs that were produced by the GeoTIFF -> PNG flow in Popula
 """
 
 # Add pipelines to path for imports
-import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "pipelines"))
-
 from shared.data_helpers import get_seed_data_repo_path, target_countries_iso_a3
-from pipelines.core.image_helpers import colorize_image_array
+from shared.image_helpers import colorize_image_array
 import shutil
 from PIL import Image
 
