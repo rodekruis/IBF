@@ -26,16 +26,18 @@ Classes and utils shared between the python projects.
 ## Prerequisites
 
 - **Python:** Install 3.12 or higher. Normally it's best to grab latest 3.x (unless we find there is a breaking change).
+
 - **UV:** Go to their [GitHub page](https://github.com/astral-sh/uv/releases) and either grab the binaries or copy the `curl` command from there to install locally. An example curl command:
 `curl --proto '=https' --tlsv1.2 -LsSf https://releases.astral.sh/github/uv/releases/download/0.10.9/uv-installer.sh | sh`
+
 - **HomeBrew Package Manager** (Need for Mac users only) Install instructions are on their [homepage](https://brew.sh/). This is needed for the GDAL installation.
+
 - **GDAL library** This has a lot of dependencies, so it will take a long time to download this.For Mac users: run this in terminal: `brew install gdal`. For Windows users, you can get this via the [OSGeo4W installer](https://trac.osgeo.org/osgeo4w/)
 
 ## Setup
 
-1. Navigate to the <repo root>/data/ directory and install all python dependencies with `uv sync` to sync with the package versions, or `pip3 install .` to get the latest of all listed packages.
+1. Navigate to the <repo root>/data/ directory and install all python dependencies with `uv sync`.
 1. Copy the `.env.example` file, and rename it to `.env`
-
 
 ### Additional setup for updating the seed repo
 
@@ -45,12 +47,14 @@ It's recommended to clone the repo into the same parent dir as the IBF/ repo. If
 
 ## Updating the dependencies
 
-If you add a python dependency, you need to add it in `pyproject.toml`. If you forget, this will get flagged automatically on your PR. You also need to update the uv.lock file (which is not flagged automatically).
+If you add a python dependency with `pip`, the project dependencies may become out of date. The ideal flow to add dependencies is:
 
-Commands to update the uv.lock file:
+1. Add the package name to `dependencies` in `pyproject.toml`
+2. Navigate to <repo root>/data in terminal and call `uv sync` to sync both your environment and the `uv.lock` file.
 
-- `uv lock`: Sync the dependencies with the `pyproject.toml` file.
-- `uv lock --upgrade`: Does the same as above, but also upgrades all packages to the latest version.
+There is a scan when you PR to check `pyproject.toml` for missing dependencies, but it doesn't scan the `uv.lock` file.
+
+To upgrade all packages in the `uv.lock` file to the latest, run `uv lock --upgrade`, although this means everything will need to be retested.
 
 ## Quality checks
 
