@@ -25,14 +25,17 @@ Classes and utils shared between the python projects.
 
 ## Prerequisites
 
-**Python:** Install 3.12 or higher. Normally it's best to grab latest 3.x (unless we find there is a breaking change).
-**UV:** Go to their [GitHub page](https://github.com/astral-sh/uv/releases) and either grab the binaries or copy the `curl` command from there to install locally. An example curl command:
+- **Python:** Install 3.12 or higher. Normally it's best to grab latest 3.x (unless we find there is a breaking change).
+- **UV:** Go to their [GitHub page](https://github.com/astral-sh/uv/releases) and either grab the binaries or copy the `curl` command from there to install locally. An example curl command:
 `curl --proto '=https' --tlsv1.2 -LsSf https://releases.astral.sh/github/uv/releases/download/0.10.9/uv-installer.sh | sh`
+- **HomeBrew Package Manager** (Need for Mac users only) Install instructions are on their [homepage](https://brew.sh/). This is needed for the GDAL installation.
+- **GDAL library** This has a lot of dependencies, so it will take a long time to download this.For Mac users: run this in terminal: `brew install gdal`. For Windows users, you can get this via the [OSGeo4W installer](https://trac.osgeo.org/osgeo4w/)
 
 ## Setup
 
 1. Navigate to the <repo root>/data/ directory and install all python dependencies with `uv sync` to sync with the package versions, or `pip3 install .` to get the latest of all listed packages.
 1. Copy the `.env.example` file, and rename it to `.env`
+
 
 ### Additional setup for updating the seed repo
 

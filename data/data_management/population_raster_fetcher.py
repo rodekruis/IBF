@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "pipelines"))
 
 from shared.data_helpers import get_seed_data_repo_path, target_countries_iso_a3
 from shared.download_helpers import download_binary_object
-from pipelines.core.image_helpers import geotiff_to_array
+from shared.image_helpers import geotiff_to_array
 import json
 from PIL import Image
 

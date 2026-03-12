@@ -20,7 +20,7 @@ Get the root dir of the local IBF-seed-data repo so files can be written there.
 This looks for the SEED_DATA_REPO_ROOT var in the /data/.env dir
 """
 def get_seed_data_repo_path():
-    env_path = Path(__file__).parent / "../../.env"
+    env_path = Path(__file__).parent / "../.env"
     load_dotenv(env_path)
     resolved_path = (env_path.parent / os.environ.get("SEED_DATA_REPO_ROOT", "")).resolve()
     print(f"Seed data repo path used as: {resolved_path}")

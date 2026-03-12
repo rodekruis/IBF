@@ -24,6 +24,7 @@ dependencies = [
     "netCDF4",
     "numpy",
     "pandas",
+    "pillow",
     "pydantic",
     "PyYAML",
     "python-dotenv",
@@ -52,6 +53,7 @@ include = [
     "pipelines/core",
     "pipelines/drought",
     "pipelines/riverflood",
+    "shared",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -59,6 +61,7 @@ include = [
     "pipelines/core",
     "pipelines/drought",
     "pipelines/riverflood",
+    "shared",
 ]
 
 [tool.hatch.build.targets.wheel.sources]
