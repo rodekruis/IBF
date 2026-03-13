@@ -24,6 +24,9 @@ dependencies = [
     "netCDF4",
     "numpy",
     "pandas",
+    "pillow",
+    "psycopg[binary]",
+    "pydantic",
     "PyYAML",
     "python-dotenv",
     "python-dateutil",
@@ -35,12 +38,12 @@ dependencies = [
     "shapely",
     "urllib3",
     "xarray",
-#    "beautifulsoup4", # not currently used, but leaving in due to lack of understanding
-#    "certifi",
-#    "fiona>=1.10b2",
-#    "GeoAlchemy2",
-#    "SQLAlchemy",
-#    "tqdm",
+    #    "beautifulsoup4", # not currently used, but leaving in due to lack of understanding
+    #    "certifi",
+    #    "fiona>=1.10b2",
+    #    "GeoAlchemy2",
+    #    "SQLAlchemy",
+    #    "tqdm",
 ]
 
 [project.urls]
@@ -51,6 +54,7 @@ include = [
     "pipelines/core",
     "pipelines/drought",
     "pipelines/riverflood",
+    "shared",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -58,6 +62,7 @@ include = [
     "pipelines/core",
     "pipelines/drought",
     "pipelines/riverflood",
+    "shared",
 ]
 
 [tool.hatch.build.targets.wheel.sources]
