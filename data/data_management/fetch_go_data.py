@@ -108,7 +108,10 @@ if __name__ == "__main__":
 
     # Fetch all data
     for name, url in sources.items():
-        raw_data[name] = download_json_source(name, url)
+        data = download_json_source(name, url)
+        if data is None:
+            raise RuntimeError(f"Failed to load or parse JSON for '{name}' from: '{url}'")
+        raw_data[name] = data
 
     # Hospital and RC locations need no processing, and can be output as is
     output_data["hospital_locs"] = raw_data["hospital_locs"]

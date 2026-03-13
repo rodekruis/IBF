@@ -1,6 +1,6 @@
 # About
 
-This is directory handles pipeline and other data management scripts in Python.
+This directory handles pipeline and other data management scripts in Python.
 
 ## Structure
 

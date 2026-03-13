@@ -1,5 +1,5 @@
 """
-Colorizes greyscale PNGs that were produced by the GeoTIFF -> PNG flow in PopulationRasterFetcher.py
+Colorizes greyscale PNGs that were produced by the GeoTIFF -> PNG flow in fetch_population_raster.py
 """
 
 from pathlib import Path

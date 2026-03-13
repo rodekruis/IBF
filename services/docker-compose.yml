@@ -1,6 +1,6 @@
 services:
   ibf-db:
-    container_name: ${POSTGRES_CONTAINER_NAME}
+    container_name: ibf-db
     image: 'postgis/postgis:17-3.5'
     platform: linux/amd64
     init: true
