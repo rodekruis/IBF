@@ -12,6 +12,7 @@ from data_management.utils.postgis_handler import (
     drop_table_if_exists,
     get_db_connection,
 )
+from data_management.utils.geo_utils import normalize_polygon_to_multipolygon
 from shared.data_helpers import get_seed_data_repo_path
 
 # Table config
@@ -46,40 +47,6 @@ def coordinate_depth(coords):
     if isinstance(coords[0], (int, float)):
         return 1
     return 1 + coordinate_depth(coords[0])
-
-
-def normalize_polygon_to_multipolygon(geometry):
-    """
-    Convert Polygon geometry payloads to MultiPolygon payloads conservatively.
-    """
-    if not isinstance(geometry, dict):
-        return geometry
-
-    if geometry.get('type') != 'Polygon':
-        return geometry
-
-    coordinates = geometry.get('coordinates')
-    if not isinstance(coordinates, list):
-        return geometry
-
-    depth = coordinate_depth(coordinates)
-    if depth == 3:
-        # Proper Polygon nesting -> wrap once for MultiPolygon.
-        return {
-            **geometry,
-            'type': 'MultiPolygon',
-            'coordinates': [coordinates],
-        }
-
-    if depth == 4:
-        # Polygon label with MultiPolygon-like nesting.
-        return {
-            **geometry,
-            'type': 'MultiPolygon',
-            'coordinates': coordinates,
-        }
-
-    return geometry
 
 def load_admin_boundaries_data(json_dir):
     """
