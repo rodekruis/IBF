@@ -16,7 +16,8 @@ Pipeline code used for creating forecasts
 
 ### Data_management
 
-A collection of scripts to upload or transform data.
+A collection of scripts to upload or transform data, including populating the seed data repo, or populating the DB used for IBF.
+
 See the summary in each script for the purpose.
 
 ### Shared
@@ -28,7 +29,7 @@ Classes and utils shared between the python projects.
 - **Python:** Install 3.12 or higher. Normally it's best to grab latest 3.x (unless we find there is a breaking change).
 
 - **UV:** Go to their [GitHub page](https://github.com/astral-sh/uv/releases) and either grab the binaries or copy the `curl` command from there to install locally. An example curl command:
-`curl --proto '=https' --tlsv1.2 -LsSf https://releases.astral.sh/github/uv/releases/download/0.10.9/uv-installer.sh | sh`
+  `curl --proto '=https' --tlsv1.2 -LsSf https://releases.astral.sh/github/uv/releases/download/0.10.9/uv-installer.sh | sh`
 
 - **HomeBrew Package Manager** (Need for Mac users only) Install instructions are on their [homepage](https://brew.sh/). This is needed for the GDAL installation.
 
