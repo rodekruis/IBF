@@ -28,6 +28,7 @@ def download_json_source(name : str, url : str, check_count : bool = True):
     attempt = 0
     max_attempts = 3
     success = False
+    response = None
 
     while attempt < max_attempts and not success:
         print(f"Downloading {name} from {url}, attempt {attempt + 1}...")

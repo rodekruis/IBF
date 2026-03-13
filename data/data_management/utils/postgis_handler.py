@@ -13,7 +13,7 @@ env_path = Path(__file__).resolve().parents[3] / "services" / ".env"
 load_dotenv(dotenv_path=env_path)
 
 # Database connection info
-POSTGRES_CONTAINER_NAME = os.getenv("POSTGRES_HOST")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_DB = os.getenv("POSTGRES_DBNAME")
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
@@ -25,7 +25,7 @@ def get_db_connection():
     Handles the DB connection and clean up.
     """
     db_connection = psycopg.connect(
-        host=POSTGRES_CONTAINER_NAME,
+        host=POSTGRES_HOST,
         dbname=POSTGRES_DB,
         user=POSTGRES_USER,
         password=POSTGRES_PASSWORD,

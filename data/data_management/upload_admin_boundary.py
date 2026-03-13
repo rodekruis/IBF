@@ -41,13 +41,6 @@ INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas/"
 FILE_PATTERN = "*.json"
 
 
-def coordinate_depth(coords):
-    if not isinstance(coords, list) or not coords:
-        return 0
-    if isinstance(coords[0], (int, float)):
-        return 1
-    return 1 + coordinate_depth(coords[0])
-
 def load_admin_boundaries_data(json_dir):
     """
     Load the admin level, country name, and all features from the GeoJSON files
@@ -96,13 +89,9 @@ def load_admin_boundaries_data(json_dir):
 
     return parsed_data
 
-def insert_admin_boundaries_data(connection, features):
+def insert_admin_boundaries_data(connection, features : list[dict]):
     """
     Insert all admin boundary features into the table.
-
-    Args:
-        connection: DB connection
-        features: List of feature dictionaries containing the data
     """
     with connection.cursor() as cur:
         for feature in features:
@@ -147,8 +136,6 @@ def insert_admin_boundaries_data(connection, features):
             geom_json = json.dumps(geom)
 
             # Insert into the table
-            #.   ST_Multi: Ensures the geometry is stored as a MultiPolygon (so all data matches)
-            #.   ST_Force2D: Ensures the geometry is 2D (removes any Z or M dimensions if they exist)
             #.   ST_SetSRID: Sets the spatial reference ID (SRID) for the geometry
             query = f"""
                 INSERT INTO {TABLE_NAME}
@@ -173,13 +160,6 @@ def insert_admin_boundaries_data(connection, features):
                 print(f"Error inserting feature with properties {props} - Error: {e}")
                 return
 
-            """
-                    ST_Multi(
-                        ST_Force2D(
-                            ST_SetSRID(ST_GeomFromGeoJSON(%s), {EPSG_PROJECTION})
-                        )
-                    )
-            """
         connection.commit()
 
     print(f"Table insertion complete: {len(features)} features added")
@@ -204,7 +184,7 @@ def verify_data(connection):
 
 def create_admin_boundaries_tables():
     """
-    Main function to create the admin_boundaries table.
+    Main function to create the admin boundaries table.
     Loads GeoJSON data, creates table, inserts data, and creates spatial index.
     """
 
@@ -216,9 +196,6 @@ def create_admin_boundaries_tables():
 
     # Connect to database and create table
     with get_db_connection() as connection:
-        #del
-        drop_table_if_exists(connection, TABLE_NAME)
-
         # Create table if needed, insert data, and create spatial index
         create_gis_table(connection, TABLE_NAME, ADMIN_TABLE_COLUMNS)
         insert_admin_boundaries_data(connection, features)
@@ -231,6 +208,3 @@ def create_admin_boundaries_tables():
 
 if __name__ == "__main__":
     create_admin_boundaries_tables()
-
-
-
