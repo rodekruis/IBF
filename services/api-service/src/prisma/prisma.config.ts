@@ -8,7 +8,7 @@ const baseUrl =
   ':' +
   process.env.POSTGRES_PASSWORD +
   '@' +
-  process.env.POSTGRES_HOST +
+  process.env.POSTGRES_CONTAINER_NAME +
   ':' +
   process.env.POSTGRES_PORT +
   '/';

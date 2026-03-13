@@ -1,32 +1,75 @@
 """
-Admin Boundaries Table Creation
-Loads UGA_*.json files and creates a PostGIS-enabled table with MultiPolygon geometries.
+Upload all admin boundaries from a local clone of the seed-data repo
 """
+
 import json
 import os
 import glob
 from pathlib import Path
-from data_management.utils.postgis_handler import get_db_connection, create_table, create_index
+from data_management.utils.postgis_handler import (
+    create_gis_index,
+    create_gis_table,
+    drop_table_if_exists,
+    get_db_connection,
+)
 from shared.data_helpers import get_seed_data_repo_path
 
-# Configuration
-TABLE_NAME = "admin_boundaries_2"
-FILE_PATTERN = "MWI*.json"
+# Table config
+TABLE_NAME = "admin_boundaries"
 
-# Input dir
+COL_COUNTRY = "country"
+COL_ADMIN_LEVEL = "admin_level"
+COL_NAME_EN = "name_en"
+COL_CODE = "code"
+COL_GEOM = "geom"
+
+EPSG_PROJECTION = 4326
+
+ADMIN_TABLE_COLUMNS = {
+    'id': 'SERIAL PRIMARY KEY',
+    COL_COUNTRY: 'VARCHAR(3)',
+    COL_ADMIN_LEVEL: 'SMALLINT',
+    COL_NAME_EN: 'VARCHAR(255)',
+    COL_CODE: 'VARCHAR(10)',
+    COL_GEOM: f'GEOMETRY(MultiPolygon, {EPSG_PROJECTION})',
+}
+
+# Input
 BASE_REPO_DIR = get_seed_data_repo_path()
 INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas/"
+FILE_PATTERN = "MWI*.json"
 
 def load_admin_boundaries_data(json_dir):
+    """
+    Load the admin level, country name, and all features from the GeoJSON files
+    """
     json_pattern = os.path.join(json_dir, FILE_PATTERN)
     json_files = glob.glob(json_pattern)
     
-    print(f"Found {len(json_files)} JSON files:")
-    for f in json_files:
-        print(f"  - {os.path.basename(f)}")
-    print("\n" + "="*50 + "\n")
+    print(f"Found {len(json_files)} GeoJSON files to process.")
     
-    all_features = []
+    # parsed data for all boundaries (called features in the JSON) for all files
+    parsed_data = []
+
+    def has_z_dimension_in_coords(coords):
+        if not isinstance(coords, (list, tuple)) or not coords:
+            return False
+        if isinstance(coords[0], (int, float)):
+            # GeoJSON point with 3+ ordinates has Z (or higher dimensions)
+            return len(coords) >= 3
+        return any(has_z_dimension_in_coords(child) for child in coords)
+
+    def has_z_dimension_in_geometry(geometry):
+        if not isinstance(geometry, dict):
+            return False
+        geometry_type = geometry.get('type')
+        if geometry_type == 'GeometryCollection':
+            return any(
+                has_z_dimension_in_geometry(child)
+                for child in geometry.get('geometries', [])
+            )
+        return has_z_dimension_in_coords(geometry.get('coordinates', []))
+
     for json_file in json_files:
         # Extract admin level from filename (e.g., UGA_adm3.json -> 3)
         basename = os.path.basename(json_file)
@@ -38,62 +81,49 @@ def load_admin_boundaries_data(json_dir):
             print(f"Error: Could not get admin level from filename '{basename}' - Error: {e}")
             continue
         
-        print(f"Loading {basename} (level: {admin_level})...")
+        print(f"Parsing {basename} (level: {admin_level})...")
         
         with open(json_file, 'r') as f:
             geojson_data = json.load(f)
             
             if geojson_data.get('type') != 'FeatureCollection':
-                print(f"  WARNING: {basename} is not a FeatureCollection, skipping...")
+                print(f"ERROR: {basename} is not a FeatureCollection.")
                 continue
             
             features = geojson_data.get('features', [])
-            file_count = 0
             
+            # For each feature, add the needed data to the output, along with the admin level
             for feature in features:
-                feature_data = {
+                parsed_boundary = {
                     'admin_level': admin_level,
                     'properties': feature.get('properties', {}),
                     'geometry': feature.get('geometry', {})
                 }
-                all_features.append(feature_data)
-                file_count += 1
-            
-            print(f"  Loaded {file_count} features")
-    
-    print(f"\nTotal features loaded: {len(all_features)}")
-    print("\n" + "="*50 + "\n")
-    
-    return all_features
+                parsed_data.append(parsed_boundary)
 
-def create_admin_boundaries_table(connection):
+            # Check for 3D geometries and print a warning.
+            z_feature_count = sum(
+                1
+                for feature in features
+                if has_z_dimension_in_geometry(feature.get('geometry', {}))
+            )
+            if z_feature_count > 0:
+                print(
+                    f"WARNING: {basename} contains {z_feature_count} feature(s) with Z coordinates. "
+                    "These will be converted to 2D during upload."
+                )
+    
+    return parsed_data
+
+def insert_admin_boundaries_data(connection, features):
     """
-    Create the admin_boundaries table with spatial capabilities.
+    Insert all admin boundary features into the table.
     
     Args:
-        conn: Database connection object
-    """
-    columns = {
-        'id': 'SERIAL PRIMARY KEY',
-        'country': 'VARCHAR(3)',
-        'admin_level': 'SMALLINT',
-        'name_en': 'VARCHAR(255)',
-        'code': 'VARCHAR(10)',
-        'geom': 'GEOMETRY(MultiPolygon, 4326)'
-    }
-    
-    create_table(connection, TABLE_NAME, columns)
-
-
-def insert_admin_boundaries_data(conn, features):
-    """
-    Insert admin boundary feature data into the table.
-    
-    Args:
-        conn: Database connection object
+        connection: DB connection
         features: List of feature dictionaries containing the data
     """
-    with conn.cursor() as cur:
+    with connection.cursor() as cur:
         for feature in features:
             props = feature['properties']
             geom = feature['geometry']
@@ -104,60 +134,84 @@ def insert_admin_boundaries_data(conn, features):
                 print(f"Error: No admin level from file attached to {props}.")
                 continue
 
-            name = props.get('ADM0_EN') or props.get('ADM1_EN') or props.get('ADM2_EN') or props.get('ADM3_EN') or None
-            code = props.get('ADM0_PCODE') or props.get('ADM1_PCODE') or props.get('ADM2_PCODE') or props.get('ADM3_PCODE') or None
+            # Name and code are called different things in different admin levels,
+            # but there is only one in each feature. Get any.
+            name = (
+                props.get('ADM0_EN')
+                or props.get('ADM1_EN')
+                or props.get('ADM2_EN')
+                or props.get('ADM3_EN')
+                or None
+            )
+            code = (
+                props.get('ADM0_PCODE')
+                or props.get('ADM1_PCODE')
+                or props.get('ADM2_PCODE')
+                or props.get('ADM3_PCODE')
+                or None
+            )
             
             if not name or not code:
                 print(f"Error: could not parse: {props}.")
                 continue
 
+            # Try to get the two-letter country code (first two letters of the code)
             try:
                 country = code[:2]
             except Exception as e:
                 print(f"Error: Invalid code for '{code}' from {props} - Error: {e}")
                 continue
 
-            # The length of the code indicates the admin level.
-            # i.e. NL1234 is "NL 12 34"
-            try:
-                admin_level = (len(code) / 2) - 1
-            except Exception as e:
-                print(f"Error: Invalid code for '{code}' from {props} - Error: {e}")
-                continue
-
-
-            
             # Convert geometry to GeoJSON string
             geom_json = json.dumps(geom)
 
+            # Insert into the table
+            #.   ST_Multi: Ensures the geometry is stored as a MultiPolygon (so all data matches)
+            #.   ST_Force2D: Ensures the geometry is 2D (removes any Z or M dimensions if they exist)
+            #.   ST_SetSRID: Sets the spatial reference ID (SRID) for the geometry
             query = f"""
                 INSERT INTO {TABLE_NAME}
-                (country, admin_level, name_en, code, geom)
-                VALUES (%s, %s, %s, %s, ST_SetSRID(ST_GeomFromGeoJSON(%s), 4326))
+                ({COL_COUNTRY}, {COL_ADMIN_LEVEL}, {COL_NAME_EN}, {COL_CODE}, {COL_GEOM})
+                VALUES (
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    ST_SetSRID(ST_GeomFromGeoJSON(%s), {EPSG_PROJECTION})
+                )
             """
-            
-            cur.execute(query, (
-                country,
-                admin_level,
-                name,
-                code,
-                geom_json
-            ))
-        conn.commit()
-    print(f"Inserted {len(features)} features into the table!")
+            try:
+                cur.execute(query, (
+                    country,
+                    admin_level,
+                    name,
+                    code,
+                    geom_json
+                ))
+            except Exception as e:
+                print(f"Error inserting feature with properties {props} - Error: {e}")
+                continue
+
+            """
+                    ST_Multi(
+                        ST_Force2D(
+                            ST_SetSRID(ST_GeomFromGeoJSON(%s), {EPSG_PROJECTION})
+                        )
+                    )
+            """
+        connection.commit()
+
+    print(f"Table insertion complete: {len(features)} features added")
 
 
-def verify_data(conn):
+def verify_data(connection):
     """
     Query and print sample records to verify the data was inserted correctly.
-    
-    Args:
-        conn: Database connection object
     """
-    with conn.cursor() as cur:
+    with connection.cursor() as cur:
         cur.execute(f"""
-            SELECT id, country, admin_level, name_en, code, 
-                   ST_GeometryType(geom) as geom_type, ST_NumGeometries(geom) as num_geoms
+            SELECT id,  {COL_COUNTRY}, {COL_ADMIN_LEVEL}, {COL_NAME_EN}, {COL_CODE}, 
+                   ST_GeometryType({COL_GEOM}) as geom_type, ST_NumGeometries({COL_GEOM}) as num_geoms
             FROM {TABLE_NAME} 
             LIMIT 3;
         """)
@@ -172,40 +226,27 @@ def create_admin_boundaries_tables():
     Main function to create the admin_boundaries table.
     Loads GeoJSON data, creates table, inserts data, and creates spatial index.
     """
-    print("="*50)
-    print("Creating Admin Boundaries Table")
-    print("="*50 + "\n")
 
     # Load data from JSON files
-    features = load_admin_boundaries_data(INPUT_DIR)
-    
+    features = load_admin_boundaries_data(INPUT_DIR)    
     if not features:
         print("No features loaded. Exiting.")
         return
     
     # Connect to database and create table
-    with get_db_connection() as conn:        
-        # Create table if needed
-        create_admin_boundaries_table(conn)
-        
-        # Insert data
-        insert_admin_boundaries_data(conn, features)
-        
-        # Create spatial index
-        create_index(conn, TABLE_NAME)
+    with get_db_connection() as connection:
+        #del
+        drop_table_if_exists(connection, TABLE_NAME)
+
+        # Create table if needed, insert data, and create spatial index
+        create_gis_table(connection, TABLE_NAME, ADMIN_TABLE_COLUMNS)
+        insert_admin_boundaries_data(connection, features)
+        create_gis_index(connection, TABLE_NAME)
         
         # Verify data
-        verify_data(conn)
+        verify_data(connection)
     
     print("\nDatabase connection closed.")
-    print("\n" + "="*50)
-    print("Your data is now available in pg-featureserv!")
-    print("Access it at:")
-    print(f"  Collection: http://localhost:9000/collections/public.{TABLE_NAME}")
-    print(f"  Items: http://localhost:9000/collections/public.{TABLE_NAME}/items")
-    print("  Web UI: http://localhost:9000/index.html")
-    print("="*50)
-
 
 if __name__ == "__main__":
     create_admin_boundaries_tables()
