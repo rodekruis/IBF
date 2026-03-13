@@ -27,17 +27,59 @@ EPSG_PROJECTION = 4326
 
 ADMIN_TABLE_COLUMNS = {
     'id': 'SERIAL PRIMARY KEY',
-    COL_COUNTRY: 'VARCHAR(3)',
+    COL_COUNTRY: 'VARCHAR(2)',
     COL_ADMIN_LEVEL: 'SMALLINT',
     COL_NAME_EN: 'VARCHAR(255)',
-    COL_CODE: 'VARCHAR(10)',
+    COL_CODE: 'VARCHAR(64)',
     COL_GEOM: f'GEOMETRY(MultiPolygon, {EPSG_PROJECTION})',
 }
 
 # Input
 BASE_REPO_DIR = get_seed_data_repo_path()
 INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas/"
-FILE_PATTERN = "MWI*.json"
+FILE_PATTERN = "*.json"
+
+
+def coordinate_depth(coords):
+    if not isinstance(coords, list) or not coords:
+        return 0
+    if isinstance(coords[0], (int, float)):
+        return 1
+    return 1 + coordinate_depth(coords[0])
+
+
+def normalize_polygon_to_multipolygon(geometry):
+    """
+    Convert Polygon geometry payloads to MultiPolygon payloads conservatively.
+    """
+    if not isinstance(geometry, dict):
+        return geometry
+
+    if geometry.get('type') != 'Polygon':
+        return geometry
+
+    coordinates = geometry.get('coordinates')
+    if not isinstance(coordinates, list):
+        return geometry
+
+    depth = coordinate_depth(coordinates)
+    if depth == 3:
+        # Proper Polygon nesting -> wrap once for MultiPolygon.
+        return {
+            **geometry,
+            'type': 'MultiPolygon',
+            'coordinates': [coordinates],
+        }
+
+    if depth == 4:
+        # Polygon label with MultiPolygon-like nesting.
+        return {
+            **geometry,
+            'type': 'MultiPolygon',
+            'coordinates': coordinates,
+        }
+
+    return geometry
 
 def load_admin_boundaries_data(json_dir):
     """
@@ -50,25 +92,6 @@ def load_admin_boundaries_data(json_dir):
     
     # parsed data for all boundaries (called features in the JSON) for all files
     parsed_data = []
-
-    def has_z_dimension_in_coords(coords):
-        if not isinstance(coords, (list, tuple)) or not coords:
-            return False
-        if isinstance(coords[0], (int, float)):
-            # GeoJSON point with 3+ ordinates has Z (or higher dimensions)
-            return len(coords) >= 3
-        return any(has_z_dimension_in_coords(child) for child in coords)
-
-    def has_z_dimension_in_geometry(geometry):
-        if not isinstance(geometry, dict):
-            return False
-        geometry_type = geometry.get('type')
-        if geometry_type == 'GeometryCollection':
-            return any(
-                has_z_dimension_in_geometry(child)
-                for child in geometry.get('geometries', [])
-            )
-        return has_z_dimension_in_coords(geometry.get('coordinates', []))
 
     for json_file in json_files:
         # Extract admin level from filename (e.g., UGA_adm3.json -> 3)
@@ -94,24 +117,15 @@ def load_admin_boundaries_data(json_dir):
             
             # For each feature, add the needed data to the output, along with the admin level
             for feature in features:
+                normalized_geometry = normalize_polygon_to_multipolygon(
+                    feature.get('geometry', {})
+                )
                 parsed_boundary = {
                     'admin_level': admin_level,
                     'properties': feature.get('properties', {}),
-                    'geometry': feature.get('geometry', {})
+                    'geometry': normalized_geometry,
                 }
                 parsed_data.append(parsed_boundary)
-
-            # Check for 3D geometries and print a warning.
-            z_feature_count = sum(
-                1
-                for feature in features
-                if has_z_dimension_in_geometry(feature.get('geometry', {}))
-            )
-            if z_feature_count > 0:
-                print(
-                    f"WARNING: {basename} contains {z_feature_count} feature(s) with Z coordinates. "
-                    "These will be converted to 2D during upload."
-                )
     
     return parsed_data
 
@@ -190,7 +204,7 @@ def insert_admin_boundaries_data(connection, features):
                 ))
             except Exception as e:
                 print(f"Error inserting feature with properties {props} - Error: {e}")
-                continue
+                return
 
             """
                     ST_Multi(
