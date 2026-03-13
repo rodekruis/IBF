@@ -87,9 +87,9 @@ def load_admin_boundaries_data(json_dir):
     """
     json_pattern = os.path.join(json_dir, FILE_PATTERN)
     json_files = glob.glob(json_pattern)
-    
+
     print(f"Found {len(json_files)} GeoJSON files to process.")
-    
+
     # parsed data for all boundaries (called features in the JSON) for all files
     parsed_data = []
 
@@ -103,18 +103,18 @@ def load_admin_boundaries_data(json_dir):
         except Exception as e:
             print(f"Error: Could not get admin level from filename '{basename}' - Error: {e}")
             continue
-        
+
         print(f"Parsing {basename} (level: {admin_level})...")
-        
+
         with open(json_file, 'r') as f:
             geojson_data = json.load(f)
-            
+
             if geojson_data.get('type') != 'FeatureCollection':
                 print(f"ERROR: {basename} is not a FeatureCollection.")
                 continue
-            
+
             features = geojson_data.get('features', [])
-            
+
             # For each feature, add the needed data to the output, along with the admin level
             for feature in features:
                 normalized_geometry = normalize_polygon_to_multipolygon(
@@ -126,13 +126,13 @@ def load_admin_boundaries_data(json_dir):
                     'geometry': normalized_geometry,
                 }
                 parsed_data.append(parsed_boundary)
-    
+
     return parsed_data
 
 def insert_admin_boundaries_data(connection, features):
     """
     Insert all admin boundary features into the table.
-    
+
     Args:
         connection: DB connection
         features: List of feature dictionaries containing the data
@@ -164,7 +164,7 @@ def insert_admin_boundaries_data(connection, features):
                 or props.get('ADM3_PCODE')
                 or None
             )
-            
+
             if not name or not code:
                 print(f"Error: could not parse: {props}.")
                 continue
@@ -224,9 +224,9 @@ def verify_data(connection):
     """
     with connection.cursor() as cur:
         cur.execute(f"""
-            SELECT id,  {COL_COUNTRY}, {COL_ADMIN_LEVEL}, {COL_NAME_EN}, {COL_CODE}, 
+            SELECT id,  {COL_COUNTRY}, {COL_ADMIN_LEVEL}, {COL_NAME_EN}, {COL_CODE},
                    ST_GeometryType({COL_GEOM}) as geom_type, ST_NumGeometries({COL_GEOM}) as num_geoms
-            FROM {TABLE_NAME} 
+            FROM {TABLE_NAME}
             LIMIT 3;
         """)
         records = cur.fetchall()
@@ -242,11 +242,11 @@ def create_admin_boundaries_tables():
     """
 
     # Load data from JSON files
-    features = load_admin_boundaries_data(INPUT_DIR)    
+    features = load_admin_boundaries_data(INPUT_DIR)
     if not features:
         print("No features loaded. Exiting.")
         return
-    
+
     # Connect to database and create table
     with get_db_connection() as connection:
         #del
@@ -256,10 +256,10 @@ def create_admin_boundaries_tables():
         create_gis_table(connection, TABLE_NAME, ADMIN_TABLE_COLUMNS)
         insert_admin_boundaries_data(connection, features)
         create_gis_index(connection, TABLE_NAME)
-        
+
         # Verify data
         verify_data(connection)
-    
+
     print("\nDatabase connection closed.")
 
 if __name__ == "__main__":
