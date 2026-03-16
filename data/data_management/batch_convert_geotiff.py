@@ -37,8 +37,12 @@ if __name__ == "__main__":
                 tif_data = f.read()
                 meta_data, img_data = geotiff_to_array(tif_data)
 
-                # Write metadata as JSON
+                # Write metadata as JSON in both output dirs
                 json_path = GREYSCALE_OUTPUT_DIR / f"{tif_path.stem}_metadata.json"
+                with open(json_path, 'w', encoding='utf-8') as f:
+                    json.dump(meta_data, f, indent=2)
+
+                json_path = RGBA_OUTPUT_DIR / f"{tif_path.stem}_metadata.json"
                 with open(json_path, 'w', encoding='utf-8') as f:
                     json.dump(meta_data, f, indent=2)
 
@@ -51,8 +55,8 @@ if __name__ == "__main__":
                 print(f"Converting to color: {tif_path.stem}...")
                 color_image_data = colorize_image_array(
                     img_data,
-                    [0, 200, 0, 0],
-                    [100, 100, 255, 255],
+                    [255, 200, 0, 0],
+                    [255, 0, 100, 255],
                     log_scale=True,
                 )
                 color_img = Image.fromarray(color_image_data, mode='RGBA')
