@@ -2,14 +2,6 @@
 
 This directory handles pipeline and other data management scripts in Python.
 
-## MVP target architecture
-
-Some of work done (as of March 2026) needs refinement still, noticeably these changes:
-- Centralize table schema, table creation, initial table data population
-- Better structure for the data management python files (https://dev.azure.com/redcrossnl/IBF/_workitems/edit/41201)
-
-See TODOs in code, or tasks in ADO for more details.
-
 ## Structure
 
 ### Pipelines
@@ -29,6 +21,13 @@ A collection of scripts to upload or transform data, including populating the se
 See the summary in each script for the purpose.
 
 To run data upload scripts, you'll need to set up a local DB. See the `<repo root>/services/docker-compose` file.
+
+**Note:** Some of work done (as of March 2026) needs refinement still, noticeably these changes:
+
+- Centralize table schema, table creation, initial table data population
+- Better structure for the data management python files (https://dev.azure.com/redcrossnl/IBF/_workitems/edit/41201)
+
+See TODOs in code, or tasks in ADO for more details.
 
 ### Shared
 
