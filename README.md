@@ -25,11 +25,8 @@ Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 
 4. Start pipelines
 
+See the [data/ folder readme](/data/README.md) for setup.
 - Install [uv](https://docs.astral.sh/uv/getting-started/installation)
-- `cd pipelines`
-- `cp .env.example .env` and fill in correct values.
-- `./uv-sync.sh`
-- `uv run pipeline.py --hazard drought --country KEN --prepare --forecast --send --debug`
 
 ---
 

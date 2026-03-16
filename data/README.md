@@ -46,7 +46,7 @@ Classes and utils shared between the python projects.
 
 ## Setup
 
-1. Navigate to the <repo root>/data/ directory and install all python dependencies with `uv sync`.
+1. Navigate to the <repo root>/data/ directory and install all python dependencies with `./uv-sync.sh`.
 2. Copy the `.env.example` file, and rename it to `.env`
 
 ### Additional setup for updating the seed repo
@@ -65,6 +65,10 @@ If you add a python dependency with `pip`, the project dependencies may become o
 There is a scan when you PR to check `pyproject.toml` for missing dependencies, but it doesn't scan the `uv.lock` file.
 
 To upgrade all packages in the `uv.lock` file to the latest, run `uv lock --upgrade`, although this means everything will need to be retested.
+
+## Running the forecast pipelines
+
+From the `<repo root>/data/` dir, you can run the pipeline from command line, for example with: `uv run pipeline.py --hazard drought --country KEN --prepare --forecast --send --debug`
 
 ## Quality checks
 
