@@ -13,6 +13,8 @@ env_path = Path(__file__).resolve().parents[3] / "services" / ".env"
 load_dotenv(dotenv_path=env_path)
 
 # Database connection info
+# TODO: (March 2026) Re-evaluate how we get these .env vars, especially when running py scripts in PROD or PROD setup
+#     See task: https://dev.azure.com/redcrossnl/IBF/_workitems/edit/41200
 POSTGRES_HOST = os.getenv("POSTGRES_HOST")
 POSTGRES_DB = os.getenv("POSTGRES_DBNAME")
 POSTGRES_USER = os.getenv("POSTGRES_USER")
@@ -39,6 +41,8 @@ def get_db_connection():
 def create_gis_table(db_connection : psycopg.Connection, table_name : str, columns : dict):
     """
     Create a table with GIS spatial capabilities
+    TODO: (March 2026) this function and related scripts will be centralized in the future.
+        See task: https://dev.azure.com/redcrossnl/IBF/_workitems/edit/41200
     """
     with db_connection.cursor() as cur:
         column_defs = ", ".join([f"{name} {type_}" for name, type_ in columns.items()])

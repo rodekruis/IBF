@@ -2,6 +2,14 @@
 
 This directory handles pipeline and other data management scripts in Python.
 
+## MVP target architecture
+
+Some of work done (as of March 2026) needs refinement still, noticeably these changes:
+- Centralize table schema, table creation, initial table data population
+- Better structure for the data management python files (https://dev.azure.com/redcrossnl/IBF/_workitems/edit/41201)
+
+See TODOs in code, or tasks in ADO for more details.
+
 ## Structure
 
 ### Pipelines
