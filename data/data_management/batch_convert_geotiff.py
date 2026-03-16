@@ -27,12 +27,8 @@ if __name__ == "__main__":
     RGBA_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # Get all TIFF files in the INPUT_DIR, convert them to PNG with geotiff_to_array, and write them to the output dir.
-    c = 10
     processed = 0
     for tif_path in INPUT_DIR.glob("*.tif"):
-        c -= 1
-        if c < 0:
-            break
         print(f"Opening: {tif_path}...")
         try:
             with open(tif_path, "rb") as f:

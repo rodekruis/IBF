@@ -109,15 +109,19 @@ def geotiff_to_array(tif_data: bytes):
 
             # This script only supports NoData values of zero or less
             if src.nodata is not None and src.nodata > 0:
-                print(f"Error: Only NoData values of 0 or less are supported. NoData value: {src.nodata}.")
+                #replace all noData values with a large negative number (-999)
+                reproj_data = np.where(reproj_data == src.nodata, -999, reproj_data)
+                src.nodata = -999
+                print("Warning: NoData value was greater than 0. This should be handled fine,"
+                      f"but verify results. Value: {src.nodata}.")
 
             # Normalize data to 0-254 (if it has values above 0)
             # 0-254 is used, since 1 is added later (bringing the max to 255)
             # in order to offset data from the NoData value of 0.
             if reproj_data.max() > 0:
-                norm_data = (reproj_data / reproj_data.max()) * 254
+                norm_data = (reproj_data.astype(float) / reproj_data.max()) * 254
             else:
-                norm_data = reproj_data
+                norm_data = reproj_data.astype(float)
 
             # Set 0 as the new nodata value, and make other data start at 1
             norm_data = np.where(norm_data < 0, 0, norm_data + 1)
