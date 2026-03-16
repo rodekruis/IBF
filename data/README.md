@@ -46,7 +46,7 @@ Classes and utils shared between the python projects.
 ## Setup
 
 1. Navigate to the <repo root>/data/ directory and install all python dependencies with `uv sync`.
-1. Copy the `.env.example` file, and rename it to `.env`
+2. Copy the `.env.example` file, and rename it to `.env`
 
 ### Additional setup for updating the seed repo
 
