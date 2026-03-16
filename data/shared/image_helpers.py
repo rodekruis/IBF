@@ -12,14 +12,21 @@ import numpy as np
 from PIL import Image
 CRS = rasterio.crs.CRS
 
-def colorize_image_array(img_array: bytes, color1 : tuple, color2: tuple, log_scale : bool):
+def colorize_image_from_file(png_in_bytes: bytes, color1 : tuple, color2: tuple, log_scale : bool):
+    """
+    Wrapper for colorize_image_array that takes in PNG bytes instead of an array.
+
+    TODO: fix function name that was using this as colorize_image_array
+    """
+    img = Image.open(io.BytesIO(png_in_bytes))
+    img_bw = np.array(img, dtype=np.float32)
+    return colorize_image_array(img_bw, color1, color2, log_scale)
+
+def colorize_image_array(img_bw: np.ndarray, color1 : tuple, color2: tuple, log_scale : bool):
     """
     Colorize a grayscale image between two colors.
     log_scale: whether or not to convert to a logarithmic scale.
     """
-
-    img = Image.open(io.BytesIO(img_array))
-    img_bw = np.array(img, dtype=np.float32)
 
     # optional: convert the data to logarithmic scale
     if log_scale:
