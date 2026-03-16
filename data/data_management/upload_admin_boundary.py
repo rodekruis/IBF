@@ -9,7 +9,6 @@ from pathlib import Path
 from data_management.utils.postgis_handler import (
     create_gis_index,
     create_gis_table,
-    drop_table_if_exists,
     get_db_connection,
 )
 from data_management.utils.geo_utils import normalize_polygon_to_multipolygon
@@ -105,19 +104,21 @@ def insert_admin_boundaries_data(connection, features : list[dict]):
                 continue
 
             # Name and code are called different things in different admin levels,
-            # but there is only one in each feature. Get any.
+            # but there is only one in each feature. Get any, with the most granular level grabbed first.
             name = (
-                props.get('ADM0_EN')
-                or props.get('ADM1_EN')
-                or props.get('ADM2_EN')
+                props.get('ADM4_EN')
                 or props.get('ADM3_EN')
+                or props.get('ADM2_EN')
+                or props.get('ADM1_EN')
+                or props.get('ADM0_EN')
                 or None
             )
             code = (
-                props.get('ADM0_PCODE')
-                or props.get('ADM1_PCODE')
-                or props.get('ADM2_PCODE')
+                props.get('ADM4_PCODE')
                 or props.get('ADM3_PCODE')
+                or props.get('ADM2_PCODE')
+                or props.get('ADM1_PCODE')
+                or props.get('ADM0_PCODE')
                 or None
             )
 
