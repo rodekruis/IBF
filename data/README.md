@@ -28,6 +28,8 @@ A collection of scripts to upload or transform data, including populating the se
 
 See the summary in each script for the purpose.
 
+To run data upload scripts, you'll need to set up a local DB. See the `<repo root>/services/docker-compose` file.
+
 ### Shared
 
 Classes and utils shared between the python projects.
