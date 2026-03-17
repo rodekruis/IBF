@@ -87,5 +87,5 @@ dev = [
 python-knip = "core.quality:main"
 
 [tool.deptry]
-known_first_party = ["pipelines"]
+known_first_party = ["pipelines", "data_management", "shared"]
 per_rule_ignores = { DEP002 = ["cfgrib", "netCDF4", "scipy"] }
