@@ -12,14 +12,21 @@ import numpy as np
 from PIL import Image
 CRS = rasterio.crs.CRS
 
-def colorize_image_array(img_array: bytes, color1 : tuple, color2: tuple, log_scale : bool):
+def colorize_image_from_file(png_in_bytes: bytes, color1 : tuple, color2: tuple, log_scale : bool):
+    """
+    Wrapper for colorize_image_array that takes in PNG bytes instead of an array.
+
+    TODO: fix function name that was using this as colorize_image_array
+    """
+    img = Image.open(io.BytesIO(png_in_bytes))
+    img_bw = np.array(img, dtype=np.float32)
+    return colorize_image_array(img_bw, color1, color2, log_scale)
+
+def colorize_image_array(img_bw: np.ndarray, color1 : tuple, color2: tuple, log_scale : bool):
     """
     Colorize a grayscale image between two colors.
     log_scale: whether or not to convert to a logarithmic scale.
     """
-
-    img = Image.open(io.BytesIO(img_array))
-    img_bw = np.array(img, dtype=np.float32)
 
     # optional: convert the data to logarithmic scale
     if log_scale:
@@ -102,15 +109,19 @@ def geotiff_to_array(tif_data: bytes):
 
             # This script only supports NoData values of zero or less
             if src.nodata is not None and src.nodata > 0:
-                print(f"Error: Only NoData values of 0 or less are supported. NoData value: {src.nodata}.")
+                #replace all noData values with a large negative number (-999)
+                reproj_data = np.where(reproj_data == src.nodata, -999, reproj_data)
+                src.nodata = -999
+                print("Warning: NoData value was greater than 0. This should be handled fine,"
+                      f"but verify results. Value: {src.nodata}.")
 
             # Normalize data to 0-254 (if it has values above 0)
             # 0-254 is used, since 1 is added later (bringing the max to 255)
             # in order to offset data from the NoData value of 0.
             if reproj_data.max() > 0:
-                norm_data = (reproj_data / reproj_data.max()) * 254
+                norm_data = (reproj_data.astype(float) / reproj_data.max()) * 254
             else:
-                norm_data = reproj_data
+                norm_data = reproj_data.astype(float)
 
             # Set 0 as the new nodata value, and make other data start at 1
             norm_data = np.where(norm_data < 0, 0, norm_data + 1)
