@@ -15,7 +15,7 @@ Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 - Install [Docker](https://docs.docker.com/get-docker)
 - Clone source code: `git clone https://github.com/rodekruis/IBF.git`
 
-2. Start api-service
+2. Start services
 
 - Setup env variables `cp services/.env.example services/.env`
 - Start api-service `npm run start:services:detach` which runs the `docker-compose` file as well.
