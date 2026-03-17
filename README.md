@@ -27,6 +27,7 @@ Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 4. Start pipelines
 
 See the [data/ folder readme](/data/README.md) for setup.
+
 - Install [uv](https://docs.astral.sh/uv/getting-started/installation)
 
 5. Seed data for the DB
