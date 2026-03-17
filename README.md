@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > This is the repo for IBF v2, which is not in MVP-state yet. Find the old IBF-system repo [here](https://github.com/rodekruis/IBF-system).
 
-IBF is a web app to visualize hazard forecasts. It has [data pipelines](./pipelines), a [NestJS backend](./services/api-service), and a React frontend, which is in a [separate repo](https://github.com/rodekruis/go-web-app/tree/ibf-main).
+IBF is a web app to visualize hazard forecasts. It has [data pipelines](./pipelines), back-end [services](./services), and a React frontend, which is in a [separate repo](https://github.com/rodekruis/go-web-app/tree/ibf-main).
 
 Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 
