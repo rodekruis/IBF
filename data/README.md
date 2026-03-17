@@ -16,7 +16,7 @@ Pipeline code used for creating forecasts
 
 ### Data_management
 
-A collection of scripts to upload or transform data, including populating the seed data repo, or populating the DB used for IBF.
+A collection of scripts to upload or transform data, including populating the seed data repo, or populating the DB used for IBF. The latter is for now done only for develop/test/prototype purposes. This is reflected by this data being uploaded in the 'public' schema of the database, as opposed to Nest.js/Prisma-managed 'api-service' schema, where eventually the full datamodel will (likely) go.
 
 See the summary in each script for the purpose.
 
