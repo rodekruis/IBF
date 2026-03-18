@@ -1,9 +1,9 @@
 """
-This script fetches the population raster data from an external source.
+This script fetches the population raster data from the WorldPop dataset.
 The frontend uses PNG in EPSG:3857, so this script also converts the files for that step as well.
 The geo metadata is saved as JSON.
-TODO: Look into if we can use this source. It is now just being pulled for evaluation.
-     See task: https://dev.azure.com/redcrossnl/IBF/_workitems/edit/41195
+This WorldPop-based source is currently the active population data source for seed data.
+TODO: Periodically re-evaluate this source and update the configuration or documentation if the chosen dataset changes.
 """
 
 import json
