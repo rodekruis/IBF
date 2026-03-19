@@ -4,7 +4,7 @@ name: PR linter
 
 on:
   pull_request:
-    types: [opened, reopened, edited, labeled, unlabeled]
+    types: [opened, reopened, edited, synchronize, labeled, unlabeled]
     branches: [main]
 
 jobs:
