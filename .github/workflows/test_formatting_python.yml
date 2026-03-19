@@ -22,6 +22,8 @@ jobs:
 
     steps:
       - name: Check code formatting
+        id: formatting
+        continue-on-error: true
         uses: omnilib/ufmt@action-v1
         with:
           path: '**/*.py'
@@ -47,4 +49,14 @@ jobs:
         run: ./uv-sync.sh
 
       - name: Run python-knip
+        id: python_knip
+        continue-on-error: true
         run: uv run python-knip
+
+      - name: Fail if any check failed
+        if: always()
+        run: |
+          if [[ "${{ steps.formatting.outcome }}" == "failure" || "${{ steps.python_knip.outcome }}" == "failure" ]]; then
+            echo "One or more checks failed. See above for details."
+            exit 1
+          fi
