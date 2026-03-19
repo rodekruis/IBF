@@ -15,8 +15,6 @@ CRS = rasterio.crs.CRS
 def colorize_image_from_file(png_in_bytes: bytes, color1 : tuple, color2: tuple, log_scale : bool):
     """
     Wrapper for colorize_image_array that takes in PNG bytes instead of an array.
-
-    TODO: fix function name that was using this as colorize_image_array
     """
     img = Image.open(io.BytesIO(png_in_bytes))
     img_bw = np.array(img, dtype=np.float32)
@@ -107,13 +105,14 @@ def geotiff_to_array(tif_data: bytes):
                 'offsets': src.offsets
             }
 
-            # This script only supports NoData values of zero or less
+            # If NoData values are above 0, set the to a large negative number (-999)
+            # This way it can be set to 0 later, and actual data values of 0 are preserved
             if src.nodata is not None and src.nodata > 0:
+                print("Warning: This file has a NoData value was greater than 0. This should be handled fine,"
+                      f"but verify results. NoData value: {src.nodata}.")
                 #replace all noData values with a large negative number (-999)
                 reproj_data = np.where(reproj_data == src.nodata, -999, reproj_data)
                 src.nodata = -999
-                print("Warning: NoData value was greater than 0. This should be handled fine,"
-                      f"but verify results. Value: {src.nodata}.")
 
             # Normalize data to 0-254 (if it has values above 0)
             # 0-254 is used, since 1 is added later (bringing the max to 255)

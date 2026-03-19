@@ -95,11 +95,12 @@ def insert_extent_data(connection, extents_list: list[dict]):
             code = extent.get('code')
             center = extent.get('center')  # [lon, lat]
             extents_bbox = extent.get('extents')
-            lon, lat = center[0], center[1]
 
             if not all([country, admin_level is not None, name_en, code, center, extents_bbox]):
                 print(f"Error: Missing required fields in {extent}")
                 continue
+
+            lon, lat = center[0], center[1]
 
             # Insert into the table
             query = f"""
@@ -130,11 +131,9 @@ if __name__ == "__main__":
     print(f"Loaded {len(extent_data)} extent items.")
     # Get database connection
     with get_db_connection() as connection:
-        # Create table if it doesn't exist
+        # Create table if it doesn't exist and insert data
         create_gis_table(connection, TABLE_NAME, ADMIN_TABLE_COLUMNS)
+        insert_extent_data(connection, extent_data)
         create_gis_index(connection, TABLE_NAME)
 
-        # Insert data into the database
-        insert_extent_data(connection, extent_data)
-
-    print(f"Finished inserting extent data into {TABLE_NAME}.")
+    print(f"Finished uploading data to {TABLE_NAME}.")

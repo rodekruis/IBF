@@ -79,6 +79,8 @@ def insert_glofas_data(connection, data: list[dict]):
     """
     Insert GloFAS station data into the table.
     """
+    print(f"Attempting to insert {len(data)} items into {TABLE_NAME}.")
+    
     with connection.cursor() as cur:
         for row in data:
             try:
@@ -114,7 +116,7 @@ def insert_glofas_data(connection, data: list[dict]):
                 continue
 
     connection.commit()
-    print(f"Inserted {len(data)} records into {TABLE_NAME}.")
+    print(f"Insert complete.")
 
 
 def verify_data(connection):

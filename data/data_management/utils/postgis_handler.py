@@ -55,7 +55,8 @@ def create_gis_table(db_connection : psycopg.Connection, table_name : str, colum
 
 def create_gis_index(db_connection : psycopg.Connection, table_name : str):
     """
-    Create a spatial index on a geometry column.    
+    Create a spatial index on a geometry column.
+    Run this after the initial inserting since having this index can slow down large batch inserts.
     """
     # Default name for geometry columns
     GEOMETRY_COLUMN : str = "geom"

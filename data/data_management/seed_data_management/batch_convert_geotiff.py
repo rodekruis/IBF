@@ -1,14 +1,15 @@
 """
-Converts a a folder of grotiff images into greyscale and colored PNGS.
+Converts a a folder of GeoTiff images into greyscale and colored PNGS.
 This is used to set up test data quickly from a batch of GeoTiffs.
+
+Change the input and output directories as needed.
+This is just a seed/test data set up script and will have no use outside of dev/set up.
 """
 
 import json
-from io import BytesIO
 from pathlib import Path
 from shared.data_helpers import get_seed_data_repo_path
 from shared.image_helpers import colorize_image_array, geotiff_to_array
-import shutil
 from PIL import Image
 
 
