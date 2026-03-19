@@ -20,7 +20,6 @@ jobs:
 
       - name: Lint GitHub Action workflows
         id: actionlint
-        continue-on-error: true
         uses: raven-actions/actionlint@v2
         with:
           group-result: false
@@ -30,16 +29,8 @@ jobs:
 
       - name: Lint .env files
         id: dotenv_lint
-        continue-on-error: true
+        if: always()
         uses: dotenv-linter/action-dotenv-linter@v3
         with:
           reporter: github-code-suggestions
           dotenv_linter_flags: -- --skip UnorderedKey
-
-      - name: Fail if any check failed
-        if: always()
-        run: |
-          if [[ "${{ steps.actionlint.outcome }}" == "failure" || "${{ steps.dotenv_lint.outcome }}" == "failure" ]]; then
-            echo "One or more checks failed. See above for details."
-            exit 1
-          fi

@@ -124,29 +124,30 @@ jobs:
 
       - name: Lint
         id: lint
-        continue-on-error: true
+        if: always()
         working-directory: ${{ env.workingDirectory }}
         run: 'npm run lint'
 
       - name: Check for dead code
         id: knip
-        continue-on-error: true
+        if: always()
         working-directory: ${{ env.workingDirectory }}
         run: 'npm run knip'
 
       - name: Check for TS errors
         id: typecheck
-        continue-on-error: true
+        if: always()
         working-directory: ${{ env.workingDirectory }}
         run: 'npm run typecheck'
 
       - name: Run unit tests
         id: unit_tests
-        continue-on-error: true
+        if: always()
         working-directory: ${{ env.workingDirectory }}
         run: 'npm run test:unit:coverage'
 
       - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: unit-test-coverage-report
           path: |
@@ -155,14 +156,6 @@ jobs:
       - name: Docker logs
         if: always()
         uses: jwalton/gh-docker-logs@v2
-
-      - name: Fail if any check failed
-        if: always()
-        run: |
-          if [[ "${{ steps.lint.outcome }}" == "failure" || "${{ steps.knip.outcome }}" == "failure" || "${{ steps.typecheck.outcome }}" == "failure" || "${{ steps.unit_tests.outcome }}" == "failure" ]]; then
-            echo "One or more checks failed. See above for details."
-            exit 1
-          fi
 
   upload_coverage_reports:
     runs-on: ubuntu-latest
