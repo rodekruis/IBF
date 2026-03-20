@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pipelines.infra.models import (
     AdminAreaExposure,
@@ -42,9 +42,27 @@ class DataSubmitter:
             )
             return
 
+        if not hazard_types:
+            self.errors[f"create_alert:{alert_id}"] = (
+                f"Alert '{alert_id}' has no hazard_types"
+            )
+            return
+
+        if not forecast_sources:
+            self.errors[f"create_alert:{alert_id}"] = (
+                f"Alert '{alert_id}' has no forecast_sources"
+            )
+            return
+
+        if issued_at.tzinfo is None:
+            self.errors[f"create_alert:{alert_id}"] = (
+                f"Alert '{alert_id}' issued_at must be timezone-aware"
+            )
+            return
+
         self._alerts[alert_id] = Alert(
             alert_id=alert_id,
-            issued_at=issued_at,
+            issued_at=issued_at.astimezone(timezone.utc),
             centroid=centroid,
             hazard_types=hazard_types,
             forecast_sources=forecast_sources,
@@ -194,11 +212,12 @@ class DataSubmitter:
             lead_times.setdefault(key, []).append(entry.ensemble_member_type)
 
         for (start, end), types in lead_times.items():
-            if start >= end:
+            if datetime.fromisoformat(start) >= datetime.fromisoformat(end):
                 errors.append(
                     f"Alert '{alert_id}' lead time {start}–{end}: "
                     f"start must be before end"
                 )
+            # TODO: maybe also check that start and end relate to a day for floods and a season for droughts? So generically to the 'temporal unit' defined for a hazard type?
             median_count = types.count(EnsembleMemberType.MEDIAN)
             ensemble_count = types.count(EnsembleMemberType.RUN)
             if median_count != 1:

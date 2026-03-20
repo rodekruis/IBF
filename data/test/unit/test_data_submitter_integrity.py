@@ -313,3 +313,17 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
 
     assert any("expected at least 1 record" in e for e in errors)
     assert not (tmp_output / "alerts_object.json").exists()
+
+
+def test_naive_datetime_is_rejected():
+    submitter = DataSubmitter()
+    submitter.create_alert(
+        alert_id=ALERT_ID,
+        hazard_types=[HazardType.FLOODS],
+        centroid=Centroid(latitude=1.0, longitude=37.0),
+        issued_at=datetime(2026, 3, 20, 12, 0, 0),
+        forecast_sources=[ForecastSource.GLOFAS],
+    )
+
+    assert ALERT_ID not in submitter._alerts
+    assert "timezone-aware" in submitter.errors[f"create_alert:{ALERT_ID}"]
