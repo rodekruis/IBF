@@ -7,11 +7,12 @@ from pathlib import Path
 from typing import Callable
 
 import click
+
+from pipelines.drought.forecast import calculate_drought_forecasts
+from pipelines.flood.forecast import calculate_flood_forecasts
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
-from pipelines.v2.drought.forecast import calculate_drought_forecasts
-from pipelines.v2.flood.forecast import calculate_flood_forecasts
 
 logger = logging.getLogger(__name__)
 
