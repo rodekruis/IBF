@@ -9,7 +9,8 @@ from pipelines.infra.models import (
     ForecastSource,
     HazardType,
 )
-from test.conftest import ALERT_ID
+
+ALERT_ID = "TST_floods_station-test"
 
 
 def test_incomplete_alert_is_rejected(valid_submitter: DataSubmitter, tmp_output: Path):

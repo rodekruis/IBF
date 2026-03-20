@@ -234,7 +234,9 @@ class DataSubmitter:
 
         counts = list(layers.values())
         if len(set(counts)) > 1:
-            detail = ", ".join(f"{l.value}={c}" for l, c in layers.items())
+            detail = ", ".join(
+                f"{layer.value}={count}" for layer, count in layers.items()
+            )
             errors.append(
                 f"Alert '{alert_id}' admin-area: record count differs "
                 f"across layers ({detail})"
