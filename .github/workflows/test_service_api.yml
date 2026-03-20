@@ -123,22 +123,31 @@ jobs:
         run: 'npm run prisma:generate'
 
       - name: Lint
+        id: lint
+        if: always()
         working-directory: ${{ env.workingDirectory }}
         run: 'npm run lint'
 
       - name: Check for dead code
+        id: knip
+        if: always()
         working-directory: ${{ env.workingDirectory }}
         run: 'npm run knip'
 
       - name: Check for TS errors
+        id: typecheck
+        if: always()
         working-directory: ${{ env.workingDirectory }}
         run: 'npm run typecheck'
 
       - name: Run unit tests
+        id: unit_tests
+        if: always()
         working-directory: ${{ env.workingDirectory }}
         run: 'npm run test:unit:coverage'
 
       - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: unit-test-coverage-report
           path: |

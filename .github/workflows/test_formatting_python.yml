@@ -22,29 +22,37 @@ jobs:
 
     steps:
       - name: Check code formatting
+        id: formatting
         uses: omnilib/ufmt@action-v1
         with:
           path: '**/*.py'
           python-version: '3.12'
 
       - name: Checkout repository
+        if: always()
         uses: actions/checkout@v4
 
       - name: Set up Python
+        if: always()
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install system dependencies
+        if: always()
         run: |
           sudo apt-get update
           sudo apt-get install -y gdal-bin libgdal-dev
 
       - name: Set up uv
+        if: always()
         uses: astral-sh/setup-uv@v6
 
       - name: Install dependencies
+        if: always()
         run: ./uv-sync.sh
 
       - name: Run python-knip
+        id: python_knip
+        if: always()
         run: uv run python python-knip.py
