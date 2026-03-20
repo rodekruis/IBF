@@ -3,10 +3,11 @@ Utility functions for PostGIS
 """
 
 import os
-from pathlib import Path
-from dotenv import load_dotenv
-import psycopg
 from contextlib import contextmanager
+from pathlib import Path
+
+import psycopg
+from dotenv import load_dotenv
 
 # Load env from the <repo root>/services/.env file
 env_path = Path(__file__).resolve().parents[3] / "services" / ".env"
@@ -21,6 +22,7 @@ POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT_LOCAL")
 
+
 @contextmanager
 def get_db_connection():
     """
@@ -31,14 +33,15 @@ def get_db_connection():
         dbname=POSTGRES_DB,
         user=POSTGRES_USER,
         password=POSTGRES_PASSWORD,
-        port=POSTGRES_PORT
+        port=POSTGRES_PORT,
     )
     try:
         yield db_connection
     finally:
         db_connection.close()
 
-def create_gis_table(db_connection : psycopg.Connection, table_name : str, columns : dict):
+
+def create_gis_table(db_connection: psycopg.Connection, table_name: str, columns: dict):
     """
     Create a table with GIS spatial capabilities
     TODO: (March 2026) this function and related scripts will be centralized in the future.
@@ -47,27 +50,30 @@ def create_gis_table(db_connection : psycopg.Connection, table_name : str, colum
     with db_connection.cursor() as cur:
         column_defs = ", ".join([f"{name} {type_}" for name, type_ in columns.items()])
         create_sql = f"CREATE TABLE IF NOT EXISTS {table_name} ({column_defs});"
-        
+
         cur.execute(create_sql)
         db_connection.commit()
     print(f"Table '{table_name}' created")
 
 
-def create_gis_index(db_connection : psycopg.Connection, table_name : str):
+def create_gis_index(db_connection: psycopg.Connection, table_name: str):
     """
     Create a spatial index on a geometry column.
     Run this after the initial inserting since having this index can slow down large batch inserts.
     """
     # Default name for geometry columns
-    GEOMETRY_COLUMN : str = "geom"
+    GEOMETRY_COLUMN: str = "geom"
 
     with db_connection.cursor() as cur:
         index_name = f"{table_name}_{GEOMETRY_COLUMN}_idx"
-        cur.execute(f"CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIST ({GEOMETRY_COLUMN});")
+        cur.execute(
+            f"CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIST ({GEOMETRY_COLUMN});"
+        )
         db_connection.commit()
     print(f"Spatial index created on {table_name}.{GEOMETRY_COLUMN}!")
 
-def drop_table_if_exists(db_connection : psycopg.Connection, table_name : str):
+
+def drop_table_if_exists(db_connection: psycopg.Connection, table_name: str):
     """
     Drop a table if it exists in the database.
     """

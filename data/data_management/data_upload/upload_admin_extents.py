@@ -5,10 +5,11 @@ TODO: This table format is used for development purposes, and we may need
 a different table or different data structure/preprocessing for MVP.
 """
 
+import glob
 import json
 import os
-import glob
 from pathlib import Path
+
 from data_management.utils.postgis_handler import (
     create_gis_index,
     create_gis_table,
@@ -29,19 +30,20 @@ COL_EXTENTS = "extents"
 EPSG_PROJECTION = 4326
 
 ADMIN_TABLE_COLUMNS = {
-    'id': 'SERIAL PRIMARY KEY',
-    COL_COUNTRY: 'VARCHAR(2)',
-    COL_ADMIN_LEVEL: 'SMALLINT',
-    COL_NAME_EN: 'VARCHAR(255)',
-    COL_CODE: 'VARCHAR(64)',
-    COL_GEOM: f'GEOMETRY(Point, {EPSG_PROJECTION})',
-    COL_EXTENTS: 'DOUBLE PRECISION[]',
+    "id": "SERIAL PRIMARY KEY",
+    COL_COUNTRY: "VARCHAR(2)",
+    COL_ADMIN_LEVEL: "SMALLINT",
+    COL_NAME_EN: "VARCHAR(255)",
+    COL_CODE: "VARCHAR(64)",
+    COL_GEOM: f"GEOMETRY(Point, {EPSG_PROJECTION})",
+    COL_EXTENTS: "DOUBLE PRECISION[]",
 }
 
 # Input
 BASE_REPO_DIR = get_seed_data_repo_path()
 INPUT_DIR = Path(BASE_REPO_DIR) / "country-data/go-data"
 FILE_PATTERN = "admin*.json"
+
 
 def load_extent_data(json_dir):
     """
@@ -62,7 +64,7 @@ def load_extent_data(json_dir):
         print(f"Parsing {filename}...")
 
         try:
-            with open(json_file, 'r') as f:
+            with open(json_file, "r") as f:
                 data = json.load(f)
 
                 # If the file contains a list, try to get extent data
@@ -70,7 +72,7 @@ def load_extent_data(json_dir):
                     for item in data:
                         # Skip if ISO is missing or code is 'N.A'
                         # 'N.A' is used in the source data to mark non-country extents
-                        if not item.get('iso') or item.get('code') == 'N.A':
+                        if not item.get("iso") or item.get("code") == "N.A":
                             continue
                         parsed_data.append(item)
                 else:
@@ -89,14 +91,16 @@ def insert_extent_data(connection, extents_list: list[dict]):
     """
     with connection.cursor() as cur:
         for extent in extents_list:
-            country = extent.get('iso')
-            admin_level = extent.get('admin_level')
-            name_en = extent.get('name_en')
-            code = extent.get('code')
-            center = extent.get('center')  # [lon, lat]
-            extents_bbox = extent.get('extents')
+            country = extent.get("iso")
+            admin_level = extent.get("admin_level")
+            name_en = extent.get("name_en")
+            code = extent.get("code")
+            center = extent.get("center")  # [lon, lat]
+            extents_bbox = extent.get("extents")
 
-            if not all([country, admin_level is not None, name_en, code, center, extents_bbox]):
+            if not all(
+                [country, admin_level is not None, name_en, code, center, extents_bbox]
+            ):
                 print(f"Error: Missing required fields in {extent}")
                 continue
 
@@ -117,7 +121,9 @@ def insert_extent_data(connection, extents_list: list[dict]):
             """
 
             try:
-                cur.execute(query, (country, admin_level, name_en, code, lon, lat, extents_bbox))
+                cur.execute(
+                    query, (country, admin_level, name_en, code, lon, lat, extents_bbox)
+                )
             except Exception as e:
                 print(f"Error: Could not insert {name_en} ({code}) - Error: {e}")
                 continue

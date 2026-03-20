@@ -3,9 +3,10 @@ Upload GloFAS station locations from CSV files in the seed-data repo.
 """
 
 import csv
-import os
 import glob
+import os
 from pathlib import Path
+
 from data_management.utils.postgis_handler import (
     create_gis_index,
     create_gis_table,
@@ -27,14 +28,14 @@ COL_GEOM = "geom"
 EPSG_PROJECTION = 4326
 
 TABLE_COLUMNS = {
-    'id': 'SERIAL PRIMARY KEY',
-    COL_FID: 'VARCHAR(50)',
-    COL_STATION_CODE: 'VARCHAR(50)',
-    COL_STATION_NAME: 'VARCHAR(255)',
-    COL_LAT: 'DOUBLE PRECISION',
-    COL_LON: 'DOUBLE PRECISION',
-    COL_COUNTRY: 'VARCHAR(3)',
-    COL_GEOM: f'GEOMETRY(Point, {EPSG_PROJECTION})',
+    "id": "SERIAL PRIMARY KEY",
+    COL_FID: "VARCHAR(50)",
+    COL_STATION_CODE: "VARCHAR(50)",
+    COL_STATION_NAME: "VARCHAR(255)",
+    COL_LAT: "DOUBLE PRECISION",
+    COL_LON: "DOUBLE PRECISION",
+    COL_COUNTRY: "VARCHAR(3)",
+    COL_GEOM: f"GEOMETRY(Point, {EPSG_PROJECTION})",
 }
 
 # Input
@@ -63,10 +64,10 @@ def load_glofas_data(csv_dir):
         print(f"Parsing {basename} (country: {country_code})...")
 
         try:
-            with open(csv_file, 'r') as f:
+            with open(csv_file, "r") as f:
                 csv_reader = csv.DictReader(f)
                 for row in csv_reader:
-                    row['country'] = country_code
+                    row["country"] = country_code
                     all_data.append(row)
         except Exception as e:
             print(f"Error: Could not parse {basename} - Error: {e}")
@@ -80,14 +81,16 @@ def insert_glofas_data(connection, data: list[dict]):
     Insert GloFAS station data into the table.
     """
     print(f"Attempting to insert {len(data)} items into {TABLE_NAME}.")
-    
+
     with connection.cursor() as cur:
         for row in data:
             try:
-                lat = round(float(row['lat']), 5) if row.get('lat') else None
-                lon = round(float(row['lon']), 5) if row.get('lon') else None
+                lat = round(float(row["lat"]), 5) if row.get("lat") else None
+                lon = round(float(row["lon"]), 5) if row.get("lon") else None
             except ValueError as e:
-                print(f"Error: Invalid lat/lon for {row.get('stationCode')} - Error: {e}")
+                print(
+                    f"Error: Invalid lat/lon for {row.get('stationCode')} - Error: {e}"
+                )
                 continue
 
             if lat is None or lon is None:
@@ -101,16 +104,19 @@ def insert_glofas_data(connection, data: list[dict]):
             """
 
             try:
-                cur.execute(query, (
-                    row.get('fid'),
-                    row.get('stationCode'),
-                    row.get('stationName'),
-                    lat,
-                    lon,
-                    row.get('country'),
-                    lon,
-                    lat,
-                ))
+                cur.execute(
+                    query,
+                    (
+                        row.get("fid"),
+                        row.get("stationCode"),
+                        row.get("stationName"),
+                        lat,
+                        lon,
+                        row.get("country"),
+                        lon,
+                        lat,
+                    ),
+                )
             except Exception as e:
                 print(f"Error: Could not insert {row.get('stationCode')} - Error: {e}")
                 continue

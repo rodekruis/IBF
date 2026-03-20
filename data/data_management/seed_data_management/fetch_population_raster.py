@@ -6,31 +6,38 @@ TODO: Look into if we can use this source. It is now just being pulled for evalu
      See task: https://dev.azure.com/redcrossnl/IBF/_workitems/edit/41195
 """
 
+import json
 from pathlib import Path
+
+from PIL import Image
 from shared.data_helpers import get_seed_data_repo_path, target_countries_iso_a3
 from shared.download_helpers import download_binary_object
 from shared.image_helpers import geotiff_to_array
-import json
-from PIL import Image
 
 # URL for the population data
 # If a new model comes out, update this.
 # See the WorldPop webiste for more information:
 # https://hub.worldpop.org/geodata/listing?id=77
-BASE_URL = "ftp://ftp.worldpop.org/GIS/Population_Density/Global_2000_2020_1km_UNadj/2020/"
+BASE_URL = (
+    "ftp://ftp.worldpop.org/GIS/Population_Density/Global_2000_2020_1km_UNadj/2020/"
+)
 
 # Output dirs
 BASE_REPO_DIR = get_seed_data_repo_path()
 GREYSCALE_OUTPUT_DIR = Path(BASE_REPO_DIR) / "raster-data/population/greyscale/"
 
+
 def get_url(country_iso_a3):
     return f"{BASE_URL}{country_iso_a3.upper()}/{country_iso_a3.lower()}_pd_2020_1km_UNadj.tif"
+
 
 if __name__ == "__main__":
     GREYSCALE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # Dictionary of export file names, with the source URL
-    urls = {f"{country}_population" : get_url(country) for country in target_countries_iso_a3}
+    urls = {
+        f"{country}_population": get_url(country) for country in target_countries_iso_a3
+    }
     for name, url in urls.items():
         # Download the raw file
         bin_object = download_binary_object(url)
@@ -41,12 +48,12 @@ if __name__ == "__main__":
 
             # Write metadata as JSON
             json_path = GREYSCALE_OUTPUT_DIR / f"{name}_metadata.json"
-            with open(json_path, 'w', encoding='utf-8') as f:
+            with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(meta_data, f, indent=2)
 
             # Write image as BW PNG
             bw_path = GREYSCALE_OUTPUT_DIR / f"{name}.png"
-            bw_img = Image.fromarray(img_data, mode='L')
+            bw_img = Image.fromarray(img_data, mode="L")
             bw_img.save(bw_path, optimize=True)
         else:
             print(f"Error: Failed to download data for {name} from {url}")

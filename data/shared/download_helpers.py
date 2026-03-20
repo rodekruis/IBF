@@ -2,15 +2,17 @@
 Helper functions for downloading
 """
 
-import requests
 import json
-from urllib.request import urlopen
 from urllib.error import URLError
+from urllib.request import urlopen
 
-def download_binary_object(url : str):
+import requests
+
+
+def download_binary_object(url: str):
     print(f"Downloading from {url}...")
     try:
-        if url.startswith('ftp://'):
+        if url.startswith("ftp://"):
             with urlopen(url, timeout=60) as response:
                 return response.read()
         else:
@@ -18,11 +20,18 @@ def download_binary_object(url : str):
             response.raise_for_status()
             return response.content
     except (requests.exceptions.RequestException, URLError) as e:
-        status_code = getattr(e.response, 'status_code', 'N/A') if hasattr(e, 'response') else 'N/A'
-        print(f"Error: Failed to download from '{url}'. Status: {status_code}, error: {e}")
+        status_code = (
+            getattr(e.response, "status_code", "N/A")
+            if hasattr(e, "response")
+            else "N/A"
+        )
+        print(
+            f"Error: Failed to download from '{url}'. Status: {status_code}, error: {e}"
+        )
     return None
 
-def download_json_source(name : str, url : str, check_count : bool = True):
+
+def download_json_source(name: str, url: str, check_count: bool = True):
 
     # Get data
     attempt = 0
@@ -37,8 +46,14 @@ def download_json_source(name : str, url : str, check_count : bool = True):
             success = response.ok
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            status_code = getattr(e.response, 'status_code', 'N/A') if hasattr(e, 'response') else 'N/A'
-            print(f"Error: Failed to download '{name}'. Status: {status_code}, error: {e}")
+            status_code = (
+                getattr(e.response, "status_code", "N/A")
+                if hasattr(e, "response")
+                else "N/A"
+            )
+            print(
+                f"Error: Failed to download '{name}'. Status: {status_code}, error: {e}"
+            )
             attempt += 1
 
     # Try to parse as JSON
@@ -54,12 +69,14 @@ def download_json_source(name : str, url : str, check_count : bool = True):
             expected_count = data["count"]
             actual_count = len(data["results"])
             if actual_count != expected_count:
-                print(f"Error: '{name}' count mismatch. Expected: {expected_count}, Got: {actual_count}")
+                print(
+                    f"Error: '{name}' count mismatch. Expected: {expected_count}, Got: {actual_count}"
+                )
             else:
                 print(f"  -- {actual_count} out of {expected_count} items parsed.")
         else:
-            print(f"Error: {name} returned no results or did not contain keys 'count' and 'results'.")
-    
-    return data
+            print(
+                f"Error: {name} returned no results or did not contain keys 'count' and 'results'."
+            )
 
-    
+    return data

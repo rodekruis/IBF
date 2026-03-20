@@ -4,6 +4,7 @@ Fetched the admin boundaries for indicated countries.
 
 import json
 from pathlib import Path
+
 from shared.data_helpers import get_seed_data_repo_path, target_countries_iso_a3
 from shared.download_helpers import download_json_source
 
@@ -11,8 +12,11 @@ from shared.download_helpers import download_json_source
 Get the url for the given country's admin boundary.
 See https://gadm.org/data.html for more info
 """
+
+
 def get_url(country_code: str, admin_level: int) -> str:
     return f"https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_{country_code}_{admin_level}.json"
+
 
 target_admin_levels = [0, 1, 2, 3]
 

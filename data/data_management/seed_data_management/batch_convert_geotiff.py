@@ -8,10 +8,10 @@ This is just a seed/test data set up script and will have no use outside of dev/
 
 import json
 from pathlib import Path
+
+from PIL import Image
 from shared.data_helpers import get_seed_data_repo_path
 from shared.image_helpers import colorize_image_array, geotiff_to_array
-from PIL import Image
-
 
 # Input/Output dirs
 BASE_REPO_DIR = get_seed_data_repo_path()
@@ -40,16 +40,16 @@ if __name__ == "__main__":
 
                 # Write metadata as JSON in both output dirs
                 json_path = GREYSCALE_OUTPUT_DIR / f"{tif_path.stem}_metadata.json"
-                with open(json_path, 'w', encoding='utf-8') as f:
+                with open(json_path, "w", encoding="utf-8") as f:
                     json.dump(meta_data, f, indent=2)
 
                 json_path = RGBA_OUTPUT_DIR / f"{tif_path.stem}_metadata.json"
-                with open(json_path, 'w', encoding='utf-8') as f:
+                with open(json_path, "w", encoding="utf-8") as f:
                     json.dump(meta_data, f, indent=2)
 
                 # Write image as BW PNG
                 bw_path = GREYSCALE_OUTPUT_DIR / f"{tif_path.stem}.png"
-                bw_img = Image.fromarray(img_data, mode='L')
+                bw_img = Image.fromarray(img_data, mode="L")
                 bw_img.save(bw_path, optimize=True)
 
                 # Convert to color and write RGBA image.
@@ -60,12 +60,11 @@ if __name__ == "__main__":
                     [255, 0, 100, 255],
                     log_scale=True,
                 )
-                color_img = Image.fromarray(color_image_data, mode='RGBA')
+                color_img = Image.fromarray(color_image_data, mode="RGBA")
                 color_img.save(RGBA_OUTPUT_DIR / f"{tif_path.stem}.png", optimize=True)
 
                 processed += 1
         except Exception as e:
             print(f"Error processing {tif_path}: {e}")
 
-        
     print(f"Finished. Total processed: {processed}")
