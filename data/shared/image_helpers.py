@@ -113,7 +113,7 @@ def geotiff_to_array(tif_data: bytes):
                 "offsets": src.offsets,
             }
 
-            # If NoData values are above 0, set the to a large negative number (-999)
+            # If NoData values are above 0, set it to a large negative number (-999)
             # This way it can be set to 0 later, and actual data values of 0 are preserved
             if src.nodata is not None and src.nodata > 0:
                 print(
