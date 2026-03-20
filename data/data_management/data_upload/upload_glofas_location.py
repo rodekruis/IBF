@@ -49,7 +49,7 @@ FILE_PATTERN = "glofas_stations_*.csv"
 def load_glofas_data(csv_dir) -> dict[str, list[dict]]:
     """
     Load all glofas_stations_*.csv files from the specified directory.
-    Returns a dict keyed by country code, each value a list of row dicts.
+    Returns a dict keyed by country code, and the data a list of dicts.
     """
     csv_pattern = os.path.join(csv_dir, FILE_PATTERN)
     csv_files = sorted(glob.glob(csv_pattern))
