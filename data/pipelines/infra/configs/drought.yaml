@@ -1,0 +1,25 @@
+hazard_type: drought
+
+run_targets:
+  DEBUG:
+    countries:
+      - name: ETH
+        data_sources:
+          # eventually from IBF API
+          - name: climate_regions
+            type: json
+            source: dummy
+          - name: admin_boundaries
+            type: geojson
+            source: dummy
+          # eventually from seed-data repo
+          - name: population
+            type: raster
+            source: dummy
+          # eventually from external sources
+          - name: ecmwf_forecast
+            type: grib
+            source: dummy
+        output:
+          mode: local
+          path: pipelines/output

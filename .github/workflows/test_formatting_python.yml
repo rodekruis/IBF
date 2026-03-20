@@ -56,3 +56,4 @@ jobs:
         id: python_knip
         if: always()
         run: uv run python-knip
+        run: uv run python python-knip.py

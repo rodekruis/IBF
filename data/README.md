@@ -72,9 +72,11 @@ From the `<repo root>/data/` dir, you can run the pipeline from command line, fo
 
 ## Quality checks
 
-Run a Python Knip-like audit: `uv run python-knip`
+Run a Python Knip-like audit: `uv run python python-knip.py`
 
-`python-knip` runs:
+Add `--fix` to auto-fix what can be auto-fixed: `uv run python python-knip.py --fix`
+
+`python-knip.py` runs:
 
 - `deptry` for dependency usage checks
 - `ruff check` for lint and unused imports/variables

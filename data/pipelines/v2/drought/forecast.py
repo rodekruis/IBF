@@ -1,0 +1,84 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+from pipelines.infra.data_provider import DataProvider
+from pipelines.infra.data_submitter import DataSubmitter
+from pipelines.infra.models import Centroid
+
+
+def calculate_drought_forecasts(
+    data_provider: DataProvider,
+    data_submitter: DataSubmitter,
+    country: str,
+) -> None:
+    # TEMPLATE IMPLEMENTATION — This function loops over climate regions and
+    # seasons from data_provider, but uses dummy/placeholder values for
+    # severity, exposure, and raster output.
+    #
+    # To be implemented by the data scientist:
+    # 1. Compute severity (percentile) data on right
+    # 2. Compute drought extent
+    # 3. Compute real population exposure from population raster + drought extent
+    # 4. Compute geo-feature exposure (schools, roads, etc.)
+    climate_regions: list[dict[str, object]] = data_provider.get_data(
+        "climate_regions"
+    ).data
+
+    issued_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    for region in climate_regions:
+        region_id = str(region["id"])
+        seasons: list[str] = region["seasons"]
+        place_codes: list[str] = region["place_codes"]
+
+        for season in seasons:
+            alert_id = f"{country}_drought_{region_id}_season-{season}"
+
+            data_submitter.create_alert(
+                alert_id=alert_id,
+                hazard_type=["drought"],
+                centroid=Centroid(latitude=0.0, longitude=0.0),
+                issued_at=issued_at,
+                forecast_sources=["ECMWF"],
+            )
+
+            ensemble_members = ["member-1", "member-2"]
+            for member in ensemble_members:
+                data_submitter.add_timeseries_data(
+                    alert_id=alert_id,
+                    lead_time_start="2026-03-01T00:00:00Z",
+                    lead_time_end="2026-05-31T23:59:59Z",
+                    ensemble_member=member,
+                    severity_key="percentile",
+                    severity_value=0,
+                )
+            data_submitter.add_timeseries_data(
+                alert_id=alert_id,
+                lead_time_start="2026-03-01T00:00:00Z",
+                lead_time_end="2026-05-31T23:59:59Z",
+                ensemble_member="median",
+                severity_key="percentile",
+                severity_value=0,
+            )
+
+            for place_code in place_codes:
+                data_submitter.add_admin_area_exposure(
+                    alert_id=alert_id,
+                    place_code=place_code,
+                    layer="spatial_extent",
+                    value=True,
+                )
+                data_submitter.add_admin_area_exposure(
+                    alert_id=alert_id,
+                    place_code=place_code,
+                    layer="population_exposed",
+                    value=0,
+                )
+
+            data_submitter.add_raster_exposure(
+                alert_id=alert_id,
+                layer="drought_extent",
+                value=f"drought_extent_{region_id}.tif",
+                extent={"xmin": 0, "ymin": 0, "xmax": 0, "ymax": 0},
+            )
