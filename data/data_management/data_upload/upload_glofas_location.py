@@ -1,5 +1,5 @@
 """
-Upload GloFAS station locations from CSV files in the seed-data repo.
+Upload GloFAS station locations from CSV files in the seed-data repo to the map server.
 """
 
 import csv
@@ -15,7 +15,7 @@ from data_management.utils.postgis_handler import (
 from shared.data_helpers import get_seed_data_repo_path
 
 # Table config
-TABLE_NAME = "glofas_stations2"
+TABLE_NAME = "glofas_stations"
 
 COL_FID = "fid"
 COL_STATION_CODE = "stationCode"
@@ -39,23 +39,24 @@ TABLE_COLUMNS = {
 }
 
 # Input
-# CSV files are named glofas_stations_<COUNTRY>.csv, e.g. glofas_stations_SEN.csv
+# CSV files are named glofas_stations_<ISO_3>.csv
+#  e.g. glofas_stations_SEN.csv
 BASE_REPO_DIR = get_seed_data_repo_path()
 INPUT_DIR = Path(BASE_REPO_DIR) / "country-data/glofas-loc"
 FILE_PATTERN = "glofas_stations_*.csv"
 
 
-def load_glofas_data(csv_dir):
+def load_glofas_data(csv_dir) -> dict[str, list[dict]]:
     """
     Load all glofas_stations_*.csv files from the specified directory.
-    Returns a list of row dicts, each with a 'country' key derived from the filename.
+    Returns a dict keyed by country code, each value a list of row dicts.
     """
     csv_pattern = os.path.join(csv_dir, FILE_PATTERN)
     csv_files = sorted(glob.glob(csv_pattern))
 
     print(f"Found {len(csv_files)} CSV files to process.")
 
-    all_data = []
+    data_by_country: dict[str, list[dict]] = {}
 
     for csv_file in csv_files:
         basename = os.path.basename(csv_file)
@@ -66,63 +67,67 @@ def load_glofas_data(csv_dir):
         try:
             with open(csv_file, "r") as f:
                 csv_reader = csv.DictReader(f)
-                for row in csv_reader:
-                    row["country"] = country_code
-                    all_data.append(row)
+                data_by_country[country_code] = list(csv_reader)
         except Exception as e:
             print(f"Error: Could not parse {basename} - Error: {e}")
             continue
 
-    return all_data
+    return data_by_country
 
 
-def insert_glofas_data(connection, data: list[dict]):
+def insert_glofas_data(connection, data: dict[str, list[dict]]):
     """
     Insert GloFAS station data into the table.
     """
-    print(f"Attempting to insert {len(data)} items into {TABLE_NAME}.")
+    total = sum(len(rows) for rows in data.values())
+    print(f"Attempting to insert {total} items into {TABLE_NAME}.")
 
     with connection.cursor() as cur:
-        for row in data:
-            try:
-                lat = round(float(row["lat"]), 5) if row.get("lat") else None
-                lon = round(float(row["lon"]), 5) if row.get("lon") else None
-            except ValueError as e:
-                print(
-                    f"Error: Invalid lat/lon for {row.get('stationCode')} - Error: {e}"
-                )
-                continue
+        for country_code, rows in data.items():
+            for row in rows:
+                try:
+                    lat = round(float(row["lat"]), 5) if row.get("lat") else None
+                    lon = round(float(row["lon"]), 5) if row.get("lon") else None
+                except ValueError as e:
+                    print(
+                        f"Error: Invalid lat/lon for {row.get('stationCode')} - Error: {e}"
+                    )
+                    continue
 
-            if lat is None or lon is None:
-                print(f"Error: Missing lat/lon for {row.get('stationCode')}. Skipping.")
-                continue
+                if lat is None or lon is None:
+                    print(
+                        f"Error: Missing lat/lon for {row.get('stationCode')}. Skipping."
+                    )
+                    continue
 
-            query = f"""
-                INSERT INTO {TABLE_NAME}
-                ({COL_FID}, {COL_STATION_CODE}, {COL_STATION_NAME}, {COL_LAT}, {COL_LON}, {COL_COUNTRY}, {COL_GEOM})
-                VALUES (%s, %s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), {EPSG_PROJECTION}))
-            """
+                query = f"""
+                    INSERT INTO {TABLE_NAME}
+                    ({COL_FID}, {COL_STATION_CODE}, {COL_STATION_NAME}, {COL_LAT}, {COL_LON}, {COL_COUNTRY}, {COL_GEOM})
+                    VALUES (%s, %s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), {EPSG_PROJECTION}))
+                """
 
-            try:
-                cur.execute(
-                    query,
-                    (
-                        row.get("fid"),
-                        row.get("stationCode"),
-                        row.get("stationName"),
-                        lat,
-                        lon,
-                        row.get("country"),
-                        lon,
-                        lat,
-                    ),
-                )
-            except Exception as e:
-                print(f"Error: Could not insert {row.get('stationCode')} - Error: {e}")
-                continue
+                try:
+                    cur.execute(
+                        query,
+                        (
+                            row.get("fid"),
+                            row.get("stationCode"),
+                            row.get("stationName"),
+                            lat,
+                            lon,
+                            country_code,
+                            lon,
+                            lat,
+                        ),
+                    )
+                except Exception as e:
+                    print(
+                        f"Error: Could not insert {row.get('stationCode')} - Error: {e}"
+                    )
+                    continue
 
     connection.commit()
-    print(f"Insert complete.")
+    print("Insert complete.")
 
 
 def verify_data(connection):
@@ -153,7 +158,8 @@ def create_glofas_stations_table():
         print("No data loaded. Exiting.")
         return
 
-    print(f"Loaded {len(data)} records.")
+    total = sum(len(rows) for rows in data.values())
+    print(f"Loaded {total} records across {len(data)} countries.")
 
     with get_db_connection() as connection:
         create_gis_table(connection, TABLE_NAME, TABLE_COLUMNS)
