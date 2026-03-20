@@ -20,9 +20,6 @@ BASE_RASTER_DIR = "raster-data/mock-events"
 GREYSCALE_OUTPUT_DIR = Path(BASE_REPO_DIR) / f"{BASE_RASTER_DIR}/greyscale/"
 RGBA_OUTPUT_DIR = Path(BASE_REPO_DIR) / f"{BASE_RASTER_DIR}/rgba/"
 
-METADATA_ENDING = "_population_metadata.json"
-RASTER_ENDING = "_population.png"
-
 if __name__ == "__main__":
     GREYSCALE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     RGBA_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
