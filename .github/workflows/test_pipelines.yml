@@ -8,12 +8,14 @@ on:
     paths:
       - 'data/**'
       - '.github/workflows/test_pipelines.yml'
+      - '!data/data_management/**'
   push:
     branches:
       - main
     paths:
       - 'data/**'
       - '.github/workflows/test_pipelines.yml'
+      - '!data/data_management/**'
 
 # This is needed for qlty to authenticate with OIDC
 # https://docs.qlty.sh/coverage/quickstart#github-actions
@@ -30,6 +32,8 @@ jobs:
         test_node:
           - test/test_pipeline_integration.py::test_pipeline_riverflood_ken
           - test/test_pipeline_integration.py::test_pipeline_drought_eth
+          - test/test_pipeline_v2.py::test_floods_ken
+          - test/test_pipeline_v2.py::test_drought_eth
     defaults:
       run:
         working-directory: data

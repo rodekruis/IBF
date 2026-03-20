@@ -27,6 +27,7 @@ npm-debug.log*
 
 # Data
 data/
+pipelines/output/
 *.nc
 
 # Byte-compiled / optimized / DLL files

@@ -18,6 +18,11 @@ target_countries_iso_a3 = {
     "MWI",
     "PHL",
     "ZMB",
+    # Temporarily added to fetch new population data for all v1 countries
+    # "UGA",
+    # "LSO",
+    # "ZWE",
+    # "SSD",
 }
 
 """
