@@ -1,0 +1,22 @@
+hazard_type: drought
+
+run_targets:
+  DEBUG:
+    countries:
+      - name: ETH
+        data_sources:
+          - name: ecmwf_forecast
+            type: grib
+            source: dummy
+          - name: admin_boundaries
+            type: geojson
+            source: dummy
+          - name: climate_regions
+            type: json
+            source: dummy
+          - name: population
+            type: raster
+            source: dummy
+        output:
+          mode: local
+          path: pipelines/output

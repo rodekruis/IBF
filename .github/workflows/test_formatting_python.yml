@@ -47,4 +47,4 @@ jobs:
         run: ./uv-sync.sh
 
       - name: Run python-knip
-        run: uv run python-knip
+        run: uv run python python-knip.py

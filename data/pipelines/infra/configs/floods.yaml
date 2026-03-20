@@ -1,0 +1,22 @@
+hazard_type: floods
+
+run_targets:
+  DEBUG:
+    countries:
+      - name: KEN
+        data_sources:
+          - name: glofas_stations
+            type: json
+            source: dummy
+          - name: glofas_discharge
+            type: netcdf
+            source: dummy
+          - name: admin_boundaries
+            type: geojson
+            source: dummy
+          - name: population
+            type: raster
+            source: dummy
+        output:
+          mode: local
+          path: pipelines/output
