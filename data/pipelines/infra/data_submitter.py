@@ -7,9 +7,13 @@ from datetime import datetime
 
 from pipelines.infra.models import (
     AdminAreaExposure,
+    AdminAreaLayer,
     Alert,
     Centroid,
+    EnsembleMemberType,
+    ForecastSource,
     GeoFeatureExposure,
+    HazardType,
     LeadTime,
     RasterExposure,
     RasterExtent,
@@ -27,10 +31,10 @@ class DataSubmitter:
     def create_alert(
         self,
         alert_id: str,
-        hazard_type: list[str],
+        hazard_types: list[HazardType],
         centroid: Centroid,
-        issued_at: str | None = None,
-        forecast_sources: list[str] | None = None,
+        issued_at: datetime,
+        forecast_sources: list[ForecastSource],
     ) -> None:
         if alert_id in self._alerts:
             self.errors[f"create_alert:{alert_id}"] = (
@@ -40,10 +44,10 @@ class DataSubmitter:
 
         self._alerts[alert_id] = Alert(
             alert_id=alert_id,
-            issued_at=issued_at or datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            issued_at=issued_at,
             centroid=centroid,
-            hazard_type=hazard_type,
-            forecast_sources=forecast_sources or [],
+            hazard_types=hazard_types,
+            forecast_sources=forecast_sources,
         )
 
     def _get_alert(self, alert_id: str, caller: str) -> Alert | None:
@@ -57,7 +61,7 @@ class DataSubmitter:
         alert_id: str,
         lead_time_start: str,
         lead_time_end: str,
-        ensemble_member: str,
+        ensemble_member_type: EnsembleMemberType,
         severity_key: str,
         severity_value: float | int,
     ) -> None:
@@ -68,7 +72,7 @@ class DataSubmitter:
         alert.time_series_data.append(
             TimeSeriesEntry(
                 lead_time=LeadTime(start=lead_time_start, end=lead_time_end),
-                ensemble_member=ensemble_member,
+                ensemble_member_type=ensemble_member_type,
                 severity_key=severity_key,
                 severity_value=severity_value,
             )
@@ -78,7 +82,7 @@ class DataSubmitter:
         self,
         alert_id: str,
         place_code: str,
-        layer: str,
+        layer: AdminAreaLayer,
         value: bool | int | float,
     ) -> None:
         alert = self._get_alert(alert_id, "add_admin_area_exposure")
@@ -153,10 +157,104 @@ class DataSubmitter:
             errors.append("No alerts to submit")
             return errors
 
+        # NOTE 1: exact data formats (and thus these integrity checks) are subject to change based on back-and-forth between hazard-logic & pipeline-infra (and exact API/datamodel requirements)
+        # NOTE 2: a lot more checks could be added and will be added in the future, but for now we focus on a few key ones to demonstrate the concept
         for alert_id, alert in self._alerts.items():
-            if not alert.hazard_type:
-                errors.append(f"Alert '{alert_id}' has no hazard type")
-            if not alert.time_series_data:
-                errors.append(f"Alert '{alert_id}' has no time series data")
+            errors.extend(self._check_centroid(alert_id, alert.centroid))
+            errors.extend(self._check_timeseries_integrity(alert_id, alert))
+            errors.extend(self._check_admin_area_integrity(alert_id, alert))
+            errors.extend(self._check_raster_integrity(alert_id, alert))
 
+        return errors
+
+    @staticmethod
+    def _check_centroid(alert_id: str, centroid: Centroid) -> list[str]:
+        errors: list[str] = []
+        if not (-90 <= centroid.latitude <= 90):
+            errors.append(
+                f"Alert '{alert_id}' centroid: latitude {centroid.latitude} "
+                f"out of range [-90, 90]"
+            )
+        if not (-180 <= centroid.longitude <= 180):
+            errors.append(
+                f"Alert '{alert_id}' centroid: longitude {centroid.longitude} "
+                f"out of range [-180, 180]"
+            )
+        return errors
+
+    @staticmethod
+    def _check_timeseries_integrity(alert_id: str, alert: Alert) -> list[str]:
+        if not alert.time_series_data:
+            return [f"Alert '{alert_id}' has no time series data"]
+
+        errors: list[str] = []
+        lead_times: dict[tuple[str, str], list[EnsembleMemberType]] = {}
+        for entry in alert.time_series_data:
+            key = (entry.lead_time.start, entry.lead_time.end)
+            lead_times.setdefault(key, []).append(entry.ensemble_member_type)
+
+        for (start, end), types in lead_times.items():
+            if start >= end:
+                errors.append(
+                    f"Alert '{alert_id}' lead time {start}–{end}: "
+                    f"start must be before end"
+                )
+            median_count = types.count(EnsembleMemberType.MEDIAN)
+            ensemble_count = types.count(EnsembleMemberType.RUN)
+            if median_count != 1:
+                errors.append(
+                    f"Alert '{alert_id}' lead time {start}–{end}: "
+                    f"expected 1 median record, found {median_count}"
+                )
+            if ensemble_count < 1:
+                errors.append(
+                    f"Alert '{alert_id}' lead time {start}–{end}: "
+                    f"expected at least 1 ensemble-run record, found 0"
+                )
+        return errors
+
+    @staticmethod
+    def _check_admin_area_integrity(alert_id: str, alert: Alert) -> list[str]:
+        errors: list[str] = []
+
+        if not alert.exposure.admin_area:
+            errors.append(f"Alert '{alert_id}' admin-area: expected at least 1 record")
+            return errors
+
+        layers: dict[AdminAreaLayer, int] = {}
+        for entry in alert.exposure.admin_area:
+            layers[entry.layer] = layers.get(entry.layer, 0) + 1
+
+        for required in AdminAreaLayer:
+            if required not in layers:
+                errors.append(
+                    f"Alert '{alert_id}' admin-area: "
+                    f"missing required layer '{required.value}'"
+                )
+
+        counts = list(layers.values())
+        if len(set(counts)) > 1:
+            detail = ", ".join(f"{l.value}={c}" for l, c in layers.items())
+            errors.append(
+                f"Alert '{alert_id}' admin-area: record count differs "
+                f"across layers ({detail})"
+            )
+        return errors
+
+    @staticmethod
+    def _check_raster_integrity(alert_id: str, alert: Alert) -> list[str]:
+        errors: list[str] = []
+        raster_layers = {r.layer for r in alert.exposure.rasters}
+        if "alert_extent" not in raster_layers:
+            errors.append(
+                f"Alert '{alert_id}' rasters: missing required 'alert_extent' layer"
+            )
+        for raster in alert.exposure.rasters:
+            ext = raster.extent
+            if ext.xmin >= ext.xmax or ext.ymin >= ext.ymax:
+                errors.append(
+                    f"Alert '{alert_id}' raster '{raster.layer}': "
+                    f"invalid extent (xmin={ext.xmin}, ymin={ext.ymin}, "
+                    f"xmax={ext.xmax}, ymax={ext.ymax})"
+                )
         return errors

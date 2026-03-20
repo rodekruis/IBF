@@ -3,13 +3,17 @@ import os
 import shutil
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
+
+import pytest
 
 EXPECTED_ALERT_KEYS = {
     "alertId",
     "issuedAt",
     "centroid",
-    "hazardType",
+    "hazardTypes",
     "forecastSources",
     "timeSeriesData",
     "exposure",
@@ -65,8 +69,8 @@ def _assert_alert_structure(alert: dict) -> None:
     assert "latitude" in alert["centroid"]
     assert "longitude" in alert["centroid"]
 
-    assert isinstance(alert["hazardType"], list)
-    assert len(alert["hazardType"]) > 0
+    assert isinstance(alert["hazardTypes"], list)
+    assert len(alert["hazardTypes"]) > 0
 
     assert isinstance(alert["timeSeriesData"], list)
     assert len(alert["timeSeriesData"]) > 0
@@ -75,7 +79,7 @@ def _assert_alert_structure(alert: dict) -> None:
         assert "leadTime" in ts_entry
         assert isinstance(ts_entry["leadTime"], list)
         assert len(ts_entry["leadTime"]) == 2
-        assert "ensembleMember" in ts_entry
+        assert "ensembleMemberType" in ts_entry
         assert "severityKey" in ts_entry
         assert "severityValue" in ts_entry
 
@@ -109,43 +113,21 @@ def _clean_output(hazard: str, country: str) -> None:
         shutil.rmtree(target)
 
 
-def test_floods_ken():
-    _clean_output("floods", "KEN")
-
-    result = _run_pipeline("pipelines/infra/configs/floods.yaml", "DEBUG")
-    assert result.returncode == 0, f"Pipeline failed: {result.stderr}"
-
-    latest = _find_latest_output("floods", "KEN")
-    alerts = _load_alerts(latest)
-
-    assert len(alerts) == 2
-
-    for alert in alerts:
-        _assert_alert_structure(alert)
-        assert alert["hazardType"] == ["floods"]
-        assert "glofas" in alert["forecastSources"]
-
-    alert_ids = {a["alertId"] for a in alerts}
-    assert "KEN_floods_glofas-station-A" in alert_ids
-    assert "KEN_floods_glofas-station-B" in alert_ids
+@dataclass(frozen=True)
+class PipelineHelpers:
+    run_pipeline: Callable[..., subprocess.CompletedProcess[str]]
+    find_latest_output: Callable[..., Path]
+    load_alerts: Callable[..., list[dict]]
+    assert_alert_structure: Callable[..., None]
+    clean_output: Callable[..., None]
 
 
-def test_drought_eth():
-    _clean_output("drought", "ETH")
-
-    result = _run_pipeline("pipelines/infra/configs/drought.yaml", "DEBUG")
-    assert result.returncode == 0, f"Pipeline failed: {result.stderr}"
-
-    latest = _find_latest_output("drought", "ETH")
-    alerts = _load_alerts(latest)
-
-    assert len(alerts) == 1
-
-    alert = alerts[0]
-    _assert_alert_structure(alert)
-    assert alert["hazardType"] == ["drought"]
-    assert alert["alertId"] == "ETH_drought_climate-region-B_season-MAM"
-    assert "ECMWF" in alert["forecastSources"]
-
-    for ts_entry in alert["timeSeriesData"]:
-        assert ts_entry["severityKey"] == "percentile"
+@pytest.fixture()
+def pipeline() -> PipelineHelpers:
+    return PipelineHelpers(
+        run_pipeline=_run_pipeline,
+        find_latest_output=_find_latest_output,
+        load_alerts=_load_alerts,
+        assert_alert_structure=_assert_alert_structure,
+        clean_output=_clean_output,
+    )
