@@ -218,11 +218,12 @@ class DataSubmitter:
             lead_times.setdefault(key, []).append(entry.ensemble_member_type)
 
         for (start, end), types in lead_times.items():
-            if start >= end:
+            if datetime.fromisoformat(start) >= datetime.fromisoformat(end):
                 errors.append(
                     f"Alert '{alert_id}' lead time {start}–{end}: "
                     f"start must be before end"
                 )
+            # TODO: maybe also check that start and end relate to a day for floods and a season for droughts? So generically to the 'temporal unit' defined for a hazard type?
             median_count = types.count(EnsembleMemberType.MEDIAN)
             ensemble_count = types.count(EnsembleMemberType.RUN)
             if median_count != 1:
