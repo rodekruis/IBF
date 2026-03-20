@@ -56,12 +56,16 @@ def download_json_source(name: str, url: str, check_count: bool = True):
             )
             attempt += 1
 
+    if not success or response is None:
+        print(f"Error: Failed to download '{name}' after {max_attempts} attempts.")
+        return None
+
     # Try to parse as JSON
     try:
         data = response.json()
     except json.JSONDecodeError as e:
         print(f"Error: Failed to parse JSON for '{name}' - Error: {e}")
-        return
+        return None
 
     # Check count vs actual items
     if check_count:
