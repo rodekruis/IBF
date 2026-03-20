@@ -117,8 +117,8 @@ def geotiff_to_array(tif_data: bytes):
             # This way it can be set to 0 later, and actual data values of 0 are preserved
             if src.nodata is not None and src.nodata > 0:
                 print(
-                    "Warning: This file has a NoData value was greater than 0. This should be handled fine,"
-                    f"but verify results. NoData value: {src.nodata}."
+                    f"Warning: This file has a NoData value greater than 0. "
+                    f"This should be handled fine, but verify results. NoData value: {src.nodata}."
                 )
                 # replace all noData values with a large negative number (-999)
                 reproj_data = np.where(reproj_data == src.nodata, -999, reproj_data)
