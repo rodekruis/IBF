@@ -6,7 +6,6 @@ import shutil
 import time
 from urllib.error import HTTPError
 
-import click
 import geopandas as gpd
 import requests
 from azure.core.exceptions import ResourceNotFoundError
