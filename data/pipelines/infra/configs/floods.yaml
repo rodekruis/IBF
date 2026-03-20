@@ -5,17 +5,20 @@ run_targets:
     countries:
       - name: KEN
         data_sources:
+          # eventually from IBF API
           - name: glofas_stations
             type: json
-            source: dummy
-          - name: glofas_discharge
-            type: netcdf
             source: dummy
           - name: admin_boundaries
             type: geojson
             source: dummy
+          # eventually from seed-data repo
           - name: population
             type: raster
+            source: dummy
+          # eventually from external sources
+          - name: glofas_discharge
+            type: netcdf
             source: dummy
         output:
           mode: local

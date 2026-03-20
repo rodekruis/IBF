@@ -110,7 +110,7 @@ DUMMY_DATA: dict[str, object] = {
         {
             "id": "climate-region-B",
             "name": "Region B",
-            "season": "MAM",
+            "seasons": ["MAM"],
             "place_codes": ["place-code-2"],
         },
     ],

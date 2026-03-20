@@ -135,6 +135,7 @@ class DataSubmitter:
                 logger.error(f"Integrity error: {err}")
             return integrity_errors
 
+        # TODO: this for now writes to file instead of sending to an API
         os.makedirs(output_dir, exist_ok=True)
 
         alerts_list = [alert.to_dict() for alert in self._alerts.values()]

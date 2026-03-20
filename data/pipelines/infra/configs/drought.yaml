@@ -5,17 +5,20 @@ run_targets:
     countries:
       - name: ETH
         data_sources:
-          - name: ecmwf_forecast
-            type: grib
+          # eventually from IBF API
+          - name: climate_regions
+            type: json
             source: dummy
           - name: admin_boundaries
             type: geojson
             source: dummy
-          - name: climate_regions
-            type: json
-            source: dummy
+          # eventually from seed-data repo
           - name: population
             type: raster
+            source: dummy
+          # eventually from external sources
+          - name: ecmwf_forecast
+            type: grib
             source: dummy
         output:
           mode: local

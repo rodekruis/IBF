@@ -10,6 +10,8 @@ import click
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
+from pipelines.v2.drought.forecast import calculate_drought_forecasts
+from pipelines.v2.flood.forecast import calculate_flood_forecasts
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +21,6 @@ HAZARD_FUNCTIONS: dict[str, HazardFunction] = {}
 
 
 def _register_hazard_functions() -> None:
-    from pipelines.v2.drought.forecast import calculate_drought_forecasts
-    from pipelines.v2.flood.forecast import calculate_flood_forecasts
 
     HAZARD_FUNCTIONS["floods"] = calculate_flood_forecasts
     HAZARD_FUNCTIONS["drought"] = calculate_drought_forecasts
