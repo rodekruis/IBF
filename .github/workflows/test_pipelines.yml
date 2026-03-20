@@ -8,12 +8,14 @@ on:
     paths:
       - 'data/**'
       - '.github/workflows/test_pipelines.yml'
+      - '!data/data_management/**'
   push:
     branches:
       - main
     paths:
       - 'data/**'
       - '.github/workflows/test_pipelines.yml'
+      - '!data/data_management/**'
 
 # This is needed for qlty to authenticate with OIDC
 # https://docs.qlty.sh/coverage/quickstart#github-actions
