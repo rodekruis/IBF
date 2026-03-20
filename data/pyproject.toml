@@ -76,4 +76,4 @@ dev = [
 
 [tool.deptry]
 known_first_party = ["pipelines", "data_management", "shared"]
-per_rule_ignores = { DEP002 = ["cfgrib", "netCDF4", "scipy"] }
+per_rule_ignores = { DEP002 = ["cfgrib", "netCDF4", "scipy"], DEP004 = ["pytest"] }
