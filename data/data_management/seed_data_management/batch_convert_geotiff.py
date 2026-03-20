@@ -1,5 +1,5 @@
 """
-Converts a a folder of GeoTiff images into greyscale and colored PNGS.
+Converts a folder of GeoTiff images into greyscale and colored PNGS.
 This is used to set up test data quickly from a batch of GeoTiffs.
 
 Change the input and output directories as needed.
