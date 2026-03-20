@@ -1,0 +1,93 @@
+dev:
+  output: local
+  hazard_type: flood
+  countries:
+    ETH:
+      data_sources:
+        - name: sample_name_1
+          uri: https://data.someurl.edu/my-file.zip
+          format: zip
+        - name: sample_name_2
+          uri: https://data.someurl.edu/my-file.json
+          format: json
+        - name: sample_name_3
+          uri: https://data.someurl.edu/my-file.raw
+          format: raw
+        - name: sample_name_4
+          uri: https://data.someurl.edu/my-file.shp
+          format: shp
+    ZMB:
+      data_sources:
+        - name: sample_name_1
+          uri: https://data.someurl.edu/my-file.zip
+          format: zip
+        - name: sample_name_2
+          uri: https://data.someurl.edu/my-file.json
+          format: json
+        - name: sample_name_3
+          uri: https://data.someurl.edu/my-file.raw
+          format: raw
+        - name: sample_name_4
+          uri: https://data.someurl.edu/my-file.shp
+          format: shp
+    ZWE:
+      data_sources:
+        - name: sample_name_1
+          uri: https://data.someurl.edu/my-file.zip
+          format: zip
+        - name: sample_name_2
+          uri: https://data.someurl.edu/my-file.json
+          format: json
+        - name: sample_name_3
+          uri: https://data.someurl.edu/my-file.raw
+          format: raw
+        - name: sample_name_4
+          uri: https://data.someurl.edu/my-file.shp
+          format: shp
+
+prod:
+  output: backend
+  hazard_type: flood
+  countries:
+    ETH:
+      data_sources:
+        - name: sample_name_1
+          uri: https://prod.data.someurl.edu/my-file.zip
+          format: zip
+        - name: sample_name_2
+          uri: https://prod.data.someurl.edu/my-file.json
+          format: json
+        - name: sample_name_3
+          uri: https://prod.data.someurl.edu/my-file.raw
+          format: raw
+        - name: sample_name_4
+          uri: https://prod.data.someurl.edu/my-file.shp
+          format: shp
+    ZMB:
+      data_sources:
+        - name: sample_name_1
+          uri: https://prod.data.someurl.edu/my-file.zip
+          format: zip
+        - name: sample_name_2
+          uri: https://prod.data.someurl.edu/my-file.json
+          format: json
+        - name: sample_name_3
+          uri: https://prod.data.someurl.edu/my-file.raw
+          format: raw
+        - name: sample_name_4
+          uri: https://prod.data.someurl.edu/my-file.shp
+          format: shp
+    ZWE:
+      data_sources:
+        - name: sample_name_1
+          uri: https://prod.data.someurl.edu/my-file.zip
+          format: zip
+        - name: sample_name_2
+          uri: https://prod.data.someurl.edu/my-file.json
+          format: json
+        - name: sample_name_3
+          uri: https://prod.data.someurl.edu/my-file.raw
+          format: raw
+        - name: sample_name_4
+          uri: https://prod.data.someurl.edu/my-file.shp
+          format: shp
