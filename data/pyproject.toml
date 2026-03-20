@@ -51,24 +51,15 @@ Homepage = "https://github.com/rodekruis/IBF/tree/main/pipelines"
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "pipelines/core",
-    "pipelines/drought",
-    "pipelines/riverflood",
+    "pipelines",
     "shared",
 ]
 
 [tool.hatch.build.targets.wheel]
 include = [
-    "pipelines/core",
-    "pipelines/drought",
-    "pipelines/riverflood",
+    "pipelines",
     "shared",
 ]
-
-[tool.hatch.build.targets.wheel.sources]
-"pipelines/core" = "core"
-"pipelines/drought" = "drought"
-"pipelines/riverflood" = "riverflood"
 
 [build-system]
 requires = ["hatchling"]
@@ -82,9 +73,6 @@ dev = [
     "ruff",
     "vulture",
 ]
-
-[project.scripts]
-python-knip = "core.quality:main"
 
 [tool.deptry]
 known_first_party = ["pipelines", "data_management", "shared"]

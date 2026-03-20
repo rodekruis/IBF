@@ -32,6 +32,8 @@ jobs:
         test_node:
           - test/test_pipeline_integration.py::test_pipeline_riverflood_ken
           - test/test_pipeline_integration.py::test_pipeline_drought_eth
+          - test/test_pipeline_v2.py::test_floods_ken
+          - test/test_pipeline_v2.py::test_drought_eth
     defaults:
       run:
         working-directory: data
