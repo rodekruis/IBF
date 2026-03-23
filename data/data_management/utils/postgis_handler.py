@@ -65,7 +65,10 @@ def create_gis_index(db_connection: psycopg.Connection, table_name: str):
     GEOMETRY_COLUMN: str = "geom"
 
     with db_connection.cursor() as cur:
-        index_name = f"{table_name}_{GEOMETRY_COLUMN}_idx"
+        # If the index name has a dot (for indicating public, debug, etc.)
+        # That dot needs to be "_" when creating a GIS index
+        raw_index_name = f"{table_name}_{GEOMETRY_COLUMN}_idx"
+        index_name = raw_index_name.replace(".", "_")
         cur.execute(
             f"CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIST ({GEOMETRY_COLUMN});"
         )

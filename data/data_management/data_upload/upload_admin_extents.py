@@ -3,6 +3,9 @@ Upload all admin boundary extents from a local clone of the seed-data repo
 
 TODO: This table format is used for development purposes, and we may need
 a different table or different data structure/preprocessing for MVP.
+
+Example URI (for Malawi):
+http://localhost:9000/collections/debug.extents_data/items?filter=country%3D%27MW%27
 """
 
 import glob
@@ -18,7 +21,7 @@ from data_management.utils.postgis_handler import (
 from shared.data_helpers import get_seed_data_repo_path
 
 # Table config
-TABLE_NAME = "extents_data"
+TABLE_NAME = "debug.extents_data"
 
 COL_COUNTRY = "country"
 COL_ADMIN_LEVEL = "admin_level"

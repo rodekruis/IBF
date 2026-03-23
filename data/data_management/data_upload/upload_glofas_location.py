@@ -1,5 +1,12 @@
 """
 Upload GloFAS station locations from CSV files in the seed-data repo to the map server.
+
+TODO: This table format is used for development purposes, and we may need
+a different table or different data structure/preprocessing for MVP.
+Most likely the glofas data will be in a shared location table with other data.
+
+Example URI (for Ethiopia):
+http://localhost:9000/collections/debug.glofas_stations/items?filter=country%3D%27ETH%27
 """
 
 import csv
@@ -15,7 +22,7 @@ from data_management.utils.postgis_handler import (
 from shared.data_helpers import get_seed_data_repo_path
 
 # Table config
-TABLE_NAME = "glofas_stations"
+TABLE_NAME = "debug.glofas_stations"
 
 COL_FID = "fid"
 COL_STATION_CODE = "stationCode"
@@ -162,6 +169,10 @@ def create_glofas_stations_table():
     print(f"Loaded {total} records across {len(data)} countries.")
 
     with get_db_connection() as connection:
+        with connection.cursor() as cur:
+            cur.execute("CREATE SCHEMA IF NOT EXISTS debug")
+        connection.commit()
+
         create_gis_table(connection, TABLE_NAME, TABLE_COLUMNS)
         insert_glofas_data(connection, data)
         create_gis_index(connection, TABLE_NAME)
