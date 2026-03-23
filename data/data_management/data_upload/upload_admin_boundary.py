@@ -1,5 +1,12 @@
 """
 Upload all admin boundaries from a local clone of the seed-data repo
+
+TODO: This table format is used for development purposes, and we may need
+a different table or different data structure/preprocessing for MVP,
+such as including extent data here.
+
+Example URI (for Uganda):
+http://localhost:9000/collections/public.admin_boundaries/items?filter=country=%27UG%27&limit=10000&transform=simplify,0.005`;
 """
 
 import glob
@@ -16,7 +23,7 @@ from data_management.utils.postgis_handler import (
 from shared.data_helpers import get_seed_data_repo_path
 
 # Table config
-TABLE_NAME = "admin_boundaries"
+TABLE_NAME = "debug.admin_boundaries"
 
 COL_COUNTRY = "country"
 COL_ADMIN_LEVEL = "admin_level"
