@@ -8,6 +8,11 @@ For instance, here are 4 codes, all for admin 3:
 "CF1111"
 "KM111"
 
+These also have special handling:
+    MDG - adm2 pcodes may be longer than adm3 codes (same code, but adm2 has a trailing "A")
+    PHL - parent codes are prefixes of child codes, but with trailing zeroes (e.g. PH170000000)
+    ZMB - adm3 codes don't start with the adm2 codes at all
+
 The naming of these will follow the values from the UGA data (which already had this).
     "features": [
         {
@@ -135,7 +140,16 @@ def populate_parent_codes(
                     if not child_pcode:
                         continue
 
-                    if not child_pcode.startswith(parent_pcode):
+                    # MDG: adm2 PCODEs have a trailing "A" that adm3 PCODEs lack
+                    compare_parent_pcode = parent_pcode
+                    if (
+                        country == "MDG"
+                        and parent_level == 2
+                        and parent_pcode.endswith("A")
+                    ):
+                        compare_parent_pcode = parent_pcode[:-1]
+
+                    if not child_pcode.startswith(compare_parent_pcode):
                         continue
 
                     # If the child already has a parent code, verify it matches
@@ -250,6 +264,13 @@ def validate_country_data(
                     compare_pcode = (
                         parent_pcode.rstrip("0") if country == "PHL" else parent_pcode
                     )
+                    # MDG: adm2 PCODEs have a trailing "A" that adm3 PCODEs lack
+                    if (
+                        country == "MDG"
+                        and parent_level == 2
+                        and compare_pcode.endswith("A")
+                    ):
+                        compare_pcode = compare_pcode[:-1]
                     if not skip_prefix_check and not feature_pcode.startswith(
                         compare_pcode
                     ):
@@ -312,10 +333,3 @@ if __name__ == "__main__":
         print("\nAll data validated successfully. No errors found.")
     else:
         print(f"\nTotal errors: {len(all_errors)}")
-
-    # Write errors to file
-    error_file = OUTPUT_DIR / "_error.txt"
-    error_file.write_text(
-        "\n".join(all_errors) + "\n" if all_errors else "", encoding="utf-8"
-    )
-    print(f"Error log written to {error_file}")
