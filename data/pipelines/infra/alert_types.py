@@ -2,15 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
-
-
-@dataclass
-class DataSource:
-    name: str
-    data: object | None = None
-    error: str | None = None
-    metadata: dict[str, str | int | float | bool] = field(default_factory=dict)
+from enum import StrEnum
 
 
 @dataclass
@@ -31,22 +23,22 @@ class LeadTime:
         return [self.start, self.end]
 
 
-class EnsembleMemberType(Enum):
+class EnsembleMemberType(StrEnum):
     MEDIAN = "median"
     RUN = "run"
 
 
-class HazardType(Enum):
+class HazardType(StrEnum):
     FLOODS = "floods"
     DROUGHT = "drought"
 
 
-class ForecastSource(Enum):
+class ForecastSource(StrEnum):
     GLOFAS = "glofas"
     ECMWF = "ECMWF"
 
 
-class AdminAreaLayer(Enum):
+class AdminAreaLayer(StrEnum):
     SPATIAL_EXTENT = "spatial_extent"
     POPULATION_EXPOSED = "population_exposed"
 
@@ -61,7 +53,7 @@ class TimeSeriesEntry:
     def to_dict(self) -> dict[str, str | float | int | list[str]]:
         return {
             "leadTime": self.lead_time.to_dict(),
-            "ensembleMemberType": self.ensemble_member_type.value,
+            "ensembleMemberType": self.ensemble_member_type,
             "severityKey": self.severity_key,
             "severityValue": self.severity_value,
         }
@@ -76,7 +68,7 @@ class AdminAreaExposure:
     def to_dict(self) -> dict[str, str | bool | int | float]:
         return {
             "placeCode": self.place_code,
-            "layer": self.layer.value,
+            "layer": self.layer,
             "value": self.value,
         }
 
@@ -165,8 +157,8 @@ class Alert:
             "alertId": self.alert_id,
             "issuedAt": self.issued_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "centroid": self.centroid.to_dict(),
-            "hazardTypes": [ht.value for ht in self.hazard_types],
-            "forecastSources": [fs.value for fs in self.forecast_sources],
+            "hazardTypes": list(self.hazard_types),
+            "forecastSources": list(self.forecast_sources),
             "timeSeriesData": [entry.to_dict() for entry in self.time_series_data],
             "exposure": self.exposure.to_dict(),
         }

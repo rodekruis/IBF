@@ -2,19 +2,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
-from pipelines.infra.data_submitter import DataSubmitter
-from pipelines.infra.models import (
+from pipelines.infra.alert_types import (
     AdminAreaLayer,
     Centroid,
     EnsembleMemberType,
     ForecastSource,
     HazardType,
 )
+from pipelines.infra.data_submitter import DataSubmitter
 
 ALERT_ID = "TST_floods_station-test"
 
 
 def _create_valid_submitter() -> DataSubmitter:
+    """Build a DataSubmitter with one fully valid alert (timeseries, admin areas,
+    rasters) so tests can add a single defect on top and verify it is caught."""
     submitter = DataSubmitter()
     submitter.create_alert(
         alert_id=ALERT_ID,

@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from pipelines.infra.data_provider import DataProvider
-from pipelines.infra.data_submitter import DataSubmitter
-from pipelines.infra.models import (
+from pipelines.infra.alert_types import (
     AdminAreaLayer,
     Centroid,
     EnsembleMemberType,
     ForecastSource,
     HazardType,
 )
+from pipelines.infra.data_provider import DataProvider
+from pipelines.infra.data_submitter import DataSubmitter
 
 
 def calculate_flood_forecasts(
