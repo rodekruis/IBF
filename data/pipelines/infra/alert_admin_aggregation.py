@@ -2,6 +2,14 @@ from __future__ import annotations
 
 from pipelines.infra.alert_types import AdminAreaExposure, AdminAreaLayer, Alert
 
+# Ancestor fields on each boundary entry, in order from nearest to farthest.
+# TODO: when we are sure we can deduce parent place codes from child place codes via place code format, we can simplify this behaviour.
+ANCESTOR_FIELDS = [
+    "parent_place_code",
+    "grandparent_place_code",
+    "great_grandparent_place_code",
+]
+
 
 def aggregate_to_parent_admin_levels(
     alert: Alert,
@@ -9,9 +17,8 @@ def aggregate_to_parent_admin_levels(
 ) -> None:
     """Aggregate admin area exposure from the deepest admin level upward.
 
-    Starting from the deepest level present in the alert, this iteratively
-    builds parent-level values by grouping child entries by their parent
-    place code and aggregating per layer:
+    Each pass groups the deepest-level entries by an ancestor field
+    and aggregates per layer:
     - Boolean layers (e.g. spatial_extent): aggregated via ``any()`` — a
       parent is True if any of its children is True.
     - Numeric layers (e.g. population_exposed): aggregated via ``sum()``,
@@ -21,68 +28,41 @@ def aggregate_to_parent_admin_levels(
     require a weighted average (e.g. weighted by child population). When such
     layers are added, extend the aggregation logic here.
 
-    Entries whose place code or parent place code is missing from
-    admin_boundaries are silently skipped. Downstream integrity checks
+    Only deepest-level boundary entries are expected in admin_boundaries.
+    Entries whose place code is not in admin_boundaries or whose ancestor
+    field is missing/None are silently skipped. Downstream integrity checks
     (alert_integrity_checks) will catch incomplete results.
 
     The aggregated entries are appended directly to ``alert.exposure.admin_area``.
     """
-    current_entries = list(alert.exposure.admin_area)
-    if not current_entries:
+    deepest_entries = list(alert.exposure.admin_area)
+    if not deepest_entries:
         return
 
-    # Walk upward one level at a time, from deepest to shallowest
-    while True:
-        current_level = max(entry.admin_level for entry in current_entries)
+    deepest_level = max(entry.admin_level for entry in deepest_entries)
 
-        entries_at_level = [
-            entry for entry in current_entries if entry.admin_level == current_level
-        ]
-
-        # Group child values by (parent_place_code, parent_level, layer)
-        parent_aggregated: dict[
-            tuple[str, int, AdminAreaLayer], list[bool | int | float]
-        ] = {}
-
-        for entry in entries_at_level:
-            boundary = admin_boundaries.get(entry.place_code)
-            if boundary is None:
-                # Child place code not found in boundaries — skip silently
-                continue
-
-            parent_code = boundary.get("parent_place_code")
-            if parent_code is None:
-                # Top-level area reached (no parent) — skip
-                continue
-
-            parent_boundary = admin_boundaries.get(str(parent_code))
-            if parent_boundary is None:
-                # Parent place code not in boundaries — skip silently
-                continue
-
-            raw_parent_level = parent_boundary.get("admin_level")
-            if raw_parent_level is None:
-                # Parent boundary missing admin_level — skip silently
-                continue
-            try:
-                parent_level = int(raw_parent_level)
-            except (TypeError, ValueError):
-                # Parent boundary has non-integer admin_level — skip silently
-                continue
-
-            key = (str(parent_code), parent_level, entry.layer)
-            parent_aggregated.setdefault(key, []).append(entry.value)
-
-        if not parent_aggregated:
+    # One pass per ancestor level: parent (level - 1), grandparent (level - 2), …
+    for level_offset, ancestor_field in enumerate(ANCESTOR_FIELDS, start=1):
+        target_level = deepest_level - level_offset
+        if target_level < 1:
             break
 
-        # Aggregate grouped child values into parent entries
-        new_entries: list[AdminAreaExposure] = []
-        for (
-            place_code,
-            admin_level,
-            layer,
-        ), values in parent_aggregated.items():
+        # Group deepest-level values by (ancestor_place_code, layer)
+        grouped: dict[tuple[str, AdminAreaLayer], list[bool | int | float]] = {}
+
+        for entry in deepest_entries:
+            boundary = admin_boundaries.get(entry.place_code)
+            if boundary is None:
+                continue
+
+            ancestor_code = boundary.get(ancestor_field)
+            if ancestor_code is None:
+                continue
+
+            key = (str(ancestor_code), entry.layer)
+            grouped.setdefault(key, []).append(entry.value)
+
+        for (place_code, layer), values in grouped.items():
             if all(isinstance(v, bool) for v in values):
                 # Boolean: parent is True if any child is True
                 aggregated_value: bool | int | float = any(values)
@@ -93,20 +73,16 @@ def aggregate_to_parent_admin_levels(
                 # TODO: add weighted average for percentage/rate layers
                 aggregated_value = sum(values)
             else:
-                # Mixed or unsupported types: fail fast to avoid silent data corruption
                 raise ValueError(
                     f"Mixed or unsupported value types for layer {layer} at "
-                    f"place_code={place_code}, admin_level={admin_level}: {values}"
+                    f"place_code={place_code}, admin_level={target_level}: {values}"
                 )
 
-            new_entry = AdminAreaExposure(
-                place_code=place_code,
-                admin_level=admin_level,
-                layer=layer,
-                value=aggregated_value,
+            alert.exposure.admin_area.append(
+                AdminAreaExposure(
+                    place_code=place_code,
+                    admin_level=target_level,
+                    layer=layer,
+                    value=aggregated_value,
+                )
             )
-            alert.exposure.admin_area.append(new_entry)
-            new_entries.append(new_entry)
-
-        # Use the newly created parent entries as input for the next iteration
-        current_entries = new_entries

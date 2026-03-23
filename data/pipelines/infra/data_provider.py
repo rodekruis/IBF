@@ -49,35 +49,31 @@ DUMMY_DATA: dict[str, object] = {
         },
     },
     "admin_boundaries": {
+        # Only deepest-level entries per country.
         "place-code-1": {
             "name": "Admin Area 1",
             "admin_level": 3,
             "parent_place_code": "place-code-1-parent",
+            "grandparent_place_code": "place-code-top",
+            "great_grandparent_place_code": None,
             "centroid": {"lat": 0.35, "lon": 32.60},
         },
         "place-code-2": {
             "name": "Admin Area 2",
             "admin_level": 3,
             "parent_place_code": "place-code-2-parent",
+            "grandparent_place_code": "place-code-top",
+            "great_grandparent_place_code": None,
             "centroid": {"lat": 1.50, "lon": 33.00},
         },
-        "place-code-1-parent": {
-            "name": "Parent Area 1",
-            "admin_level": 2,
-            "parent_place_code": "place-code-top",
-            "centroid": {"lat": 0.35, "lon": 32.60},
-        },
+        # Deepest level for drought (admin_levels: [1, 2])
         "place-code-2-parent": {
             "name": "Parent Area 2",
             "admin_level": 2,
             "parent_place_code": "place-code-top",
+            "grandparent_place_code": None,
+            "great_grandparent_place_code": None,
             "centroid": {"lat": 1.50, "lon": 33.00},
-        },
-        "place-code-top": {
-            "name": "Top Area",
-            "admin_level": 1,
-            "parent_place_code": None,
-            "centroid": {"lat": 0.90, "lon": 32.80},
         },
     },
     "population": {

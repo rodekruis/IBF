@@ -1,0 +1,214 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+import pytest
+from pipelines.infra.alert_admin_aggregation import aggregate_to_parent_admin_levels
+from pipelines.infra.alert_types import (
+    AdminAreaExposure,
+    AdminAreaLayer,
+    Alert,
+    Centroid,
+    Exposure,
+    ForecastSource,
+    HazardType,
+)
+
+BOUNDARIES_3_LEVELS: dict[str, dict[str, object]] = {
+    "child-A": {
+        "admin_level": 3,
+        "parent_place_code": "parent-X",
+        "grandparent_place_code": "top",
+    },
+    "child-B": {
+        "admin_level": 3,
+        "parent_place_code": "parent-X",
+        "grandparent_place_code": "top",
+    },
+    "child-C": {
+        "admin_level": 3,
+        "parent_place_code": "parent-Y",
+        "grandparent_place_code": "top",
+    },
+}
+
+BOUNDARIES_2_LEVELS: dict[str, dict[str, object]] = {
+    "child-A": {
+        "admin_level": 2,
+        "parent_place_code": "top",
+        "grandparent_place_code": None,
+    },
+    "child-B": {
+        "admin_level": 2,
+        "parent_place_code": "top",
+        "grandparent_place_code": None,
+    },
+}
+
+
+def _make_alert(entries: list[AdminAreaExposure]) -> Alert:
+    return Alert(
+        alert_id="test-alert",
+        issued_at=datetime.now(timezone.utc),
+        centroid=Centroid(latitude=0.0, longitude=0.0),
+        hazard_types=[HazardType.FLOODS],
+        forecast_sources=[ForecastSource.GLOFAS],
+        exposure=Exposure(admin_area=entries),
+    )
+
+
+def _entries_at_level(alert: Alert, level: int) -> list[AdminAreaExposure]:
+    return [e for e in alert.exposure.admin_area if e.admin_level == level]
+
+
+def test_boolean_aggregation_uses_any():
+    # Parent is True if any child is True, False if all children are False
+    alert = _make_alert(
+        [
+            AdminAreaExposure("child-A", 3, AdminAreaLayer.SPATIAL_EXTENT, True),
+            AdminAreaExposure("child-B", 3, AdminAreaLayer.SPATIAL_EXTENT, False),
+            AdminAreaExposure("child-C", 3, AdminAreaLayer.SPATIAL_EXTENT, False),
+        ]
+    )
+
+    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+
+    level_2 = _entries_at_level(alert, 2)
+    parent_x = [e for e in level_2 if e.place_code == "parent-X"]
+    parent_y = [e for e in level_2 if e.place_code == "parent-Y"]
+
+    assert len(parent_x) == 1
+    assert parent_x[0].value is True
+
+    assert len(parent_y) == 1
+    assert parent_y[0].value is False
+
+
+def test_numeric_aggregation_uses_sum():
+    # Parent population = sum of children (100 + 250 = 350 for parent-X, 50 for parent-Y)
+    alert = _make_alert(
+        [
+            AdminAreaExposure("child-A", 3, AdminAreaLayer.POPULATION_EXPOSED, 100),
+            AdminAreaExposure("child-B", 3, AdminAreaLayer.POPULATION_EXPOSED, 250),
+            AdminAreaExposure("child-C", 3, AdminAreaLayer.POPULATION_EXPOSED, 50),
+        ]
+    )
+
+    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+
+    level_2 = _entries_at_level(alert, 2)
+    parent_x = [e for e in level_2 if e.place_code == "parent-X"]
+    parent_y = [e for e in level_2 if e.place_code == "parent-Y"]
+
+    assert parent_x[0].value == 350
+    assert parent_y[0].value == 50
+
+
+def test_aggregation_produces_all_levels():
+    # 3-level boundaries should produce entries at levels 3, 2, and 1
+    alert = _make_alert(
+        [
+            AdminAreaExposure("child-A", 3, AdminAreaLayer.SPATIAL_EXTENT, True),
+            AdminAreaExposure("child-B", 3, AdminAreaLayer.SPATIAL_EXTENT, True),
+            AdminAreaExposure("child-C", 3, AdminAreaLayer.SPATIAL_EXTENT, False),
+        ]
+    )
+
+    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+
+    levels = {e.admin_level for e in alert.exposure.admin_area}
+    assert levels == {1, 2, 3}
+
+    level_1 = _entries_at_level(alert, 1)
+    assert len(level_1) == 1
+    assert level_1[0].place_code == "top"
+    assert level_1[0].value is True
+
+
+def test_grandparent_sums_from_deepest_not_from_parents():
+    # Level 1 sums all deepest entries directly (100+200+50=350), not parent subtotals
+    alert = _make_alert(
+        [
+            AdminAreaExposure("child-A", 3, AdminAreaLayer.POPULATION_EXPOSED, 100),
+            AdminAreaExposure("child-B", 3, AdminAreaLayer.POPULATION_EXPOSED, 200),
+            AdminAreaExposure("child-C", 3, AdminAreaLayer.POPULATION_EXPOSED, 50),
+        ]
+    )
+
+    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+
+    level_1 = _entries_at_level(alert, 1)
+    assert level_1[0].value == 350
+
+
+def test_two_level_hierarchy():
+    # Works with only 2 admin levels (no grandparent pass)
+    alert = _make_alert(
+        [
+            AdminAreaExposure("child-A", 2, AdminAreaLayer.POPULATION_EXPOSED, 10),
+            AdminAreaExposure("child-B", 2, AdminAreaLayer.POPULATION_EXPOSED, 20),
+        ]
+    )
+
+    aggregate_to_parent_admin_levels(alert, BOUNDARIES_2_LEVELS)
+
+    level_1 = _entries_at_level(alert, 1)
+    assert len(level_1) == 1
+    assert level_1[0].place_code == "top"
+    assert level_1[0].value == 30
+
+
+def test_empty_alert_is_noop():
+    # No entries in, no entries out
+    alert = _make_alert([])
+    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+    assert alert.exposure.admin_area == []
+
+
+def test_unknown_place_code_is_skipped():
+    # Place codes not in admin_boundaries are silently ignored
+    alert = _make_alert(
+        [
+            AdminAreaExposure("unknown", 3, AdminAreaLayer.SPATIAL_EXTENT, True),
+        ]
+    )
+
+    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+
+    assert len(alert.exposure.admin_area) == 1
+
+
+def test_multiple_layers_aggregated_independently():
+    # spatial_extent and population_exposed are aggregated separately per parent
+    alert = _make_alert(
+        [
+            AdminAreaExposure("child-A", 3, AdminAreaLayer.SPATIAL_EXTENT, True),
+            AdminAreaExposure("child-A", 3, AdminAreaLayer.POPULATION_EXPOSED, 100),
+            AdminAreaExposure("child-B", 3, AdminAreaLayer.SPATIAL_EXTENT, False),
+            AdminAreaExposure("child-B", 3, AdminAreaLayer.POPULATION_EXPOSED, 200),
+        ]
+    )
+
+    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+
+    level_2 = _entries_at_level(alert, 2)
+    spatial = [e for e in level_2 if e.layer == AdminAreaLayer.SPATIAL_EXTENT]
+    population = [e for e in level_2 if e.layer == AdminAreaLayer.POPULATION_EXPOSED]
+
+    assert len(spatial) == 1
+    assert spatial[0].value is True
+    assert len(population) == 1
+    assert population[0].value == 300
+
+
+def test_mixed_value_types_raises():
+    # Mixing bool and int for the same layer should raise ValueError
+    alert = _make_alert(
+        [
+            AdminAreaExposure("child-A", 3, AdminAreaLayer.SPATIAL_EXTENT, True),
+            AdminAreaExposure("child-B", 3, AdminAreaLayer.SPATIAL_EXTENT, 42),
+        ]
+    )
+
+    with pytest.raises(ValueError, match="Mixed or unsupported"):
+        aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
