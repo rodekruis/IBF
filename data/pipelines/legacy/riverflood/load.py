@@ -8,9 +8,9 @@ import shutil
 from datetime import datetime
 from typing import List
 
-from pipelines.core.data import AdminDataSet, RegionDataSet
-from pipelines.core.load import Load
-from pipelines.riverflood.data import (
+from pipelines.legacy.core.data import AdminDataSet, RegionDataSet
+from pipelines.legacy.core.load import Load
+from pipelines.legacy.riverflood.data import (
     RiverFloodDataSets,
     ThresholdDataUnit,
     ThresholdStationDataUnit,

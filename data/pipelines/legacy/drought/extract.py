@@ -12,9 +12,9 @@ import rasterio
 import rioxarray
 import xarray as xr
 from dateutil.relativedelta import relativedelta
-from pipelines.drought.data import ForecastRegionDataUnit
-from pipelines.drought.module import DroughtModule
-from pipelines.drought.utils import replace_year_month
+from pipelines.legacy.drought.data import ForecastRegionDataUnit
+from pipelines.legacy.drought.module import DroughtModule
+from pipelines.legacy.drought.utils import replace_year_month
 from rasterio.crs import CRS
 from rasterio.mask import mask
 from rasterio.transform import from_origin

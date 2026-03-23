@@ -10,10 +10,10 @@ import geopandas as gpd
 import requests
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.blob import BlobServiceClient
-from pipelines.core.data import DataSets
-from pipelines.core.logger import logger
-from pipelines.core.secrets import Secrets
-from pipelines.core.settings import Settings
+from pipelines.legacy.core.data import DataSets
+from pipelines.legacy.core.logger import logger
+from pipelines.legacy.core.secrets import Secrets
+from pipelines.legacy.core.settings import Settings
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 

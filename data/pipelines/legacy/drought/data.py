@@ -1,14 +1,14 @@
 from datetime import datetime
 
-from pipelines.core.data import (
+from pipelines.legacy.core.data import (
     AdminDataSet,
     AdminDataUnit,
     DataSets,
     RegionDataSet,
     RegionDataUnit,
 )
-from pipelines.core.secrets import Secrets
-from pipelines.core.settings import Settings
+from pipelines.legacy.core.secrets import Secrets
+from pipelines.legacy.core.settings import Settings
 
 
 class ForecastAdminDataUnit(AdminDataUnit):

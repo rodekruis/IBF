@@ -1,5 +1,5 @@
-from pipelines.core.module import Module
-from pipelines.drought.load import DroughtLoad
+from pipelines.legacy.core.module import Module
+from pipelines.legacy.drought.load import DroughtLoad
 
 
 class DroughtModule(Module):

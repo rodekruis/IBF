@@ -1,10 +1,10 @@
 import logging
 
 import click
-from pipelines.core.secrets import Secrets
-from pipelines.core.settings import Settings
-from pipelines.drought.pipeline import Pipeline as DroughtPipeline
-from pipelines.riverflood.pipeline import Pipeline as RiverFloodPipeline
+from pipelines.legacy.core.secrets import Secrets
+from pipelines.legacy.core.settings import Settings
+from pipelines.legacy.drought.pipeline import Pipeline as DroughtPipeline
+from pipelines.legacy.riverflood.pipeline import Pipeline as RiverFloodPipeline
 
 
 @click.command()
@@ -34,7 +34,7 @@ def pipeline(hazard, country, prepare, forecast, send, debug, no_cache):
             pipeline = RiverFloodPipeline(
                 country=country,
                 hazard=hazard,
-                settings=Settings("pipelines/riverflood/config.yaml"),
+                settings=Settings("pipelines/legacy/riverflood/config.yaml"),
                 secrets=Secrets(".env"),
                 no_cache=no_cache,
             )
@@ -42,7 +42,7 @@ def pipeline(hazard, country, prepare, forecast, send, debug, no_cache):
             pipeline = DroughtPipeline(
                 country=country,
                 hazard=hazard,
-                settings=Settings("pipelines/drought/config.yaml"),
+                settings=Settings("pipelines/legacy/drought/config.yaml"),
                 secrets=Secrets(".env"),
                 no_cache=no_cache,
             )

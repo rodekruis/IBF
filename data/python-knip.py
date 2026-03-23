@@ -14,15 +14,18 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+PYTHON_SOURCES = ["pipelines", "data_management", "shared", "test", "python-knip.py"]
+
+
 def build_checks(fix: bool) -> list[list[str]]:
-    ruff_command = ["ruff", "check", "pipeline.py", "pipelines", "test"]
+    ruff_command = ["ruff", "check", *PYTHON_SOURCES]
     if fix:
         ruff_command.append("--fix")
 
     return [
         ["deptry", "."],
         ruff_command,
-        ["vulture", "pipeline.py", "pipelines", "test", "--min-confidence", "80"],
+        ["vulture", *PYTHON_SOURCES, "--min-confidence", "80"],
     ]
 
 

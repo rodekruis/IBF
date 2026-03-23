@@ -1,5 +1,5 @@
-from pipelines.core.module import Module
-from pipelines.riverflood.load import RiverFloodLoad
+from pipelines.legacy.core.module import Module
+from pipelines.legacy.riverflood.load import RiverFloodLoad
 
 
 class RiverFloodModule(Module):

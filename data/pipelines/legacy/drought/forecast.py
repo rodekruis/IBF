@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 import rasterio
 import rioxarray
-from pipelines.drought.data import ForecastAdminDataUnit, ForecastRegionDataUnit
-from pipelines.drought.module import DroughtModule
-from pipelines.drought.utils import replace_year_month
+from pipelines.legacy.drought.data import ForecastAdminDataUnit, ForecastRegionDataUnit
+from pipelines.legacy.drought.module import DroughtModule
+from pipelines.legacy.drought.utils import replace_year_month
 from rasterio.features import shapes
 from rasterio.mask import mask
 from rasterstats import zonal_stats

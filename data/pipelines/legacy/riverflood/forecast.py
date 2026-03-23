@@ -6,12 +6,12 @@ from typing import List
 import numpy as np
 import pandas as pd
 import rasterio
-from pipelines.riverflood.data import (
+from pipelines.legacy.riverflood.data import (
     FloodForecast,
     ForecastDataUnit,
     ForecastStationDataUnit,
 )
-from pipelines.riverflood.module import RiverFloodModule
+from pipelines.legacy.riverflood.module import RiverFloodModule
 from rasterio.features import shapes
 from rasterio.mask import mask
 from rasterio.merge import merge

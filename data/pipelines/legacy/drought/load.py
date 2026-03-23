@@ -8,14 +8,14 @@ import shutil
 from datetime import datetime
 
 import azure.cosmos.cosmos_client as cosmos_client
-from pipelines.core.data import (
+from pipelines.legacy.core.data import (
     AdminDataSet,
     AdminDataUnit,
     RegionDataSet,
     RegionDataUnit,
 )
-from pipelines.core.load import Load
-from pipelines.drought.data import DroughtDataSets
+from pipelines.legacy.core.load import Load
+from pipelines.legacy.drought.data import DroughtDataSets
 
 COSMOS_DATA_TYPES = [
     "climate-region",

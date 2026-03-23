@@ -1,8 +1,8 @@
 import ast
 import random
 
-from pipelines.riverflood.data import DischargeDataUnit, DischargeStationDataUnit
-from pipelines.riverflood.pipeline import Pipeline
+from pipelines.legacy.riverflood.data import DischargeDataUnit, DischargeStationDataUnit
+from pipelines.legacy.riverflood.pipeline import Pipeline
 
 
 def get_ensemble_likelihood(ensemble, threshold):
