@@ -44,12 +44,14 @@ def _create_valid_submitter() -> DataSubmitter:
     submitter.add_admin_area_exposure(
         alert_id=ALERT_ID,
         place_code="PC001",
+        admin_level=3,
         layer=AdminAreaLayer.SPATIAL_EXTENT,
         value=True,
     )
     submitter.add_admin_area_exposure(
         alert_id=ALERT_ID,
         place_code="PC001",
+        admin_level=3,
         layer=AdminAreaLayer.POPULATION_EXPOSED,
         value=0,
     )

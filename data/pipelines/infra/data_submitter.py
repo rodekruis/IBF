@@ -5,6 +5,12 @@ import logging
 import os
 from datetime import datetime, timezone
 
+from pipelines.infra.alert_integrity_checks import (
+    check_admin_area_integrity,
+    check_centroid,
+    check_raster_integrity,
+    check_timeseries_integrity,
+)
 from pipelines.infra.alert_types import (
     AdminAreaExposure,
     AdminAreaLayer,
@@ -18,12 +24,6 @@ from pipelines.infra.alert_types import (
     RasterExposure,
     RasterExtent,
     TimeSeriesEntry,
-)
-from pipelines.infra.integrity_checks import (
-    check_admin_area_integrity,
-    check_centroid,
-    check_raster_integrity,
-    check_timeseries_integrity,
 )
 
 logger = logging.getLogger(__name__)
@@ -106,6 +106,7 @@ class DataSubmitter:
         self,
         alert_id: str,
         place_code: str,
+        admin_level: int,
         layer: AdminAreaLayer,
         value: bool | int | float,
     ) -> None:
@@ -114,7 +115,12 @@ class DataSubmitter:
             return
 
         alert.exposure.admin_area.append(
-            AdminAreaExposure(place_code=place_code, layer=layer, value=value)
+            AdminAreaExposure(
+                place_code=place_code,
+                admin_level=admin_level,
+                layer=layer,
+                value=value,
+            )
         )
 
     def add_geo_feature_exposure(
@@ -155,6 +161,9 @@ class DataSubmitter:
                 ),
             )
         )
+
+    def get_alerts(self) -> list[Alert]:
+        return list(self._alerts.values())
 
     def send_all(self, output_dir: str) -> list[str]:
         integrity_errors = self._check_integrity()

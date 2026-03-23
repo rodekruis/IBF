@@ -90,6 +90,7 @@ def _assert_alert_structure(alert: dict) -> None:
 
     for admin_area in exposure["admin-area"]:
         assert "placeCode" in admin_area
+        assert "adminLevel" in admin_area
         assert "layer" in admin_area
         assert "value" in admin_area
 

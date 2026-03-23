@@ -4,6 +4,7 @@ run_targets:
   DEBUG:
     countries:
       - name: ETH
+        admin_levels: [1, 2]
         data_sources:
           # eventually from IBF API
           - name: climate_regions

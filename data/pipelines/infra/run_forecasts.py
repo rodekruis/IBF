@@ -10,13 +10,14 @@ import click
 
 from pipelines.drought.forecast import calculate_drought_forecasts
 from pipelines.flood.forecast import calculate_flood_forecasts
-from pipelines.infra.config_reader import ConfigReader
+from pipelines.infra.alert_admin_aggregation import aggregate_to_parent_admin_levels
+from pipelines.infra.config_reader import ConfigReader, CountryConfig
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 
 logger = logging.getLogger(__name__)
 
-HazardFunction = Callable[[DataProvider, DataSubmitter, str], None]
+HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
 
 HAZARD_FUNCTIONS: dict[str, HazardFunction] = {}
 
@@ -25,6 +26,40 @@ def _register_hazard_functions() -> None:
 
     HAZARD_FUNCTIONS["floods"] = calculate_flood_forecasts
     HAZARD_FUNCTIONS["drought"] = calculate_drought_forecasts
+
+
+def _run_country(
+    hazard_fn: HazardFunction,
+    country: CountryConfig,
+    config_reader: ConfigReader,
+    run_target: str,
+    hazard_type: str,
+) -> list[str]:
+    data_provider = DataProvider()
+    if not data_provider.try_load_data(config_reader, country.name, run_target):
+        return [f"Failed to load data for {country.name}"]
+
+    data_submitter = DataSubmitter()
+
+    # --- Hazard-specific forecast logic (implemented by data scientists) ---
+    hazard_fn(
+        data_provider,
+        data_submitter,
+        country.name,
+        country.deepest_admin_level,
+    )
+
+    # --- Post-processing: aggregate deepest-level admin area data upward ---
+    admin_boundaries: dict[str, dict[str, object]] = data_provider.get_data(
+        "admin_boundaries"
+    ).data
+    for alert in data_submitter.get_alerts():
+        aggregate_to_parent_admin_levels(alert, admin_boundaries)
+
+    # --- Write output ---
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    output_dir = str(Path(country.output_path) / hazard_type / country.name / timestamp)
+    return data_submitter.send_all(output_dir)
 
 
 def run_forecasts(config_path: str, run_target: str) -> list[str]:
@@ -53,28 +88,14 @@ def run_forecasts(config_path: str, run_target: str) -> list[str]:
     for country in countries:
         logger.info(f"Processing {hazard_type} for {country.name}")
 
-        data_provider = DataProvider()
-        if not data_provider.try_load_data(config_reader, country.name, run_target):
-            msg = f"Failed to load data for {country.name}"
-            logger.error(msg)
-            all_errors.append(msg)
-            continue
-
-        data_submitter = DataSubmitter()
-
-        hazard_fn(data_provider, data_submitter, country.name)
-
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        output_dir = str(
-            Path(country.output_path) / hazard_type / country.name / timestamp
+        errors = _run_country(
+            hazard_fn, country, config_reader, run_target, hazard_type
         )
-
-        errors = data_submitter.send_all(output_dir)
         if errors:
             logger.error(f"Errors for {country.name}: {errors}")
             all_errors.extend(errors)
         else:
-            logger.info(f"Output written to {output_dir}")
+            logger.info(f"Completed {hazard_type} for {country.name}")
 
     return all_errors
 

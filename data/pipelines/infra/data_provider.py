@@ -51,13 +51,33 @@ DUMMY_DATA: dict[str, object] = {
     "admin_boundaries": {
         "place-code-1": {
             "name": "Admin Area 1",
-            "adm_level": 2,
+            "admin_level": 3,
+            "parent_place_code": "place-code-1-parent",
             "centroid": {"lat": 0.35, "lon": 32.60},
         },
         "place-code-2": {
             "name": "Admin Area 2",
-            "adm_level": 2,
+            "admin_level": 3,
+            "parent_place_code": "place-code-2-parent",
             "centroid": {"lat": 1.50, "lon": 33.00},
+        },
+        "place-code-1-parent": {
+            "name": "Parent Area 1",
+            "admin_level": 2,
+            "parent_place_code": "place-code-top",
+            "centroid": {"lat": 0.35, "lon": 32.60},
+        },
+        "place-code-2-parent": {
+            "name": "Parent Area 2",
+            "admin_level": 2,
+            "parent_place_code": "place-code-top",
+            "centroid": {"lat": 1.50, "lon": 33.00},
+        },
+        "place-code-top": {
+            "name": "Top Area",
+            "admin_level": 1,
+            "parent_place_code": None,
+            "centroid": {"lat": 0.90, "lon": 32.80},
         },
     },
     "population": {
@@ -120,7 +140,7 @@ DUMMY_DATA: dict[str, object] = {
             "id": "climate-region-B",
             "name": "Region B",
             "seasons": ["MAM"],
-            "place_codes": ["place-code-2"],
+            "place_codes": ["place-code-2-parent"],
         },
     ],
 }
@@ -129,12 +149,10 @@ DUMMY_DATA: dict[str, object] = {
 class DataProvider:
     def __init__(self) -> None:
         self.loaded_data: dict[str, DataSource] = {}
-        self.config: ConfigReader | None = None
 
     def try_load_data(
         self, config_reader: ConfigReader, country_name: str, run_target: str
     ) -> bool:
-        self.config = config_reader
         data_sources = config_reader.get_data_sources(country_name, run_target)
 
         if not data_sources:

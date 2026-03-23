@@ -19,9 +19,16 @@ class DataSourceConfig:
 @dataclass
 class CountryConfig:
     name: str
+    admin_levels: list[int] = field(default_factory=list)
     data_sources: list[DataSourceConfig] = field(default_factory=list)
     output_mode: str = "local"
     output_path: str = "pipelines/output"
+
+    @property
+    def deepest_admin_level(self) -> int:
+        if not self.admin_levels:
+            raise ValueError(f"No admin_levels configured for country '{self.name}'")
+        return max(self.admin_levels)
 
 
 @dataclass
@@ -92,6 +99,7 @@ class ConfigReader:
             countries.append(
                 CountryConfig(
                     name=country_raw["name"],
+                    admin_levels=country_raw.get("admin_levels", []),
                     data_sources=data_sources,
                     output_mode=output_raw.get("mode", "local"),
                     output_path=output_raw.get("path", "pipelines/output"),
@@ -113,3 +121,9 @@ class ConfigReader:
             if country.name == country_name:
                 return {"mode": country.output_mode, "path": country.output_path}
         return {"mode": "local", "path": "pipelines/output"}
+
+    def get_admin_levels(self, country_name: str, run_target: str) -> list[int]:
+        for country in self.get_countries(run_target):
+            if country.name == country_name:
+                return sorted(country.admin_levels)
+        return []

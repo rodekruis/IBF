@@ -14,6 +14,9 @@ def test_floods_ken(pipeline):
         assert alert["hazardTypes"] == ["floods"]
         assert "glofas" in alert["forecastSources"]
 
+        admin_levels = {r["adminLevel"] for r in alert["exposure"]["admin-area"]}
+        assert admin_levels == {1, 2, 3}
+
     alert_ids = {a["alertId"] for a in alerts}
     assert "KEN_floods_glofas-station-A" in alert_ids
     assert "KEN_floods_glofas-station-B" in alert_ids
