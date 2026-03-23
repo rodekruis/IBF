@@ -6,7 +6,7 @@ This directory handles pipeline and other data management scripts in Python.
 
 ### Pipelines
 
-Pipeline code used for creating forecasts. See [pipelines/README.md] for further info.
+Pipeline code used for creating forecasts. See [pipelines/README.md](pipelines/README.md) for further info.
 
 ### Data_management
 
