@@ -6,7 +6,7 @@ a different table or different data structure/preprocessing for MVP.
 Most likely the glofas data will be in a shared location table with other data.
 
 Example URI (for Ethiopia):
-http://localhost:9000/collections/prototype.glofas_stations/items?filter=country%3D%27ETH%27
+http://localhost:9000/collections/debug.glofas_stations/items?filter=country%3D%27ETH%27
 """
 
 import csv
@@ -22,7 +22,7 @@ from data_management.utils.postgis_handler import (
 from shared.data_helpers import get_seed_data_repo_path
 
 # Table config
-TABLE_NAME = "prototype.glofas_stations"
+TABLE_NAME = "debug.glofas_stations"
 
 COL_FID = "fid"
 COL_STATION_CODE = "stationCode"
