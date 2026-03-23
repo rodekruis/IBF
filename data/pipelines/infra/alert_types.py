@@ -68,7 +68,7 @@ class AdminAreaExposure:
     def to_dict(self) -> dict[str, str | bool | int | float]:
         return {
             "placeCode": self.place_code,
-            "layer": self.layer.value,
+            "layer": self.layer,
             "value": self.value,
         }
 
