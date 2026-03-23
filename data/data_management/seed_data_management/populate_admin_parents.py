@@ -45,7 +45,7 @@ Once all are done, go back and open all admin files for a country from the outpu
 - Check adm3 and adm4 files.
 - Print if any data is missing. Print any errors
    - It should have the PCODE and name (_EN) for the current adm level, and all parents.
-   - The higher admin levels (0,1,2) PCODE string shuld be a subset of the lower levels.
+   - The higher admin levels (0,1,2) PCODE string should be a subset of the lower levels.
 """
 
 import json
@@ -168,7 +168,7 @@ def populate_parent_codes(
                     child_props[parent_name_key] = parent_name
 
                     # When setting adm1, also set the adm0 code (first 2 chars of adm1 PCODE)
-                    # there are not adm0 JSON files, so we need to derrive the adm0 code ourselves.
+                    # there are no adm0 JSON files, so we need to derive the adm0 code ourselves.
                     if parent_level == 1 and len(parent_pcode) >= 2:
                         child_props[get_pcode_key(0)] = parent_pcode[:2]
 
