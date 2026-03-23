@@ -14,7 +14,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-PYTHON_SOURCES = ["pipelines", "data_management", "shared", "test", "python-knip.py"]
+PYTHON_SOURCES = ["pipelines", "data_management", "shared", "python-knip.py"]
 
 
 def build_checks(fix: bool) -> list[list[str]]:
