@@ -65,24 +65,29 @@ def check_admin_area_integrity(alert_id: str, alert: Alert) -> list[str]:
         errors.append(f"Alert '{alert_id}' admin-area: expected at least 1 record")
         return errors
 
-    layers: dict[AdminAreaLayer, int] = {}
+    levels: dict[int, dict[AdminAreaLayer, int]] = {}
     for entry in alert.exposure.admin_area:
-        layers[entry.layer] = layers.get(entry.layer, 0) + 1
+        level_layers = levels.setdefault(entry.admin_level, {})
+        level_layers[entry.layer] = level_layers.get(entry.layer, 0) + 1
 
-    for required in AdminAreaLayer:
-        if required not in layers:
+    for level, layer_counts in sorted(levels.items()):
+        for required in AdminAreaLayer:
+            if required not in layer_counts:
+                errors.append(
+                    f"Alert '{alert_id}' admin-area level {level}: "
+                    f"missing required layer '{required}'"
+                )
+
+        counts = list(layer_counts.values())
+        if len(set(counts)) > 1:
+            detail = ", ".join(
+                f"{layer}={count}" for layer, count in layer_counts.items()
+            )
             errors.append(
-                f"Alert '{alert_id}' admin-area: "
-                f"missing required layer '{required}'"
+                f"Alert '{alert_id}' admin-area level {level}: "
+                f"record count differs across layers ({detail})"
             )
 
-    counts = list(layers.values())
-    if len(set(counts)) > 1:
-        detail = ", ".join(f"{layer}={count}" for layer, count in layers.items())
-        errors.append(
-            f"Alert '{alert_id}' admin-area: record count differs "
-            f"across layers ({detail})"
-        )
     return errors
 
 

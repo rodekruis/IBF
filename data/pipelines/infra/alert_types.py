@@ -62,12 +62,14 @@ class TimeSeriesEntry:
 @dataclass
 class AdminAreaExposure:
     place_code: str
+    admin_level: int
     layer: AdminAreaLayer
     value: bool | int | float
 
     def to_dict(self) -> dict[str, str | bool | int | float]:
         return {
             "placeCode": self.place_code,
+            "adminLevel": self.admin_level,
             "layer": self.layer,
             "value": self.value,
         }

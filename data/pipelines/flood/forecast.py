@@ -17,6 +17,7 @@ def calculate_flood_forecasts(
     data_provider: DataProvider,
     data_submitter: DataSubmitter,
     country: str,
+    deepest_admin_level: int,
 ) -> None:
     # TEMPLATE IMPLEMENTATION — This function loops over stations from
     # data_provider, but uses dummy/placeholder values for severity, exposure,
@@ -69,12 +70,14 @@ def calculate_flood_forecasts(
             data_submitter.add_admin_area_exposure(
                 alert_id=alert_id,
                 place_code=place_code,
+                admin_level=deepest_admin_level,
                 layer=AdminAreaLayer.SPATIAL_EXTENT,
                 value=True,
             )
             data_submitter.add_admin_area_exposure(
                 alert_id=alert_id,
                 place_code=place_code,
+                admin_level=deepest_admin_level,
                 layer=AdminAreaLayer.POPULATION_EXPOSED,
                 value=0,
             )

@@ -4,6 +4,7 @@ run_targets:
   DEBUG:
     countries:
       - name: KEN
+        admin_levels: [1, 2, 3]
         data_sources:
           # eventually from IBF API
           - name: glofas_stations

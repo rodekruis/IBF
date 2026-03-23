@@ -76,12 +76,14 @@ def test_admin_area_unequal_layer_counts_is_rejected(
     valid_submitter.add_admin_area_exposure(
         alert_id=ALERT_ID,
         place_code="PC001",
+        admin_level=3,
         layer=AdminAreaLayer.SPATIAL_EXTENT,
         value=True,
     )
     valid_submitter.add_admin_area_exposure(
         alert_id=ALERT_ID,
         place_code="PC002",
+        admin_level=3,
         layer=AdminAreaLayer.SPATIAL_EXTENT,
         value=True,
     )
@@ -121,6 +123,7 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
     submitter.add_admin_area_exposure(
         alert_id=ALERT_ID,
         place_code="PC001",
+        admin_level=3,
         layer=AdminAreaLayer.POPULATION_EXPOSED,
         value=0,
     )
@@ -166,6 +169,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     submitter.add_admin_area_exposure(
         alert_id=ALERT_ID,
         place_code="PC001",
+        admin_level=3,
         layer=AdminAreaLayer.POPULATION_EXPOSED,
         value=0,
     )

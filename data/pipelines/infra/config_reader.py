@@ -19,9 +19,14 @@ class DataSourceConfig:
 @dataclass
 class CountryConfig:
     name: str
+    admin_levels: list[int] = field(default_factory=list)
     data_sources: list[DataSourceConfig] = field(default_factory=list)
     output_mode: str = "local"
     output_path: str = "pipelines/output"
+
+    @property
+    def deepest_admin_level(self) -> int:
+        return max(self.admin_levels)
 
 
 @dataclass
@@ -57,9 +62,29 @@ class ConfigReader:
             if key not in self.raw_config:
                 self.errors.append(f"Missing required config key: '{key}'")
 
+        if not self.errors:
+            self._validate_countries()
+
         if self.errors:
             return False
         return True
+
+    def _validate_countries(self) -> None:
+        if self.raw_config is None:
+            return
+        for target_name, target_config in self.raw_config.get(
+            "run_targets", {}
+        ).items():
+            if not isinstance(target_config, dict):
+                continue
+            for country_raw in target_config.get("countries", []):
+                country_name = country_raw.get("name", "<unknown>")
+                admin_levels = country_raw.get("admin_levels", [])
+                if not admin_levels:
+                    self.errors.append(
+                        f"Country '{country_name}' in run_target '{target_name}' "
+                        f"has no admin_levels configured"
+                    )
 
     def get_hazard_type(self) -> str:
         if self.raw_config is None:
@@ -92,6 +117,7 @@ class ConfigReader:
             countries.append(
                 CountryConfig(
                     name=country_raw["name"],
+                    admin_levels=country_raw.get("admin_levels", []),
                     data_sources=data_sources,
                     output_mode=output_raw.get("mode", "local"),
                     output_path=output_raw.get("path", "pipelines/output"),
@@ -113,3 +139,9 @@ class ConfigReader:
             if country.name == country_name:
                 return {"mode": country.output_mode, "path": country.output_path}
         return {"mode": "local", "path": "pipelines/output"}
+
+    def get_admin_levels(self, country_name: str, run_target: str) -> list[int]:
+        for country in self.get_countries(run_target):
+            if country.name == country_name:
+                return sorted(country.admin_levels)
+        return []

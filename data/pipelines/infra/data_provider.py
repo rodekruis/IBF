@@ -49,14 +49,30 @@ DUMMY_DATA: dict[str, object] = {
         },
     },
     "admin_boundaries": {
+        # Only deepest-level entries per country.
         "place-code-1": {
             "name": "Admin Area 1",
-            "adm_level": 2,
+            "admin_level": 3,
+            "parent_place_code": "place-code-1-parent",
+            "grandparent_place_code": "place-code-top",
+            "great_grandparent_place_code": None,
             "centroid": {"lat": 0.35, "lon": 32.60},
         },
         "place-code-2": {
             "name": "Admin Area 2",
-            "adm_level": 2,
+            "admin_level": 3,
+            "parent_place_code": "place-code-2-parent",
+            "grandparent_place_code": "place-code-top",
+            "great_grandparent_place_code": None,
+            "centroid": {"lat": 1.50, "lon": 33.00},
+        },
+        # Deepest level for drought (admin_levels: [1, 2])
+        "place-code-2-parent": {
+            "name": "Parent Area 2",
+            "admin_level": 2,
+            "parent_place_code": "place-code-top",
+            "grandparent_place_code": None,
+            "great_grandparent_place_code": None,
             "centroid": {"lat": 1.50, "lon": 33.00},
         },
     },
@@ -120,7 +136,7 @@ DUMMY_DATA: dict[str, object] = {
             "id": "climate-region-B",
             "name": "Region B",
             "seasons": ["MAM"],
-            "place_codes": ["place-code-2"],
+            "place_codes": ["place-code-2-parent"],
         },
     ],
 }
@@ -129,12 +145,13 @@ DUMMY_DATA: dict[str, object] = {
 class DataProvider:
     def __init__(self) -> None:
         self.loaded_data: dict[str, DataSource] = {}
-        self.config: ConfigReader | None = None
+
+    # TODO: add more as needed
+    REQUIRED_DATA_SOURCES = ["admin_boundaries"]
 
     def try_load_data(
         self, config_reader: ConfigReader, country_name: str, run_target: str
     ) -> bool:
-        self.config = config_reader
         data_sources = config_reader.get_data_sources(country_name, run_target)
 
         if not data_sources:
@@ -142,6 +159,15 @@ class DataProvider:
                 f"No data sources configured for country '{country_name}' in run_target '{run_target}'"
             )
             return False
+
+        configured_names = {src.name for src in data_sources}
+        for required in self.REQUIRED_DATA_SOURCES:
+            if required not in configured_names:
+                logger.error(
+                    f"Required data source '{required}' is not configured "
+                    f"for country '{country_name}'"
+                )
+                return False
 
         success = True
         for source_config in data_sources:
