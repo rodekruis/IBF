@@ -26,8 +26,6 @@ class CountryConfig:
 
     @property
     def deepest_admin_level(self) -> int:
-        if not self.admin_levels:
-            raise ValueError(f"No admin_levels configured for country '{self.name}'")
         return max(self.admin_levels)
 
 
@@ -64,9 +62,29 @@ class ConfigReader:
             if key not in self.raw_config:
                 self.errors.append(f"Missing required config key: '{key}'")
 
+        if not self.errors:
+            self._validate_countries()
+
         if self.errors:
             return False
         return True
+
+    def _validate_countries(self) -> None:
+        if self.raw_config is None:
+            return
+        for target_name, target_config in self.raw_config.get(
+            "run_targets", {}
+        ).items():
+            if not isinstance(target_config, dict):
+                continue
+            for country_raw in target_config.get("countries", []):
+                country_name = country_raw.get("name", "<unknown>")
+                admin_levels = country_raw.get("admin_levels", [])
+                if not admin_levels:
+                    self.errors.append(
+                        f"Country '{country_name}' in run_target '{target_name}' "
+                        f"has no admin_levels configured"
+                    )
 
     def get_hazard_type(self) -> str:
         if self.raw_config is None:

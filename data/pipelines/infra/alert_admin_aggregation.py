@@ -60,7 +60,16 @@ def aggregate_to_parent_admin_levels(
                 # Parent place code not in boundaries — skip silently
                 continue
 
-            parent_level = int(parent_boundary["admin_level"])
+            raw_parent_level = parent_boundary.get("admin_level")
+            if raw_parent_level is None:
+                # Parent boundary missing admin_level — skip silently
+                continue
+            try:
+                parent_level = int(raw_parent_level)
+            except (TypeError, ValueError):
+                # Parent boundary has non-integer admin_level — skip silently
+                continue
+
             key = (str(parent_code), parent_level, entry.layer)
             parent_aggregated.setdefault(key, []).append(entry.value)
 
@@ -77,10 +86,18 @@ def aggregate_to_parent_admin_levels(
             if all(isinstance(v, bool) for v in values):
                 # Boolean: parent is True if any child is True
                 aggregated_value: bool | int | float = any(values)
-            else:
+            elif all(
+                isinstance(v, (int, float)) and not isinstance(v, bool) for v in values
+            ):
                 # Numeric (absolute counts): sum children
                 # TODO: add weighted average for percentage/rate layers
-                aggregated_value = sum(v for v in values if not isinstance(v, bool))
+                aggregated_value = sum(values)
+            else:
+                # Mixed or unsupported types: fail fast to avoid silent data corruption
+                raise ValueError(
+                    f"Mixed or unsupported value types for layer {layer} at "
+                    f"place_code={place_code}, admin_level={admin_level}: {values}"
+                )
 
             new_entry = AdminAreaExposure(
                 place_code=place_code,

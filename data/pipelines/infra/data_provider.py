@@ -150,6 +150,9 @@ class DataProvider:
     def __init__(self) -> None:
         self.loaded_data: dict[str, DataSource] = {}
 
+    # TODO: add more as needed
+    REQUIRED_DATA_SOURCES = ["admin_boundaries"]
+
     def try_load_data(
         self, config_reader: ConfigReader, country_name: str, run_target: str
     ) -> bool:
@@ -160,6 +163,15 @@ class DataProvider:
                 f"No data sources configured for country '{country_name}' in run_target '{run_target}'"
             )
             return False
+
+        configured_names = {src.name for src in data_sources}
+        for required in self.REQUIRED_DATA_SOURCES:
+            if required not in configured_names:
+                logger.error(
+                    f"Required data source '{required}' is not configured "
+                    f"for country '{country_name}'"
+                )
+                return False
 
         success = True
         for source_config in data_sources:
