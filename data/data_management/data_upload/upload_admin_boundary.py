@@ -1,21 +1,29 @@
 """
 Upload all admin boundaries from a local clone of the seed-data repo
+
+TODO: This table format is used for development purposes, and we may need
+a different table or different data structure/preprocessing for MVP,
+such as including extent data here.
+
+Example URI (for Uganda):
+http://localhost:9000/collections/debug.admin_boundaries/items?filter=country=%27UG%27&limit=10000&transform=simplify,0.005`;
 """
 
+import glob
 import json
 import os
-import glob
 from pathlib import Path
+
+from data_management.utils.geo_utils import normalize_polygon_to_multipolygon
 from data_management.utils.postgis_handler import (
     create_gis_index,
     create_gis_table,
     get_db_connection,
 )
-from data_management.utils.geo_utils import normalize_polygon_to_multipolygon
 from shared.data_helpers import get_seed_data_repo_path
 
 # Table config
-TABLE_NAME = "admin_boundaries"
+TABLE_NAME = "debug.admin_boundaries"
 
 COL_COUNTRY = "country"
 COL_ADMIN_LEVEL = "admin_level"
@@ -26,12 +34,12 @@ COL_GEOM = "geom"
 EPSG_PROJECTION = 4326
 
 ADMIN_TABLE_COLUMNS = {
-    'id': 'SERIAL PRIMARY KEY',
-    COL_COUNTRY: 'VARCHAR(2)',
-    COL_ADMIN_LEVEL: 'SMALLINT',
-    COL_NAME_EN: 'VARCHAR(255)',
-    COL_CODE: 'VARCHAR(64)',
-    COL_GEOM: f'GEOMETRY(MultiPolygon, {EPSG_PROJECTION})',
+    "id": "SERIAL PRIMARY KEY",
+    COL_COUNTRY: "VARCHAR(2)",
+    COL_ADMIN_LEVEL: "SMALLINT",
+    COL_NAME_EN: "VARCHAR(255)",
+    COL_CODE: "VARCHAR(64)",
+    COL_GEOM: f"GEOMETRY(MultiPolygon, {EPSG_PROJECTION})",
 }
 
 # Input
@@ -55,49 +63,52 @@ def load_admin_boundaries_data(json_dir):
     for json_file in json_files:
         # Extract admin level from filename (e.g., UGA_adm3.json -> 3)
         basename = os.path.basename(json_file)
-        filename = basename.replace('.json', '')
+        filename = basename.replace(".json", "")
 
         try:
-            admin_level = int(filename.split('_adm')[-1])
+            admin_level = int(filename.split("_adm")[-1])
         except Exception as e:
-            print(f"Error: Could not get admin level from filename '{basename}' - Error: {e}")
+            print(
+                f"Error: Could not get admin level from filename '{basename}' - Error: {e}"
+            )
             continue
 
         print(f"Parsing {basename} (level: {admin_level})...")
 
-        with open(json_file, 'r') as f:
+        with open(json_file, "r") as f:
             geojson_data = json.load(f)
 
-            if geojson_data.get('type') != 'FeatureCollection':
+            if geojson_data.get("type") != "FeatureCollection":
                 print(f"ERROR: {basename} is not a FeatureCollection.")
                 continue
 
-            features = geojson_data.get('features', [])
+            features = geojson_data.get("features", [])
 
             # For each feature, add the needed data to the output, along with the admin level
             for feature in features:
                 normalized_geometry = normalize_polygon_to_multipolygon(
-                    feature.get('geometry', {})
+                    feature.get("geometry", {})
                 )
                 parsed_boundary = {
-                    'admin_level': admin_level,
-                    'properties': feature.get('properties', {}),
-                    'geometry': normalized_geometry,
+                    "admin_level": admin_level,
+                    "properties": feature.get("properties", {}),
+                    "geometry": normalized_geometry,
                 }
                 parsed_data.append(parsed_boundary)
 
     return parsed_data
 
-def insert_admin_boundaries_data(connection, features : list[dict]):
+
+def insert_admin_boundaries_data(connection, features: list[dict]):
     """
     Insert all admin boundary features into the table.
     """
     with connection.cursor() as cur:
         for feature in features:
-            props = feature['properties']
-            geom = feature['geometry']
+            props = feature["properties"]
+            geom = feature["geometry"]
 
-            admin_level = feature.get('admin_level')
+            admin_level = feature.get("admin_level")
 
             if not admin_level:
                 print(f"Error: No admin level from file attached to {props}.")
@@ -106,19 +117,19 @@ def insert_admin_boundaries_data(connection, features : list[dict]):
             # Name and code are called different things in different admin levels,
             # but there is only one in each feature. Get any, with the most granular level grabbed first.
             name = (
-                props.get('ADM4_EN')
-                or props.get('ADM3_EN')
-                or props.get('ADM2_EN')
-                or props.get('ADM1_EN')
-                or props.get('ADM0_EN')
+                props.get("ADM4_EN")
+                or props.get("ADM3_EN")
+                or props.get("ADM2_EN")
+                or props.get("ADM1_EN")
+                or props.get("ADM0_EN")
                 or None
             )
             code = (
-                props.get('ADM4_PCODE')
-                or props.get('ADM3_PCODE')
-                or props.get('ADM2_PCODE')
-                or props.get('ADM1_PCODE')
-                or props.get('ADM0_PCODE')
+                props.get("ADM4_PCODE")
+                or props.get("ADM3_PCODE")
+                or props.get("ADM2_PCODE")
+                or props.get("ADM1_PCODE")
+                or props.get("ADM0_PCODE")
                 or None
             )
 
@@ -137,7 +148,7 @@ def insert_admin_boundaries_data(connection, features : list[dict]):
             geom_json = json.dumps(geom)
 
             # Insert into the table
-            #.   ST_SetSRID: Sets the spatial reference ID (SRID) for the geometry
+            # .   ST_SetSRID: Sets the spatial reference ID (SRID) for the geometry
             query = f"""
                 INSERT INTO {TABLE_NAME}
                 ({COL_COUNTRY}, {COL_ADMIN_LEVEL}, {COL_NAME_EN}, {COL_CODE}, {COL_GEOM})
@@ -150,13 +161,7 @@ def insert_admin_boundaries_data(connection, features : list[dict]):
                 )
             """
             try:
-                cur.execute(query, (
-                    country,
-                    admin_level,
-                    name,
-                    code,
-                    geom_json
-                ))
+                cur.execute(query, (country, admin_level, name, code, geom_json))
             except Exception as e:
                 print(f"Error inserting feature with properties {props} - Error: {e}")
                 return
@@ -206,6 +211,7 @@ def create_admin_boundaries_tables():
         verify_data(connection)
 
     print("\nDatabase connection closed.")
+
 
 if __name__ == "__main__":
     create_admin_boundaries_tables()

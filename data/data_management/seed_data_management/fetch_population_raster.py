@@ -42,6 +42,7 @@ def get_url(country_iso_a3):
     )
 
 
+
 if __name__ == "__main__":
     GREYSCALE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 

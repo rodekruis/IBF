@@ -5,9 +5,10 @@ It writes some directly to file, and processes others that need to be cleaned up
 
 import json
 from pathlib import Path
+
+from pydantic import BaseModel
 from shared.data_helpers import get_seed_data_repo_path
 from shared.download_helpers import download_json_source
-from pydantic import BaseModel
 
 # Results can be larger than 26,000. Set query limit 99999 to get all. Set to lower when debugging.
 results_limit = 99999
@@ -27,6 +28,8 @@ BASE_REPO_DIR = get_seed_data_repo_path()
 DATA_DIR = Path(BASE_REPO_DIR) / "country-data"
 
 """ Data structure for extracting extent and center data """
+
+
 class ExtentData(BaseModel):
     name_en: str
     admin_level: int
@@ -35,10 +38,13 @@ class ExtentData(BaseModel):
     center: list[float]
     extents: list[list[float]]
 
+
 """
 Extract the extent data.
 Some data is missing in admin 0 and admin 1, so it needs special handling.
 """
+
+
 def get_extent_data(admin_level: int, source) -> list[ExtentData]:
     output = []
 
@@ -94,7 +100,7 @@ def get_extent_data(admin_level: int, source) -> list[ExtentData]:
             center=center,
             extents=extents,
         )
-        
+
         output.append(extent_data)
 
     return output
@@ -110,7 +116,9 @@ if __name__ == "__main__":
     for name, url in sources.items():
         data = download_json_source(name, url)
         if data is None:
-            raise RuntimeError(f"Failed to load or parse JSON for '{name}' from: '{url}'")
+            raise RuntimeError(
+                f"Failed to load or parse JSON for '{name}' from: '{url}'"
+            )
         raw_data[name] = data
 
     # Hospital and RC locations need no processing, and can be output as is

@@ -3,23 +3,36 @@ Helper functions relating to image processing
 """
 
 import io
-import rasterio
-from rasterio.io import MemoryFile
-from rasterio.warp import calculate_default_transform, reproject, Resampling
-from rasterio.transform import array_bounds
-import rasterio.crs
+
 import numpy as np
+import rasterio
+import rasterio.crs
 from PIL import Image
+from rasterio.io import MemoryFile
+from rasterio.transform import array_bounds
+from rasterio.warp import calculate_default_transform, reproject, Resampling
+
 CRS = rasterio.crs.CRS
 
-def colorize_image_array(img_array: bytes, color1 : tuple, color2: tuple, log_scale : bool):
+
+def colorize_image_from_file(
+    png_in_bytes: bytes, color1: tuple, color2: tuple, log_scale: bool
+):
+    """
+    Wrapper for colorize_image_array that takes in PNG bytes instead of an array.
+    """
+    img = Image.open(io.BytesIO(png_in_bytes))
+    img_bw = np.array(img, dtype=np.float32)
+    return colorize_image_array(img_bw, color1, color2, log_scale)
+
+
+def colorize_image_array(
+    img_bw: np.ndarray, color1: tuple, color2: tuple, log_scale: bool
+):
     """
     Colorize a grayscale image between two colors.
     log_scale: whether or not to convert to a logarithmic scale.
     """
-
-    img = Image.open(io.BytesIO(img_array))
-    img_bw = np.array(img, dtype=np.float32)
 
     # optional: convert the data to logarithmic scale
     if log_scale:
@@ -44,7 +57,7 @@ def colorize_image_array(img_array: bytes, color1 : tuple, color2: tuple, log_sc
                 img_array_rgba[i, j] = [0, 0, 0, 0]
             else:
                 # lerp between color1 and 2 based on the normalized value from the greyscale array
-                n  = normalized[i, j]
+                n = normalized[i, j]
                 img_array_rgba[i, j, 0] = int(color1[0] * (1 - n) + color2[0] * n)
                 img_array_rgba[i, j, 1] = int(color1[1] * (1 - n) + color2[1] * n)
                 img_array_rgba[i, j, 2] = int(color1[2] * (1 - n) + color2[2] * n)
@@ -76,7 +89,7 @@ def geotiff_to_array(tif_data: bytes):
                 src_crs=src.crs,
                 dst_transform=transform,
                 dst_crs=target_crs,
-                resampling=Resampling.bilinear
+                resampling=Resampling.bilinear,
             )
 
             # Calculate the new bounds in 3857
@@ -84,33 +97,40 @@ def geotiff_to_array(tif_data: bytes):
 
             # Get meta data
             geo_data = {
-                'width': width,
-                'height': height,
-                'count': src.count,
-                'crs': str(target_crs),
-                'transform': list(transform),
-                'bounds': {
-                    'left': new_bounds[0],
-                    'bottom': new_bounds[1],
-                    'right': new_bounds[2],
-                    'top': new_bounds[3]
+                "width": width,
+                "height": height,
+                "count": src.count,
+                "crs": str(target_crs),
+                "transform": list(transform),
+                "bounds": {
+                    "left": new_bounds[0],
+                    "bottom": new_bounds[1],
+                    "right": new_bounds[2],
+                    "top": new_bounds[3],
                 },
-                'res': (transform[0], -transform[4]),
-                'scales': src.scales,
-                'offsets': src.offsets
+                "res": (transform[0], -transform[4]),
+                "scales": src.scales,
+                "offsets": src.offsets,
             }
 
-            # This script only supports NoData values of zero or less
+            # If NoData values are above 0, set it to a large negative number (-999)
+            # This way it can be set to 0 later, and actual data values of 0 are preserved
             if src.nodata is not None and src.nodata > 0:
-                print(f"Error: Only NoData values of 0 or less are supported. NoData value: {src.nodata}.")
+                print(
+                    f"Warning: This file has a NoData value greater than 0. "
+                    f"This should be handled fine, but verify results. NoData value: {src.nodata}."
+                )
+                # replace all noData values with a large negative number (-999)
+                reproj_data = np.where(reproj_data == src.nodata, -999, reproj_data)
+                src.nodata = -999
 
             # Normalize data to 0-254 (if it has values above 0)
             # 0-254 is used, since 1 is added later (bringing the max to 255)
             # in order to offset data from the NoData value of 0.
             if reproj_data.max() > 0:
-                norm_data = (reproj_data / reproj_data.max()) * 254
+                norm_data = (reproj_data.astype(float) / reproj_data.max()) * 254
             else:
-                norm_data = reproj_data
+                norm_data = reproj_data.astype(float)
 
             # Set 0 as the new nodata value, and make other data start at 1
             norm_data = np.where(norm_data < 0, 0, norm_data + 1)
