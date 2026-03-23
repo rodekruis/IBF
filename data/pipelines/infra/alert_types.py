@@ -1,14 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-
-
-@dataclass
-class DataSource:
-    name: str
-    data: object | None = None
-    error: str | None = None
-    metadata: dict[str, str | int | float | bool] = field(default_factory=dict)
+from datetime import datetime
+from enum import StrEnum
 
 
 @dataclass
@@ -29,17 +23,37 @@ class LeadTime:
         return [self.start, self.end]
 
 
+class EnsembleMemberType(StrEnum):
+    MEDIAN = "median"
+    RUN = "run"
+
+
+class HazardType(StrEnum):
+    FLOODS = "floods"
+    DROUGHT = "drought"
+
+
+class ForecastSource(StrEnum):
+    GLOFAS = "glofas"
+    ECMWF = "ECMWF"
+
+
+class AdminAreaLayer(StrEnum):
+    SPATIAL_EXTENT = "spatial_extent"
+    POPULATION_EXPOSED = "population_exposed"
+
+
 @dataclass
 class TimeSeriesEntry:
     lead_time: LeadTime
-    ensemble_member: str
+    ensemble_member_type: EnsembleMemberType
     severity_key: str
     severity_value: float | int
 
     def to_dict(self) -> dict[str, str | float | int | list[str]]:
         return {
             "leadTime": self.lead_time.to_dict(),
-            "ensembleMember": self.ensemble_member,
+            "ensembleMemberType": self.ensemble_member_type,
             "severityKey": self.severity_key,
             "severityValue": self.severity_value,
         }
@@ -48,7 +62,7 @@ class TimeSeriesEntry:
 @dataclass
 class AdminAreaExposure:
     place_code: str
-    layer: str
+    layer: AdminAreaLayer
     value: bool | int | float
 
     def to_dict(self) -> dict[str, str | bool | int | float]:
@@ -122,10 +136,10 @@ class Exposure:
 @dataclass
 class Alert:
     alert_id: str
-    issued_at: str
+    issued_at: datetime
     centroid: Centroid
-    hazard_type: list[str]
-    forecast_sources: list[str] = field(default_factory=list)
+    hazard_types: list[HazardType]
+    forecast_sources: list[ForecastSource] = field(default_factory=list)
     time_series_data: list[TimeSeriesEntry] = field(default_factory=list)
     exposure: Exposure = field(default_factory=Exposure)
 
@@ -141,10 +155,10 @@ class Alert:
     ]:
         return {
             "alertId": self.alert_id,
-            "issuedAt": self.issued_at,
+            "issuedAt": self.issued_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "centroid": self.centroid.to_dict(),
-            "hazardType": self.hazard_type,
-            "forecastSources": self.forecast_sources,
+            "hazardTypes": list(self.hazard_types),
+            "forecastSources": list(self.forecast_sources),
             "timeSeriesData": [entry.to_dict() for entry in self.time_series_data],
             "exposure": self.exposure.to_dict(),
         }

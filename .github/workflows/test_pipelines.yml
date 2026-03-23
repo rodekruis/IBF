@@ -1,4 +1,4 @@
-name: Pipelines integration tests
+name: Pipeline tests
 
 on:
   workflow_dispatch:
@@ -30,10 +30,11 @@ jobs:
       fail-fast: false
       matrix:
         test_node:
-          - test/test_pipeline_integration.py::test_pipeline_riverflood_ken
-          - test/test_pipeline_integration.py::test_pipeline_drought_eth
-          - test/test_pipeline_v2.py::test_floods_ken
-          - test/test_pipeline_v2.py::test_drought_eth
+          - test/unit/
+          - test/integration/test_flood_pipeline.py
+          - test/integration/test_drought_pipeline.py
+          - test/legacy/test_pipeline_integration.py::test_pipeline_riverflood_ken
+          - test/legacy/test_pipeline_integration.py::test_pipeline_drought_eth
     defaults:
       run:
         working-directory: data
@@ -60,7 +61,7 @@ jobs:
       - name: Prepare environment
         run: cp .env.example .env
 
-      - name: Run integration shard
+      - name: Run test shard
         env:
           BLOB_ACCOUNT_KEY: ${{ secrets.PIPELINES_BLOB_ACCOUNT_KEY }}
           COSMOS_KEY: ${{ secrets.PIPELINES_COSMOS_KEY }}

@@ -3,17 +3,27 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pipelines.infra.models import (
+from pipelines.infra.alert_types import (
     AdminAreaExposure,
+    AdminAreaLayer,
     Alert,
     Centroid,
+    EnsembleMemberType,
+    ForecastSource,
     GeoFeatureExposure,
+    HazardType,
     LeadTime,
     RasterExposure,
     RasterExtent,
     TimeSeriesEntry,
+)
+from pipelines.infra.integrity_checks import (
+    check_admin_area_integrity,
+    check_centroid,
+    check_raster_integrity,
+    check_timeseries_integrity,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,10 +37,10 @@ class DataSubmitter:
     def create_alert(
         self,
         alert_id: str,
-        hazard_type: list[str],
+        hazard_types: list[HazardType],
         centroid: Centroid,
-        issued_at: str | None = None,
-        forecast_sources: list[str] | None = None,
+        issued_at: datetime,
+        forecast_sources: list[ForecastSource],
     ) -> None:
         if alert_id in self._alerts:
             self.errors[f"create_alert:{alert_id}"] = (
@@ -38,12 +48,30 @@ class DataSubmitter:
             )
             return
 
+        if not hazard_types:
+            self.errors[f"create_alert:{alert_id}"] = (
+                f"Alert '{alert_id}' has no hazard_types"
+            )
+            return
+
+        if not forecast_sources:
+            self.errors[f"create_alert:{alert_id}"] = (
+                f"Alert '{alert_id}' has no forecast_sources"
+            )
+            return
+
+        if issued_at.tzinfo is None:
+            self.errors[f"create_alert:{alert_id}"] = (
+                f"Alert '{alert_id}' issued_at must be timezone-aware"
+            )
+            return
+
         self._alerts[alert_id] = Alert(
             alert_id=alert_id,
-            issued_at=issued_at or datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            issued_at=issued_at.astimezone(timezone.utc),
             centroid=centroid,
-            hazard_type=hazard_type,
-            forecast_sources=forecast_sources or [],
+            hazard_types=hazard_types,
+            forecast_sources=forecast_sources,
         )
 
     def _get_alert(self, alert_id: str, caller: str) -> Alert | None:
@@ -57,7 +85,7 @@ class DataSubmitter:
         alert_id: str,
         lead_time_start: str,
         lead_time_end: str,
-        ensemble_member: str,
+        ensemble_member_type: EnsembleMemberType,
         severity_key: str,
         severity_value: float | int,
     ) -> None:
@@ -68,7 +96,7 @@ class DataSubmitter:
         alert.time_series_data.append(
             TimeSeriesEntry(
                 lead_time=LeadTime(start=lead_time_start, end=lead_time_end),
-                ensemble_member=ensemble_member,
+                ensemble_member_type=ensemble_member_type,
                 severity_key=severity_key,
                 severity_value=severity_value,
             )
@@ -78,7 +106,7 @@ class DataSubmitter:
         self,
         alert_id: str,
         place_code: str,
-        layer: str,
+        layer: AdminAreaLayer,
         value: bool | int | float,
     ) -> None:
         alert = self._get_alert(alert_id, "add_admin_area_exposure")
@@ -153,10 +181,12 @@ class DataSubmitter:
             errors.append("No alerts to submit")
             return errors
 
+        # NOTE 1: exact data formats (and thus these integrity checks) are subject to change based on back-and-forth between hazard-logic & pipeline-infra (and exact API/datamodel requirements)
+        # NOTE 2: a lot more checks could be added and will be added in the future, but for now we focus on a few key ones to demonstrate the concept
         for alert_id, alert in self._alerts.items():
-            if not alert.hazard_type:
-                errors.append(f"Alert '{alert_id}' has no hazard type")
-            if not alert.time_series_data:
-                errors.append(f"Alert '{alert_id}' has no time series data")
+            errors.extend(check_centroid(alert_id, alert.centroid))
+            errors.extend(check_timeseries_integrity(alert_id, alert))
+            errors.extend(check_admin_area_integrity(alert_id, alert))
+            errors.extend(check_raster_integrity(alert_id, alert))
 
         return errors

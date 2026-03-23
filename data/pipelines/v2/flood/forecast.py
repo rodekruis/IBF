@@ -2,9 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from pipelines.infra.alert_types import (
+    AdminAreaLayer,
+    Centroid,
+    EnsembleMemberType,
+    ForecastSource,
+    HazardType,
+)
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
-from pipelines.infra.models import Centroid
 
 
 def calculate_flood_forecasts(
@@ -23,7 +29,7 @@ def calculate_flood_forecasts(
     # 4. Compute geo-feature exposure (hospitals, roads, etc.)
     stations: list[dict[str, object]] = data_provider.get_data("glofas_stations").data
 
-    issued_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    issued_at = datetime.now(timezone.utc)
 
     for station in stations:
         station_code = str(station["station_code"])
@@ -32,22 +38,21 @@ def calculate_flood_forecasts(
 
         data_submitter.create_alert(
             alert_id=alert_id,
-            hazard_type=["floods"],
+            hazard_types=[HazardType.FLOODS],
             centroid=Centroid(
                 latitude=float(station["lat"]),
                 longitude=float(station["lon"]),
             ),
             issued_at=issued_at,
-            forecast_sources=["glofas"],
+            forecast_sources=[ForecastSource.GLOFAS],
         )
 
-        ensemble_members = ["member-1", "member-2"]
-        for member in ensemble_members:
+        for _ in range(2):
             data_submitter.add_timeseries_data(
                 alert_id=alert_id,
                 lead_time_start="2026-03-20T00:00:00Z",
                 lead_time_end="2026-03-20T23:59:59Z",
-                ensemble_member=member,
+                ensemble_member_type=EnsembleMemberType.RUN,
                 severity_key="water_discharge",
                 severity_value=0,
             )
@@ -55,7 +60,7 @@ def calculate_flood_forecasts(
             alert_id=alert_id,
             lead_time_start="2026-03-20T00:00:00Z",
             lead_time_end="2026-03-20T23:59:59Z",
-            ensemble_member="median",
+            ensemble_member_type=EnsembleMemberType.MEDIAN,
             severity_key="water_discharge",
             severity_value=0,
         )
@@ -64,13 +69,13 @@ def calculate_flood_forecasts(
             data_submitter.add_admin_area_exposure(
                 alert_id=alert_id,
                 place_code=place_code,
-                layer="spatial_extent",
+                layer=AdminAreaLayer.SPATIAL_EXTENT,
                 value=True,
             )
             data_submitter.add_admin_area_exposure(
                 alert_id=alert_id,
                 place_code=place_code,
-                layer="population_exposed",
+                layer=AdminAreaLayer.POPULATION_EXPOSED,
                 value=0,
             )
 
@@ -83,7 +88,7 @@ def calculate_flood_forecasts(
 
         data_submitter.add_raster_exposure(
             alert_id=alert_id,
-            layer="flood_extent",
-            value=f"flood_extent_{station_code}.tif",
-            extent={"xmin": 0, "ymin": 0, "xmax": 0, "ymax": 0},
+            layer="alert_extent",
+            value=f"alert_extent_{station_code}.tif",
+            extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
         )

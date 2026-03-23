@@ -36,6 +36,15 @@ Check `.vscode/extensions.json` for the complete list of recommended extensions 
 - **Testing**: Jest for unit and integration tests
 - **Containerization**: Docker and Docker Compose
 
+### Data Pipelines (Python)
+
+- **Location**: `data/` directory
+- **Language**: Python 3.12+
+- **Package Management**: uv with hatchling build backend
+- **Linting**: ruff, deptry, vulture (via `python-knip.py`)
+- **Testing**: pytest
+- **CI**: GitHub Actions (`test_pipelines.yml`)
+
 ### Development Tools
 
 - **Code Quality**: ESLint, Prettier, Husky pre-commit hooks
@@ -168,6 +177,37 @@ Before requesting review, ensure:
 - [ ] Azure DevOps task reference included (AB#XXXXX)
 - [ ] Appropriate release notes label added (enhancement, bugfix, other, chore)
 - [ ] Branch is up-to-date with target branch
+
+## Data Pipeline Patterns (Python)
+
+> _This section covers the `data/` directory. It is a starting point — expand as conventions solidify._
+
+### Project Structure
+
+- `data/` — root directory for all Python code
+- `data/data_management/` — scripts for managing data (e.g., fetching & processing seed data)
+- `data/pipelines/` — main pipeline code organized by version and type
+- `data/pipelines/infra/` — shared pipeline infrastructure (data submission, integrity checks, configuration)
+- `data/pipelines/<hazard-type>/` — current hazard pipeline implementations (flood, drought)
+- `data/pipelines/legacy/` — previous-generation pipeline code
+- `data/test/unit/`, `data/test/integration/` — test directories
+
+### Python Style
+
+- Use dataclasses for data models, `StrEnum` for string enumerations
+- Avoid abbreviations — same principle as the TypeScript codebase
+- Use type annotations everywhere; avoid `Any`
+
+### Testing
+
+```bash
+cd data
+uv run pytest test/unit/             # unit tests
+uv run pytest test/integration/      # integration tests
+uv run python python-knip.py         # linting (ruff, deptry, vulture)
+```
+
+---
 
 ## Backend Service Patterns (NestJS)
 

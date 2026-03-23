@@ -1,9 +1,18 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass, field
 
 from pipelines.infra.config_reader import ConfigReader, DataSourceConfig
-from pipelines.infra.models import DataSource
+
+
+@dataclass
+class DataSource:
+    name: str
+    data: object | None = None
+    error: str | None = None
+    metadata: dict[str, str | int | float | bool] = field(default_factory=dict)
+
 
 logger = logging.getLogger(__name__)
 
