@@ -1,12 +1,12 @@
 from datetime import datetime
 
-from pipelines.core.logger import logger
-from pipelines.core.secrets import Secrets
-from pipelines.core.settings import Settings
-from pipelines.riverflood.data import RiverFloodDataSets
-from pipelines.riverflood.extract import Extract
-from pipelines.riverflood.forecast import Forecast
-from pipelines.riverflood.load import RiverFloodLoad
+from pipelines.legacy.core.logger import logger
+from pipelines.legacy.core.secrets import Secrets
+from pipelines.legacy.core.settings import Settings
+from pipelines.legacy.riverflood.data import RiverFloodDataSets
+from pipelines.legacy.riverflood.extract import Extract
+from pipelines.legacy.riverflood.forecast import Forecast
+from pipelines.legacy.riverflood.load import RiverFloodLoad
 
 
 class Pipeline:

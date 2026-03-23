@@ -30,11 +30,11 @@ jobs:
       fail-fast: false
       matrix:
         test_node:
-          - test/unit/
-          - test/integration/test_flood_pipeline.py
-          - test/integration/test_drought_pipeline.py
-          - test/legacy/test_pipeline_integration.py::test_pipeline_riverflood_ken
-          - test/legacy/test_pipeline_integration.py::test_pipeline_drought_eth
+          - pipelines/test/unit/
+          - pipelines/test/integration/test_flood_pipeline.py
+          - pipelines/test/integration/test_drought_pipeline.py
+          - pipelines/test/legacy/test_pipeline_integration.py::test_pipeline_riverflood_ken
+          - pipelines/test/legacy/test_pipeline_integration.py::test_pipeline_drought_eth
     defaults:
       run:
         working-directory: data

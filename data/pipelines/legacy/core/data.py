@@ -6,7 +6,7 @@ from typing import List
 from urllib.parse import quote
 
 import requests
-from pipelines.core.secrets import Secrets
+from pipelines.legacy.core.secrets import Secrets
 
 
 class AdminDataUnit:

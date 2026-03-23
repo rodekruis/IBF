@@ -46,6 +46,9 @@ dependencies = [
     #    "tqdm",
 ]
 
+[project.scripts]
+pipeline = "pipelines.infra.run_forecasts:main"
+
 [project.urls]
 Homepage = "https://github.com/rodekruis/IBF/tree/main/pipelines"
 

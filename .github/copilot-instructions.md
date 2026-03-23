@@ -190,7 +190,7 @@ Before requesting review, ensure:
 - `data/pipelines/infra/` — shared pipeline infrastructure (data submission, integrity checks, configuration)
 - `data/pipelines/<hazard-type>/` — current hazard pipeline implementations (flood, drought)
 - `data/pipelines/legacy/` — previous-generation pipeline code
-- `data/test/unit/`, `data/test/integration/` — test directories
+- `data/pipelines/test/unit/`, `data/pipelines/test/integration/` — test directories
 
 ### Python Style
 
@@ -202,8 +202,8 @@ Before requesting review, ensure:
 
 ```bash
 cd data
-uv run pytest test/unit/             # unit tests
-uv run pytest test/integration/      # integration tests
+uv run pytest pipelines/test/unit/             # unit tests
+uv run pytest pipelines/test/integration/      # integration tests
 uv run python python-knip.py         # linting (ruff, deptry, vulture)
 ```
 

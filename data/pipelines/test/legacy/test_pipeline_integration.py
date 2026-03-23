@@ -9,7 +9,7 @@ def test_pipeline_riverflood_ken():
     result = subprocess.run(
         [
             sys.executable,
-            "pipeline.py",
+            "pipelines/legacy/pipeline.py",
             "--hazard",
             "riverflood",
             "--country",
@@ -58,7 +58,7 @@ def test_pipeline_drought_eth():
     result = subprocess.run(
         [
             sys.executable,
-            "pipeline.py",
+            "pipelines/legacy/pipeline.py",
             "--hazard",
             "drought",
             "--country",

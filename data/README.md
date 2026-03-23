@@ -6,13 +6,7 @@ This directory handles pipeline and other data management scripts in Python.
 
 ### Pipelines
 
-Pipeline code used for creating forecasts
-
-#### Components
-
-- [`pipelines/core`](pipelines/core): core framework and shared utilities to forecast hazard impact.
-- [`pipelines/drought`](pipelines/drought): drought pipeline
-- [`pipelines/riverflood`](pipelines/riverflood): river flood pipeline
+Pipeline code used for creating forecasts. See [pipelines/README.md](pipelines/README.md) for further info.
 
 ### Data_management
 

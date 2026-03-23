@@ -1,13 +1,13 @@
 from datetime import datetime
 
 import geopandas as gpd
-from pipelines.core.logger import logger
-from pipelines.core.secrets import Secrets
-from pipelines.core.settings import Settings
-from pipelines.drought.data import DroughtDataSets
-from pipelines.drought.extract import Extract
-from pipelines.drought.forecast import Forecast
-from pipelines.drought.load import DroughtLoad
+from pipelines.legacy.core.logger import logger
+from pipelines.legacy.core.secrets import Secrets
+from pipelines.legacy.core.settings import Settings
+from pipelines.legacy.drought.data import DroughtDataSets
+from pipelines.legacy.drought.extract import Extract
+from pipelines.legacy.drought.forecast import Forecast
+from pipelines.legacy.drought.load import DroughtLoad
 
 
 class Pipeline:
