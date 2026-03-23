@@ -13,6 +13,8 @@ These also have special handling:
     PHL - parent codes are prefixes of child codes, but with trailing zeroes (e.g. PH170000000)
     ZMB - adm3 codes don't start with the adm2 codes at all
 
+Note: Not all countries have ADM0 data, so I couldn't get the ADM0 name for all of them.
+
 The naming of these will follow the values from the UGA data (which already had this).
     "features": [
         {
@@ -54,12 +56,12 @@ from pathlib import Path
 from shared.data_helpers import get_seed_data_repo_path
 
 BASE_REPO_DIR = get_seed_data_repo_path()
-INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas"
-OUTPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas-output"
+INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas-v1"
+OUTPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas"
 
 
 def discover_countries(input_dir: Path) -> dict[str, list[int]]:
-    """Scan the directory for admin boundary files and return a dict of country -> sorted admin levels."""
+    """Scan the input dir and return a dict of country -> sorted admin levels."""
     countries: dict[str, list[int]] = defaultdict(list)
     for json_file in sorted(input_dir.glob("*.json")):
         match = re.match(r"^(.+)_adm(\d+)\.json$", json_file.name)
@@ -165,6 +167,11 @@ def populate_parent_codes(
                     child_props[parent_pcode_key] = parent_pcode
                     child_props[parent_name_key] = parent_name
 
+                    # When setting adm1, also set the adm0 code (first 2 chars of adm1 PCODE)
+                    # there are not adm0 JSON files, so we need to derrive the adm0 code ourselves.
+                    if parent_level == 1 and len(parent_pcode) >= 2:
+                        child_props[get_pcode_key(0)] = parent_pcode[:2]
+
     # ZMB: adm3 PCODEs don't start with adm2 PCODEs, so the normal pass won't
     # link parents to adm3. Instead, use the ADM2_PCODE already on each adm3
     # feature to look up the adm2 name and the adm1 parent via adm2's PCODE.
@@ -206,6 +213,8 @@ def populate_parent_codes(
                     if adm1_pcode and child_adm2_pcode.startswith(adm1_pcode):
                         child_props[adm1_pcode_key] = adm1_pcode
                         child_props[adm1_name_key] = adm1_name
+                        if len(adm1_pcode) >= 2:
+                            child_props[get_pcode_key(0)] = adm1_pcode[:2]
                         break
 
     return errors
@@ -217,13 +226,13 @@ def validate_country_data(
     admin_levels: list[int],
 ) -> list[str]:
     """
-    Validate adm3 and adm4 files: check that all features have PCODE and name
+    Validate adm2, adm3, and adm4 files: check that all features have PCODE and name
     for the current level and all parent levels, and that higher-level PCODEs
     are substrings (prefixes) of lower-level PCODEs.
     """
     errors: list[str] = []
 
-    check_levels = [level for level in admin_levels if level >= 3]
+    check_levels = [level for level in admin_levels if level >= 2]
 
     for level in check_levels:
         geojson = admin_data[level]
