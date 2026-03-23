@@ -6,7 +6,7 @@ a different table or different data structure/preprocessing for MVP,
 such as including extent data here.
 
 Example URI (for Uganda):
-http://localhost:9000/collections/public.admin_boundaries/items?filter=country=%27UG%27&limit=10000&transform=simplify,0.005`;
+http://localhost:9000/collections/debug.admin_boundaries/items?filter=country=%27UG%27&limit=10000&transform=simplify,0.005`;
 """
 
 import glob
