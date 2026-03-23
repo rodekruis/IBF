@@ -48,6 +48,12 @@ def create_gis_table(db_connection: psycopg.Connection, table_name: str, columns
         See task: https://dev.azure.com/redcrossnl/IBF/_workitems/edit/41200
     """
     with db_connection.cursor() as cur:
+        # Create the schema if it doesn't exist (for example, "debug" or "public")
+        if "." in table_name:
+            schema_name = table_name.split(".")[0]
+            cur.execute(f"CREATE SCHEMA IF NOT EXISTS {schema_name};")
+
+        # Create table
         column_defs = ", ".join([f"{name} {type_}" for name, type_ in columns.items()])
         create_sql = f"CREATE TABLE IF NOT EXISTS {table_name} ({column_defs});"
 
