@@ -5,4 +5,5 @@ export enum Layer {
   spatialExtent = 'spatial_extent',
   populationExposed = 'population_exposed',
   // geo-feature layers
+  glofasStations = 'glofas_stations',
 }

@@ -1,14 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsString, ValidateNested } from 'class-validator';
+import { IsEnum, IsString, ValidateNested } from 'class-validator';
 
 import { RasterExtentDto } from '@api-service/src/alerts/dto/raster-extent.dto';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
 export class RasterExposureDto {
-  @ApiProperty({ example: Layer.alertExtent })
-  @IsString()
-  public readonly layer: string;
+  @ApiProperty({ enum: Layer, example: Layer.alertExtent })
+  @IsEnum(Layer)
+  public readonly layer: Layer;
 
   @ApiProperty({ example: 'base64-encoded-raster-data' })
   @IsString()

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNumber, IsString, Min } from 'class-validator';
+import { IsEnum, IsInt, IsNumber, IsString, Min } from 'class-validator';
 
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
@@ -13,9 +13,9 @@ export class AdminAreaExposureDto {
   @Min(1)
   public readonly adminLevel: number;
 
-  @ApiProperty({ example: Layer.populationExposed })
-  @IsString()
-  public readonly layer: string;
+  @ApiProperty({ enum: Layer, example: Layer.populationExposed })
+  @IsEnum(Layer)
+  public readonly layer: Layer;
 
   @ApiProperty({ example: 1 })
   @IsNumber()

@@ -344,7 +344,7 @@ describe('AlertsService', () => {
             ],
             rasters: [
               {
-                layer: 'some_other',
+                layer: Layer.populationExposed, // invalid raster layer
                 value: 'base64',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
