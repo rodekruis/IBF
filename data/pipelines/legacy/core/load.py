@@ -83,7 +83,7 @@ class Load:
         file_path = os.path.join(self.data.input_dir, resource_name)
         try:
             adm_boundaries = self.data.download_from_github(
-                path_in_repo=f"admin-areas/{resource_name}",
+                path_in_repo=f"admin-areas/processed/{resource_name}",
                 file_path=file_path,
             )
         except HTTPError:

@@ -22,7 +22,7 @@ target_admin_levels = [0, 1, 2, 3]
 
 # Output Dir
 BASE_REPO_DIR = get_seed_data_repo_path()
-DATA_DIR = Path(BASE_REPO_DIR) / "admin-areas-gadm"
+DATA_DIR = Path(BASE_REPO_DIR) / "admin-areas" / "admin-areas-gadm"
 
 if __name__ == "__main__":
     DATA_DIR.mkdir(parents=True, exist_ok=True)

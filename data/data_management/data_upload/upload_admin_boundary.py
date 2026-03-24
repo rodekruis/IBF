@@ -44,7 +44,7 @@ ADMIN_TABLE_COLUMNS = {
 
 # Input
 BASE_REPO_DIR = get_seed_data_repo_path()
-INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas/"
+INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas" / "processed"
 FILE_PATTERN = "*.json"
 
 
