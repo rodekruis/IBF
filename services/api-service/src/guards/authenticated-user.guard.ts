@@ -7,6 +7,11 @@ import { Observable } from 'rxjs';
 import { env } from '@api-service/src/env';
 import { AuthenticatedUserParameters } from '@api-service/src/guards/authenticated-user.decorator';
 
+// Authentication guard that supports two mechanisms:
+// 1. JWT cookie auth (default) — delegates to Passport's cookie-jwt strategy
+// 2. Pipeline API key auth (opt-in) — allows pipelines to authenticate via
+//    the x-api-key header instead of JWT. Only enabled on endpoints that set
+//    allowPipelineApiKey: true in @AuthenticatedUser().
 @Injectable()
 export class AuthenticatedUserGuard
   extends AuthGuard(['cookie-jwt'])
@@ -28,18 +33,24 @@ export class AuthenticatedUserGuard
     if (!endpointParameters?.isGuarded) {
       return true;
     }
-    if (this.isValidApiKey(request)) {
+    // Only check API key if the endpoint explicitly opts in. This prevents
+    // the API key from bypassing JWT/role checks on other endpoints.
+    if (endpointParameters.allowPipelineApiKey && this.isValidApiKey(request)) {
       return true;
     }
+    // Fall through to JWT cookie authentication
     return super.canActivate(context);
   }
 
-  private isValidApiKey(request: { headers: Record<string, string> }): boolean {
+  private isValidApiKey(request: {
+    headers: Record<string, string | string[] | undefined>;
+  }): boolean {
     const expected = env.PIPELINE_API_KEY;
     if (!expected) {
       return false;
     }
-    const provided = request.headers['x-api-key'];
+    const raw = request.headers['x-api-key'];
+    const provided = Array.isArray(raw) ? raw[0] : raw;
     if (!provided) {
       return false;
     }

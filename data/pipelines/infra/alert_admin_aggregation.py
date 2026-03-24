@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pipelines.infra.alert_types import AdminAreaExposure, AdminAreaLayer, Alert
+from pipelines.infra.alert_types import AdminAreaExposure, Alert, Layer
 
 # Ancestor fields on each boundary entry, in order from nearest to farthest.
 # TODO: when we are sure we can deduce parent place codes from child place codes via place code format, we can simplify this behaviour.
@@ -48,7 +48,7 @@ def aggregate_to_parent_admin_levels(
             break
 
         # Group deepest-level values by (ancestor_place_code, layer)
-        grouped: dict[tuple[str, AdminAreaLayer], list[bool | int | float]] = {}
+        grouped: dict[tuple[str, Layer], list[bool | int | float]] = {}
 
         for entry in deepest_entries:
             boundary = admin_boundaries.get(entry.place_code)

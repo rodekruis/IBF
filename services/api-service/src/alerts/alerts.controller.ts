@@ -12,7 +12,7 @@ import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-us
 export class AlertsController {
   public constructor(private readonly alertsService: AlertsService) {}
 
-  @AuthenticatedUser()
+  @AuthenticatedUser({ allowPipelineApiKey: true })
   @Post()
   @ApiOperation({ summary: 'Submit forecast alerts' })
   @ApiResponse({

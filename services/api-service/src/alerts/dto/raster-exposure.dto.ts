@@ -3,9 +3,10 @@ import { Type } from 'class-transformer';
 import { IsString, ValidateNested } from 'class-validator';
 
 import { RasterExtentDto } from '@api-service/src/alerts/dto/raster-extent.dto';
+import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
 export class RasterExposureDto {
-  @ApiProperty({ example: 'alert_extent' })
+  @ApiProperty({ example: Layer.alertExtent })
   @IsString()
   public readonly layer: string;
 

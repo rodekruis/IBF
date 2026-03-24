@@ -2,12 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pipelines.infra.alert_types import (
-    AdminAreaLayer,
-    Alert,
-    Centroid,
-    EnsembleMemberType,
-)
+from pipelines.infra.alert_types import Alert, Centroid, EnsembleMemberType, Layer
 
 
 def check_centroid(alert_name: str, centroid: Centroid) -> list[str]:
@@ -65,13 +60,14 @@ def check_admin_area_integrity(alert_name: str, alert: Alert) -> list[str]:
         errors.append(f"Alert '{alert_name}' admin-area: expected at least 1 record")
         return errors
 
-    levels: dict[int, dict[AdminAreaLayer, int]] = {}
+    levels: dict[int, dict[Layer, int]] = {}
     for entry in alert.exposure.admin_area:
         level_layers = levels.setdefault(entry.admin_level, {})
         level_layers[entry.layer] = level_layers.get(entry.layer, 0) + 1
 
+    admin_area_required = (Layer.SPATIAL_EXTENT, Layer.POPULATION_EXPOSED)
     for level, layer_counts in sorted(levels.items()):
-        for required in AdminAreaLayer:
+        for required in admin_area_required:
             if required not in layer_counts:
                 errors.append(
                     f"Alert '{alert_name}' admin-area level {level}: "
@@ -94,7 +90,7 @@ def check_admin_area_integrity(alert_name: str, alert: Alert) -> list[str]:
 def check_raster_integrity(alert_name: str, alert: Alert) -> list[str]:
     errors: list[str] = []
     raster_layers = {r.layer for r in alert.exposure.rasters}
-    if "alert_extent" not in raster_layers:
+    if Layer.ALERT_EXTENT not in raster_layers:
         errors.append(
             f"Alert '{alert_name}' rasters: missing required 'alert_extent' layer"
         )

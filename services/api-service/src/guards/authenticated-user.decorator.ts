@@ -4,6 +4,7 @@ import { ApiResponse } from '@nestjs/swagger';
 export interface AuthenticatedUserParameters {
   isAdmin?: boolean;
   readonly isGuarded?: boolean;
+  readonly allowPipelineApiKey?: boolean;
 }
 
 export const AuthenticatedUser = (parameters?: AuthenticatedUserParameters) => {

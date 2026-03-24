@@ -4,6 +4,7 @@ import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
 import { CreateAlertDto } from '@api-service/src/alerts/dto/create-alert.dto';
 import { SubmitAlertsDto } from '@api-service/src/alerts/dto/submit-alerts.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
+import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
 @Injectable()
 export class AlertsService {
@@ -23,7 +24,7 @@ export class AlertsService {
 
   // TODO: as this file grows, consider moving this into a separate service
   private validateIntegrity(alerts: CreateAlertDto[]): string[] {
-    // NOTE: this validation mimicks the validation on the pipeline-side. Make sure to keep this in sync.
+    // NOTE: this validation mimics the validation on the pipeline-side. Make sure to keep this in sync.
     const errors: string[] = [];
     for (const alert of alerts) {
       errors.push(...this.checkCentroid(alert));
@@ -125,12 +126,12 @@ export class AlertsService {
 
   private checkRasters(alert: CreateAlertDto): string[] {
     const errors: string[] = [];
-    const rasters = alert.exposure.rasters ?? [];
+    const rasters = alert.exposure.rasters;
 
     const rasterLayers = new Set(rasters.map((r) => r.layer));
-    if (rasters.length > 0 && !rasterLayers.has('alert_extent')) {
+    if (!rasterLayers.has(Layer.alertExtent)) {
       errors.push(
-        `Alert '${alert.alertName}' rasters: missing required 'alert_extent' layer`,
+        `Alert '${alert.alertName}' rasters: missing required '${Layer.alertExtent}' layer`,
       );
     }
 

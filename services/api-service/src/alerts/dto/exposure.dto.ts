@@ -5,6 +5,7 @@ import { IsArray, IsOptional, ValidateNested } from 'class-validator';
 import { AdminAreaExposureDto } from '@api-service/src/alerts/dto/admin-area-exposure.dto';
 import { GeoFeatureExposureDto } from '@api-service/src/alerts/dto/geo-feature-exposure.dto';
 import { RasterExposureDto } from '@api-service/src/alerts/dto/raster-exposure.dto';
+import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
 export class ExposureDto {
   @ApiProperty({
@@ -13,13 +14,13 @@ export class ExposureDto {
       {
         placeCode: 'KEN_01_001',
         adminLevel: 3,
-        layer: 'spatial_extent',
+        layer: Layer.spatialExtent,
         value: 1,
       },
       {
         placeCode: 'KEN_01_001',
         adminLevel: 3,
-        layer: 'population_exposed',
+        layer: Layer.populationExposed,
         value: 4500,
       },
     ],
@@ -36,10 +37,9 @@ export class ExposureDto {
   @Type(() => GeoFeatureExposureDto)
   public readonly geoFeatures?: GeoFeatureExposureDto[];
 
-  @ApiProperty({ type: [RasterExposureDto], required: false })
-  @IsOptional()
+  @ApiProperty({ type: [RasterExposureDto] })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RasterExposureDto)
-  public readonly rasters?: RasterExposureDto[];
+  public readonly rasters: RasterExposureDto[];
 }

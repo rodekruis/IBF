@@ -3,11 +3,11 @@ from pathlib import Path
 
 import pytest
 from pipelines.infra.alert_types import (
-    AdminAreaLayer,
     Centroid,
     EnsembleMemberType,
     ForecastSource,
     HazardType,
+    Layer,
 )
 from pipelines.infra.data_submitter import DataSubmitter
 
@@ -45,14 +45,14 @@ def _create_valid_submitter() -> DataSubmitter:
         alert_name=ALERT_NAME,
         place_code="PC001",
         admin_level=3,
-        layer=AdminAreaLayer.SPATIAL_EXTENT,
+        layer=Layer.SPATIAL_EXTENT,
         value=True,
     )
     submitter.add_admin_area_exposure(
         alert_name=ALERT_NAME,
         place_code="PC001",
         admin_level=3,
-        layer=AdminAreaLayer.POPULATION_EXPOSED,
+        layer=Layer.POPULATION_EXPOSED,
         value=0,
     )
     submitter.add_raster_exposure(

@@ -5,6 +5,9 @@ import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
 import { CreateAlertDto } from '@api-service/src/alerts/dto/create-alert.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
+import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
+import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
+import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
 function buildValidAlert(
   overrides: Partial<CreateAlertDto> = {},
@@ -13,8 +16,8 @@ function buildValidAlert(
     alertName: 'KEN-flood-2026-03-20',
     issuedAt: '2026-03-20T12:00:00Z',
     centroid: { latitude: 0.35, longitude: 32.6 },
-    hazardTypes: ['floods'],
-    forecastSources: ['glofas'],
+    hazardTypes: [HazardType.floods],
+    forecastSources: [ForecastSource.glofas],
     severityData: [
       {
         leadTime: {
@@ -40,8 +43,15 @@ function buildValidAlert(
         {
           placeCode: 'KEN_01_001',
           adminLevel: 3,
-          layer: 'spatial_extent',
+          layer: Layer.spatialExtent,
           value: 1,
+        },
+      ],
+      rasters: [
+        {
+          layer: Layer.alertExtent,
+          value: 'base64',
+          extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },
       ],
     },
@@ -242,7 +252,16 @@ describe('AlertsService', () => {
     it('should reject empty admin-area', async () => {
       const alerts = [
         buildValidAlert({
-          exposure: { adminArea: [] },
+          exposure: {
+            adminArea: [],
+            rasters: [
+              {
+                layer: Layer.alertExtent,
+                value: 'base64',
+                extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
+              },
+            ],
+          },
         }),
       ];
       try {
@@ -268,20 +287,27 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: 'spatial_extent',
+                layer: Layer.spatialExtent,
                 value: 1,
               },
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: 'population_exposed',
+                layer: Layer.populationExposed,
                 value: 100,
               },
               {
                 placeCode: 'B',
                 adminLevel: 3,
-                layer: 'population_exposed',
+                layer: Layer.populationExposed,
                 value: 200,
+              },
+            ],
+            rasters: [
+              {
+                layer: Layer.alertExtent,
+                value: 'base64',
+                extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
           },
@@ -312,7 +338,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: 'spatial_extent',
+                layer: Layer.spatialExtent,
                 value: 1,
               },
             ],
@@ -349,13 +375,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: 'spatial_extent',
+                layer: Layer.spatialExtent,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: 'alert_extent',
+                layer: Layer.alertExtent,
                 value: 'base64',
                 extent: { xmin: 10, ymin: 5, xmax: 5, ymax: 1 },
               },
@@ -376,10 +402,35 @@ describe('AlertsService', () => {
       }
     });
 
-    it('should accept alert with no rasters at all', async () => {
-      const alerts = [buildValidAlert()];
-      await service.submitAlerts({ alerts });
-      expect(repository.createAlerts).toHaveBeenCalledWith(alerts);
+    it('should reject alert with empty rasters array', async () => {
+      const alerts = [
+        buildValidAlert({
+          exposure: {
+            adminArea: [
+              {
+                placeCode: 'A',
+                adminLevel: 3,
+                layer: Layer.spatialExtent,
+                value: 1,
+              },
+            ],
+            rasters: [],
+          },
+        }),
+      ];
+      try {
+        await service.submitAlerts({ alerts });
+        fail('Expected HttpException');
+      } catch (e) {
+        const response = (e as HttpException).getResponse() as {
+          errors: string[];
+        };
+        expect(response.errors).toEqual(
+          expect.arrayContaining([
+            expect.stringContaining("missing required 'alert_extent' layer"),
+          ]),
+        );
+      }
     });
 
     it('should accept rasters with valid alert_extent', async () => {
@@ -390,13 +441,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: 'spatial_extent',
+                layer: Layer.spatialExtent,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: 'alert_extent',
+                layer: Layer.alertExtent,
                 value: 'base64',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },

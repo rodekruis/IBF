@@ -38,7 +38,8 @@ class ForecastSource(StrEnum):
     ECMWF = "ECMWF"
 
 
-class AdminAreaLayer(StrEnum):
+class Layer(StrEnum):
+    ALERT_EXTENT = "alert_extent"
     SPATIAL_EXTENT = "spatial_extent"
     POPULATION_EXPOSED = "population_exposed"
 
@@ -63,7 +64,7 @@ class SeverityEntry:
 class AdminAreaExposure:
     place_code: str
     admin_level: int
-    layer: AdminAreaLayer
+    layer: Layer
     value: bool | int | float
 
     def to_dict(self) -> dict[str, str | int | float]:

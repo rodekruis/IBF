@@ -82,7 +82,7 @@ describe('AuthenticatedUserGuard', () => {
 
   describe('API key authentication', () => {
     function buildContext(
-      headers: Record<string, string> = {},
+      headers: Record<string, string | string[]> = {},
     ): ExecutionContext {
       const request = { headers, authenticationParameters: undefined };
       return {
@@ -94,7 +94,9 @@ describe('AuthenticatedUserGuard', () => {
     }
 
     it('should allow access with valid API key', async () => {
-      jest.spyOn(reflector, 'get').mockReturnValue({ isGuarded: true });
+      jest
+        .spyOn(reflector, 'get')
+        .mockReturnValue({ isGuarded: true, allowPipelineApiKey: true });
       mockEnv.PIPELINE_API_KEY = 'a'.repeat(32);
 
       const context = buildContext({ 'x-api-key': 'a'.repeat(32) });
@@ -102,7 +104,9 @@ describe('AuthenticatedUserGuard', () => {
     });
 
     it('should reject invalid API key and fall through to JWT', async () => {
-      jest.spyOn(reflector, 'get').mockReturnValue({ isGuarded: true });
+      jest
+        .spyOn(reflector, 'get')
+        .mockReturnValue({ isGuarded: true, allowPipelineApiKey: true });
       mockEnv.PIPELINE_API_KEY = 'a'.repeat(32);
       mockAuthGuardCanActivate.mockReturnValue(false);
 
@@ -111,13 +115,37 @@ describe('AuthenticatedUserGuard', () => {
       expect(mockAuthGuardCanActivate).toHaveBeenCalled();
     });
 
+    it('should allow access when API key header is an array', async () => {
+      jest
+        .spyOn(reflector, 'get')
+        .mockReturnValue({ isGuarded: true, allowPipelineApiKey: true });
+      mockEnv.PIPELINE_API_KEY = 'a'.repeat(32);
+
+      const context = buildContext({
+        'x-api-key': ['a'.repeat(32), 'ignored'],
+      });
+      expect(await guard.canActivate(context)).toBe(true);
+    });
+
     it('should fall through to JWT when no API key configured', async () => {
-      jest.spyOn(reflector, 'get').mockReturnValue({ isGuarded: true });
+      jest
+        .spyOn(reflector, 'get')
+        .mockReturnValue({ isGuarded: true, allowPipelineApiKey: true });
       mockEnv.PIPELINE_API_KEY = undefined;
       mockAuthGuardCanActivate.mockReturnValue(true);
 
       const context = buildContext({ 'x-api-key': 'some-key' });
       expect(await guard.canActivate(context)).toBe(true);
+      expect(mockAuthGuardCanActivate).toHaveBeenCalled();
+    });
+
+    it('should ignore API key when allowPipelineApiKey is not set', async () => {
+      jest.spyOn(reflector, 'get').mockReturnValue({ isGuarded: true });
+      mockEnv.PIPELINE_API_KEY = 'a'.repeat(32);
+      mockAuthGuardCanActivate.mockReturnValue(false);
+
+      const context = buildContext({ 'x-api-key': 'a'.repeat(32) });
+      expect(await guard.canActivate(context)).toBe(false);
       expect(mockAuthGuardCanActivate).toHaveBeenCalled();
     });
   });

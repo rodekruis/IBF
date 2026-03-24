@@ -13,13 +13,13 @@ from pipelines.infra.alert_integrity_checks import (
 )
 from pipelines.infra.alert_types import (
     AdminAreaExposure,
-    AdminAreaLayer,
     Alert,
     Centroid,
     EnsembleMemberType,
     ForecastSource,
     GeoFeatureExposure,
     HazardType,
+    Layer,
     LeadTime,
     RasterExposure,
     RasterExtent,
@@ -108,7 +108,7 @@ class DataSubmitter:
         alert_name: str,
         place_code: str,
         admin_level: int,
-        layer: AdminAreaLayer,
+        layer: Layer,
         value: bool | int | float,
     ) -> None:
         alert = self._get_alert(alert_name, "add_admin_area_exposure")
@@ -211,7 +211,7 @@ class DataSubmitter:
         # NOTE 1: exact data formats (and thus these integrity checks) are subject to change based on back-and-forth between hazard-logic & pipeline-infra (and exact API/datamodel requirements)
         # NOTE 2: a lot more checks could be added and will be added in the future, but for now we focus on a few key ones to demonstrate the concept
         for alert_name, alert in self._alerts.items():
-            # NOTE: this validation mimicks the validation on the API-side. Make sure to keep this in sync.
+            # NOTE: this validation mimics the validation on the API-side. Make sure to keep this in sync.
             errors.extend(check_centroid(alert_name, alert.centroid))
             errors.extend(check_severity_integrity(alert_name, alert))
             errors.extend(check_admin_area_integrity(alert_name, alert))

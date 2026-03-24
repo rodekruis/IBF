@@ -3,11 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from pipelines.infra.alert_types import (
-    AdminAreaLayer,
     Centroid,
     EnsembleMemberType,
     ForecastSource,
     HazardType,
+    Layer,
 )
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
@@ -73,14 +73,14 @@ def calculate_drought_forecasts(
                     alert_name=alert_name,
                     place_code=place_code,
                     admin_level=deepest_admin_level,
-                    layer=AdminAreaLayer.SPATIAL_EXTENT,
+                    layer=Layer.SPATIAL_EXTENT,
                     value=True,
                 )
                 data_submitter.add_admin_area_exposure(
                     alert_name=alert_name,
                     place_code=place_code,
                     admin_level=deepest_admin_level,
-                    layer=AdminAreaLayer.POPULATION_EXPOSED,
+                    layer=Layer.POPULATION_EXPOSED,
                     value=0,
                 )
 

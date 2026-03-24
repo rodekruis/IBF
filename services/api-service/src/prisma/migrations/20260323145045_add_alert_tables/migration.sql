@@ -6,8 +6,8 @@ CREATE TABLE "alert" (
     "alertName" TEXT NOT NULL,
     "issuedAt" TIMESTAMP(3) NOT NULL,
     "centroid" JSONB NOT NULL,
-    "hazardTypes" TEXT[],
-    "forecastSources" TEXT[],
+    "hazardTypes" TEXT[] NOT NULL,
+    "forecastSources" TEXT[] NOT NULL,
 
     CONSTRAINT "alert_pkey" PRIMARY KEY ("id")
 );

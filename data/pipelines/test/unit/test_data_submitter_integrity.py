@@ -2,11 +2,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from pipelines.infra.alert_types import (
-    AdminAreaLayer,
     Centroid,
     EnsembleMemberType,
     ForecastSource,
     HazardType,
+    Layer,
 )
 from pipelines.infra.data_submitter import DataSubmitter
 
@@ -77,14 +77,14 @@ def test_admin_area_unequal_layer_counts_is_rejected(
         alert_name=ALERT_NAME,
         place_code="PC001",
         admin_level=3,
-        layer=AdminAreaLayer.SPATIAL_EXTENT,
+        layer=Layer.SPATIAL_EXTENT,
         value=True,
     )
     valid_submitter.add_admin_area_exposure(
         alert_name=ALERT_NAME,
         place_code="PC002",
         admin_level=3,
-        layer=AdminAreaLayer.SPATIAL_EXTENT,
+        layer=Layer.SPATIAL_EXTENT,
         value=True,
     )
 
@@ -124,7 +124,7 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
         alert_name=ALERT_NAME,
         place_code="PC001",
         admin_level=3,
-        layer=AdminAreaLayer.POPULATION_EXPOSED,
+        layer=Layer.POPULATION_EXPOSED,
         value=0,
     )
     submitter.add_raster_exposure(
@@ -170,7 +170,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
         alert_name=ALERT_NAME,
         place_code="PC001",
         admin_level=3,
-        layer=AdminAreaLayer.POPULATION_EXPOSED,
+        layer=Layer.POPULATION_EXPOSED,
         value=0,
     )
     submitter.add_raster_exposure(

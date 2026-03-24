@@ -1,5 +1,9 @@
 import { HttpStatus } from '@nestjs/common';
 
+import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
+import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
+import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
+import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { getServer, resetDB } from '@api-service/test/helpers/utility.helper';
@@ -8,18 +12,18 @@ const VALID_ALERT = {
   alertName: 'TEST-flood-2026-03-23',
   issuedAt: '2026-03-23T12:00:00Z',
   centroid: { latitude: 0.35, longitude: 32.6 },
-  hazardTypes: ['floods'],
-  forecastSources: ['glofas'],
+  hazardTypes: [HazardType.floods],
+  forecastSources: [ForecastSource.glofas],
   severityData: [
     {
       leadTime: { start: '2026-03-23T00:00:00Z', end: '2026-03-23T23:59:59Z' },
-      ensembleMemberType: 'median',
+      ensembleMemberType: EnsembleMemberType.median,
       severityKey: 'water_discharge',
       severityValue: 120.5,
     },
     {
       leadTime: { start: '2026-03-23T00:00:00Z', end: '2026-03-23T23:59:59Z' },
-      ensembleMemberType: 'run',
+      ensembleMemberType: EnsembleMemberType.run,
       severityKey: 'water_discharge',
       severityValue: 135.0,
     },
@@ -29,7 +33,7 @@ const VALID_ALERT = {
       {
         placeCode: 'KEN_01_001',
         adminLevel: 3,
-        layer: 'spatial_extent',
+        layer: Layer.populationExposed,
         value: 1,
       },
     ],

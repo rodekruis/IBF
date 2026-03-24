@@ -1,8 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsDateString,
+  IsEnum,
   IsString,
   ValidateNested,
 } from 'class-validator';
@@ -11,6 +13,8 @@ import { CentroidDto } from '@api-service/src/alerts/dto/centroid.dto';
 import { ExposureDto } from '@api-service/src/alerts/dto/exposure.dto';
 import { SeverityEntryDto } from '@api-service/src/alerts/dto/severity-entry.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
+import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
+import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 
 export class CreateAlertDto {
   @ApiProperty({ example: 'KEN-flood-2026-03-20' })
@@ -26,15 +30,25 @@ export class CreateAlertDto {
   @Type(() => CentroidDto)
   public readonly centroid: CentroidDto;
 
-  @ApiProperty({ example: ['floods'] })
+  @ApiProperty({
+    enum: HazardType,
+    isArray: true,
+    example: [HazardType.floods],
+  })
   @IsArray()
-  @IsString({ each: true })
-  public readonly hazardTypes: string[];
+  @ArrayMinSize(1)
+  @IsEnum(HazardType, { each: true })
+  public readonly hazardTypes: HazardType[];
 
-  @ApiProperty({ example: ['glofas'] })
+  @ApiProperty({
+    enum: ForecastSource,
+    isArray: true,
+    example: [ForecastSource.glofas],
+  })
   @IsArray()
-  @IsString({ each: true })
-  public readonly forecastSources: string[];
+  @ArrayMinSize(1)
+  @IsEnum(ForecastSource, { each: true })
+  public readonly forecastSources: ForecastSource[];
 
   @ApiProperty({
     type: [SeverityEntryDto],
