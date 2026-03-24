@@ -34,18 +34,20 @@ The naming of these will follow the values from the UGA data (which already had 
 
 This script does the following:
 - Look at all files in the dir, make a list of the country names, and print them.
-- Foreach country, open all existing admin boundary files (1,2,3, and sometimes 4) in a list.
+- For each country, open all existing admin boundary files (1,2,3, and sometimes 4) in a list.
 - Apply parent code and name children (all depths) that starts with the parent code.
   - If the parent code is invalid (empty, missing), print an error.
   - If a child already has a parent code, make sure it matches. If not, print an error.
+  - If a child level exists, but the parent adm code is never applied, print an error.
 - Repeat for parent levels (adm1, adm2, and adm3 (if adm4 exists))
 - Save the files to the output directory.
 
 Once all are done, go back and open all admin files for a country from the output directory.
-- Check adm3 and adm4 files.
-- Print if any data is missing. Print any errors
+- Check adm2, 3 and 4 files.
+- Check if any data is missing. Print any errors
    - It should have the PCODE and name (_EN) for the current adm level, and all parents.
    - The higher admin levels (0,1,2) PCODE string should be a subset of the lower levels.
+- For each admin level, check for duplicates in that file of the PCODE for that level.
 """
 
 import json
@@ -128,8 +130,13 @@ def populate_parent_codes(
                 )
 
             # Apply this parent's info to all deeper admin levels
+            was_parent_code_applied = False
             for child_level in admin_levels:
+
+                # Skip levels that are not children of the current level.
                 if child_level <= parent_level:
+                    # set true to skip this alert (since no lower admin level exists)
+                    was_parent_code_applied = True
                     continue
 
                 child_geojson = admin_data[child_level]
@@ -151,10 +158,12 @@ def populate_parent_codes(
                     ):
                         compare_parent_pcode = parent_pcode[:-1]
 
+                    # Skip if not a match (using startswith comparison)
                     if not child_pcode.startswith(compare_parent_pcode):
                         continue
 
-                    # If the child already has a parent code, verify it matches
+                    # If the child already has a parent code,
+                    # check if it matches the one we're trying to set now.
                     existing_parent_pcode = child_props.get(parent_pcode_key, "")
                     if existing_parent_pcode and existing_parent_pcode != parent_pcode:
                         errors.append(
@@ -164,13 +173,21 @@ def populate_parent_codes(
                         )
                         continue
 
+                    # At this point in the function, we have a matching code, so apply it.
                     child_props[parent_pcode_key] = parent_pcode
                     child_props[parent_name_key] = parent_name
+                    was_parent_code_applied = True
 
-                    # When setting adm1, also set the adm0 code (first 2 chars of adm1 PCODE)
+                    # When setting the adm1 PCODE, also set the adm0 code (first 2 chars of adm1 PCODE)
                     # there are no adm0 JSON files, so we need to derive the adm0 code ourselves.
                     if parent_level == 1 and len(parent_pcode) >= 2:
                         child_props[get_pcode_key(0)] = parent_pcode[:2]
+
+            if not was_parent_code_applied:
+                errors.append(
+                    f"ERROR [{country}]: Parent adm{parent_level} PCODE={parent_pcode} "
+                    f"was never applied to any child"
+                )
 
     # ZMB: adm3 PCODEs don't start with adm2 PCODEs, so the normal pass won't
     # link parents to adm3. Instead, use the ADM2_PCODE already on each adm3
@@ -293,6 +310,21 @@ def validate_country_data(
                         f"VALIDATION [{country}] adm{level}: {pcode_key}={feature_pcode} "
                         f"missing parent {parent_name_key}"
                     )
+
+        # Check for duplicate PCODEs at the current admin level
+        seen_pcodes: dict[str, int] = {}
+        for feature in geojson.get("features", []):
+            props = feature.get("properties", {})
+            feature_pcode = props.get(pcode_key, "")
+            if not feature_pcode:
+                continue
+            seen_pcodes[feature_pcode] = seen_pcodes.get(feature_pcode, 0) + 1
+        for pcode, count in seen_pcodes.items():
+            if count > 1:
+                errors.append(
+                    f"VALIDATION [{country}] adm{level}: Duplicate {pcode_key}={pcode} "
+                    f"appears {count} times"
+                )
 
     return errors
 
