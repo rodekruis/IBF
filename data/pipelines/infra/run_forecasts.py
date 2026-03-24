@@ -38,8 +38,8 @@ def _run_country(
     hazard_type: str,
 ) -> list[str]:
     data_provider = DataProvider()
-    if not data_provider.try_load_data(config_reader, country.name, run_target):
-        return [f"Failed to load data for {country.name}"]
+    if not data_provider.try_load_data(config_reader, country.iso_3_code, run_target):
+        return [f"Failed to load data for {country.iso_3_code}"]
 
     data_submitter = DataSubmitter()
 
@@ -47,8 +47,8 @@ def _run_country(
     hazard_fn(
         data_provider,
         data_submitter,
-        country.name,
-        country.deepest_admin_level,
+        country.iso_3_code,
+        country.target_admin_level,
     )
 
     # --- Post-processing: aggregate deepest-level admin area data upward ---
@@ -78,7 +78,7 @@ def run_forecasts(config_path: str, run_target: str) -> list[str]:
     _register_hazard_functions()
 
     config_reader = ConfigReader()
-    if not config_reader.load(config_path):
+    if not config_reader.load_file(config_path):
         logger.error(f"Config errors: {config_reader.errors}")
         return config_reader.errors
 
@@ -98,16 +98,16 @@ def run_forecasts(config_path: str, run_target: str) -> list[str]:
     all_errors: list[str] = []
 
     for country in countries:
-        logger.info(f"Processing {hazard_type} for {country.name}")
+        logger.info(f"Processing {hazard_type} for {country.iso_3_code}")
 
         errors = _run_country(
             hazard_fn, country, config_reader, run_target, hazard_type
         )
         if errors:
-            logger.error(f"Errors for {country.name}: {errors}")
+            logger.error(f"Errors for {country.iso_3_code}: {errors}")
             all_errors.extend(errors)
         else:
-            logger.info(f"Completed {hazard_type} for {country.name}")
+            logger.info(f"Completed {hazard_type} for {country.iso_3_code}")
 
     return all_errors
 

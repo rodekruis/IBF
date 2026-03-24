@@ -4,22 +4,19 @@ run_targets:
   DEBUG:
     countries:
       - name: ETH
-        admin_levels: [1, 2]
+        target_admin_level: 2
         data_sources:
-          # eventually from IBF API
           - name: climate_regions
             type: json
-            source: dummy
+            source: todo_ibf_api
           - name: admin_boundaries
             type: geojson
-            source: dummy
-          # eventually from seed-data repo
+            source: seed_data_repo
           - name: population
             type: raster
-            source: dummy
-          # eventually from external sources
+            source: worldpop_latest
           - name: ecmwf_forecast
             type: grib
-            source: dummy
+            source: todo_data_source
         output:
           mode: api
