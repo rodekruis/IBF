@@ -4,23 +4,20 @@ run_targets:
   DEBUG:
     countries:
       - name: KEN
-        admin_levels: [1, 2, 3]
+        target_admin_level: 3
         data_sources:
-          # eventually from IBF API
           - name: glofas_stations
             type: json
-            source: dummy
+            source: todo_ibf_api
           - name: admin_boundaries
             type: geojson
-            source: dummy
-          # eventually from seed-data repo
+            source: seed_data_repo
           - name: population
             type: raster
-            source: dummy
-          # eventually from external sources
+            source: worldpop_latest
           - name: glofas_discharge
             type: netcdf
-            source: dummy
+            source: todo_data_source
         output:
           mode: local
           path: pipelines/output
