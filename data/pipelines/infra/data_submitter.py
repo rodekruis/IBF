@@ -4,7 +4,6 @@ import json
 import logging
 import os
 from datetime import datetime, timezone
-from xml.parsers.expat import errors
 
 from pipelines.infra.alert_integrity_checks import (
     check_admin_area_integrity,
