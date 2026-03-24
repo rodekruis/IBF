@@ -286,7 +286,7 @@ def validate_country_data(
                     # ZMB: adm3 PCODEs are numeric and don't share a prefix with any parent, skip
                     skip_prefix_check = country == "ZMB" and level == 3
                     # PHL uses trailing zeroes in parent codes (e.g. PH170000000)
-                    # trying matching for the PHL case before printing an error.
+                    # Try matching for the PHL case before printing an error.
                     compare_pcode = (
                         parent_pcode.rstrip("0") if country == "PHL" else parent_pcode
                     )
