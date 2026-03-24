@@ -37,6 +37,13 @@ const VALID_ALERT = {
         value: 1,
       },
     ],
+    rasters: [
+      {
+        layer: Layer.alertExtent,
+        value: 'raster-file-path.tif',
+        extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
+      },
+    ],
   },
 };
 
