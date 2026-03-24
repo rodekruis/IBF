@@ -1,6 +1,9 @@
 """
-This adds the missing admin parent codes on the admin data imported from IBF v1
-This can't be calculated easily, since countries don't follow a standard.
+This adds the missing admin parent codes on the admin data imported from IBF v1.
+The structure and issues with the IBF v1 data structure are different than other sources,
+so this script is just for processing the IBF v1 data.
+
+The admin codes can't be calculated easily, since countries don't follow a standard.
 For instance, here are 4 codes, all for admin 3:
 
 "AO01002004"
@@ -58,8 +61,8 @@ from pathlib import Path
 from shared.data_helpers import get_seed_data_repo_path
 
 BASE_REPO_DIR = get_seed_data_repo_path()
-INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas-v1"
-OUTPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas"
+INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas" / "admin-areas-v1"
+OUTPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas" / "processed"
 
 
 def discover_countries(input_dir: Path) -> dict[str, list[int]]:
@@ -330,7 +333,7 @@ def validate_country_data(
 
 
 if __name__ == "__main__":
-    # Step 1: Discover countries from filenames
+    # Create list of countries from filenames
     countries = discover_countries(INPUT_DIR)
     print(f"\nFound {len(countries)} countries:")
     for country, levels in countries.items():
@@ -338,7 +341,7 @@ if __name__ == "__main__":
 
     all_errors: list[str] = []
 
-    # Step 2-5: For each country, load files, populate parent codes, and save
+    # For each country, load files, populate parent codes, and save
     for country, levels in countries.items():
         print(f"\nProcessing {country}...")
 
@@ -357,7 +360,7 @@ if __name__ == "__main__":
             save_geojson(output_path, admin_data[level])
             print(f"  Saved {output_path.name}")
 
-    # Step 6: Validation pass — re-read saved files and check adm3/adm4
+    # Validation pass — re-read saved files and check for errors
     print("\n--- Validation Pass ---")
     for country, levels in countries.items():
         admin_data_check: dict[int, dict] = {}
