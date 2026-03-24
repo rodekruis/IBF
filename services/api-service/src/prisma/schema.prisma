@@ -25,3 +25,89 @@ model User {
   @@index([created])
   @@index([username])
 }
+
+model Alert {
+  @@schema("api-service")
+  @@map("alert")
+
+  id              Int      @id @default(autoincrement())
+  created         DateTime @default(now())
+  updated         DateTime @updatedAt
+  alertName       String
+  issuedAt        DateTime
+  centroid        Json
+  hazardTypes     String[]
+  forecastSources String[]
+
+  severity             AlertSeverity[]
+  exposureAdminArea    AlertExposureAdminArea[]
+  exposureGeoFeature   AlertExposureGeoFeature[]
+  exposureRasterData   AlertExposureRasterData[]
+}
+
+model AlertSeverity {
+  @@schema("api-service")
+  @@map("alert-severity")
+
+  id                 Int      @id @default(autoincrement())
+  created            DateTime @default(now())
+  updated            DateTime @updatedAt
+  alertId            Int
+  alert              Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  leadTime           Json
+  ensembleMemberType String
+  severityKey        String
+  severityValue      Float
+
+  @@index([alertId])
+}
+
+model AlertExposureAdminArea {
+  @@schema("api-service")
+  @@map("alert-exposure-admin-area")
+
+  id         Int      @id @default(autoincrement())
+  created    DateTime @default(now())
+  updated    DateTime @updatedAt
+  alertId    Int
+  alert      Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  placeCode  String
+  adminLevel Int
+  layer      String
+  value      Float
+
+  @@index([alertId])
+  @@index([alertId, adminLevel])
+}
+
+model AlertExposureGeoFeature {
+  @@schema("api-service")
+  @@map("alert-exposure-geo-features")
+
+  id           Int      @id @default(autoincrement())
+  created      DateTime @default(now())
+  updated      DateTime @updatedAt
+  alertId      Int
+  alert        Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  geoFeatureId String
+  layer        String
+  attributes   Json
+
+  @@index([alertId])
+}
+
+model AlertExposureRasterData {
+  @@schema("api-service")
+  @@map("alert-exposure-raster-data")
+
+  id      Int      @id @default(autoincrement())
+  created DateTime @default(now())
+  updated DateTime @updatedAt
+  alertId Int
+  alert   Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  layer   String
+  value   String
+  extent  Json
+
+  @@index([alertId])
+}

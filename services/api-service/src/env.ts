@@ -59,6 +59,9 @@ export const env = createEnv({
     USERCONFIG_API_SERVICE_EMAIL_ADMIN: z.email(),
     USERCONFIG_API_SERVICE_PASSWORD_ADMIN: z.string(),
 
+    // Pipeline service account (optional — only when pipeline submission is enabled)
+    PIPELINE_API_KEY: z.string().min(32).optional(),
+
     // Third-party: Azure ApplicationInsights
     APPLICATIONINSIGHTS_CONNECTION_STRING: z.string().optional(),
 

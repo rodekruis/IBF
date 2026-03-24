@@ -37,5 +37,10 @@
     "method": "get",
     "path": "/api/users/current",
     "params": []
+  },
+  {
+    "method": "post",
+    "path": "/api/alerts",
+    "params": []
   }
 ]

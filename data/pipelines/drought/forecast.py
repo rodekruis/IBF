@@ -40,10 +40,10 @@ def calculate_drought_forecasts(
         place_codes: list[str] = region["place_codes"]
 
         for season in seasons:
-            alert_id = f"{country}_drought_{region_id}_season-{season}"
+            alert_name = f"{country}_drought_{region_id}_season-{season}"
 
             data_submitter.create_alert(
-                alert_id=alert_id,
+                alert_name=alert_name,
                 hazard_types=[HazardType.DROUGHT],
                 centroid=Centroid(latitude=0.0, longitude=0.0),
                 issued_at=issued_at,
@@ -51,16 +51,16 @@ def calculate_drought_forecasts(
             )
 
             for _ in range(2):
-                data_submitter.add_timeseries_data(
-                    alert_id=alert_id,
+                data_submitter.add_severity_data(
+                    alert_name=alert_name,
                     lead_time_start="2026-03-01T00:00:00Z",
                     lead_time_end="2026-05-31T23:59:59Z",
                     ensemble_member_type=EnsembleMemberType.RUN,
                     severity_key="percentile",
                     severity_value=0,
                 )
-            data_submitter.add_timeseries_data(
-                alert_id=alert_id,
+            data_submitter.add_severity_data(
+                alert_name=alert_name,
                 lead_time_start="2026-03-01T00:00:00Z",
                 lead_time_end="2026-05-31T23:59:59Z",
                 ensemble_member_type=EnsembleMemberType.MEDIAN,
@@ -70,14 +70,14 @@ def calculate_drought_forecasts(
 
             for place_code in place_codes:
                 data_submitter.add_admin_area_exposure(
-                    alert_id=alert_id,
+                    alert_name=alert_name,
                     place_code=place_code,
                     admin_level=deepest_admin_level,
                     layer=AdminAreaLayer.SPATIAL_EXTENT,
                     value=True,
                 )
                 data_submitter.add_admin_area_exposure(
-                    alert_id=alert_id,
+                    alert_name=alert_name,
                     place_code=place_code,
                     admin_level=deepest_admin_level,
                     layer=AdminAreaLayer.POPULATION_EXPOSED,
@@ -85,7 +85,7 @@ def calculate_drought_forecasts(
                 )
 
             data_submitter.add_raster_exposure(
-                alert_id=alert_id,
+                alert_name=alert_name,
                 layer="alert_extent",
                 value=f"alert_extent_{region_id}.tif",
                 extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},

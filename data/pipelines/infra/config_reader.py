@@ -21,7 +21,7 @@ class CountryConfig:
     name: str
     admin_levels: list[int] = field(default_factory=list)
     data_sources: list[DataSourceConfig] = field(default_factory=list)
-    output_mode: str = "local"
+    output_mode: str = "api"
     output_path: str = "pipelines/output"
 
     @property
@@ -119,7 +119,7 @@ class ConfigReader:
                     name=country_raw["name"],
                     admin_levels=country_raw.get("admin_levels", []),
                     data_sources=data_sources,
-                    output_mode=output_raw.get("mode", "local"),
+                    output_mode=output_raw.get("mode", "api"),
                     output_path=output_raw.get("path", "pipelines/output"),
                 )
             )
@@ -137,8 +137,11 @@ class ConfigReader:
     def get_output_config(self, country_name: str, run_target: str) -> dict[str, str]:
         for country in self.get_countries(run_target):
             if country.name == country_name:
-                return {"mode": country.output_mode, "path": country.output_path}
-        return {"mode": "local", "path": "pipelines/output"}
+                return {
+                    "mode": country.output_mode,
+                    "path": country.output_path,
+                }
+        return {"mode": "api", "path": "pipelines/output"}
 
     def get_admin_levels(self, country_name: str, run_target: str) -> list[int]:
         for country in self.get_countries(run_target):

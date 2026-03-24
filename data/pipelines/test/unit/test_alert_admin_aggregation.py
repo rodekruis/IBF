@@ -48,7 +48,7 @@ BOUNDARIES_2_LEVELS: dict[str, dict[str, object]] = {
 
 def _make_alert(entries: list[AdminAreaExposure]) -> Alert:
     return Alert(
-        alert_id="test-alert",
+        alert_name="test-alert",
         issued_at=datetime.now(timezone.utc),
         centroid=Centroid(latitude=0.0, longitude=0.0),
         hazard_types=[HazardType.FLOODS],
