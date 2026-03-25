@@ -19,8 +19,8 @@ class LeadTime:
     start: str
     end: str
 
-    def to_dict(self) -> list[str]:
-        return [self.start, self.end]
+    def to_dict(self) -> dict[str, str]:
+        return {"start": self.start, "end": self.end}
 
 
 class EnsembleMemberType(StrEnum):
@@ -38,19 +38,20 @@ class ForecastSource(StrEnum):
     ECMWF = "ECMWF"
 
 
-class AdminAreaLayer(StrEnum):
+class Layer(StrEnum):
+    ALERT_EXTENT = "alert_extent"
     SPATIAL_EXTENT = "spatial_extent"
     POPULATION_EXPOSED = "population_exposed"
 
 
 @dataclass
-class TimeSeriesEntry:
+class SeverityEntry:
     lead_time: LeadTime
     ensemble_member_type: EnsembleMemberType
     severity_key: str
     severity_value: float | int
 
-    def to_dict(self) -> dict[str, str | float | int | list[str]]:
+    def to_dict(self) -> dict[str, str | float | int | dict[str, str]]:
         return {
             "leadTime": self.lead_time.to_dict(),
             "ensembleMemberType": self.ensemble_member_type,
@@ -63,15 +64,15 @@ class TimeSeriesEntry:
 class AdminAreaExposure:
     place_code: str
     admin_level: int
-    layer: AdminAreaLayer
+    layer: Layer
     value: bool | int | float
 
-    def to_dict(self) -> dict[str, str | bool | int | float]:
+    def to_dict(self) -> dict[str, str | int | float]:
         return {
             "placeCode": self.place_code,
             "adminLevel": self.admin_level,
             "layer": self.layer,
-            "value": self.value,
+            "value": int(self.value) if isinstance(self.value, bool) else self.value,
         }
 
 
@@ -85,7 +86,7 @@ class GeoFeatureExposure:
         return {
             "geoFeatureId": self.geo_feature_id,
             "layer": self.layer,
-            "value": self.value,
+            "attributes": self.value,
         }
 
 
@@ -129,20 +130,20 @@ class Exposure:
         self,
     ) -> dict[str, list[dict[str, str | bool | int | float | dict[str, float]]]]:
         return {
-            "admin-area": [item.to_dict() for item in self.admin_area],
-            "geo-features": [item.to_dict() for item in self.geo_features],
+            "adminArea": [item.to_dict() for item in self.admin_area],
+            "geoFeatures": [item.to_dict() for item in self.geo_features],
             "rasters": [item.to_dict() for item in self.rasters],
         }
 
 
 @dataclass
 class Alert:
-    alert_id: str
+    alert_name: str
     issued_at: datetime
     centroid: Centroid
     hazard_types: list[HazardType]
     forecast_sources: list[ForecastSource] = field(default_factory=list)
-    time_series_data: list[TimeSeriesEntry] = field(default_factory=list)
+    severity_data: list[SeverityEntry] = field(default_factory=list)
     exposure: Exposure = field(default_factory=Exposure)
 
     def to_dict(
@@ -156,11 +157,11 @@ class Alert:
         | dict[str, list[dict[str, str | bool | int | float | dict[str, float]]]],
     ]:
         return {
-            "alertId": self.alert_id,
+            "alertName": self.alert_name,
             "issuedAt": self.issued_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "centroid": self.centroid.to_dict(),
             "hazardTypes": list(self.hazard_types),
             "forecastSources": list(self.forecast_sources),
-            "timeSeriesData": [entry.to_dict() for entry in self.time_series_data],
+            "severityData": [entry.to_dict() for entry in self.severity_data],
             "exposure": self.exposure.to_dict(),
         }

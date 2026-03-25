@@ -3,11 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from pipelines.infra.alert_types import (
-    AdminAreaLayer,
     Centroid,
     EnsembleMemberType,
     ForecastSource,
     HazardType,
+    Layer,
 )
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
@@ -35,10 +35,10 @@ def calculate_flood_forecasts(
     for station in stations:
         station_code = str(station["station_code"])
         place_codes: list[str] = station["place_codes"]
-        alert_id = f"{country}_floods_{station_code}"
+        alert_name = f"{country}_floods_{station_code}"
 
         data_submitter.create_alert(
-            alert_id=alert_id,
+            alert_name=alert_name,
             hazard_types=[HazardType.FLOODS],
             centroid=Centroid(
                 latitude=float(station["lat"]),
@@ -49,16 +49,16 @@ def calculate_flood_forecasts(
         )
 
         for _ in range(2):
-            data_submitter.add_timeseries_data(
-                alert_id=alert_id,
+            data_submitter.add_severity_data(
+                alert_name=alert_name,
                 lead_time_start="2026-03-20T00:00:00Z",
                 lead_time_end="2026-03-20T23:59:59Z",
                 ensemble_member_type=EnsembleMemberType.RUN,
                 severity_key="water_discharge",
                 severity_value=0,
             )
-        data_submitter.add_timeseries_data(
-            alert_id=alert_id,
+        data_submitter.add_severity_data(
+            alert_name=alert_name,
             lead_time_start="2026-03-20T00:00:00Z",
             lead_time_end="2026-03-20T23:59:59Z",
             ensemble_member_type=EnsembleMemberType.MEDIAN,
@@ -68,29 +68,29 @@ def calculate_flood_forecasts(
 
         for place_code in place_codes:
             data_submitter.add_admin_area_exposure(
-                alert_id=alert_id,
+                alert_name=alert_name,
                 place_code=place_code,
                 admin_level=deepest_admin_level,
-                layer=AdminAreaLayer.SPATIAL_EXTENT,
+                layer=Layer.SPATIAL_EXTENT,
                 value=True,
             )
             data_submitter.add_admin_area_exposure(
-                alert_id=alert_id,
+                alert_name=alert_name,
                 place_code=place_code,
                 admin_level=deepest_admin_level,
-                layer=AdminAreaLayer.POPULATION_EXPOSED,
+                layer=Layer.POPULATION_EXPOSED,
                 value=0,
             )
 
         data_submitter.add_geo_feature_exposure(
-            alert_id=alert_id,
+            alert_name=alert_name,
             geo_feature_id=station_code,
             layer="glofas_stations",
             value={"water_discharge": 0},
         )
 
         data_submitter.add_raster_exposure(
-            alert_id=alert_id,
+            alert_name=alert_name,
             layer="alert_extent",
             value=f"alert_extent_{station_code}.tif",
             extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},

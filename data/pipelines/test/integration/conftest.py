@@ -10,21 +10,29 @@ from typing import Callable
 import pytest
 
 EXPECTED_ALERT_KEYS = {
-    "alertId",
+    "alertName",
     "issuedAt",
     "centroid",
     "hazardTypes",
     "forecastSources",
-    "timeSeriesData",
+    "severityData",
     "exposure",
 }
 
-EXPECTED_EXPOSURE_KEYS = {"admin-area", "geo-features", "rasters"}
+EXPECTED_EXPOSURE_KEYS = {"adminArea", "geoFeatures", "rasters"}
 
 OUTPUT_BASE = Path("pipelines/output")
 
 
-def _run_pipeline(config: str, run_target: str) -> subprocess.CompletedProcess[str]:
+def _run_pipeline(
+    config: str,
+    run_target: str,
+    extra_env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    if extra_env:
+        env.update(extra_env)
+
     return subprocess.run(
         [
             sys.executable,
@@ -35,7 +43,7 @@ def _run_pipeline(config: str, run_target: str) -> subprocess.CompletedProcess[s
             "--run-target",
             run_target,
         ],
-        env=os.environ.copy(),
+        env=env,
         capture_output=True,
         text=True,
     )
@@ -72,32 +80,33 @@ def _assert_alert_structure(alert: dict) -> None:
     assert isinstance(alert["hazardTypes"], list)
     assert len(alert["hazardTypes"]) > 0
 
-    assert isinstance(alert["timeSeriesData"], list)
-    assert len(alert["timeSeriesData"]) > 0
+    assert isinstance(alert["severityData"], list)
+    assert len(alert["severityData"]) > 0
 
-    for ts_entry in alert["timeSeriesData"]:
-        assert "leadTime" in ts_entry
-        assert isinstance(ts_entry["leadTime"], list)
-        assert len(ts_entry["leadTime"]) == 2
-        assert "ensembleMemberType" in ts_entry
-        assert "severityKey" in ts_entry
-        assert "severityValue" in ts_entry
+    for entry in alert["severityData"]:
+        assert "leadTime" in entry
+        assert isinstance(entry["leadTime"], dict)
+        assert "start" in entry["leadTime"]
+        assert "end" in entry["leadTime"]
+        assert "ensembleMemberType" in entry
+        assert "severityKey" in entry
+        assert "severityValue" in entry
 
     exposure = alert["exposure"]
     assert EXPECTED_EXPOSURE_KEYS.issubset(
         exposure.keys()
     ), f"Exposure missing keys: {EXPECTED_EXPOSURE_KEYS - exposure.keys()}"
 
-    for admin_area in exposure["admin-area"]:
+    for admin_area in exposure["adminArea"]:
         assert "placeCode" in admin_area
         assert "adminLevel" in admin_area
         assert "layer" in admin_area
         assert "value" in admin_area
 
-    for geo_feature in exposure["geo-features"]:
+    for geo_feature in exposure["geoFeatures"]:
         assert "geoFeatureId" in geo_feature
         assert "layer" in geo_feature
-        assert "value" in geo_feature
+        assert "attributes" in geo_feature
 
     for raster in exposure["rasters"]:
         assert "layer" in raster

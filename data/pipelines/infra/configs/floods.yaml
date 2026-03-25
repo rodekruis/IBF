@@ -22,5 +22,4 @@ run_targets:
             type: netcdf
             source: dummy
         output:
-          mode: local
-          path: pipelines/output
+          mode: api

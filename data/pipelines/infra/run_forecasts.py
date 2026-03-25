@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
 import click
+from dotenv import load_dotenv
 
 from pipelines.drought.forecast import calculate_drought_forecasts
 from pipelines.flood.forecast import calculate_flood_forecasts
@@ -57,9 +59,19 @@ def _run_country(
         aggregate_to_parent_admin_levels(alert, admin_boundaries)
 
     # --- Write output ---
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    output_dir = str(Path(country.output_path) / hazard_type / country.name / timestamp)
-    return data_submitter.send_all(output_dir)
+    # NOTE: local file output is kept for now for /integration tests only
+    output_config = config_reader.get_output_config(country.name, run_target)
+    output_mode = os.environ.get("IBF_OUTPUT_MODE", output_config["mode"])
+
+    if output_mode == "local":
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        output_path = str(
+            Path(output_config["path"]) / hazard_type / country.name / timestamp
+        )
+    else:
+        output_path = ""
+
+    return data_submitter.send_all(output_mode, output_path)
 
 
 def run_forecasts(config_path: str, run_target: str) -> list[str]:
@@ -114,6 +126,7 @@ def run_forecasts(config_path: str, run_target: str) -> list[str]:
     help="Run target defined in the config (e.g. DEBUG, LIVE).",
 )
 def main(config_path: str, run_target: str) -> None:
+    load_dotenv()
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
