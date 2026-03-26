@@ -1,23 +1,18 @@
 from __future__ import annotations
 
 from pipelines.infra.alert_types import AdminAreaExposure, Alert, Layer
-
-# Ancestor fields on each boundary entry, in order from nearest to farthest.
-# TODO: when we are sure we can deduce parent place codes from child place codes via place code format, we can simplify this behaviour.
-ANCESTOR_FIELDS = [
-    "parent_place_code",
-    "grandparent_place_code",
-    "great_grandparent_place_code",
-]
+from pipelines.infra.infra_utils.admin_boundaries_container import (
+    AdminBoundariesContainer,
+)
 
 
 def aggregate_to_parent_admin_levels(
     alert: Alert,
-    admin_boundaries: dict[str, dict[str, object]],
+    admin_boundaries: dict[int, AdminBoundariesContainer],
 ) -> None:
     """Aggregate admin area exposure from the deepest admin level upward.
 
-    Each pass groups the deepest-level entries by an ancestor field
+    Each pass groups the deepest-level entries by a parent at the target level
     and aggregates per layer:
     - Boolean layers (e.g. spatial_extent): aggregated via ``any()`` — a
       parent is True if any of its children is True.
@@ -41,25 +36,26 @@ def aggregate_to_parent_admin_levels(
 
     deepest_level = max(entry.admin_level for entry in deepest_entries)
 
-    # One pass per ancestor level: parent (level - 1), grandparent (level - 2), …
-    for level_offset, ancestor_field in enumerate(ANCESTOR_FIELDS, start=1):
-        target_level = deepest_level - level_offset
-        if target_level < 1:
-            break
+    deepest_boundaries = admin_boundaries.get(deepest_level)
+    if deepest_boundaries is None:
+        return
 
+    # Aggregate upward, for instance level 3 → level 2 → level 1
+    parent_levels = list(reversed(range(1, deepest_level)))
+    for target_level in parent_levels:
         # Group deepest-level values by (ancestor_place_code, layer)
         grouped: dict[tuple[str, Layer], list[bool | int | float]] = {}
 
         for entry in deepest_entries:
-            boundary = admin_boundaries.get(entry.place_code)
-            if boundary is None:
+            feature = deepest_boundaries.features.get(entry.place_code)
+            if feature is None:
                 continue
 
-            ancestor_code = boundary.get(ancestor_field)
+            ancestor_code = feature.properties.parent_pcodes.get(target_level)
             if ancestor_code is None:
                 continue
 
-            key = (str(ancestor_code), entry.layer)
+            key = (ancestor_code, entry.layer)
             grouped.setdefault(key, []).append(entry.value)
 
         for (place_code, layer), values in grouped.items():
