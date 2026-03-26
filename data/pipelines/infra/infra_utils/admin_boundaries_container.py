@@ -21,15 +21,11 @@ class GeoJsonFeature:
 @dataclass
 class AdminBoundariesContainer:
     admin_level: int
-    name: str
-    crs: dict
-    features: list[GeoJsonFeature]
+    features: dict[str, GeoJsonFeature]
 
     @staticmethod
     def from_geojson(admin_level: int, raw: dict) -> AdminBoundariesContainer:
-        crs = raw.get("crs", {})
-        name = raw.get("name", "")
-        features = []
+        features = {}
 
         for f in raw.get("features", []):
             props = f.get("properties", {})
@@ -45,22 +41,18 @@ class AdminBoundariesContainer:
 
             geom = f.get("geometry", {})
 
-            features.append(
-                GeoJsonFeature(
-                    properties=GeoJsonFeatureProperties(
-                        pcode=pcode,
-                        name=feature_name,
-                        adm0_pcode=adm0_pcode,
-                        parent_pcodes=parent_pcodes,
-                    ),
-                    geometry_type=geom.get("type", ""),
-                    coordinates=geom.get("coordinates", []),
-                )
+            features[pcode] = GeoJsonFeature(
+                properties=GeoJsonFeatureProperties(
+                    pcode=pcode,
+                    name=feature_name,
+                    adm0_pcode=adm0_pcode,
+                    parent_pcodes=parent_pcodes,
+                ),
+                geometry_type=geom.get("type", ""),
+                coordinates=geom.get("coordinates", []),
             )
 
         return AdminBoundariesContainer(
             admin_level=admin_level,
-            name=name,
-            crs=crs,
             features=features,
         )
