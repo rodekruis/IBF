@@ -9,11 +9,12 @@ from typing import Callable
 
 import click
 from dotenv import load_dotenv
+from infra.alert_types import HazardType
 
 from pipelines.drought.forecast import calculate_drought_forecasts
 from pipelines.flood.forecast import calculate_flood_forecasts
 from pipelines.infra.alert_admin_aggregation import aggregate_to_parent_admin_levels
-from pipelines.infra.config_reader import ConfigReader, CountryConfig
+from pipelines.infra.config_reader import ConfigReader, CountryConfig, RunTargetType
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 
@@ -34,8 +35,8 @@ def _run_country(
     hazard_fn: HazardFunction,
     country: CountryConfig,
     config_reader: ConfigReader,
-    run_target: str,
-    hazard_type: str,
+    run_target: RunTargetType,
+    hazard_type: HazardType,
 ) -> list[str]:
     data_provider = DataProvider()
     if not data_provider.try_load_data(config_reader, country.iso_3_code, run_target):
@@ -60,13 +61,16 @@ def _run_country(
 
     # --- Write output ---
     # NOTE: local file output is kept for now for /integration tests only
-    output_config = config_reader.get_output_config(country.name, run_target)
-    output_mode = os.environ.get("IBF_OUTPUT_MODE", output_config["mode"])
+    output_config = config_reader.get_country_config(country.iso_3_code, run_target)
+    output_mode = os.environ.get("IBF_OUTPUT_MODE", output_config.output_mode)
 
     if output_mode == "local":
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         output_path = str(
-            Path(output_config["path"]) / hazard_type / country.name / timestamp
+            Path(output_config.output_path)
+            / hazard_type
+            / country.iso_3_code
+            / timestamp
         )
     else:
         output_path = ""
@@ -74,7 +78,7 @@ def _run_country(
     return data_submitter.send_all(output_mode, output_path)
 
 
-def run_forecasts(config_path: str, run_target: str) -> list[str]:
+def run_forecasts(config_path: str, run_target_str: str) -> list[str]:
     _register_hazard_functions()
 
     config_reader = ConfigReader()
@@ -86,6 +90,13 @@ def run_forecasts(config_path: str, run_target: str) -> list[str]:
     hazard_fn = HAZARD_FUNCTIONS.get(hazard_type)
     if hazard_fn is None:
         msg = f"No hazard function registered for '{hazard_type}'"
+        logger.error(msg)
+        return [msg]
+
+    try:
+        run_target = RunTargetType(run_target_str.lower())
+    except ValueError:
+        msg = f"Invalid run target '{run_target_str}', expected one of: {[e.value for e in RunTargetType]}"
         logger.error(msg)
         return [msg]
 

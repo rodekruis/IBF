@@ -8,13 +8,13 @@ run_targets:
         data_sources:
           - name: glofas_stations
             type: json
-            source: todo_ibf_api
+            source: seed_data_repo_glofas_stations
           - name: admin_boundaries
             type: geojson
-            source: seed_data_repo
+            source: seed_data_repo_admin
           - name: population
-            type: raster
-            source: worldpop_latest
+            type: png
+            source: seed_data_repo_population
           - name: glofas_discharge
             type: netcdf
             source: todo_data_source
