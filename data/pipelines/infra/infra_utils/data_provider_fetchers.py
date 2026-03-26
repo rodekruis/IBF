@@ -1,6 +1,5 @@
 import csv
 import io
-import json
 import logging
 
 from infra.infra_utils.admin_boundaries_container import AdminBoundariesContainer
