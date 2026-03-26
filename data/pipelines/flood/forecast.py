@@ -11,6 +11,10 @@ from pipelines.infra.alert_types import (
 )
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
+from pipelines.infra.infra_utils.admin_boundaries_container import (
+    AdminBoundariesContainer,
+)
+from pipelines.infra.infra_utils.location_point import LocationPoint
 
 
 def calculate_flood_forecasts(
@@ -28,21 +32,31 @@ def calculate_flood_forecasts(
     # 2. Generate actual flood extent rasters instead of placeholders
     # 3. Compute real population exposure from population raster + flood extent
     # 4. Compute geo-feature exposure (hospitals, roads, etc.)
-    stations: list[dict[str, object]] = data_provider.get_data("glofas_stations").data
+    stations: dict[str, LocationPoint] = data_provider.get_data("glofas_stations").data
+    all_admin_boundaries: dict[int, AdminBoundariesContainer] = data_provider.get_data(
+        "admin_boundaries"
+    ).data
+
+    if all_admin_boundaries:
+        target_admin_boundaries = all_admin_boundaries[deepest_admin_level]
+
+    if not stations or not target_admin_boundaries:
+        data_submitter.add_error(
+            f"Missing input data: stations={bool(stations)}, admin_boundaries={bool(target_admin_boundaries)}"
+        )
+        return
 
     issued_at = datetime.now(timezone.utc)
 
-    for station in stations:
-        station_code = str(station["station_code"])
-        place_codes: list[str] = station["place_codes"]
+    for station_code, station in stations.items():
         alert_name = f"{country}_floods_{station_code}"
 
         data_submitter.create_alert(
             alert_name=alert_name,
             hazard_types=[HazardType.FLOODS],
             centroid=Centroid(
-                latitude=float(station["lat"]),
-                longitude=float(station["lon"]),
+                latitude=station.lat,
+                longitude=station.lon,
             ),
             issued_at=issued_at,
             forecast_sources=[ForecastSource.GLOFAS],
@@ -65,6 +79,10 @@ def calculate_flood_forecasts(
             severity_key="water_discharge",
             severity_value=0,
         )
+
+        # TODO: determine place_codes from station location + admin boundaries, or add it to the glofas station data source
+        # For now, just get the first three place codes from the admin boundaries for debug.
+        place_codes: list[str] = list(target_admin_boundaries.features.keys())[:3]
 
         for place_code in place_codes:
             data_submitter.add_admin_area_exposure(

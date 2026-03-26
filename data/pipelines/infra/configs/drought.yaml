@@ -13,6 +13,6 @@ run_targets:
           - name: population
             source: seed_data_repo_population
           - name: ecmwf_forecast
-            source: todo_data_source
+            source: todo_ecmwf_forecast
         output:
           mode: api

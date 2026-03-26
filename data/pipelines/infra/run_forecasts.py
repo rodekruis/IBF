@@ -85,12 +85,6 @@ def run_forecasts(config_path: str, run_target_str: str) -> list[str]:
     config_reader = ConfigReader()
     if not config_reader.load_all(config_path):
         return ["Failed to load config"]
-    hazard_type = run_target_config.hazard_type
-    hazard_fn = HAZARD_FUNCTIONS.get(hazard_type)
-    if hazard_fn is None:
-        msg = f"No hazard function registered for '{hazard_type}'"
-        logger.error(msg)
-        return [msg]
 
     try:
         run_target = RunTargetType(run_target_str.lower())
@@ -102,6 +96,13 @@ def run_forecasts(config_path: str, run_target_str: str) -> list[str]:
     run_target_config = config_reader.run_targets.get(run_target)
     if not run_target_config:
         msg = f"Run target '{run_target}' not found in config"
+        logger.error(msg)
+        return [msg]
+
+    hazard_type = run_target_config.hazard_type
+    hazard_fn = HAZARD_FUNCTIONS.get(hazard_type)
+    if hazard_fn is None:
+        msg = f"No hazard function registered for '{hazard_type}'"
         logger.error(msg)
         return [msg]
 

@@ -13,6 +13,6 @@ run_targets:
           - name: population
             source: seed_data_repo_population
           - name: glofas_discharge
-            source: todo_data_source
+            source: todo_glofas_discharge
         output:
           mode: api

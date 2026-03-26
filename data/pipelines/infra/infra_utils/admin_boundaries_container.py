@@ -1,10 +1,19 @@
+"""
+Data structure for holding admin boundary data
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
 
 @dataclass
-class GeoJsonFeatureProperties:
+class AdmingBoundaryFeatureProperties:
+    """
+    The code and name (in English) of an admin boundary, along with a list of all parent codes.
+    Adm1 would have no parents, while Adm4 would have 3 parents.
+    """
+
     pcode: str
     name: str
     adm0_pcode: str | None = None
@@ -12,8 +21,12 @@ class GeoJsonFeatureProperties:
 
 
 @dataclass
-class GeoJsonFeature:
-    properties: GeoJsonFeatureProperties
+class AdminBoundaryFeature:
+    """
+    This represents a single admin boundary, with coordinates being the border
+    """
+
+    properties: AdmingBoundaryFeatureProperties
     geometry_type: str
     coordinates: list
 
@@ -21,7 +34,8 @@ class GeoJsonFeature:
 @dataclass
 class AdminBoundariesContainer:
     admin_level: int
-    features: dict[str, GeoJsonFeature]
+    # Features are keyed on admin boundary code
+    features: dict[str, AdminBoundaryFeature]
 
     @staticmethod
     def from_geojson(admin_level: int, raw: dict) -> AdminBoundariesContainer:
@@ -41,8 +55,8 @@ class AdminBoundariesContainer:
 
             geom = f.get("geometry", {})
 
-            features[pcode] = GeoJsonFeature(
-                properties=GeoJsonFeatureProperties(
+            features[pcode] = AdminBoundaryFeature(
+                properties=AdmingBoundaryFeatureProperties(
                     pcode=pcode,
                     name=feature_name,
                     adm0_pcode=adm0_pcode,

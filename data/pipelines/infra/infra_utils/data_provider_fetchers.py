@@ -2,11 +2,11 @@ import csv
 import io
 import logging
 
-from pipelines.infra.data_source_container import DataSourceContainer
 from pipelines.infra.data_source_types import (
     CountryConfig,
     DataSource,
     DataSourceConfig,
+    DataSourceContainer,
     DataType,
 )
 from pipelines.infra.infra_utils.admin_boundaries_container import (
@@ -41,21 +41,16 @@ def load_data_container(
             return _load_seed_repo_glofas_stations(data_config, container)
         case DataSource.IBF_API_CLIMATE_REGIONS:
             return _load_ibf_api_climate_regions(data_config, container)
+        case DataSource.TODO_ECMWF_FORECAST:
+            return _load_ecmwf_forecast(data_config, container)
+        case DataSource.TODO_GLOFAS_DISCHARGE:
+            return _load_glofas_discharge(data_config, container)
         case DataSource.TODO_DATA_SOURCE:
             container.error = "Data source not yet configured"
             raise NotImplementedError("Data source not yet configured")
         case _:
             container.error = f"Unknown source type: '{data_config.source}'"
             raise ValueError(f"Unknown source type: '{data_config.source}'")
-
-
-def _load_ibf_api_climate_regions(
-    config: DataSourceConfig, container: DataSourceContainer
-):
-    container.dataType = DataType.STRING
-    container.data = _load_dummy_data(config)
-    if container.data is None:
-        container.error = f"No dummy data found for source '{config.name}'"
 
 
 def _load_seed_repo_admin_boundaries(
@@ -147,6 +142,29 @@ def _load_seed_repo_population_data(
         "offsets": json_data["offsets"],
         "count": json_data["count"],
     }
+
+
+def _load_ecmwf_forecast(config: DataSourceConfig, container: DataSourceContainer):
+    container.dataType = DataType.STRING
+    container.data = _load_dummy_data(config)
+    if container.data is None:
+        container.error = f"No dummy data found for source '{config.name}'"
+
+
+def _load_glofas_discharge(config: DataSourceConfig, container: DataSourceContainer):
+    container.dataType = DataType.STRING
+    container.data = _load_dummy_data(config)
+    if container.data is None:
+        container.error = f"No dummy data found for source '{config.name}'"
+
+
+def _load_ibf_api_climate_regions(
+    config: DataSourceConfig, container: DataSourceContainer
+):
+    container.dataType = DataType.STRING
+    container.data = _load_dummy_data(config)
+    if container.data is None:
+        container.error = f"No dummy data found for source '{config.name}'"
 
 
 def _load_dummy_data(source_config: DataSourceConfig) -> object:
