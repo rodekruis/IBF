@@ -1,10 +1,17 @@
 import csv
 import io
+import json
+import logging
 
-from pipelines.infra.config_reader import DataSource, DataSourceConfig
+from pipelines.infra.config_reader import CountryConfig, DataSource, DataSourceConfig
 from pipelines.infra.data_source_container import DataSourceContainer
 from pipelines.infra.infra_utils.dummy_data import DUMMY_DATA
+from pipelines.infra.infra_utils.geojson_admin_boundaries import (
+    AdminBoundariesContainer,
+)
 from shared.download_helpers import download_json_source, download_object
+
+logger = logging.getLogger(__name__)
 
 SEED_REPO_URI = "https://github.com/rodekruis/IBF-seed-data/tree/main/"
 SEED_REPO_POPULATION_GREYSCALE_PATH = "raster-data/population/greyscale/"
@@ -12,23 +19,29 @@ SEED_REPO_ADMIN_BOUNDARIES_PATH = "admin-areas/processed/"
 SEED_REPO_GLOFAS_STATIONS_PATH = "country-data/glofas-loc/"
 
 
-def load_data_container(config: DataSourceConfig, container: DataSourceContainer):
+def load_data_container(
+    country_config: CountryConfig,
+    data_config: DataSourceConfig,
+    container: DataSourceContainer,
+):
 
-    match config.source:
+    match data_config.source:
         case DataSource.SEED_DATA_REPO_ADMIN:
-            return _load_seed_repo_admin_boundaries(config, container)
+            return _load_seed_repo_admin_boundaries(
+                data_config, container, country_config.target_admin_level
+            )
         case DataSource.SEED_DATA_REPO_POPULATION:
-            return _load_seed_repo_population_data(config, container)
+            return _load_seed_repo_population_data(data_config, container)
         case DataSource.SEED_DATA_REPO_GLOFAS_STATIONS:
-            return _load_seed_repo_glofas_stations(config, container)
+            return _load_seed_repo_glofas_stations(data_config, container)
         case DataSource.IBF_API_CLIMATE_REGIONS:
-            return _load_ibf_api_climate_regions(config, container)
+            return _load_ibf_api_climate_regions(data_config, container)
         case DataSource.TODO_DATA_SOURCE:
             container.error = "Data source not yet configured"
             raise NotImplementedError("Data source not yet configured")
         case _:
-            container.error = f"Unknown source type: '{config.source}'"
-            raise ValueError(f"Unknown source type: '{config.source}'")
+            container.error = f"Unknown source type: '{data_config.source}'"
+            raise ValueError(f"Unknown source type: '{data_config.source}'")
 
 
 def _load_ibf_api_climate_regions(
@@ -40,10 +53,29 @@ def _load_ibf_api_climate_regions(
 
 
 def _load_seed_repo_admin_boundaries(
-    config: DataSourceConfig, container: DataSourceContainer
+    config: DataSourceConfig, container: DataSourceContainer, target_admin_level: int
 ):
-    # https://github.com/rodekruis/IBF-seed-data/blob/main/admin-areas/processed/AGO_adm3.json
-    print("todo:")
+    # https://github.com/rodekruis/IBF-seed-data/blob/main/admin-areas/processed/AGO_adm1.json
+    admin_boundaries: dict[int, AdminBoundariesContainer] = {}
+
+    for adm_level in range(1, target_admin_level + 1):
+        filename = f"{config.iso_3_code}_adm{adm_level}.json"
+        uri = SEED_REPO_URI + SEED_REPO_ADMIN_BOUNDARIES_PATH + filename
+
+        raw_data = download_object(uri)
+        if raw_data is None:
+            container.error = f"Failed to download admin boundary data from '{uri}'"
+            raise ValueError(container.error)
+
+        geojson = json.loads(raw_data.decode("utf-8"))
+        admin_boundaries[adm_level] = AdminBoundariesContainer.from_geojson(
+            adm_level, geojson
+        )
+        logger.info(
+            f"Loaded {len(admin_boundaries[adm_level].features)} features for admin level {adm_level}"
+        )
+
+    container.data = admin_boundaries
 
 
 def _load_seed_repo_glofas_stations(
