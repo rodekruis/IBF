@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from infra.infra_utils.admin_boundaries_container import AdminBoundariesContainer
 from infra.infra_utils.data_provider_fetchers import load_data_container
 
 from pipelines.infra.config_reader import ConfigReader
@@ -86,9 +87,15 @@ if __name__ == "__main__":
         for container in provider.loaded_data.values():
             if container.dataType == DataType.ADMIN_BOUNDARIES_DICT:
                 if isinstance(container.data, dict):
+                    boundaries: AdminBoundariesContainer
                     for adm_level, boundaries in container.data.items():
+                        first_pcode, first_item = next(
+                            iter(boundaries.features.items())
+                        )
                         print(
-                            f"  [{container.name}] adm{adm_level}: {boundaries.name}, {len(boundaries.features)} features"
+                            f"  [{container.name}] adm{adm_level}: ",
+                            f"{first_item.properties.name}, {first_item.properties.pcode}, "
+                            f"parents: {first_item.properties.parent_pcodes}, ",
                         )
                 else:
                     print(f"  [{container.name}] ({container.dataType}): <no data>")
