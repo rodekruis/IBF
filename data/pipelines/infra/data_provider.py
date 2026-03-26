@@ -3,12 +3,13 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from infra.infra_utils.admin_boundaries_container import AdminBoundariesContainer
-from infra.infra_utils.data_provider_fetchers import load_data_container
-
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_source_container import DataSourceContainer
 from pipelines.infra.data_source_types import DataType, RunTargetType
+from pipelines.infra.infra_utils.admin_boundaries_container import (
+    AdminBoundariesContainer,
+)
+from pipelines.infra.infra_utils.data_provider_fetchers import load_data_container
 
 logger = logging.getLogger(__name__)
 

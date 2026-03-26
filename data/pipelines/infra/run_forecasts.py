@@ -9,11 +9,11 @@ from typing import Callable
 
 import click
 from dotenv import load_dotenv
-from infra.alert_types import HazardType
 
 from pipelines.drought.forecast import calculate_drought_forecasts
 from pipelines.flood.forecast import calculate_flood_forecasts
 from pipelines.infra.alert_admin_aggregation import aggregate_to_parent_admin_levels
+from pipelines.infra.alert_types import HazardType
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_source_types import CountryConfig, RunTargetType
@@ -83,11 +83,9 @@ def run_forecasts(config_path: str, run_target_str: str) -> list[str]:
     _register_hazard_functions()
 
     config_reader = ConfigReader()
-    if not config_reader.load_file(config_path):
-        logger.error(f"Config errors: {config_reader.errors}")
-        return config_reader.errors
-
-    hazard_type = config_reader.get_hazard_type()
+    if not config_reader.load_all(config_path):
+        return ["Failed to load config"]
+    hazard_type = run_target_config.hazard_type
     hazard_fn = HAZARD_FUNCTIONS.get(hazard_type)
     if hazard_fn is None:
         msg = f"No hazard function registered for '{hazard_type}'"
@@ -101,7 +99,13 @@ def run_forecasts(config_path: str, run_target_str: str) -> list[str]:
         logger.error(msg)
         return [msg]
 
-    countries = config_reader.get_countries(run_target)
+    run_target_config = config_reader.run_targets.get(run_target)
+    if not run_target_config:
+        msg = f"Run target '{run_target}' not found in config"
+        logger.error(msg)
+        return [msg]
+
+    countries = list(run_target_config.country_configs.values())
     if not countries:
         msg = f"No countries configured for run_target '{run_target}'"
         logger.warning(msg)
