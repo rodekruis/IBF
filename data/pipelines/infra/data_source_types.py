@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 
 from shared.country_data import CountryCode
@@ -38,6 +38,8 @@ class DataSource(StrEnum):
     SEED_DATA_REPO_POPULATION = "seed_data_repo_population"
     SEED_DATA_REPO_GLOFAS_STATIONS = "seed_data_repo_glofas_stations"
     IBF_API_CLIMATE_REGIONS = "ibf_api_climate_regions"
+    TODO_ECMWF_FORECAST = "todo_ecmwf_forecast"
+    TODO_GLOFAS_DISCHARGE = "todo_glofas_discharge"
     TODO_DATA_SOURCE = "todo_data_source"
 
 
@@ -67,3 +69,13 @@ class RunTargetConfig:
     run_target: RunTargetType
     hazard_type: HazardType
     country_configs: dict[CountryCode, CountryConfig]
+
+
+@dataclass
+class DataSourceContainer:
+    name: str
+    dataType: DataType
+    dataLocation: DataSource
+    data: object | None = None
+    error: str | None = None
+    metadata: dict[str, str | int | float | bool] = field(default_factory=dict)
