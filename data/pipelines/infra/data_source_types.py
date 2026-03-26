@@ -29,8 +29,8 @@ class DataType(StrEnum):
     STRING = "string"
     BINARY = "binary"
 
-    # Default value until the type is determined
-    NONE = "none"
+    # Default value until the type is set by the loader
+    UNSPECIFIED = "unspecified"
 
 
 class DataSource(StrEnum):
@@ -74,8 +74,8 @@ class RunTargetConfig:
 @dataclass
 class DataSourceContainer:
     name: str
-    dataType: DataType
-    dataLocation: DataSource
+    data_type: DataType
+    data_source: DataSource
     data: object | None = None
     error: str | None = None
     metadata: dict[str, str | int | float | bool] = field(default_factory=dict)

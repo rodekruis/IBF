@@ -29,7 +29,8 @@ class ConfigReader:
 
     def load_all(self, path: str | Path) -> bool:
 
-        success = True
+        # Clear any existing config
+        self.run_targets: dict[RunTargetType, RunTargetConfig] = {}
 
         # Load the config from the path
         path = Path(path)
@@ -44,6 +45,10 @@ class ConfigReader:
             logger.error(f"Failed to parse YAML: {exc}")
             return False
 
+        if self.raw_config is None:
+            logger.error(f"Config file is empty: {path}")
+            return False
+
         # Assign and validate hazard_type
         hazard_type_raw = self.raw_config.get("hazard_type", "")
         try:
@@ -56,6 +61,7 @@ class ConfigReader:
             return False
 
         # Populate the self.run_targets
+        success = True
         for target_name, target_config in self.raw_config.get(
             "run_targets", {}
         ).items():
@@ -191,24 +197,6 @@ class ConfigReader:
             )
 
         return success
-
-    def get_data_sources(
-        self, country_name: CountryCode, run_target: RunTargetType
-    ) -> list[DataSourceConfig]:
-
-        country_config = self.get_country_config(country_name, run_target)
-        if not country_config:
-            # Error already logged. Return an empty list
-            return []
-
-        data_sources = country_config.data_sources
-        if not data_sources:
-            logger.error(
-                f"No data sources configured for country '{country_name}' in run_target '{run_target}'"
-            )
-            return []
-
-        return data_sources
 
     def get_country_config(
         self, country_name: CountryCode, run_target: RunTargetType

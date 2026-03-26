@@ -1,11 +1,8 @@
 from enum import StrEnum
 
-"""
-ISO a3 country codes
-Source: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
-"""
 
-
+# ISO a3 country codes
+# Source: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
 class CountryCode(StrEnum):
     ABW = "ABW"
     AFG = "AFG"
