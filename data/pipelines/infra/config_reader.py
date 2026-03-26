@@ -11,7 +11,6 @@ from pipelines.infra.data_source_types import (
     CountryConfig,
     DataSource,
     DataSourceConfig,
-    DataType,
     OutputMode,
     RunTargetConfig,
     RunTargetType,
