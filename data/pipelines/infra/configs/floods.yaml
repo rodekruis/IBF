@@ -15,4 +15,4 @@ run_targets:
           - name: glofas_discharge
             source: todo_glofas_discharge
         output:
-          mode: api
+          mode: local

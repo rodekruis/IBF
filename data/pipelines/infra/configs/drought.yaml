@@ -15,4 +15,4 @@ run_targets:
           - name: ecmwf_forecast
             source: todo_ecmwf_forecast
         output:
-          mode: api
+          mode: local
