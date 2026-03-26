@@ -13,36 +13,44 @@ from pipelines.infra.alert_types import (
     HazardType,
     Layer,
 )
+from pipelines.infra.infra_utils.admin_boundaries_container import (
+    AdminBoundariesContainer,
+    AdminBoundaryFeature,
+    AdmingBoundaryFeatureProperties,
+)
 
-BOUNDARIES_3_LEVELS: dict[str, dict[str, object]] = {
-    "child-A": {
-        "admin_level": 3,
-        "parent_place_code": "parent-X",
-        "grandparent_place_code": "top",
-    },
-    "child-B": {
-        "admin_level": 3,
-        "parent_place_code": "parent-X",
-        "grandparent_place_code": "top",
-    },
-    "child-C": {
-        "admin_level": 3,
-        "parent_place_code": "parent-Y",
-        "grandparent_place_code": "top",
-    },
+
+def _feature(pcode: str, parent_pcodes: dict[int, str]) -> AdminBoundaryFeature:
+    return AdminBoundaryFeature(
+        properties=AdmingBoundaryFeatureProperties(
+            pcode=pcode,
+            name=pcode,
+            parent_pcodes=parent_pcodes,
+        ),
+        geometry_type="",
+        coordinates=[],
+    )
+
+
+BOUNDARIES_3_LEVELS: dict[int, AdminBoundariesContainer] = {
+    3: AdminBoundariesContainer(
+        admin_level=3,
+        features={
+            "child-A": _feature("child-A", {2: "parent-X", 1: "top"}),
+            "child-B": _feature("child-B", {2: "parent-X", 1: "top"}),
+            "child-C": _feature("child-C", {2: "parent-Y", 1: "top"}),
+        },
+    ),
 }
 
-BOUNDARIES_2_LEVELS: dict[str, dict[str, object]] = {
-    "child-A": {
-        "admin_level": 2,
-        "parent_place_code": "top",
-        "grandparent_place_code": None,
-    },
-    "child-B": {
-        "admin_level": 2,
-        "parent_place_code": "top",
-        "grandparent_place_code": None,
-    },
+BOUNDARIES_2_LEVELS: dict[int, AdminBoundariesContainer] = {
+    2: AdminBoundariesContainer(
+        admin_level=2,
+        features={
+            "child-A": _feature("child-A", {1: "top"}),
+            "child-B": _feature("child-B", {1: "top"}),
+        },
+    ),
 }
 
 

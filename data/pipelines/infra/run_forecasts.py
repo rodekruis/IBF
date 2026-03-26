@@ -18,6 +18,9 @@ from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_source_types import CountryConfig, RunTargetType
 from pipelines.infra.data_submitter import DataSubmitter
+from pipelines.infra.infra_utils.admin_boundaries_container import (
+    AdminBoundariesContainer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +57,7 @@ def _run_country(
     )
 
     # --- Post-processing: aggregate deepest-level admin area data upward ---
-    admin_boundaries: dict[str, dict[str, object]] = data_provider.get_data(
+    admin_boundaries: dict[int, AdminBoundariesContainer] = data_provider.get_data(
         "admin_boundaries"
     ).data
     for alert in data_submitter.get_alerts():
