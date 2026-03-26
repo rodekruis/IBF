@@ -14,8 +14,9 @@ from infra.alert_types import HazardType
 from pipelines.drought.forecast import calculate_drought_forecasts
 from pipelines.flood.forecast import calculate_flood_forecasts
 from pipelines.infra.alert_admin_aggregation import aggregate_to_parent_admin_levels
-from pipelines.infra.config_reader import ConfigReader, CountryConfig, RunTargetType
+from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
+from pipelines.infra.data_source_types import CountryConfig, RunTargetType
 from pipelines.infra.data_submitter import DataSubmitter
 
 logger = logging.getLogger(__name__)

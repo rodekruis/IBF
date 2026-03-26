@@ -1,67 +1,23 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-from enum import StrEnum
 from pathlib import Path
 
 import yaml
 from infra.alert_types import HazardType
-from shared.country_data import CountryCode
+
+from pipelines.infra.data_source_types import (
+    CountryCode,
+    CountryConfig,
+    DataSource,
+    DataSourceConfig,
+    DataType,
+    OutputMode,
+    RunTargetConfig,
+    RunTargetType,
+)
 
 logger = logging.getLogger(__name__)
-
-
-class RunTargetType(StrEnum):
-    DEBUG = "debug"
-    TEST = "test"
-    PROD = "prod"
-
-
-class DataType(StrEnum):
-    PNG = "png"
-    JSON = "json"
-    GEOJSON = "geojson"
-    GRIB = "grib"
-    NETCDF = "netcdf"
-    GEOTIFF = "geotiff"
-
-
-class DataSource(StrEnum):
-    SEED_DATA_REPO_ADMIN = "seed_data_repo_admin"
-    SEED_DATA_REPO_POPULATION = "seed_data_repo_population"
-    SEED_DATA_REPO_GLOFAS_STATIONS = "seed_data_repo_glofas_stations"
-    IBF_API_CLIMATE_REGIONS = "ibf_api_climate_regions"
-    TODO_DATA_SOURCE = "todo_data_source"
-
-
-class OutputMode(StrEnum):
-    LOCAL = "local"
-    API = "api"
-
-
-@dataclass
-class DataSourceConfig:
-    name: str
-    iso_3_code: CountryCode
-    type: DataType
-    source: DataSource
-
-
-@dataclass
-class CountryConfig:
-    iso_3_code: CountryCode
-    target_admin_level: int
-    data_sources: list[DataSourceConfig]
-    output_mode: OutputMode
-    output_path: str
-
-
-@dataclass
-class RunTargetConfig:
-    run_target: RunTargetType
-    hazard_type: HazardType
-    country_configs: dict[CountryCode, CountryConfig]
 
 
 # Default output path for local output mode
@@ -163,16 +119,6 @@ class ConfigReader:
                         )
                         success = False
                         continue
-                    try:
-                        data_type = DataType(src.get("type", "json"))
-                    except ValueError:
-                        logger.error(
-                            f"Invalid data type '{src.get('type')}' in country "
-                            f"'{country_raw['name']}' run target '{target_name}', "
-                            f"expected one of: {[e.value for e in DataType]}"
-                        )
-                        success = False
-                        continue
 
                     try:
                         data_source = DataSource(src.get("source", "todo_data_source"))
@@ -189,7 +135,6 @@ class ConfigReader:
                         DataSourceConfig(
                             name=src["name"],
                             iso_3_code=iso_3_code,
-                            type=data_type,
                             source=data_source,
                         )
                     )

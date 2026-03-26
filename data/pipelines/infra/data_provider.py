@@ -5,14 +5,15 @@ from pathlib import Path
 
 from infra.infra_utils.data_provider_fetchers import load_data_container
 
-from pipelines.infra.config_reader import (
-    ConfigReader,
+from pipelines.infra.config_reader import ConfigReader
+from pipelines.infra.data_source_container import DataSourceContainer
+from pipelines.infra.data_source_types import (
+    CountryConfig,
     DataSource,
     DataSourceConfig,
     DataType,
     RunTargetType,
 )
-from pipelines.infra.data_source_container import DataSourceContainer
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,8 @@ class DataProvider:
     def try_load_data(
         self, config_reader: ConfigReader, country_name: str, run_target: RunTargetType
     ) -> bool:
+        country_config = config_reader.get_country_config(country_name, run_target)
+        # TODO, RM this function?
         data_sources = config_reader.get_data_sources(country_name, run_target)
 
         if not data_sources:
@@ -37,12 +40,12 @@ class DataProvider:
 
             data_container = DataSourceContainer(
                 name=source_config.name,
-                dataType=source_config.type,
+                dataType=DataType.NONE,
                 dataLocation=source_config.source,
             )
 
             try:
-                load_data_container(source_config, data_container)
+                load_data_container(country_config, source_config, data_container)
             except Exception as exc:
                 data_container.error = str(exc)
                 logger.error(
@@ -63,9 +66,9 @@ class DataProvider:
 # If the file is run as main, load one of the default config files and load listed data sources
 # This is used for debugging, as well as for sample usage of this class.
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    # logging.basicConfig(level=logging.INFO)
     config_reader = ConfigReader()
-    config_path = Path(__file__).parent / "configs" / "drought.yaml"
+    config_path = Path(__file__).parent / "configs" / "floods.yaml"
     success = config_reader.load_all(config_path)
     if not success:
         print(f"Failed to load config from path {config_path}")
@@ -78,4 +81,32 @@ if __name__ == "__main__":
         provider = DataProvider()
         for country_code in data.country_configs:
             provider.try_load_data(config_reader, country_code, RunTargetType.DEBUG)
+
+        # For the loaded data, print out some of the printable fields to verify it loaded
+        for container in provider.loaded_data.values():
+            if container.dataType == DataType.ADMIN_BOUNDARIES_DICT:
+                if isinstance(container.data, dict):
+                    for adm_level, boundaries in container.data.items():
+                        print(
+                            f"  [{container.name}] adm{adm_level}: {boundaries.name}, {len(boundaries.features)} features"
+                        )
+                else:
+                    print(f"  [{container.name}] ({container.dataType}): <no data>")
+            elif container.dataType == DataType.LOCATION_POINT_DICT:
+                if isinstance(container.data, dict):
+                    for code, point in container.data.items():
+                        print(
+                            f"  [{container.name}] {code}: {point.name} ({point.lat}, {point.lon})"
+                        )
+                else:
+                    print(f"  [{container.name}] ({container.dataType}): <no data>")
+            elif container.dataType == DataType.STRING:
+                print(f"  [{container.name}] ({container.dataType}): {container.data}")
+            elif container.dataType == DataType.PNG:
+                crs = container.metadata.get("crs", "N/A")
+                bounds = container.metadata.get("bounds", "N/A")
+                size = len(container.data) if container.data else 0
+                print(
+                    f"  [{container.name}] ({container.dataType}): {size} bytes, crs={crs}, bounds={bounds}"
+                )
     print("Complete")

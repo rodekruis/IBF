@@ -5,7 +5,6 @@ from dataclasses import dataclass
 
 @dataclass
 class LocationPoint:
-    code: str
     name: str
     lat: float
     lon: float
