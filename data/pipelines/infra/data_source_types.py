@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from infra.alert_types import HazardType
 from shared.country_data import CountryCode
+
+from pipelines.infra.alert_types import HazardType
 
 
 class RunTargetType(StrEnum):

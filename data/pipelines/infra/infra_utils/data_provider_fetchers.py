@@ -2,13 +2,15 @@ import csv
 import io
 import logging
 
-from infra.infra_utils.admin_boundaries_container import AdminBoundariesContainer
 from pipelines.infra.data_source_container import DataSourceContainer
 from pipelines.infra.data_source_types import (
     CountryConfig,
     DataSource,
     DataSourceConfig,
     DataType,
+)
+from pipelines.infra.infra_utils.admin_boundaries_container import (
+    AdminBoundariesContainer,
 )
 from pipelines.infra.infra_utils.dummy_data import DUMMY_DATA
 from pipelines.infra.infra_utils.location_point import LocationPoint

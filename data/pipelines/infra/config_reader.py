@@ -4,8 +4,8 @@ import logging
 from pathlib import Path
 
 import yaml
-from infra.alert_types import HazardType
 
+from pipelines.infra.alert_types import HazardType
 from pipelines.infra.data_source_types import (
     CountryCode,
     CountryConfig,
