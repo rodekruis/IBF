@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     # Fetch all data
     for name, url in sources.items():
-        output[name] = download_json_source(name, url, check_count=False)
+        output[name] = download_json_source(url, check_count=False)
 
     # Save to file, overwriting the existing file
     for name, data in output.items():
