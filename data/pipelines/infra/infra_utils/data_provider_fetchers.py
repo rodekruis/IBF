@@ -9,6 +9,7 @@ from pipelines.infra.infra_utils.dummy_data import DUMMY_DATA
 from pipelines.infra.infra_utils.geojson_admin_boundaries import (
     AdminBoundariesContainer,
 )
+from pipelines.infra.infra_utils.location_point import LocationPoint
 from shared.download_helpers import download_json_source, download_object
 
 logger = logging.getLogger(__name__)
@@ -93,14 +94,16 @@ def _load_seed_repo_glofas_stations(
 
     # Convert the CSV into a dict keyed by stationCode
     reader = csv.DictReader(io.StringIO(csv_data.decode("utf-8")))
-    stations = {}
+    stations: dict[str, LocationPoint] = {}
     for row in reader:
-        stations[row["stationCode"]] = {
-            "stationName": row["stationName"],
-            "lat": float(row["lat"]),
-            "lon": float(row["lon"]),
-            "fid": row["fid"],
-        }
+        station = LocationPoint(
+            code=row["stationCode"],
+            name=row["stationName"],
+            lat=float(row["lat"]),
+            lon=float(row["lon"]),
+            id=row["fid"],
+        )
+        stations[station.code] = station
     container.data = stations
 
 
