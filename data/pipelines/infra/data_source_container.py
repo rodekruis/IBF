@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from pipelines.infra.config_reader import DataSource, DataType
+from pipelines.infra.data_source_types import DataSource, DataType
 
 
 @dataclass
