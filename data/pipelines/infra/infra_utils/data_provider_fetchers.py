@@ -56,7 +56,7 @@ def load_data_container(
 def _load_seed_repo_admin_boundaries(
     config: DataSourceConfig, container: DataSourceContainer, target_admin_level: int
 ):
-    container.dataType = DataType.ADMIN_BOUNDARIES_DICT
+    container.data_type = DataType.ADMIN_BOUNDARIES_DICT
 
     # https://github.com/rodekruis/IBF-seed-data/blob/main/admin-areas/processed/AGO_adm1.json
     admin_boundaries: dict[int, AdminBoundariesContainer] = {}
@@ -84,7 +84,7 @@ def _load_seed_repo_admin_boundaries(
 def _load_seed_repo_glofas_stations(
     config: DataSourceConfig, container: DataSourceContainer
 ):
-    container.dataType = DataType.LOCATION_POINT_DICT
+    container.data_type = DataType.LOCATION_POINT_DICT
 
     # https://github.com/rodekruis/IBF-seed-data/blob/main/country-data/glofas-loc/glofas_stations_AGO.csv
     filename = f"glofas_stations_{config.iso_3_code}.csv"
@@ -114,7 +114,7 @@ def _load_seed_repo_glofas_stations(
 def _load_seed_repo_population_data(
     config: DataSourceConfig, container: DataSourceContainer
 ):
-    container.dataType = DataType.PNG
+    container.data_type = DataType.PNG
 
     png_filename = f"{config.iso_3_code}_population.png"
     json_filename = f"{config.iso_3_code}_population_metadata.json"
@@ -145,14 +145,16 @@ def _load_seed_repo_population_data(
 
 
 def _load_ecmwf_forecast(config: DataSourceConfig, container: DataSourceContainer):
-    container.dataType = DataType.STRING
+    # TODO: Set the type correctly once real data is loaded
+    container.data_type = DataType.UNSPECIFIED
     container.data = _load_dummy_data(config)
     if container.data is None:
         container.error = f"No dummy data found for source '{config.name}'"
 
 
 def _load_glofas_discharge(config: DataSourceConfig, container: DataSourceContainer):
-    container.dataType = DataType.STRING
+    # TODO: Set the type correctly once real data is loaded
+    container.data_type = DataType.UNSPECIFIED
     container.data = _load_dummy_data(config)
     if container.data is None:
         container.error = f"No dummy data found for source '{config.name}'"
@@ -161,7 +163,8 @@ def _load_glofas_discharge(config: DataSourceConfig, container: DataSourceContai
 def _load_ibf_api_climate_regions(
     config: DataSourceConfig, container: DataSourceContainer
 ):
-    container.dataType = DataType.STRING
+    # TODO: Set the type correctly once real data is loaded
+    container.data_type = DataType.UNSPECIFIED
     container.data = _load_dummy_data(config)
     if container.data is None:
         container.error = f"No dummy data found for source '{config.name}'"

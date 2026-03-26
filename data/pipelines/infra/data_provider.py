@@ -25,9 +25,13 @@ class DataProvider:
         self, config_reader: ConfigReader, country_name: str, run_target: RunTargetType
     ) -> bool:
         country_config = config_reader.get_country_config(country_name, run_target)
-        # TODO, RM this function?
-        data_sources = config_reader.get_data_sources(country_name, run_target)
+        if not country_config:
+            logger.error(
+                f"Country '{country_name}' not found in config for run_target '{run_target}'"
+            )
+            return False
 
+        data_sources = country_config.data_sources
         if not data_sources:
             logger.warning(
                 f"No data sources configured for country '{country_name}' in run_target '{run_target}'"
@@ -39,8 +43,8 @@ class DataProvider:
 
             data_container = DataSourceContainer(
                 name=source_config.name,
-                dataType=DataType.NONE,
-                dataLocation=source_config.source,
+                data_type=DataType.NONE,
+                data_source=source_config.source,
             )
 
             try:
@@ -83,7 +87,7 @@ if __name__ == "__main__":
 
         # For the loaded data, print out some of the printable fields to verify it loaded
         for container in provider.loaded_data.values():
-            if container.dataType == DataType.ADMIN_BOUNDARIES_DICT:
+            if container.data_type == DataType.ADMIN_BOUNDARIES_DICT:
                 if isinstance(container.data, dict):
                     boundaries: AdminBoundariesContainer
                     for adm_level, boundaries in container.data.items():
@@ -96,22 +100,22 @@ if __name__ == "__main__":
                             f"parents: {first_item.properties.parent_pcodes}, ",
                         )
                 else:
-                    print(f"  [{container.name}] ({container.dataType}): <no data>")
-            elif container.dataType == DataType.LOCATION_POINT_DICT:
+                    print(f"  [{container.name}] ({container.data_type}): <no data>")
+            elif container.data_type == DataType.LOCATION_POINT_DICT:
                 if isinstance(container.data, dict):
                     for code, point in container.data.items():
                         print(
                             f"  [{container.name}] {code}: {point.name} ({point.lat}, {point.lon})"
                         )
                 else:
-                    print(f"  [{container.name}] ({container.dataType}): <no data>")
-            elif container.dataType == DataType.STRING:
-                print(f"  [{container.name}] ({container.dataType}): {container.data}")
-            elif container.dataType == DataType.PNG:
+                    print(f"  [{container.name}] ({container.data_type}): <no data>")
+            elif container.data_type == DataType.STRING:
+                print(f"  [{container.name}] ({container.data_type}): {container.data}")
+            elif container.data_type == DataType.PNG:
                 crs = container.metadata.get("crs", "N/A")
                 bounds = container.metadata.get("bounds", "N/A")
                 size = len(container.data) if container.data else 0
                 print(
-                    f"  [{container.name}] ({container.dataType}): {size} bytes, crs={crs}, bounds={bounds}"
+                    f"  [{container.name}] ({container.data_type}): {size} bytes, crs={crs}, bounds={bounds}"
                 )
     print("Complete")
