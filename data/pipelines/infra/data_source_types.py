@@ -72,6 +72,14 @@ class RunTargetConfig:
 
 
 @dataclass
+class LocationPoint:
+    name: str
+    lat: float
+    lon: float
+    id: str
+
+
+@dataclass
 class DataSourceContainer:
     name: str
     data_type: DataType
