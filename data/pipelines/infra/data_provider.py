@@ -43,7 +43,7 @@ class DataProvider:
 
             data_container = DataSourceContainer(
                 name=source_config.name,
-                data_type=DataType.NONE,
+                data_type=DataType.UNSPECIFIED,
                 data_source=source_config.source,
             )
 
