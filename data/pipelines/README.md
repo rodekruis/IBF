@@ -56,7 +56,7 @@ pipelines/
 └── legacy/                    # Old pipeline code (see Legacy section)
 ```
 
-## Yaml config files
+## YAML config files
 
 Most of the fields in the config file are mapped to enums. You can see the allowed values by looking at the enums in `alert_types.py` and `data_source_types.py`.
 
@@ -68,7 +68,7 @@ run_targets:
   <run_target>:                  # RunTargetType enum (DEBUG / TEST / PROD, etc.)
     countries:
       - name                     # ISO alpha-3 country code (e.g. "KEN", "ETH")
-        target_admin_level       # Target admin level make forecast on (1–4)
+        target_admin_level       # Target admin level to make forecasts on (1–4)
         data_sources:
           - name                 # Any string to use as a dict key to reference the loaded data
             source               # DataSource enum showing where to fetch this data.
@@ -87,12 +87,12 @@ run_targets:
 
 ### Adding a new data source
 
-1. Pick a string name you want to use in the config yaml file
+1. Pick a string name you want to use in the config YAML file
 2. Add that string name to a new enum value in `DataSource` in `data_source_types.py`
 3. In `data_provider_fetchers.py`, add a new function to handle the downloading of the source.
-4. Set the `DataSourceContainer.data_type` in that function. If you need to create a new `DataType` for this, do so. For the data you set, avoid using complex dictionaries, raw JSON, or other types that need lots of strings to be parsed, since these make it hard to find data errors, and make it hard to adjust the code if a source needs to change. If you have a data type like this, try to cast it to a dataclass and return that. These are easy to make with LLMs. You can have the LLM fetch the data source directly (via the url, or from a local file) and then it can write a dataclass for you. See other data source types for examples.
+4. Set the `DataSourceContainer.data_type` in that function. If you need to create a new `DataType` for this, do so. For the data you set, avoid using complex dictionaries, raw JSON, or other types that need lots of strings to be parsed, since these make it hard to find data errors, and make it hard to adjust the code if a source needs to change. If you have a data type like this, try to cast it to a dataclass and return that. These are easy to make with LLMs. You can have the LLM fetch the data source directly (via the URL, or from a local file) and then it can write a dataclass for you. See other data source types for examples.
 5. Also in `data_provider_fetchers.py`, in the function `load_data_container`, add a `case` to direct your new enum to your function.
-6. Add the data source string name to your config yaml, and run the pipeline locally to test it out.
+6. Add the data source string name to your config YAML, and run the pipeline locally to test it out.
 
 ## Tests
 
