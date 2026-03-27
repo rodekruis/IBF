@@ -1,7 +1,13 @@
 def test_drought_eth(pipeline):
-    """Run the drought pipeline for ETH in local file mode and verify the output
+    """
+    Run the drought pipeline for ETH in local file mode and verify the output
     structure: 1 alert with correct hazard type, alert name, forecast source,
-    severity keys, and admin levels."""
+    severity keys, and admin levels.
+
+    TODO: this test needs a controlled dataset.
+    It's just grabbing any data from the config now, and testing on that.
+    It's also dependent on the values in the DUMMY_DATA for "climate_regions"
+    """
     pipeline.clean_output("drought", "ETH")
 
     result = pipeline.run_pipeline(
@@ -28,4 +34,5 @@ def test_drought_eth(pipeline):
         assert entry["severityKey"] == "percentile"
 
     admin_levels = {r["adminLevel"] for r in alert["exposure"]["adminArea"]}
+    print(admin_levels)
     assert admin_levels == {1, 2}
