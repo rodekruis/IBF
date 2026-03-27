@@ -1,3 +1,9 @@
+"""
+Functions for fetching, loading, and parsing data.
+When a new data source is added, this is the main file that needs to be updated.
+See the readme for more details on adding new data sources.
+"""
+
 import csv
 import io
 import logging

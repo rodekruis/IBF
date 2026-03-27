@@ -1,3 +1,10 @@
+"""
+Class for loading and providing all data sources.
+It loads a config file, and fetches all data source from it.
+
+This file can be run directly to help debug data loading issues.
+"""
+
 from __future__ import annotations
 
 import logging
