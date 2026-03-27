@@ -23,7 +23,7 @@ Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 2. Start services
 
 - Setup env variables `cp services/.env.example services/.env`
-- Start services with `npm run start:services:detach`
+- Start services with `npm run start:services:detach`. Avoid `docker compose up`, since it may not pass latest changes to docker.
 - Open
   - [http://localhost:4000/docs](http://localhost:4000/docs) to access the `api-service` documentation
   - [http://localhost:9000/](http://localhost:9000/) for pg_featureserv (GIS feature service)
