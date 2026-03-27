@@ -162,10 +162,10 @@ class ConfigReader:
 
                 try:
                     output_mode = OutputMode(output_raw["mode"].lower())
-                except ValueError:
+                except (ValueError, KeyError):
                     logger.error(
-                        f"Invalid output mode '{output_raw.get('mode')}' in country "
-                        f"'{country_raw['name']}' run target '{target_name}', "
+                        f"Invalid output mode: '{output_raw.get('mode')}' "
+                        f"for country '{country_raw['name']}' run target '{target_name}', "
                         f"expected one of: {[e.value for e in OutputMode]}"
                     )
                     success = False
@@ -200,7 +200,7 @@ class ConfigReader:
 
     def get_country_config(
         self, country_name: CountryCode, run_target: RunTargetType
-    ) -> CountryConfig:
+    ) -> CountryConfig | None:
         run_target_configs = self.run_targets.get(run_target)
         if not run_target_configs:
             logger.error(f"Run target '{run_target}' not found in config")

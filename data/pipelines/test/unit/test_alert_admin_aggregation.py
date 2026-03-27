@@ -16,13 +16,13 @@ from pipelines.infra.alert_types import (
 from pipelines.infra.infra_utils.admin_boundaries_container import (
     AdminBoundariesContainer,
     AdminBoundaryFeature,
-    AdmingBoundaryFeatureProperties,
+    AdminBoundaryFeatureProperties,
 )
 
 
 def _feature(pcode: str, parent_pcodes: dict[int, str]) -> AdminBoundaryFeature:
     return AdminBoundaryFeature(
-        properties=AdmingBoundaryFeatureProperties(
+        properties=AdminBoundaryFeatureProperties(
             pcode=pcode,
             name=pcode,
             parent_pcodes=parent_pcodes,

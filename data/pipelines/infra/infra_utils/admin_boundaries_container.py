@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class AdmingBoundaryFeatureProperties:
+class AdminBoundaryFeatureProperties:
     """
     The code and name (in English) of an admin boundary, along with a list of all parent codes.
     Adm1 would have no parents, while Adm4 would have 3 parents.
@@ -26,7 +26,7 @@ class AdminBoundaryFeature:
     This represents a single admin boundary, with coordinates being the border
     """
 
-    properties: AdmingBoundaryFeatureProperties
+    properties: AdminBoundaryFeatureProperties
     geometry_type: str
     coordinates: list
 
@@ -56,7 +56,7 @@ class AdminBoundariesContainer:
             geom = f.get("geometry", {})
 
             features[pcode] = AdminBoundaryFeature(
-                properties=AdmingBoundaryFeatureProperties(
+                properties=AdminBoundaryFeatureProperties(
                     pcode=pcode,
                     name=feature_name,
                     adm0_pcode=adm0_pcode,

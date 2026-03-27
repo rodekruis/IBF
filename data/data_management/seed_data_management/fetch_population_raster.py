@@ -11,7 +11,7 @@ from pathlib import Path
 
 from PIL import Image
 from shared.data_helpers import get_seed_data_repo_path, target_countries_iso_a3
-from shared.download_helpers import download_binary_object
+from shared.download_helpers import download_object
 from shared.image_helpers import geotiff_to_array
 
 # URL for the population data
@@ -42,7 +42,6 @@ def get_url(country_iso_a3):
     )
 
 
-
 if __name__ == "__main__":
     GREYSCALE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -52,7 +51,7 @@ if __name__ == "__main__":
     }
     for name, url in urls.items():
         # Download the raw file
-        bin_object = download_binary_object(url)
+        bin_object = download_object(url)
 
         # Convert and save it to PNG
         if bin_object:
