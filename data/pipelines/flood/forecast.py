@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from pipelines.infra.admin_boundaries_container import AdminBoundariesContainer
 from pipelines.infra.alert_types import (
     Centroid,
     EnsembleMemberType,
@@ -10,11 +11,8 @@ from pipelines.infra.alert_types import (
     Layer,
 )
 from pipelines.infra.data_provider import DataProvider
+from pipelines.infra.data_source_types import LocationPoint
 from pipelines.infra.data_submitter import DataSubmitter
-from pipelines.infra.infra_utils.admin_boundaries_container import (
-    AdminBoundariesContainer,
-)
-from pipelines.infra.infra_utils.location_point import LocationPoint
 
 
 def calculate_flood_forecasts(

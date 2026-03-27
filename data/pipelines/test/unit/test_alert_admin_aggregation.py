@@ -3,6 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 import pytest
+from pipelines.infra.admin_boundaries_container import (
+    AdminBoundariesContainer,
+    AdminBoundaryFeature,
+    AdminBoundaryFeatureProperties,
+)
 from pipelines.infra.alert_admin_aggregation import aggregate_to_parent_admin_levels
 from pipelines.infra.alert_types import (
     AdminAreaExposure,
@@ -12,11 +17,6 @@ from pipelines.infra.alert_types import (
     ForecastSource,
     HazardType,
     Layer,
-)
-from pipelines.infra.infra_utils.admin_boundaries_container import (
-    AdminBoundariesContainer,
-    AdminBoundaryFeature,
-    AdminBoundaryFeatureProperties,
 )
 
 
