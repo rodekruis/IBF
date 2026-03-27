@@ -1,3 +1,9 @@
+"""
+Class for opening, parsing, validating, and providing a pipeline yaml config
+
+This file can be run directly to help debug config loading issues.
+"""
+
 from __future__ import annotations
 
 import logging

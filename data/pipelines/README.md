@@ -38,7 +38,10 @@ pipelines/
 │   ├── data_provider.py       # Data loading abstraction
 │   ├── data_submitter.py      # Alert building and submission
 │   ├── alert_types.py         # Dataclasses (Alert, Centroid, etc.)
+│   ├── admin_boundaries_container.py   # Dataclasses for admin boundaries
+│   ├── data_source_types.py   # Dataclasses for data sources
 │   ├── integrity_checks.py    # Alert validation before submission
+│   └── infra_utils/           # Util files only needed for infra/ code
 │   └── configs/               # YAML config files per hazard
 │       ├── floods.yaml
 │       └── drought.yaml
@@ -53,13 +56,43 @@ pipelines/
 └── legacy/                    # Old pipeline code (see Legacy section)
 ```
 
-## Adding a new hazard type
+## Yaml config files
+
+Most of the fields in the config file are mapped to enums. You can see the allowed values by looking at the enums in `alert_types.py` and `data_source_types.py`.
+
+To handle new configs and targets, see the sections below.
+
+```
+hazard_type                      # HazardType enum (e.g. "floods", "drought")
+run_targets:
+  <run_target>:                  # RunTargetType enum (DEBUG / TEST / PROD, etc.)
+    countries:
+      - name                     # ISO alpha-3 country code (e.g. "KEN", "ETH")
+        target_admin_level       # Target admin level make forecast on (1–4)
+        data_sources:
+          - name                 # Any string to use as a dict key to reference the loaded data
+            source               # DataSource enum showing where to fetch this data.
+        output:
+          mode                   # OutputMode enum (local / api)
+          path                   # Optional, used for local output
+```
+
+### Adding a new hazard type
 
 1. Create a new folder: `<hazard_type>/`
 2. Add `__init__.py` and `forecast.py`
 3. Implement a function that receives `DataProvider` and `DataSubmitter`
 4. Register the hazard type in `infra/run_forecasts.py`
 5. Add a config YAML in `infra/configs/<hazard_type>.yaml`
+
+### Adding a new data source
+
+1. Pick a string name you want to use in the config yaml file
+2. Add that string name to a new enum value in `DataSource` in `data_source_types.py`
+3. In `data_provider_fetchers.py`, add a new function to handle the downloading of the source.
+4. Set the `DataSourceContainer.data_type` in that function. If you need to create a new `DataType` for this, do so. For the data you set, avoid using complex dictionaries, raw JSON, or other types that need lots of strings to be parsed, since these make it hard to find data errors, and make it hard to adjust the code if a source needs to change. If you have a data type like this, try to cast it to a dataclass and return that. These are easy to make with LLMs. You can have the LLM fetch the data source directly (via the url, or from a local file) and then it can write a dataclass for you. See other data source types for examples.
+5. Also in `data_provider_fetchers.py`, in the function `load_data_container`, add a `case` to direct your new enum to your function.
+6. Add the data source string name to your config yaml, and run the pipeline locally to test it out.
 
 ## Tests
 
