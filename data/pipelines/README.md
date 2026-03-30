@@ -64,7 +64,7 @@ hazard_type                      # HazardType enum (e.g. "floods", "drought")
 run_targets:
   <run_target>:                  # RunTargetType enum (DEBUG / TEST / PROD, etc.)
     countries:
-      - name                     # ISO alpha-3 country code (e.g. "KEN", "ETH")
+      - iso_3_code               # ISO alpha-3 country code (e.g. "KEN", "ETH")
         target_admin_level       # Target admin level to make forecasts on (1–4)
         data_sources:
           - name                 # Any string to use as a dict key to reference the loaded data
