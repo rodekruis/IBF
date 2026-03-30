@@ -41,7 +41,7 @@ def aggregate_to_parent_admin_levels(
         grouped: dict[tuple[str, Layer], list[bool | int | float]] = {}
 
         for entry in deepest_entries:
-            feature = admin_boundaries.features.get(entry.place_code)
+            feature = admin_boundaries.admin_areas.get(entry.place_code)
             if feature is None:
                 continue
 
