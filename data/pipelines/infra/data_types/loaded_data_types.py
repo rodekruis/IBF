@@ -3,9 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from shared.country_data import CountryCode
-
 from pipelines.infra.alert_types import HazardType
+from shared.country_data import CountryCode
 
 
 class RunTargetType(StrEnum):
@@ -103,18 +102,6 @@ class RunTargetConfig:
     run_target: RunTargetType
     hazard_type: HazardType
     country_configs: dict[CountryCode, CountryConfig]
-
-
-@dataclass
-class LocationPoint:
-    """
-    A generic class used for point locations
-    """
-
-    name: str
-    lat: float
-    lon: float
-    id: str
 
 
 @dataclass

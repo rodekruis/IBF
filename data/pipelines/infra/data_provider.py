@@ -10,14 +10,14 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from pipelines.infra.admin_boundaries_container import AdminAreasSet
 from pipelines.infra.config_reader import ConfigReader
-from pipelines.infra.data_source_types import (
+from pipelines.infra.data_types.admin_area_types import AdminAreasSet
+from pipelines.infra.data_types.loaded_data_types import (
     DataSourceContainer,
     DataType,
     RunTargetType,
 )
-from pipelines.infra.infra_utils.data_provider_fetchers import load_data_container
+from pipelines.infra.utils.data_provider_fetchers import load_data_container
 
 logger = logging.getLogger(__name__)
 

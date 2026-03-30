@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pipelines.infra.admin_boundaries_container import AdminAreasSet
 from pipelines.infra.alert_types import AdminAreaExposure, Alert, Layer
+from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 
 
 def aggregate_to_parent_admin_levels(

@@ -30,6 +30,8 @@ The pipeline is split into two concerns:
 
 This separation means data scientists only need to implement one function per hazard type. That function receives a `DataProvider` (to read input data) and a `DataSubmitter` (to build alert output), and does not need to know about config files, file I/O, or API calls.
 
+Here are the main files used by the hazard logic flow.
+
 ```
 pipelines/
 ├── infra/                     # Hazard-agnostic infrastructure
@@ -37,11 +39,6 @@ pipelines/
 │   ├── config_reader.py       # YAML config loading and validation
 │   ├── data_provider.py       # Data loading abstraction
 │   ├── data_submitter.py      # Alert building and submission
-│   ├── alert_types.py         # Dataclasses (Alert, Centroid, etc.)
-│   ├── admin_boundaries_container.py   # Dataclasses for admin boundaries
-│   ├── data_source_types.py   # Dataclasses for data sources
-│   ├── integrity_checks.py    # Alert validation before submission
-│   └── infra_utils/           # Util files only needed for infra/ code
 │   └── configs/               # YAML config files per hazard
 │       ├── floods.yaml
 │       └── drought.yaml

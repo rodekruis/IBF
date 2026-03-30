@@ -12,7 +12,7 @@ from pathlib import Path
 import yaml
 
 from pipelines.infra.alert_types import HazardType
-from pipelines.infra.data_source_types import (
+from pipelines.infra.data_types.loaded_data_types import (
     CountryCode,
     CountryConfig,
     DataSource,
