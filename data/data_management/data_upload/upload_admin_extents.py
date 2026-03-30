@@ -1,5 +1,5 @@
 """
-Upload all admin boundary extents from a local clone of the seed-data repo
+Upload all admin area extents from a local clone of the seed-data repo
 
 TODO: This table format is used for development purposes, and we may need
 a different table or different data structure/preprocessing for MVP.

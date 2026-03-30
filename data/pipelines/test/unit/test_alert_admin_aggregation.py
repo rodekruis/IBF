@@ -109,7 +109,7 @@ def test_numeric_aggregation_uses_sum():
 
 
 def test_aggregation_produces_all_levels():
-    # 3-level boundaries should produce entries at levels 3, 2, and 1
+    # 3-level areas should produce entries at levels 3, 2, and 1
     alert = _make_alert(
         [
             AdminAreaExposure("child-A", 3, Layer.SPATIAL_EXTENT, True),
@@ -170,7 +170,7 @@ def test_empty_alert_is_noop():
 
 
 def test_unknown_place_code_is_skipped():
-    # Place codes not in admin_boundaries are silently ignored
+    # Place codes not in admin_areas are silently ignored
     alert = _make_alert(
         [
             AdminAreaExposure("unknown", 3, Layer.SPATIAL_EXTENT, True),
