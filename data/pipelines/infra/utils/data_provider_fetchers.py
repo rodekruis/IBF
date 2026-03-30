@@ -23,7 +23,7 @@ from shared.download_helpers import download_json_source, download_object
 logger = logging.getLogger(__name__)
 
 SEED_REPO_POPULATION_GREYSCALE_PATH = "/raster-data/population/greyscale/"
-SEED_REPO_ADMIN_BOUNDARIES_PATH = "/admin-areas/processed/"
+SEED_REPO_ADMIN_AREAS_PATH = "/admin-areas/processed/"
 SEED_REPO_GLOFAS_STATIONS_PATH = "/country-data/glofas-loc/"
 
 
@@ -39,7 +39,7 @@ def load_data_container(
 
     match data_config.source:
         case DataSourceLocation.SEED_DATA_REPO_ADMIN:
-            return _load_seed_repo_admin_boundaries(
+            return _load_seed_repo_admin_areas(
                 data_config, container, country_config.target_admin_level
             )
         case DataSourceLocation.SEED_DATA_REPO_POPULATION:
@@ -60,7 +60,7 @@ def load_data_container(
             raise ValueError(f"Unknown source type: '{data_config.source}'")
 
 
-def _load_seed_repo_admin_boundaries(
+def _load_seed_repo_admin_areas(
     config: DataSourceConfig, container: LoadedDataSource, target_admin_level: int
 ):
     # Example of the data being loaded:
@@ -69,20 +69,18 @@ def _load_seed_repo_admin_boundaries(
     container.data_type = DataType.ADMIN_AREA_SET
 
     filename = f"{config.country_code_iso_3}_adm{target_admin_level}.json"
-    uri = _get_seed_repo_uri() + SEED_REPO_ADMIN_BOUNDARIES_PATH + filename
+    uri = _get_seed_repo_uri() + SEED_REPO_ADMIN_AREAS_PATH + filename
 
     geojson = download_json_source(uri, check_count=False)
     if geojson is None:
-        container.error = (
-            f"Failed to download admin boundaries GeoJSON data from '{uri}'"
-        )
+        container.error = f"Failed to download admin areas GeoJSON data from '{uri}'"
         raise ValueError(container.error)
-    admin_boundaries = AdminAreasSet.from_geojson(target_admin_level, geojson)
+    admin_areas = AdminAreasSet.from_geojson(target_admin_level, geojson)
     logger.info(
-        f"Loaded {len(admin_boundaries.admin_areas)} features for admin level {target_admin_level}"
+        f"Loaded {len(admin_areas.admin_areas)} features for admin level {target_admin_level}"
     )
 
-    container.data = admin_boundaries
+    container.data = admin_areas
 
 
 def _load_seed_repo_glofas_stations(

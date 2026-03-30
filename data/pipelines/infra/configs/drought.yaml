@@ -8,7 +8,7 @@ run_targets:
         data_sources:
           - name: climate_regions
             source: ibf_api_climate_regions
-          - name: admin_boundaries
+          - name: admin_areas
             source: seed_data_repo_admin
           - name: population
             source: seed_data_repo_population

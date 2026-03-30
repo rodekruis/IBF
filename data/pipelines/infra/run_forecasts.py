@@ -57,9 +57,9 @@ def _run_country(
     )
 
     # --- Post-processing: aggregate deepest-level admin area data upward ---
-    admin_boundaries: AdminAreasSet = data_provider.get_data("admin_boundaries").data
+    admin_areas: AdminAreasSet = data_provider.get_data("admin_areas").data
     for alert in data_submitter.get_alerts():
-        aggregate_to_parent_admin_levels(alert, admin_boundaries)
+        aggregate_to_parent_admin_levels(alert, admin_areas)
 
     # --- Write output ---
     # NOTE: local file output is kept for now for /integration tests only

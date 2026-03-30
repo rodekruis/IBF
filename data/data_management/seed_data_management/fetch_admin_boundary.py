@@ -1,5 +1,5 @@
 """
-Fetched the admin boundaries for indicated countries.
+Fetched the admin areas for indicated countries.
 """
 
 import json
@@ -9,7 +9,7 @@ from shared.data_helpers import get_seed_data_repo_path, target_countries_iso_a3
 from shared.download_helpers import download_json_source
 
 """
-Get the url for the given country's admin boundary.
+Get the url for the given country's admin area.
 See https://gadm.org/data.html for more info
 """
 

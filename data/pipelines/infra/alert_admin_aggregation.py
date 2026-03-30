@@ -6,7 +6,7 @@ from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 
 def aggregate_to_parent_admin_levels(
     alert: Alert,
-    admin_boundaries: AdminAreasSet,
+    admin_areas: AdminAreasSet,
 ) -> None:
     """Aggregate admin area exposure from the deepest admin level upward.
 
@@ -21,8 +21,8 @@ def aggregate_to_parent_admin_levels(
     require a weighted average (e.g. weighted by child population). When such
     layers are added, extend the aggregation logic here.
 
-    Only deepest-level boundary entries are expected in admin_boundaries.
-    Entries whose place code is not in admin_boundaries or whose ancestor
+    Only deepest-level admin area entries are expected in admin_areas.
+    Entries whose place code is not in admin_areas or whose ancestor
     field is missing/None are silently skipped. Downstream integrity checks
     (alert_integrity_checks) will catch incomplete results.
 
@@ -41,7 +41,7 @@ def aggregate_to_parent_admin_levels(
         grouped: dict[tuple[str, Layer], list[bool | int | float]] = {}
 
         for entry in deepest_entries:
-            feature = admin_boundaries.admin_areas.get(entry.place_code)
+            feature = admin_areas.admin_areas.get(entry.place_code)
             if feature is None:
                 continue
 

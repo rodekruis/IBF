@@ -19,7 +19,7 @@ def calculate_flood_forecasts(
     data_provider: DataProvider,
     data_submitter: DataSubmitter,
     country: str,
-    deepest_admin_level: int,
+    target_admin_level: int,
 ) -> None:
     # TEMPLATE IMPLEMENTATION — This function loops over stations from
     # data_provider, but uses dummy/placeholder values for severity, exposure,
@@ -31,13 +31,11 @@ def calculate_flood_forecasts(
     # 3. Compute real population exposure from population raster + flood extent
     # 4. Compute geo-feature exposure (hospitals, roads, etc.)
     stations: dict[str, LocationPoint] = data_provider.get_data("glofas_stations").data
-    target_admin_boundaries: AdminAreasSet = data_provider.get_data(
-        "admin_boundaries"
-    ).data
+    target_admin_areas: AdminAreasSet = data_provider.get_data("admin_areas").data
 
-    if not stations or not target_admin_boundaries:
+    if not stations or not target_admin_areas:
         data_submitter.add_error(
-            f"Missing input data: stations={bool(stations)}, admin_boundaries={bool(target_admin_boundaries)}"
+            f"Missing input data: stations={bool(stations)}, admin_areas={bool(target_admin_areas)}"
         )
         return
 
@@ -75,24 +73,24 @@ def calculate_flood_forecasts(
             severity_value=0,
         )
 
-        # TODO: determine admin_area_codes by looking at the admin boundaries in a climate region
-        # For now, just get the first two place codes from the admin boundaries for debug.
+        # TODO: determine admin_area_codes by looking at the admin areas in a climate region
+        # For now, just get the first two place codes from the admin areas for debug.
         debug_affected_admin_area_codes: list[str] = list(
-            target_admin_boundaries.admin_areas.keys()
+            target_admin_areas.admin_areas.keys()
         )[:2]
 
         for place_code in debug_affected_admin_area_codes:
             data_submitter.add_admin_area_exposure(
                 alert_name=alert_name,
                 place_code=place_code,
-                admin_level=deepest_admin_level,
+                admin_level=target_admin_level,
                 layer=Layer.SPATIAL_EXTENT,
                 value=True,
             )
             data_submitter.add_admin_area_exposure(
                 alert_name=alert_name,
                 place_code=place_code,
-                admin_level=deepest_admin_level,
+                admin_level=target_admin_level,
                 layer=Layer.POPULATION_EXPOSED,
                 value=0,
             )

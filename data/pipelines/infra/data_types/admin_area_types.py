@@ -1,5 +1,5 @@
 """
-Data structure for holding admin boundary data
+Data structure for holding admin area data
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 @dataclass
 class AdminAreaProperties:
     """
-    The code and name (in English) of an admin boundary, along with a list of all parent codes.
+    The code and name (in English) of an admin area, along with a list of all parent codes.
     Adm1 would have no parents, while Adm4 would have 3 parents.
     """
 
@@ -23,7 +23,7 @@ class AdminAreaProperties:
 @dataclass
 class AdminArea:
     """
-    This represents a single admin area, with coordinates being a list of points for the boundary
+    This represents a single admin area, with coordinates being a list of points for the area
     """
 
     properties: AdminAreaProperties
@@ -34,7 +34,7 @@ class AdminArea:
 @dataclass
 class AdminAreasSet:
     admin_level: int
-    # Admin areas are keyed on admin boundary code
+    # Admin areas are keyed on admin area code
     admin_areas: dict[str, AdminArea]
 
     @staticmethod

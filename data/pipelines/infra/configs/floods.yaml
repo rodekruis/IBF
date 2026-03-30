@@ -8,7 +8,7 @@ run_targets:
         data_sources:
           - name: glofas_stations
             source: seed_data_repo_glofas_stations
-          - name: admin_boundaries
+          - name: admin_areas
             source: seed_data_repo_admin
           - name: population
             source: seed_data_repo_population
