@@ -422,12 +422,12 @@ class DroughtLoad(Load):
         valid_events_and_leadtimes = {}  # dict of season_name: lead_time
 
         current_month_abb = upload_time.strftime("%b")
-        # Calculate last month
-        if upload_time.month == 1:
-            # If it's January, last month is December of the previous year
-            last_month = upload_time.replace(year=upload_time.year - 1, month=12)
+        # Calculate last month (use day=1 to avoid invalid dates like Feb 30)
+        first_of_month = upload_time.replace(day=1)
+        if first_of_month.month == 1:
+            last_month = first_of_month.replace(year=first_of_month.year - 1, month=12)
         else:
-            last_month = upload_time.replace(month=upload_time.month - 1)
+            last_month = first_of_month.replace(month=first_of_month.month - 1)
         last_month_abb = last_month.strftime("%b")
 
         events_and_leadtimes = self.get_events_and_leadtimes_by_region_and_month(
