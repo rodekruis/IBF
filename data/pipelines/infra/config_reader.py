@@ -34,9 +34,9 @@ class ConfigReader:
         self.run_targets: dict[RunTargetType, RunTargetConfig] = {}
 
     def load_all(self, path: str | Path) -> bool:
-
+        """Load and parse config from YAML file."""
         # Clear any existing config
-        self.run_targets: dict[RunTargetType, RunTargetConfig] = {}
+        self.run_targets = {}
 
         # Load the config from the path
         path = Path(path)
@@ -66,7 +66,30 @@ class ConfigReader:
             )
             return False
 
-        # Populate the self.run_targets
+        return self._parse_run_targets(hazard_type)
+
+    def get_country_config(
+        self, country_name: CountryCode, run_target: RunTargetType
+    ) -> CountryConfig | None:
+        """
+        Get the parsed config for a specific country and run target, or None if not found.
+        """
+        run_target_configs = self.run_targets.get(run_target)
+        if not run_target_configs:
+            logger.error(f"Run target '{run_target}' not found in config")
+            return None
+
+        country_config = run_target_configs.country_configs.get(country_name)
+        if not country_config:
+            logger.error(
+                f"Country '{country_name}' not found in run target '{run_target}'"
+            )
+            return None
+
+        return country_config
+
+    def _parse_run_targets(self, hazard_type: HazardType) -> bool:
+        """Parse run targets from raw config and populate self.run_targets."""
         success = True
         for target_name, target_config in self.raw_config.get(
             "run_targets", {}
@@ -82,119 +105,14 @@ class ConfigReader:
                 continue
 
             if not isinstance(target_config, dict):
-                logger.error(f"Run target '{target_name}' is not a valid mapping")
+                logger.error(f"Run target '{target_name}' does not have a valid dict")
                 success = False
                 continue
 
             countries: dict[CountryCode, CountryConfig] = {}
-            for country_raw in target_config.get("countries", []):
-                if "name" not in country_raw:
-                    logger.error(
-                        f"Country in run target '{target_name}' is missing 'name'"
-                    )
-                    success = False
-                    continue
-                if "target_admin_level" not in country_raw:
-                    logger.error(
-                        f"Country '{country_raw['name']}' in run target '{target_name}' "
-                        f"is missing 'target_admin_level'"
-                    )
-                    success = False
-                    continue
-
-                try:
-                    iso_3_code = CountryCode(country_raw["name"].upper())
-                except ValueError:
-                    logger.error(
-                        f"Invalid country code '{country_raw['name']}' in run target "
-                        f"'{target_name}', expected a valid ISO a-3 code"
-                    )
-                    success = False
-                    continue
-
-                # if the country data already exists, throw an error
-                if iso_3_code in countries:
-                    logger.error(
-                        f"Duplicate country '{iso_3_code}' in run target '{target_name}'"
-                    )
-                    success = False
-                    continue
-
-                # Load all the data source configs
-                data_sources: list[DataSourceConfig] = []
-                for src in country_raw.get("data_sources", []):
-                    if "name" not in src:
-                        logger.error(
-                            f"Data source in country '{country_raw['name']}' "
-                            f"run target '{target_name}' is missing 'name'"
-                        )
-                        success = False
-                        continue
-
-                    try:
-                        data_source = DataSource(src.get("source", "todo_data_source"))
-                    except ValueError:
-                        logger.error(
-                            f"Invalid data source '{src.get('source')}' in country "
-                            f"'{country_raw['name']}' run target '{target_name}', "
-                            f"expected one of: {[e.value for e in DataSource]}"
-                        )
-                        success = False
-                        continue
-
-                    data_sources.append(
-                        DataSourceConfig(
-                            name=src["name"],
-                            iso_3_code=iso_3_code,
-                            source=data_source,
-                        )
-                    )
-
-                target_admin_level = country_raw["target_admin_level"]
-                if (
-                    not isinstance(target_admin_level, int)
-                    or target_admin_level < 1
-                    or target_admin_level > 4
-                ):
-                    logger.error(
-                        f"Invalid target_admin_level '{target_admin_level}' for country "
-                        f"'{country_raw['name']}' in run target '{target_name}', "
-                        f"expected a positive integer between 1 and 4"
-                    )
-                    success = False
-                    continue
-
-                output_raw = country_raw.get("output", {})
-
-                try:
-                    output_mode = OutputMode(output_raw["mode"].lower())
-                except (ValueError, KeyError):
-                    logger.error(
-                        f"Invalid output mode: '{output_raw.get('mode')}' "
-                        f"for country '{country_raw['name']}' run target '{target_name}', "
-                        f"expected one of: {[e.value for e in OutputMode]}"
-                    )
-                    success = False
-                    continue
-
-                # optional output path, used for local output.
-                output_path = output_raw.get("path", DEFAULT_OUTPUT_PATH)
-                if not output_path or not isinstance(output_path, str):
-                    logger.error(
-                        f"Invalid output path '{output_path}' for country "
-                        f"'{country_raw['name']}' in run target '{target_name}', "
-                        f"expected a non-empty string"
-                    )
-                    success = False
-                    continue
-
-                countries[iso_3_code] = CountryConfig(
-                    iso_3_code=iso_3_code,
-                    target_admin_level=target_admin_level,
-                    data_sources=data_sources,
-                    output_mode=output_mode,
-                    output_path=output_path,
-                )
+            if not self._parse_countries(countries, target_config, target_name):
+                success = False
+                # Continue processing - still add run target with whatever countries parsed
 
             self.run_targets[run_target_type] = RunTargetConfig(
                 run_target=run_target_type,
@@ -204,22 +122,139 @@ class ConfigReader:
 
         return success
 
-    def get_country_config(
-        self, country_name: CountryCode, run_target: RunTargetType
-    ) -> CountryConfig | None:
-        run_target_configs = self.run_targets.get(run_target)
-        if not run_target_configs:
-            logger.error(f"Run target '{run_target}' not found in config")
-            return None
+    def _parse_countries(
+        self,
+        countries: dict[CountryCode, CountryConfig],
+        target_config: dict,
+        target: RunTargetType,
+    ) -> bool:
+        """Parse countries from run target config and add to provided dict."""
+        success = True
+        for country_raw in target_config.get("countries", []):
+            if "name" not in country_raw:
+                logger.error(f"Country in run target '{target}' is missing 'name'")
+                success = False
+                continue
+            if "target_admin_level" not in country_raw:
+                logger.error(
+                    f"Country '{country_raw['name']}' in run target '{target}' "
+                    f"is missing 'target_admin_level'"
+                )
+                success = False
+                continue
 
-        country_config = run_target_configs.country_configs.get(country_name)
-        if not country_config:
-            logger.error(
-                f"Country '{country_name}' not found in run target '{run_target}'"
+            try:
+                iso_3_code = CountryCode(country_raw["name"].upper())
+            except ValueError:
+                logger.error(
+                    f"Invalid country code '{country_raw['name']}' in run target "
+                    f"'{target}', expected a valid ISO a-3 code"
+                )
+                success = False
+                continue
+
+            # if the country data already exists, throw an error
+            if iso_3_code in countries:
+                logger.error(
+                    f"Duplicate country '{iso_3_code}' in run target '{target}'"
+                )
+                success = False
+                continue
+
+            # Parse data sources
+            data_sources: list[DataSourceConfig] = []
+            if not self._parse_data_sources(
+                data_sources, iso_3_code, country_raw, target
+            ):
+                success = False
+                # Continue processing - still validate rest of country config
+
+            target_admin_level = country_raw["target_admin_level"]
+            if (
+                not isinstance(target_admin_level, int)
+                or target_admin_level < 1
+                or target_admin_level > 4
+            ):
+                logger.error(
+                    f"Invalid target_admin_level '{target_admin_level}' for country "
+                    f"'{country_raw['name']}' in run target '{target}', "
+                    f"expected a positive integer between 1 and 4"
+                )
+                success = False
+                continue
+
+            output_raw = country_raw.get("output", {})
+
+            try:
+                output_mode = OutputMode(output_raw["mode"].lower())
+            except (ValueError, KeyError):
+                logger.error(
+                    f"Invalid output mode: '{output_raw.get('mode')}' "
+                    f"for country '{country_raw['name']}' run target '{target}', "
+                    f"expected one of: {[e.value for e in OutputMode]}"
+                )
+                success = False
+                continue
+
+            # optional output path, used for local output.
+            output_path = output_raw.get("path", DEFAULT_OUTPUT_PATH)
+            if not output_path or not isinstance(output_path, str):
+                logger.error(
+                    f"Invalid output path '{output_path}' for country "
+                    f"'{country_raw['name']}' in run target '{target}', "
+                    f"expected a non-empty string"
+                )
+                success = False
+                continue
+
+            countries[iso_3_code] = CountryConfig(
+                iso_3_code=iso_3_code,
+                target_admin_level=target_admin_level,
+                data_sources=data_sources,
+                output_mode=output_mode,
+                output_path=output_path,
             )
-            return None
 
-        return country_config
+        return success
+
+    def _parse_data_sources(
+        self,
+        data_sources: list[DataSourceConfig],
+        iso_3_code: CountryCode,
+        country_raw: dict,
+        target: RunTargetType,
+    ) -> bool:
+        """Parse data sources from country config and append to provided list."""
+        success = True
+        for src in country_raw.get("data_sources", []):
+            if "name" not in src:
+                logger.error(
+                    f"Data source in country '{country_raw['name']}' "
+                    f"run target '{target}' is missing 'name'"
+                )
+                success = False
+                continue
+
+            try:
+                data_source = DataSource(src.get("source", "todo_data_source"))
+            except ValueError:
+                logger.error(
+                    f"Invalid data source '{src.get('source')}' in country "
+                    f"'{country_raw['name']}' run target '{target}', "
+                    f"expected one of: {[e.value for e in DataSource]}"
+                )
+                success = False
+                continue
+
+            data_sources.append(
+                DataSourceConfig(
+                    name=src["name"],
+                    iso_3_code=iso_3_code,
+                    source=data_source,
+                )
+            )
+
+        return success
 
 
 # If the file is run as main, load one of the default config files and print it out.
