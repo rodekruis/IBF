@@ -11,6 +11,7 @@ from pipelines.infra.alert_types import (
 )
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
+from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 
 
 def calculate_drought_forecasts(
@@ -31,13 +32,26 @@ def calculate_drought_forecasts(
     climate_regions: list[dict[str, object]] = data_provider.get_data(
         "climate_regions"
     ).data
+    target_admin_boundaries: AdminAreasSet = data_provider.get_data(
+        "admin_boundaries"
+    ).data
+
+    if not climate_regions or not target_admin_boundaries:
+        data_submitter.add_error(
+            f"Missing input data: climate_regions={bool(climate_regions)}, admin_boundaries={bool(target_admin_boundaries)}"
+        )
+        return
 
     issued_at = datetime.now(timezone.utc)
 
     for region in climate_regions:
         region_id = str(region["id"])
         seasons: list[str] = region["seasons"]
-        place_codes: list[str] = region["place_codes"]
+        # TODO: determine admin_area_codes by looking at the admin boundaries in a climate region
+        # For now, just get the first two place codes from the admin boundaries for debug.
+        admin_area_codes: list[str] = list(target_admin_boundaries.admin_areas.keys())[
+            :2
+        ]
 
         for season in seasons:
             alert_name = f"{country}_drought_{region_id}_season-{season}"
@@ -68,7 +82,7 @@ def calculate_drought_forecasts(
                 severity_value=0,
             )
 
-            for place_code in place_codes:
+            for place_code in admin_area_codes:
                 data_submitter.add_admin_area_exposure(
                     alert_name=alert_name,
                     place_code=place_code,
