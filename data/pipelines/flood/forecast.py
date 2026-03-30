@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from pipelines.infra.admin_boundaries_container import AdminBoundariesContainer
+from pipelines.infra.admin_boundaries_container import AdminAreasSet
 from pipelines.infra.alert_types import (
     Centroid,
     EnsembleMemberType,
@@ -31,12 +31,9 @@ def calculate_flood_forecasts(
     # 3. Compute real population exposure from population raster + flood extent
     # 4. Compute geo-feature exposure (hospitals, roads, etc.)
     stations: dict[str, LocationPoint] = data_provider.get_data("glofas_stations").data
-    all_admin_boundaries: dict[int, AdminBoundariesContainer] = data_provider.get_data(
+    target_admin_boundaries: AdminAreasSet = data_provider.get_data(
         "admin_boundaries"
     ).data
-
-    if all_admin_boundaries:
-        target_admin_boundaries = all_admin_boundaries[deepest_admin_level]
 
     if not stations or not target_admin_boundaries:
         data_submitter.add_error(

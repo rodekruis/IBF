@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class AdminBoundaryFeatureProperties:
+class AdminAreaProperties:
     """
     The code and name (in English) of an admin boundary, along with a list of all parent codes.
     Adm1 would have no parents, while Adm4 would have 3 parents.
@@ -21,24 +21,24 @@ class AdminBoundaryFeatureProperties:
 
 
 @dataclass
-class AdminBoundaryFeature:
+class AdminArea:
     """
     This represents a single admin boundary, with coordinates being the border
     """
 
-    properties: AdminBoundaryFeatureProperties
+    properties: AdminAreaProperties
     geometry_type: str
     coordinates: list
 
 
 @dataclass
-class AdminBoundariesContainer:
+class AdminAreasSet:
     admin_level: int
     # Features are keyed on admin boundary code
-    features: dict[str, AdminBoundaryFeature]
+    features: dict[str, AdminArea]
 
     @staticmethod
-    def from_geojson(admin_level: int, raw: dict) -> AdminBoundariesContainer:
+    def from_geojson(admin_level: int, raw: dict) -> AdminAreasSet:
         features = {}
 
         for f in raw.get("features", []):
@@ -55,8 +55,8 @@ class AdminBoundariesContainer:
 
             geom = f.get("geometry", {})
 
-            features[pcode] = AdminBoundaryFeature(
-                properties=AdminBoundaryFeatureProperties(
+            features[pcode] = AdminArea(
+                properties=AdminAreaProperties(
                     pcode=pcode,
                     name=feature_name,
                     adm0_pcode=adm0_pcode,
@@ -66,7 +66,7 @@ class AdminBoundariesContainer:
                 coordinates=geom.get("coordinates", []),
             )
 
-        return AdminBoundariesContainer(
+        return AdminAreasSet(
             admin_level=admin_level,
             features=features,
         )

@@ -8,7 +8,7 @@ import csv
 import io
 import logging
 
-from pipelines.infra.admin_boundaries_container import AdminBoundariesContainer
+from pipelines.infra.admin_boundaries_container import AdminAreasSet
 from pipelines.infra.data_source_types import (
     CountryConfig,
     DataSource,
@@ -63,24 +63,20 @@ def _load_seed_repo_admin_boundaries(
     container.data_type = DataType.ADMIN_BOUNDARIES_DICT
 
     # https://github.com/rodekruis/IBF-seed-data/blob/main/admin-areas/processed/AGO_adm1.json
-    admin_boundaries: dict[int, AdminBoundariesContainer] = {}
 
-    for adm_level in range(1, target_admin_level + 1):
-        filename = f"{config.iso_3_code}_adm{adm_level}.json"
-        uri = SEED_REPO_URI + SEED_REPO_ADMIN_BOUNDARIES_PATH + filename
+    filename = f"{config.iso_3_code}_adm{target_admin_level}.json"
+    uri = SEED_REPO_URI + SEED_REPO_ADMIN_BOUNDARIES_PATH + filename
 
-        geojson = download_json_source(uri, check_count=False)
-        if geojson is None:
-            container.error = (
-                f"Failed to download admin boundaries GeoJSON data from '{uri}'"
-            )
-            raise ValueError(container.error)
-        admin_boundaries[adm_level] = AdminBoundariesContainer.from_geojson(
-            adm_level, geojson
+    geojson = download_json_source(uri, check_count=False)
+    if geojson is None:
+        container.error = (
+            f"Failed to download admin boundaries GeoJSON data from '{uri}'"
         )
-        logger.info(
-            f"Loaded {len(admin_boundaries[adm_level].features)} features for admin level {adm_level}"
-        )
+        raise ValueError(container.error)
+    admin_boundaries = AdminAreasSet.from_geojson(target_admin_level, geojson)
+    logger.info(
+        f"Loaded {len(admin_boundaries.features)} features for admin level {target_admin_level}"
+    )
 
     container.data = admin_boundaries
 
