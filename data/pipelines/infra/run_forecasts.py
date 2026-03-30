@@ -12,13 +12,13 @@ from dotenv import load_dotenv
 
 from pipelines.drought.forecast import calculate_drought_forecasts
 from pipelines.flood.forecast import calculate_flood_forecasts
-from pipelines.infra.admin_boundaries_container import AdminAreasSet
 from pipelines.infra.alert_admin_aggregation import aggregate_to_parent_admin_levels
 from pipelines.infra.alert_types import HazardType
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
-from pipelines.infra.data_source_types import CountryConfig, RunTargetType
 from pipelines.infra.data_submitter import DataSubmitter
+from pipelines.infra.data_types.admin_area_types import AdminAreasSet
+from pipelines.infra.data_types.loaded_data_types import CountryConfig, RunTargetType
 
 logger = logging.getLogger(__name__)
 

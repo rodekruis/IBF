@@ -8,16 +8,16 @@ import csv
 import io
 import logging
 
-from pipelines.infra.admin_boundaries_container import AdminAreasSet
-from pipelines.infra.data_source_types import (
+from pipelines.infra.data_types.admin_area_types import AdminAreasSet
+from pipelines.infra.data_types.loaded_data_types import (
     CountryConfig,
     DataSource,
     DataSourceConfig,
     DataSourceContainer,
     DataType,
-    LocationPoint,
 )
-from pipelines.infra.infra_utils.dummy_data import DUMMY_DATA
+from pipelines.infra.data_types.location_point import LocationPoint
+from pipelines.infra.utils.dummy_data import DUMMY_DATA
 from shared.download_helpers import download_json_source, download_object
 
 logger = logging.getLogger(__name__)
