@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 SEED_REPO_POPULATION_GREYSCALE_PATH = "/raster-data/population/greyscale/"
 SEED_REPO_ADMIN_AREAS_PATH = "/admin-areas/processed/"
+# Note: this is getting glofas stations now. In the future, we most likely will be fetching
+# climate areas, catchments or something like that.
+# When we switch to that, the glofas station flow can be removed.
 SEED_REPO_GLOFAS_STATIONS_PATH = "/country-data/glofas-loc/"
 
 
