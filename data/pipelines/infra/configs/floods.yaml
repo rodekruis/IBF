@@ -3,7 +3,7 @@ hazard_type: floods
 run_targets:
   DEBUG:
     countries:
-      - name: KEN
+      - iso_3_code: KEN
         target_admin_level: 3
         data_sources:
           - name: glofas_stations

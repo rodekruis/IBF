@@ -3,7 +3,7 @@ hazard_type: drought
 run_targets:
   DEBUG:
     countries:
-      - name: ETH
+      - iso_3_code: ETH
         target_admin_level: 2
         data_sources:
           - name: climate_regions

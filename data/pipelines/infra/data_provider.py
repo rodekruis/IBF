@@ -70,6 +70,8 @@ class DataProvider:
 
 # If the file is run as main, load one of the default config files and load listed data sources
 # This is used for debugging, as well as for sample usage of this class.
+# Rewrite as needed.
+# If you need to refactor too much here, feel free to delete this code, and only add back what is needed for you.
 if __name__ == "__main__":
     # logging.basicConfig(level=logging.INFO)
     config_reader = ConfigReader()

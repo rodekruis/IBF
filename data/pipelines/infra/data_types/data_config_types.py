@@ -69,7 +69,7 @@ class CountryRunConfig:
 
 
 @dataclass
-class RunTargetConfig:
+class PipelineRunConfig:
     """
     Top level class for a pipeline run config file.
     """

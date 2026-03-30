@@ -18,7 +18,7 @@ from pipelines.infra.data_types.data_config_types import (
     DataSourceConfig,
     DataSourceLocation,
     OutputMode,
-    RunTargetConfig,
+    PipelineRunConfig,
     RunTargetType,
 )
 
@@ -31,7 +31,7 @@ DEFAULT_OUTPUT_PATH = "pipelines/output"
 
 class ConfigReader:
     def __init__(self) -> None:
-        self.run_targets: dict[RunTargetType, RunTargetConfig] = {}
+        self.run_targets: dict[RunTargetType, PipelineRunConfig] = {}
 
     def load_all(self, path: str | Path) -> bool:
         """Load and parse config from YAML file."""
@@ -114,7 +114,7 @@ class ConfigReader:
                 success = False
                 # Continue processing - still add run target with whatever countries parsed
 
-            self.run_targets[run_target_type] = RunTargetConfig(
+            self.run_targets[run_target_type] = PipelineRunConfig(
                 run_target=run_target_type,
                 hazard_type=hazard_type,
                 country_configs=countries,
@@ -131,23 +131,25 @@ class ConfigReader:
         """Parse countries from run target config and add to provided dict."""
         success = True
         for country_raw in target_config.get("countries", []):
-            if "name" not in country_raw:
-                logger.error(f"Country in run target '{target}' is missing 'name'")
+            if "iso_3_code" not in country_raw:
+                logger.error(
+                    f"Country in run target '{target}' is missing 'iso_3_code'"
+                )
                 success = False
                 continue
             if "target_admin_level" not in country_raw:
                 logger.error(
-                    f"Country '{country_raw['name']}' in run target '{target}' "
+                    f"Country '{country_raw['iso_3_code']}' in run target '{target}' "
                     f"is missing 'target_admin_level'"
                 )
                 success = False
                 continue
 
             try:
-                iso_3_code = CountryCodeIso3(country_raw["name"].upper())
+                iso_3_code = CountryCodeIso3(country_raw["iso_3_code"].upper())
             except ValueError:
                 logger.error(
-                    f"Invalid country code '{country_raw['name']}' in run target "
+                    f"Invalid country code '{country_raw['iso_3_code']}' in run target "
                     f"'{target}', expected a valid ISO a-3 code"
                 )
                 success = False
@@ -177,7 +179,7 @@ class ConfigReader:
             ):
                 logger.error(
                     f"Invalid target_admin_level '{target_admin_level}' for country "
-                    f"'{country_raw['name']}' in run target '{target}', "
+                    f"'{iso_3_code}' in run target '{target}', "
                     f"expected a positive integer between 1 and 4"
                 )
                 success = False
@@ -190,7 +192,7 @@ class ConfigReader:
             except (ValueError, KeyError):
                 logger.error(
                     f"Invalid output mode: '{output_raw.get('mode')}' "
-                    f"for country '{country_raw['name']}' run target '{target}', "
+                    f"for country '{iso_3_code}' run target '{target}', "
                     f"expected one of: {[e.value for e in OutputMode]}"
                 )
                 success = False
@@ -201,7 +203,7 @@ class ConfigReader:
             if not output_path or not isinstance(output_path, str):
                 logger.error(
                     f"Invalid output path '{output_path}' for country "
-                    f"'{country_raw['name']}' in run target '{target}', "
+                    f"'{iso_3_code}' in run target '{target}', "
                     f"expected a non-empty string"
                 )
                 success = False
@@ -229,7 +231,7 @@ class ConfigReader:
         for src in country_raw.get("data_sources", []):
             if "name" not in src:
                 logger.error(
-                    f"Data source in country '{country_raw['name']}' "
+                    f"Data source in country '{iso_3_code}' "
                     f"run target '{target}' is missing 'name'"
                 )
                 success = False
@@ -240,7 +242,7 @@ class ConfigReader:
             except ValueError:
                 logger.error(
                     f"Invalid data source '{src.get('source')}' in country "
-                    f"'{country_raw['name']}' run target '{target}', "
+                    f"'{iso_3_code}' run target '{target}', "
                     f"expected one of: {[e.value for e in DataSourceLocation]}"
                 )
                 success = False

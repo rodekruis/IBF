@@ -7,6 +7,7 @@ See the readme for more details on adding new data sources.
 import csv
 import io
 import logging
+import os
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import (
@@ -21,7 +22,7 @@ from shared.download_helpers import download_json_source, download_object
 
 logger = logging.getLogger(__name__)
 
-SEED_REPO_URI = "https://raw.githubusercontent.com/rodekruis/IBF-seed-data/main/"
+SEED_REPO_URI = os.environ["GITHUB_DATA_BASE_URL"]
 SEED_REPO_POPULATION_GREYSCALE_PATH = "raster-data/population/greyscale/"
 SEED_REPO_ADMIN_BOUNDARIES_PATH = "admin-areas/processed/"
 SEED_REPO_GLOFAS_STATIONS_PATH = "country-data/glofas-loc/"
