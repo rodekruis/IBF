@@ -60,9 +60,10 @@ def load_data_container(
 def _load_seed_repo_admin_boundaries(
     config: DataSourceConfig, container: DataSourceContainer, target_admin_level: int
 ):
-    container.data_type = DataType.ADMIN_BOUNDARIES_DICT
-
+    # Example of the data being loaded:
     # https://github.com/rodekruis/IBF-seed-data/blob/main/admin-areas/processed/AGO_adm1.json
+
+    container.data_type = DataType.ADMIN_AREA_SET
 
     filename = f"{config.iso_3_code}_adm{target_admin_level}.json"
     uri = SEED_REPO_URI + SEED_REPO_ADMIN_BOUNDARIES_PATH + filename
@@ -75,7 +76,7 @@ def _load_seed_repo_admin_boundaries(
         raise ValueError(container.error)
     admin_boundaries = AdminAreasSet.from_geojson(target_admin_level, geojson)
     logger.info(
-        f"Loaded {len(admin_boundaries.features)} features for admin level {target_admin_level}"
+        f"Loaded {len(admin_boundaries.admin_areas)} features for admin level {target_admin_level}"
     )
 
     container.data = admin_boundaries

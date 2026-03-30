@@ -23,7 +23,7 @@ class AdminAreaProperties:
 @dataclass
 class AdminArea:
     """
-    This represents a single admin boundary, with coordinates being the border
+    This represents a single admin area, with coordinates being a list of points for the boundary
     """
 
     properties: AdminAreaProperties
@@ -34,12 +34,12 @@ class AdminArea:
 @dataclass
 class AdminAreasSet:
     admin_level: int
-    # Features are keyed on admin boundary code
-    features: dict[str, AdminArea]
+    # Admin areas are keyed on admin boundary code
+    admin_areas: dict[str, AdminArea]
 
     @staticmethod
     def from_geojson(admin_level: int, raw: dict) -> AdminAreasSet:
-        features = {}
+        admin_areas = {}
 
         for f in raw.get("features", []):
             props = f.get("properties", {})
@@ -55,7 +55,7 @@ class AdminAreasSet:
 
             geom = f.get("geometry", {})
 
-            features[pcode] = AdminArea(
+            admin_areas[pcode] = AdminArea(
                 properties=AdminAreaProperties(
                     pcode=pcode,
                     name=feature_name,
@@ -68,5 +68,5 @@ class AdminAreasSet:
 
         return AdminAreasSet(
             admin_level=admin_level,
-            features=features,
+            admin_areas=admin_areas,
         )

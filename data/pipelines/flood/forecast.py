@@ -77,7 +77,7 @@ def calculate_flood_forecasts(
 
         # TODO: determine place_codes from station location + admin boundaries, or add it to the glofas station data source
         # For now, just get the first two place codes from the admin boundaries for debug.
-        place_codes: list[str] = list(target_admin_boundaries.features.keys())[:2]
+        place_codes: list[str] = list(target_admin_boundaries.admin_areas.keys())[:2]
 
         for place_code in place_codes:
             data_submitter.add_admin_area_exposure(

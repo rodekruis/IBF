@@ -30,8 +30,8 @@ class DataType(StrEnum):
     # Meta data may be loaded in the data container's metadata field
     PNG = "png"
 
-    # a dict of AdminBoundariesContainers keyed by admin level
-    ADMIN_BOUNDARIES_DICT = "admin_boundaries_dict"
+    # an AdminAreasSet object
+    ADMIN_AREA_SET = "admin_area_set"
 
     # a dict of LocationPoints keyed by id
     LOCATION_POINT_DICT = "location_point_dict"

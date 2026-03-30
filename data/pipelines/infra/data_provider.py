@@ -92,20 +92,20 @@ if __name__ == "__main__":
 
         # For the loaded data, print out some of the printable fields to verify it loaded
         for container in provider.loaded_data.values():
-            if container.data_type == DataType.ADMIN_BOUNDARIES_DICT:
-                if isinstance(container.data, dict):
-                    boundaries: AdminAreasSet
-                    for adm_level, boundaries in container.data.items():
-                        first_pcode, first_item = next(
-                            iter(boundaries.features.items())
-                        )
-                        print(
-                            f"  [{container.name}] adm{adm_level}: ",
-                            f"{first_item.properties.name}, {first_item.properties.pcode}, "
-                            f"parents: {first_item.properties.parent_pcodes}, ",
-                        )
+            if container.data_type == DataType.ADMIN_AREA_SET:
+                if isinstance(container.data, AdminAreasSet):
+                    first_pcode, first_item = next(
+                        iter(container.data.admin_areas.items())
+                    )
+                    print(
+                        f"  [{container.name}] admin level {container.data.admin_level}: ",
+                        f"{first_item.properties.name}, {first_item.properties.pcode}, "
+                        f"parents: {first_item.properties.parent_pcodes}, ",
+                    )
                 else:
-                    print(f"  [{container.name}] ({container.data_type}): <no data>")
+                    print(
+                        f"  ERROR: [{container.name}] ({container.data_type}): <no data>"
+                    )
             elif container.data_type == DataType.LOCATION_POINT_DICT:
                 if isinstance(container.data, dict):
                     for code, point in container.data.items():
@@ -113,7 +113,9 @@ if __name__ == "__main__":
                             f"  [{container.name}] {code}: {point.name} ({point.lat}, {point.lon})"
                         )
                 else:
-                    print(f"  [{container.name}] ({container.data_type}): <no data>")
+                    print(
+                        f"  ERROR: [{container.name}] ({container.data_type}): <no data>"
+                    )
             elif container.data_type == DataType.STRING:
                 print(f"  [{container.name}] ({container.data_type}): {container.data}")
             elif container.data_type == DataType.PNG:
