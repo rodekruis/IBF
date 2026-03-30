@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from pipelines.infra.admin_boundaries_container import AdminBoundariesContainer
+from pipelines.infra.admin_boundaries_container import AdminAreasSet
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_source_types import (
     DataSourceContainer,
@@ -94,7 +94,7 @@ if __name__ == "__main__":
         for container in provider.loaded_data.values():
             if container.data_type == DataType.ADMIN_BOUNDARIES_DICT:
                 if isinstance(container.data, dict):
-                    boundaries: AdminBoundariesContainer
+                    boundaries: AdminAreasSet
                     for adm_level, boundaries in container.data.items():
                         first_pcode, first_item = next(
                             iter(boundaries.features.items())

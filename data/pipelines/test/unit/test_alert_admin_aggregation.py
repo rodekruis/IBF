@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 
 import pytest
 from pipelines.infra.admin_boundaries_container import (
-    AdminBoundariesContainer,
-    AdminBoundaryFeature,
-    AdminBoundaryFeatureProperties,
+    AdminArea,
+    AdminAreaProperties,
+    AdminAreasSet,
 )
 from pipelines.infra.alert_admin_aggregation import aggregate_to_parent_admin_levels
 from pipelines.infra.alert_types import (
@@ -20,9 +20,9 @@ from pipelines.infra.alert_types import (
 )
 
 
-def _feature(pcode: str, parent_pcodes: dict[int, str]) -> AdminBoundaryFeature:
-    return AdminBoundaryFeature(
-        properties=AdminBoundaryFeatureProperties(
+def _feature(pcode: str, parent_pcodes: dict[int, str]) -> AdminArea:
+    return AdminArea(
+        properties=AdminAreaProperties(
             pcode=pcode,
             name=pcode,
             parent_pcodes=parent_pcodes,
@@ -32,26 +32,22 @@ def _feature(pcode: str, parent_pcodes: dict[int, str]) -> AdminBoundaryFeature:
     )
 
 
-BOUNDARIES_3_LEVELS: dict[int, AdminBoundariesContainer] = {
-    3: AdminBoundariesContainer(
-        admin_level=3,
-        features={
-            "child-A": _feature("child-A", {2: "parent-X", 1: "top"}),
-            "child-B": _feature("child-B", {2: "parent-X", 1: "top"}),
-            "child-C": _feature("child-C", {2: "parent-Y", 1: "top"}),
-        },
-    ),
-}
+BOUNDARIES_3_LEVELS: AdminAreasSet = AdminAreasSet(
+    admin_level=3,
+    features={
+        "child-A": _feature("child-A", {2: "parent-X", 1: "top"}),
+        "child-B": _feature("child-B", {2: "parent-X", 1: "top"}),
+        "child-C": _feature("child-C", {2: "parent-Y", 1: "top"}),
+    },
+)
 
-BOUNDARIES_2_LEVELS: dict[int, AdminBoundariesContainer] = {
-    2: AdminBoundariesContainer(
-        admin_level=2,
-        features={
-            "child-A": _feature("child-A", {1: "top"}),
-            "child-B": _feature("child-B", {1: "top"}),
-        },
-    ),
-}
+BOUNDARIES_2_LEVELS: AdminAreasSet = AdminAreasSet(
+    admin_level=2,
+    features={
+        "child-A": _feature("child-A", {1: "top"}),
+        "child-B": _feature("child-B", {1: "top"}),
+    },
+)
 
 
 def _make_alert(entries: list[AdminAreaExposure]) -> Alert:

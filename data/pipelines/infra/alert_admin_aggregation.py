@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from pipelines.infra.admin_boundaries_container import AdminBoundariesContainer
+from pipelines.infra.admin_boundaries_container import AdminAreasSet
 from pipelines.infra.alert_types import AdminAreaExposure, Alert, Layer
 
 
 def aggregate_to_parent_admin_levels(
     alert: Alert,
-    admin_boundaries: dict[int, AdminBoundariesContainer],
+    admin_boundaries: AdminAreasSet,
 ) -> None:
     """Aggregate admin area exposure from the deepest admin level upward.
 
@@ -34,10 +34,6 @@ def aggregate_to_parent_admin_levels(
 
     deepest_level = max(entry.admin_level for entry in deepest_entries)
 
-    deepest_boundaries = admin_boundaries.get(deepest_level)
-    if deepest_boundaries is None:
-        return
-
     # Aggregate upward, for instance level 3 → level 2 → level 1
     parent_levels = list(reversed(range(1, deepest_level)))
     for target_level in parent_levels:
@@ -45,7 +41,7 @@ def aggregate_to_parent_admin_levels(
         grouped: dict[tuple[str, Layer], list[bool | int | float]] = {}
 
         for entry in deepest_entries:
-            feature = deepest_boundaries.features.get(entry.place_code)
+            feature = admin_boundaries.features.get(entry.place_code)
             if feature is None:
                 continue
 

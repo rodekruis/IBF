@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 from pipelines.drought.forecast import calculate_drought_forecasts
 from pipelines.flood.forecast import calculate_flood_forecasts
-from pipelines.infra.admin_boundaries_container import AdminBoundariesContainer
+from pipelines.infra.admin_boundaries_container import AdminAreasSet
 from pipelines.infra.alert_admin_aggregation import aggregate_to_parent_admin_levels
 from pipelines.infra.alert_types import HazardType
 from pipelines.infra.config_reader import ConfigReader
@@ -55,9 +55,7 @@ def _run_country(
     )
 
     # --- Post-processing: aggregate deepest-level admin area data upward ---
-    admin_boundaries: dict[int, AdminBoundariesContainer] = data_provider.get_data(
-        "admin_boundaries"
-    ).data
+    admin_boundaries: AdminAreasSet = data_provider.get_data("admin_boundaries").data
     for alert in data_submitter.get_alerts():
         aggregate_to_parent_admin_levels(alert, admin_boundaries)
 
