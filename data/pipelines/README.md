@@ -85,9 +85,9 @@ run_targets:
 ### Adding a new data source
 
 1. Pick a string name you want to use in the config YAML file
-2. Add that string name to a new enum value in `DataSource` in `data_source_types.py`
+2. Add that string name to a new enum value in `DataSourceLocation` in `data_config_types.py`
 3. In `data_provider_fetchers.py`, add a new function to handle the downloading of the source.
-4. Set the `DataSourceContainer.data_type` in that function. If you need to create a new `DataType` for this, do so. For the data you set, avoid using complex dictionaries, raw JSON, or other types that need lots of strings to be parsed, since these make it hard to find data errors, and make it hard to adjust the code if a source needs to change. If you have a data type like this, try to cast it to a dataclass and return that. These are easy to make with LLMs. You can have the LLM fetch the data source directly (via the URL, or from a local file) and then it can write a dataclass for you. See other data source types for examples.
+4. Set the `LoadedDataSource.data_type` in that function. If you need to create a new `DataType` for this, do so. For the data you set, avoid using complex dictionaries, raw JSON, or other types that need lots of strings to be parsed, since these make it hard to find data errors, and make it hard to adjust the code if a source needs to change. If you have a data type like this, try to cast it to a dataclass and return that. These are easy to make with LLMs. You can have the LLM fetch the data source directly (via the URL, or from a local file) and then it can write a dataclass for you. See other data source types for examples.
 5. Also in `data_provider_fetchers.py`, in the function `load_data_container`, add a `case` to direct your new enum to your function.
 6. Add the data source string name to your config YAML, and run the pipeline locally to test it out.
 

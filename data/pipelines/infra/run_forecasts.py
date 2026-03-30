@@ -18,7 +18,7 @@ from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.loaded_data_types import CountryConfig, RunTargetType
+from pipelines.infra.data_types.data_config_types import CountryRunConfig, RunTargetType
 
 logger = logging.getLogger(__name__)
 
@@ -35,14 +35,16 @@ def _register_hazard_functions() -> None:
 
 def _run_country(
     hazard_fn: HazardFunction,
-    country: CountryConfig,
+    country: CountryRunConfig,
     config_reader: ConfigReader,
     run_target: RunTargetType,
     hazard_type: HazardType,
 ) -> list[str]:
     data_provider = DataProvider()
-    if not data_provider.try_load_data(config_reader, country.iso_3_code, run_target):
-        return [f"Failed to load data for {country.iso_3_code}"]
+    if not data_provider.try_load_data(
+        config_reader, country.country_code_iso_3, run_target
+    ):
+        return [f"Failed to load data for {country.country_code_iso_3}"]
 
     data_submitter = DataSubmitter()
 
@@ -50,7 +52,7 @@ def _run_country(
     hazard_fn(
         data_provider,
         data_submitter,
-        country.iso_3_code,
+        country.country_code_iso_3,
         country.target_admin_level,
     )
 
@@ -61,7 +63,9 @@ def _run_country(
 
     # --- Write output ---
     # NOTE: local file output is kept for now for /integration tests only
-    output_config = config_reader.get_country_config(country.iso_3_code, run_target)
+    output_config = config_reader.get_country_config(
+        country.country_code_iso_3, run_target
+    )
     output_mode = os.environ.get("IBF_OUTPUT_MODE", output_config.output_mode)
 
     if output_mode == "local":
@@ -69,7 +73,7 @@ def _run_country(
         output_path = str(
             Path(output_config.output_path)
             / hazard_type
-            / country.iso_3_code
+            / country.country_code_iso_3
             / timestamp
         )
     else:
@@ -114,16 +118,16 @@ def run_forecasts(config_path: str, run_target_str: str) -> list[str]:
     all_errors: list[str] = []
 
     for country in countries:
-        logger.info(f"Processing {hazard_type} for {country.iso_3_code}")
+        logger.info(f"Processing {hazard_type} for {country.country_code_iso_3}")
 
         errors = _run_country(
             hazard_fn, country, config_reader, run_target, hazard_type
         )
         if errors:
-            logger.error(f"Errors for {country.iso_3_code}: {errors}")
+            logger.error(f"Errors for {country.country_code_iso_3}: {errors}")
             all_errors.extend(errors)
         else:
-            logger.info(f"Completed {hazard_type} for {country.iso_3_code}")
+            logger.info(f"Completed {hazard_type} for {country.country_code_iso_3}")
 
     return all_errors
 

@@ -12,11 +12,11 @@ from pathlib import Path
 import yaml
 
 from pipelines.infra.alert_types import HazardType
-from pipelines.infra.data_types.loaded_data_types import (
-    CountryCode,
-    CountryConfig,
-    DataSource,
+from pipelines.infra.data_types.data_config_types import (
+    CountryCodeIso3,
+    CountryRunConfig,
     DataSourceConfig,
+    DataSourceLocation,
     OutputMode,
     RunTargetConfig,
     RunTargetType,
@@ -69,8 +69,8 @@ class ConfigReader:
         return self._parse_run_targets(hazard_type)
 
     def get_country_config(
-        self, country_name: CountryCode, run_target: RunTargetType
-    ) -> CountryConfig | None:
+        self, country_name: CountryCodeIso3, run_target: RunTargetType
+    ) -> CountryRunConfig | None:
         """
         Get the parsed config for a specific country and run target, or None if not found.
         """
@@ -109,7 +109,7 @@ class ConfigReader:
                 success = False
                 continue
 
-            countries: dict[CountryCode, CountryConfig] = {}
+            countries: dict[CountryCodeIso3, CountryRunConfig] = {}
             if not self._parse_countries(countries, target_config, target_name):
                 success = False
                 # Continue processing - still add run target with whatever countries parsed
@@ -124,7 +124,7 @@ class ConfigReader:
 
     def _parse_countries(
         self,
-        countries: dict[CountryCode, CountryConfig],
+        countries: dict[CountryCodeIso3, CountryRunConfig],
         target_config: dict,
         target: RunTargetType,
     ) -> bool:
@@ -144,7 +144,7 @@ class ConfigReader:
                 continue
 
             try:
-                iso_3_code = CountryCode(country_raw["name"].upper())
+                iso_3_code = CountryCodeIso3(country_raw["name"].upper())
             except ValueError:
                 logger.error(
                     f"Invalid country code '{country_raw['name']}' in run target "
@@ -207,8 +207,8 @@ class ConfigReader:
                 success = False
                 continue
 
-            countries[iso_3_code] = CountryConfig(
-                iso_3_code=iso_3_code,
+            countries[iso_3_code] = CountryRunConfig(
+                country_code_iso_3=iso_3_code,
                 target_admin_level=target_admin_level,
                 data_sources=data_sources,
                 output_mode=output_mode,
@@ -220,7 +220,7 @@ class ConfigReader:
     def _parse_data_sources(
         self,
         data_sources: list[DataSourceConfig],
-        iso_3_code: CountryCode,
+        iso_3_code: CountryCodeIso3,
         country_raw: dict,
         target: RunTargetType,
     ) -> bool:
@@ -236,12 +236,12 @@ class ConfigReader:
                 continue
 
             try:
-                data_source = DataSource(src.get("source", "todo_data_source"))
+                data_source = DataSourceLocation(src.get("source", "todo_data_source"))
             except ValueError:
                 logger.error(
                     f"Invalid data source '{src.get('source')}' in country "
                     f"'{country_raw['name']}' run target '{target}', "
-                    f"expected one of: {[e.value for e in DataSource]}"
+                    f"expected one of: {[e.value for e in DataSourceLocation]}"
                 )
                 success = False
                 continue
@@ -249,7 +249,7 @@ class ConfigReader:
             data_sources.append(
                 DataSourceConfig(
                     name=src["name"],
-                    iso_3_code=iso_3_code,
+                    country_code_iso_3=iso_3_code,
                     source=data_source,
                 )
             )

@@ -9,13 +9,12 @@ import io
 import logging
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.loaded_data_types import (
-    CountryConfig,
-    DataSource,
+from pipelines.infra.data_types.data_config_types import (
+    CountryRunConfig,
     DataSourceConfig,
-    DataSourceContainer,
-    DataType,
+    DataSourceLocation,
 )
+from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
 from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.dummy_data import DUMMY_DATA
 from shared.download_helpers import download_json_source, download_object
@@ -29,27 +28,27 @@ SEED_REPO_GLOFAS_STATIONS_PATH = "country-data/glofas-loc/"
 
 
 def load_data_container(
-    country_config: CountryConfig,
+    country_config: CountryRunConfig,
     data_config: DataSourceConfig,
-    container: DataSourceContainer,
+    container: LoadedDataSource,
 ):
 
     match data_config.source:
-        case DataSource.SEED_DATA_REPO_ADMIN:
+        case DataSourceLocation.SEED_DATA_REPO_ADMIN:
             return _load_seed_repo_admin_boundaries(
                 data_config, container, country_config.target_admin_level
             )
-        case DataSource.SEED_DATA_REPO_POPULATION:
+        case DataSourceLocation.SEED_DATA_REPO_POPULATION:
             return _load_seed_repo_population_data(data_config, container)
-        case DataSource.SEED_DATA_REPO_GLOFAS_STATIONS:
+        case DataSourceLocation.SEED_DATA_REPO_GLOFAS_STATIONS:
             return _load_seed_repo_glofas_stations(data_config, container)
-        case DataSource.IBF_API_CLIMATE_REGIONS:
+        case DataSourceLocation.IBF_API_CLIMATE_REGIONS:
             return _load_ibf_api_climate_regions(data_config, container)
-        case DataSource.TODO_ECMWF_FORECAST:
+        case DataSourceLocation.TODO_ECMWF_FORECAST:
             return _load_ecmwf_forecast(data_config, container)
-        case DataSource.TODO_GLOFAS_DISCHARGE:
+        case DataSourceLocation.TODO_GLOFAS_DISCHARGE:
             return _load_glofas_discharge(data_config, container)
-        case DataSource.TODO_DATA_SOURCE:
+        case DataSourceLocation.TODO_DATA_SOURCE:
             container.error = "Data source not yet configured"
             raise NotImplementedError("Data source not yet configured")
         case _:
@@ -58,14 +57,14 @@ def load_data_container(
 
 
 def _load_seed_repo_admin_boundaries(
-    config: DataSourceConfig, container: DataSourceContainer, target_admin_level: int
+    config: DataSourceConfig, container: LoadedDataSource, target_admin_level: int
 ):
     # Example of the data being loaded:
     # https://github.com/rodekruis/IBF-seed-data/blob/main/admin-areas/processed/AGO_adm1.json
 
     container.data_type = DataType.ADMIN_AREA_SET
 
-    filename = f"{config.iso_3_code}_adm{target_admin_level}.json"
+    filename = f"{config.country_code_iso_3}_adm{target_admin_level}.json"
     uri = SEED_REPO_URI + SEED_REPO_ADMIN_BOUNDARIES_PATH + filename
 
     geojson = download_json_source(uri, check_count=False)
@@ -83,12 +82,12 @@ def _load_seed_repo_admin_boundaries(
 
 
 def _load_seed_repo_glofas_stations(
-    config: DataSourceConfig, container: DataSourceContainer
+    config: DataSourceConfig, container: LoadedDataSource
 ):
     container.data_type = DataType.LOCATION_POINT_DICT
 
     # https://github.com/rodekruis/IBF-seed-data/blob/main/country-data/glofas-loc/glofas_stations_AGO.csv
-    filename = f"glofas_stations_{config.iso_3_code}.csv"
+    filename = f"glofas_stations_{config.country_code_iso_3}.csv"
     csv_uri = SEED_REPO_URI + SEED_REPO_GLOFAS_STATIONS_PATH + filename
     csv_data = download_object(csv_uri)
     if csv_data is None:
@@ -113,12 +112,12 @@ def _load_seed_repo_glofas_stations(
 
 
 def _load_seed_repo_population_data(
-    config: DataSourceConfig, container: DataSourceContainer
+    config: DataSourceConfig, container: LoadedDataSource
 ):
     container.data_type = DataType.PNG
 
-    png_filename = f"{config.iso_3_code}_population.png"
-    json_filename = f"{config.iso_3_code}_population_metadata.json"
+    png_filename = f"{config.country_code_iso_3}_population.png"
+    json_filename = f"{config.country_code_iso_3}_population_metadata.json"
     png_uri = SEED_REPO_URI + SEED_REPO_POPULATION_GREYSCALE_PATH + png_filename
     json_uri = SEED_REPO_URI + SEED_REPO_POPULATION_GREYSCALE_PATH + json_filename
 
@@ -145,7 +144,7 @@ def _load_seed_repo_population_data(
     }
 
 
-def _load_ecmwf_forecast(config: DataSourceConfig, container: DataSourceContainer):
+def _load_ecmwf_forecast(config: DataSourceConfig, container: LoadedDataSource):
     # TODO: Set the type correctly once real data is loaded
     container.data_type = DataType.UNSPECIFIED
     container.data = _load_dummy_data(config)
@@ -153,7 +152,7 @@ def _load_ecmwf_forecast(config: DataSourceConfig, container: DataSourceContaine
         container.error = f"No dummy data found for source '{config.name}'"
 
 
-def _load_glofas_discharge(config: DataSourceConfig, container: DataSourceContainer):
+def _load_glofas_discharge(config: DataSourceConfig, container: LoadedDataSource):
     # TODO: Set the type correctly once real data is loaded
     container.data_type = DataType.UNSPECIFIED
     container.data = _load_dummy_data(config)
@@ -162,7 +161,7 @@ def _load_glofas_discharge(config: DataSourceConfig, container: DataSourceContai
 
 
 def _load_ibf_api_climate_regions(
-    config: DataSourceConfig, container: DataSourceContainer
+    config: DataSourceConfig, container: LoadedDataSource
 ):
     # TODO: Set the type correctly once real data is loaded
     container.data_type = DataType.UNSPECIFIED

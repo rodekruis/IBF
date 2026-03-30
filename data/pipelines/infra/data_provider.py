@@ -12,11 +12,8 @@ from pathlib import Path
 
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.loaded_data_types import (
-    DataSourceContainer,
-    DataType,
-    RunTargetType,
-)
+from pipelines.infra.data_types.data_config_types import RunTargetType
+from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
 from pipelines.infra.utils.data_provider_fetchers import load_data_container
 
 logger = logging.getLogger(__name__)
@@ -24,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class DataProvider:
     def __init__(self) -> None:
-        self.loaded_data: dict[str, DataSourceContainer] = {}
+        self.loaded_data: dict[str, LoadedDataSource] = {}
 
     def try_load_data(
         self, config_reader: ConfigReader, country_name: str, run_target: RunTargetType
@@ -46,7 +43,7 @@ class DataProvider:
         success = True
         for source_config in data_sources:
 
-            data_container = DataSourceContainer(
+            data_container = LoadedDataSource(
                 name=source_config.name,
                 data_type=DataType.UNSPECIFIED,
                 data_source=source_config.source,
@@ -65,7 +62,7 @@ class DataProvider:
 
         return success
 
-    def get_data(self, name: str) -> DataSourceContainer:
+    def get_data(self, name: str) -> LoadedDataSource:
         if name not in self.loaded_data:
             raise KeyError(f"Data source '{name}' not loaded")
         return self.loaded_data[name]
