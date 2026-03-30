@@ -2,5 +2,5 @@
 
 ```mermaid
 graph LR
-
+  AlertsModule-->EventsModule
 ```

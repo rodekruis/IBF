@@ -3,7 +3,7 @@ import { HttpStatus } from '@nestjs/common';
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { CookieNames } from '@api-service/src/shared/enum/cookie.enums';
-import { getServer, resetDB } from '@api-service/test/helpers/utility.helper';
+import { loginApi, resetDB } from '@api-service/test/helpers/utility.helper';
 
 describe('/ Users', () => {
   describe('/ Login', () => {
@@ -21,7 +21,7 @@ describe('/ Users', () => {
       const testUser = fixtureUser;
 
       // Act
-      const response = await getServer().post('/users/login').send(testUser);
+      const response = await loginApi(testUser.username, testUser.password);
 
       // Assert
       expect(response.status).toBe(HttpStatus.CREATED);
@@ -44,7 +44,7 @@ describe('/ Users', () => {
       };
 
       // Act
-      const response = await getServer().post('/users/login').send(testUser);
+      const response = await loginApi(testUser.username, testUser.password);
 
       // Assert
       expect(response.status).toBe(HttpStatus.UNAUTHORIZED);

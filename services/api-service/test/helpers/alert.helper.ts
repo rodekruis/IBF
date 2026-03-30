@@ -1,8 +1,11 @@
+import * as request from 'supertest';
+
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import { env } from '@api-service/src/env';
 import {
   getAccessToken,
   getServer,
@@ -70,4 +73,13 @@ export async function createAlert(
   const seededAlert = response.body[0];
 
   return { adminAccessToken, alertId: seededAlert.id };
+}
+
+export async function submitAlerts(
+  alerts: Record<string, unknown>[],
+): Promise<request.Response> {
+  return getServer()
+    .post('/alerts')
+    .set('x-api-key', env.PIPELINE_API_KEY!)
+    .send({ alerts });
 }

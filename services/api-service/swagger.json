@@ -62,5 +62,10 @@
     "params": [
       "id"
     ]
+  },
+  {
+    "method": "get",
+    "path": "/api/events",
+    "params": []
   }
 ]
