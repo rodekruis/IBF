@@ -22,10 +22,13 @@ from shared.download_helpers import download_json_source, download_object
 
 logger = logging.getLogger(__name__)
 
-SEED_REPO_URI = os.environ["GITHUB_DATA_BASE_URL"]
-SEED_REPO_POPULATION_GREYSCALE_PATH = "raster-data/population/greyscale/"
-SEED_REPO_ADMIN_BOUNDARIES_PATH = "admin-areas/processed/"
-SEED_REPO_GLOFAS_STATIONS_PATH = "country-data/glofas-loc/"
+SEED_REPO_POPULATION_GREYSCALE_PATH = "/raster-data/population/greyscale/"
+SEED_REPO_ADMIN_BOUNDARIES_PATH = "/admin-areas/processed/"
+SEED_REPO_GLOFAS_STATIONS_PATH = "/country-data/glofas-loc/"
+
+
+def _get_seed_repo_uri() -> str:
+    return os.environ["GITHUB_DATA_BASE_URL"]
 
 
 def load_data_container(
@@ -66,7 +69,7 @@ def _load_seed_repo_admin_boundaries(
     container.data_type = DataType.ADMIN_AREA_SET
 
     filename = f"{config.country_code_iso_3}_adm{target_admin_level}.json"
-    uri = SEED_REPO_URI + SEED_REPO_ADMIN_BOUNDARIES_PATH + filename
+    uri = _get_seed_repo_uri() + SEED_REPO_ADMIN_BOUNDARIES_PATH + filename
 
     geojson = download_json_source(uri, check_count=False)
     if geojson is None:
@@ -89,7 +92,7 @@ def _load_seed_repo_glofas_stations(
 
     # https://github.com/rodekruis/IBF-seed-data/blob/main/country-data/glofas-loc/glofas_stations_AGO.csv
     filename = f"glofas_stations_{config.country_code_iso_3}.csv"
-    csv_uri = SEED_REPO_URI + SEED_REPO_GLOFAS_STATIONS_PATH + filename
+    csv_uri = _get_seed_repo_uri() + SEED_REPO_GLOFAS_STATIONS_PATH + filename
     csv_data = download_object(csv_uri)
     if csv_data is None:
         container.error = (
@@ -119,8 +122,10 @@ def _load_seed_repo_population_data(
 
     png_filename = f"{config.country_code_iso_3}_population.png"
     json_filename = f"{config.country_code_iso_3}_population_metadata.json"
-    png_uri = SEED_REPO_URI + SEED_REPO_POPULATION_GREYSCALE_PATH + png_filename
-    json_uri = SEED_REPO_URI + SEED_REPO_POPULATION_GREYSCALE_PATH + json_filename
+    png_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_GREYSCALE_PATH + png_filename
+    json_uri = (
+        _get_seed_repo_uri() + SEED_REPO_POPULATION_GREYSCALE_PATH + json_filename
+    )
 
     container.data = download_object(png_uri)
     if container.data is None:
