@@ -35,15 +35,14 @@ export class AlertsService {
       );
     }
 
-    const alerts = await this.alertsRepository.createAlerts(alerts);
-
     for (const alert of alerts) {
       await this.alertToEventService.matchAndStore(alert);
     }
 
     await this.closeStaleEvents(alerts);
 
-    return alerts;
+    // This way alerts are not stored in cases of errors on event matching/storing/closing
+    return await this.alertsRepository.createAlerts(alerts);
   }
 
   private async closeStaleEvents(alerts: AlertCreateDto[]): Promise<void> {

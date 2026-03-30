@@ -3,6 +3,7 @@ import { HttpStatus } from '@nestjs/common';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
+import { buildSeverityData } from '@api-service/src/alerts/test-helpers/alert.builders';
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
@@ -17,28 +18,6 @@ import {
 } from '@api-service/test/helpers/utility.helper';
 
 const VALID_ALERT = getAlertCreateDto('TEST-flood-2026-03-23');
-
-function buildSeverityData(
-  start: string,
-  end: string,
-  medianValue: number,
-  runValues: number[],
-) {
-  return [
-    {
-      leadTime: { start, end },
-      ensembleMemberType: EnsembleMemberType.median,
-      severityKey: 'water_discharge',
-      severityValue: medianValue,
-    },
-    ...runValues.map((v) => ({
-      leadTime: { start, end },
-      ensembleMemberType: EnsembleMemberType.run,
-      severityKey: 'water_discharge',
-      severityValue: v,
-    })),
-  ];
-}
 
 describe('POST /alerts', () => {
   const apiKey = env.PIPELINE_API_KEY;

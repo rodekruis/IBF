@@ -12,9 +12,18 @@ export class EventsRepository {
   }
 
   public async getOpenEventByName(eventName: string): Promise<Event | null> {
-    return this.prisma.event.findFirst({
+    const openEvents = await this.prisma.event.findMany({
       where: { eventName, closedAt: null },
     });
+    if (openEvents.length === 0) {
+      return null;
+    }
+    if (openEvents.length === 1) {
+      return openEvents[0];
+    }
+    throw new Error(
+      `Data integrity error: multiple open events found with name '${eventName}'`,
+    );
   }
 
   public async createEvent(data: {
