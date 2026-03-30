@@ -1,3 +1,6 @@
+# Can't use the top-level "paths" filter because of issues with required checks
+# See: https://github.com/orgs/community/discussions/44490#discussioncomment-10253645
+
 name: Pipeline tests
 
 on:
@@ -5,10 +8,6 @@ on:
   merge_group:
     types: [checks_requested]
   pull_request:
-    paths:
-      - 'data/**'
-      - '!data/data_management/**'
-      - '.github/workflows/test_pipelines.yml'
   push:
     branches:
       - main
@@ -24,8 +23,32 @@ permissions:
   id-token: write
 
 jobs:
+  path-filter:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.filter.outputs.should_skip }}
+    steps:
+      - uses: actions/checkout@v4
+        # Other events (from the merge-queue) can safely ignore the path-filter; Its output would default to 'NOT true'
+        if: github.event_name == 'pull_request'
+        with:
+          filter: blob:none
+          fetch-depth: 0
+
+      - uses: leavesster/pull-request-path-filter@v0.2
+        # Other events (from the merge-queue) can safely ignore the path-filter; Its output would default to 'NOT true'
+        if: github.event_name == 'pull_request'
+        id: 'filter'
+        with:
+          paths: |
+            - data/**
+            - '!data/data_management/**'
+            - .github/workflows/test_pipelines.yml
+
   test:
     runs-on: ubuntu-latest
+    needs: path-filter
+    if: ${{ needs.path-filter.outputs.should_skip != 'true' }}
     strategy:
       fail-fast: false
       matrix:
