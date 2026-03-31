@@ -21,15 +21,16 @@ def calculate_drought_forecasts(
     country: str,
     target_admin_level: int,
 ) -> None:
-    # TEMPLATE IMPLEMENTATION — This function loops over climate regions and
-    # seasons from data_provider, but uses dummy/placeholder values for
-    # severity, exposure, and raster output.
-    #
-    # To be implemented by the data scientist:
-    # 1. Compute severity (percentile) data on right
-    # 2. Compute drought extent
-    # 3. Compute real population exposure from population raster + drought extent
-    # 4. Compute geo-feature exposure (schools, roads, etc.)
+    ##################################################################################################################################
+    # TEMPLATE IMPLEMENTATION
+    # — Replace anything in this method/file as wished, but be sure to follow the correct loading and export of the data as outlined here.
+    # - To make the code easier to read/maintain, split it into multiple files/methods as needed.
+    ##################################################################################################################################
+
+    # Step 1 - Get data supplied by the data provider
+    # For early prototyping, just fetch a new data source here directly.
+    # As soon as the source is stable enough, inform software-dev to fetch it through the data provider instead.
+
     climate_regions: list[dict[str, object]] = data_provider.get_data(
         DataSource.CLIMATE_REGIONS_IBF_API
     ).data
@@ -37,11 +38,21 @@ def calculate_drought_forecasts(
         DataSource.ADMIN_AREA_SEED_REPO
     ).data
 
+    # Make sure your data loaded
     if not climate_regions or not target_admin_areas:
         data_submitter.add_error(
             f"Missing input data: climate_regions={bool(climate_regions)}, admin_areas={bool(target_admin_areas)}"
         )
         return
+
+    # Step 2 - Calculate the forecast
+    # NOTE: the code in here is purely for demonstration purposes and should be replaced with actual logic, which should include:
+    # - Loop over potential spatial extents (climate regions) and temporal extents (seasons)
+    # - Compute aggregate severity per season
+    # - If minimum severity threshold is passed, create an alert
+    # - Generate drought extent rasters
+    # - Compute population exposure from population raster + drought extent
+    # - Compute geo-feature exposure (hospitals, roads, etc.)
 
     issued_at = datetime.now(timezone.utc)
 
