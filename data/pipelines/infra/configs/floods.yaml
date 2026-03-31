@@ -11,4 +11,4 @@ run_targets:
           - source: population_seed_repo
           - source: todo_glofas_discharge
         output:
-          mode: local
+          mode: api
