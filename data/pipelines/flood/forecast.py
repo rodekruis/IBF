@@ -78,13 +78,13 @@ def calculate_flood_forecasts(
             severity_value=0,
         )
 
-        # TODO: determine admin_area_codes by looking at the admin areas in a climate region
+        # TODO: determine place codes by looking at the admin areas in a catchment area.
         # For now, just get the first two place codes from the admin areas for debug.
-        debug_affected_admin_area_codes: list[str] = list(
+        debug_alert_place_codes: list[str] = list(
             target_admin_areas.admin_areas.keys()
         )[:2]
 
-        for place_code in debug_affected_admin_area_codes:
+        for place_code in debug_alert_place_codes:
             data_submitter.add_admin_area_exposure(
                 alert_name=alert_name,
                 place_code=place_code,
