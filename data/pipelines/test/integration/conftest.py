@@ -1,3 +1,9 @@
+"""Shared pytest fixtures for local integration tests.
+
+Provides helpers to run pipeline subprocesses with local file output,
+load and validate the resulting alert JSON, and clean up output directories.
+"""
+
 import json
 import os
 import shutil

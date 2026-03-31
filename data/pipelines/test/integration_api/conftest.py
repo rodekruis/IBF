@@ -1,3 +1,9 @@
+"""Shared pytest fixtures for integration API tests.
+
+Provides helpers to run pipeline subprocesses against a live API,
+so individual test modules don't have to duplicate the boilerplate.
+"""
+
 import os
 import subprocess
 import sys
