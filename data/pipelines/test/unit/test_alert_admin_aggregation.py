@@ -13,37 +13,41 @@ from pipelines.infra.alert_types import (
     HazardType,
     Layer,
 )
+from pipelines.infra.data_types.admin_area_types import (
+    AdminArea,
+    AdminAreaProperties,
+    AdminAreasSet,
+)
 
-BOUNDARIES_3_LEVELS: dict[str, dict[str, object]] = {
-    "child-A": {
-        "admin_level": 3,
-        "parent_place_code": "parent-X",
-        "grandparent_place_code": "top",
-    },
-    "child-B": {
-        "admin_level": 3,
-        "parent_place_code": "parent-X",
-        "grandparent_place_code": "top",
-    },
-    "child-C": {
-        "admin_level": 3,
-        "parent_place_code": "parent-Y",
-        "grandparent_place_code": "top",
-    },
-}
 
-BOUNDARIES_2_LEVELS: dict[str, dict[str, object]] = {
-    "child-A": {
-        "admin_level": 2,
-        "parent_place_code": "top",
-        "grandparent_place_code": None,
+def _mock_admin_area(pcode: str, parent_pcodes: dict[int, str]) -> AdminArea:
+    return AdminArea(
+        properties=AdminAreaProperties(
+            pcode=pcode,
+            name=f"mock_name_for_{pcode}",
+            parent_pcodes=parent_pcodes,
+        ),
+        geometry_type="",
+        coordinates=[],
+    )
+
+
+MOCK_ADMIN_AREAS_LEVEL_3: AdminAreasSet = AdminAreasSet(
+    admin_level=3,
+    admin_areas={
+        "child-A": _mock_admin_area("child-A", {2: "parent-X", 1: "top"}),
+        "child-B": _mock_admin_area("child-B", {2: "parent-X", 1: "top"}),
+        "child-C": _mock_admin_area("child-C", {2: "parent-Y", 1: "top"}),
     },
-    "child-B": {
-        "admin_level": 2,
-        "parent_place_code": "top",
-        "grandparent_place_code": None,
+)
+
+MOCK_ADMIN_AREAS_LEVEL_2: AdminAreasSet = AdminAreasSet(
+    admin_level=2,
+    admin_areas={
+        "child-A": _mock_admin_area("child-A", {1: "top"}),
+        "child-B": _mock_admin_area("child-B", {1: "top"}),
     },
-}
+)
 
 
 def _make_alert(entries: list[AdminAreaExposure]) -> Alert:
@@ -71,7 +75,7 @@ def test_boolean_aggregation_uses_any():
         ]
     )
 
-    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+    aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
 
     level_2 = _entries_at_level(alert, 2)
     parent_x = [e for e in level_2 if e.place_code == "parent-X"]
@@ -94,7 +98,7 @@ def test_numeric_aggregation_uses_sum():
         ]
     )
 
-    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+    aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
 
     level_2 = _entries_at_level(alert, 2)
     parent_x = [e for e in level_2 if e.place_code == "parent-X"]
@@ -105,7 +109,7 @@ def test_numeric_aggregation_uses_sum():
 
 
 def test_aggregation_produces_all_levels():
-    # 3-level boundaries should produce entries at levels 3, 2, and 1
+    # 3-level areas should produce entries at levels 3, 2, and 1
     alert = _make_alert(
         [
             AdminAreaExposure("child-A", 3, Layer.SPATIAL_EXTENT, True),
@@ -114,7 +118,7 @@ def test_aggregation_produces_all_levels():
         ]
     )
 
-    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+    aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
 
     levels = {e.admin_level for e in alert.exposure.admin_area}
     assert levels == {1, 2, 3}
@@ -135,7 +139,7 @@ def test_grandparent_sums_from_deepest_not_from_parents():
         ]
     )
 
-    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+    aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
 
     level_1 = _entries_at_level(alert, 1)
     assert level_1[0].value == 350
@@ -150,7 +154,7 @@ def test_two_level_hierarchy():
         ]
     )
 
-    aggregate_to_parent_admin_levels(alert, BOUNDARIES_2_LEVELS)
+    aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_2)
 
     level_1 = _entries_at_level(alert, 1)
     assert len(level_1) == 1
@@ -161,19 +165,19 @@ def test_two_level_hierarchy():
 def test_empty_alert_is_noop():
     # No entries in, no entries out
     alert = _make_alert([])
-    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+    aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
     assert alert.exposure.admin_area == []
 
 
 def test_unknown_place_code_is_skipped():
-    # Place codes not in admin_boundaries are silently ignored
+    # Place codes not in admin_areas are silently ignored
     alert = _make_alert(
         [
             AdminAreaExposure("unknown", 3, Layer.SPATIAL_EXTENT, True),
         ]
     )
 
-    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+    aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
 
     assert len(alert.exposure.admin_area) == 1
 
@@ -189,7 +193,7 @@ def test_multiple_layers_aggregated_independently():
         ]
     )
 
-    aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+    aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
 
     level_2 = _entries_at_level(alert, 2)
     spatial = [e for e in level_2 if e.layer == Layer.SPATIAL_EXTENT]
@@ -211,4 +215,4 @@ def test_mixed_value_types_raises():
     )
 
     with pytest.raises(ValueError, match="Mixed or unsupported"):
-        aggregate_to_parent_admin_levels(alert, BOUNDARIES_3_LEVELS)
+        aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)

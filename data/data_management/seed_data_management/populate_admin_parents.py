@@ -37,7 +37,7 @@ The naming of these will follow the values from the UGA data (which already had 
 
 This script does the following:
 - Look at all files in the dir, make a list of the country names, and print them.
-- For each country, open all existing admin boundary files (1,2,3, and sometimes 4) in a list.
+- For each country, open all existing admin area files (1,2,3, and sometimes 4) in a list.
 - Apply parent code and name children (all depths) that starts with the parent code.
   - If the parent code is invalid (empty, missing), print an error.
   - If a child already has a parent code, make sure it matches. If not, print an error.

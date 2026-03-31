@@ -23,7 +23,7 @@ Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 2. Start services
 
 - Setup env variables `cp services/.env.example services/.env`
-- Start services with `npm run start:services:detach`
+- Start services with `npm run start:services:detach`.
 - Open
   - [http://localhost:4000/docs](http://localhost:4000/docs) to access the `api-service` documentation
   - [http://localhost:9000/](http://localhost:9000/) for pg_featureserv (GIS feature service)
@@ -38,6 +38,12 @@ See the [data/ folder readme](/data/README.md) for setup.
 5. Seed data for the DB
 
 This is under construction. There are currently some seeding scripts in `data/data_management/data_upload` for dev use. See the [data/ folder readme](/data/README.md) for more information.
+
+## Troubleshooting
+
+### When running locally, `api-service` tries to connect to the wrong local port for the DB (localhost:5432)
+
+- This can happen if you run `docker compose up` to start services, since Prisma may not get the correct env setting. Instead, always launch the services with `npm run start:services:detach`.
 
 ---
 

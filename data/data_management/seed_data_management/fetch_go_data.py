@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     # Fetch all data
     for name, url in sources.items():
-        data = download_json_source(name, url)
+        data = download_json_source(url)
         if data is None:
             raise RuntimeError(
                 f"Failed to load or parse JSON for '{name}' from: '{url}'"

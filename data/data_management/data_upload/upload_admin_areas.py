@@ -1,12 +1,12 @@
 """
-Upload all admin boundaries from a local clone of the seed-data repo
+Upload all admin areas from a local clone of the seed-data repo
 
 TODO: This table format is used for development purposes, and we may need
 a different table or different data structure/preprocessing for MVP,
 such as including extent data here.
 
 Example URI (for Uganda):
-http://localhost:9000/collections/debug.admin_boundaries/items?filter=country=%27UG%27&limit=10000&transform=simplify,0.005`;
+http://localhost:9000/collections/debug.admin_areas/items?filter=country=%27UG%27&limit=10000&transform=simplify,0.005`;
 """
 
 import glob
@@ -23,7 +23,7 @@ from data_management.utils.postgis_handler import (
 from shared.data_helpers import get_seed_data_repo_path
 
 # Table config
-TABLE_NAME = "debug.admin_boundaries"
+TABLE_NAME = "debug.admin_areas"
 
 COL_COUNTRY = "country"
 COL_ADMIN_LEVEL = "admin_level"
@@ -48,7 +48,7 @@ INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas" / "processed"
 FILE_PATTERN = "*.json"
 
 
-def load_admin_boundaries_data(json_dir):
+def load_admin_areas_data(json_dir):
     """
     Load the admin level, country name, and all features from the GeoJSON files
     """
@@ -57,7 +57,7 @@ def load_admin_boundaries_data(json_dir):
 
     print(f"Found {len(json_files)} GeoJSON files to process.")
 
-    # parsed data for all boundaries (called features in the JSON) for all files
+    # parsed data for all areas (called features in the JSON) for all files
     parsed_data = []
 
     for json_file in json_files:
@@ -89,19 +89,19 @@ def load_admin_boundaries_data(json_dir):
                 normalized_geometry = normalize_polygon_to_multipolygon(
                     feature.get("geometry", {})
                 )
-                parsed_boundary = {
+                parsed_admin_area = {
                     "admin_level": admin_level,
                     "properties": feature.get("properties", {}),
                     "geometry": normalized_geometry,
                 }
-                parsed_data.append(parsed_boundary)
+                parsed_data.append(parsed_admin_area)
 
     return parsed_data
 
 
-def insert_admin_boundaries_data(connection, features: list[dict]):
+def insert_admin_areas_data(connection, features: list[dict]):
     """
-    Insert all admin boundary features into the table.
+    Insert all admin area features into the table.
     """
     with connection.cursor() as cur:
         for feature in features:
@@ -188,14 +188,14 @@ def verify_data(connection):
             print(record)
 
 
-def create_admin_boundaries_tables():
+def create_admin_areas_tables():
     """
-    Main function to create the admin boundaries table.
+    Main function to create the admin areas table.
     Loads GeoJSON data, creates table, inserts data, and creates spatial index.
     """
 
     # Load data from JSON files
-    features = load_admin_boundaries_data(INPUT_DIR)
+    features = load_admin_areas_data(INPUT_DIR)
     if not features:
         print("No features loaded. Exiting.")
         return
@@ -204,7 +204,7 @@ def create_admin_boundaries_tables():
     with get_db_connection() as connection:
         # Create table if needed, insert data, and create spatial index
         create_gis_table(connection, TABLE_NAME, ADMIN_TABLE_COLUMNS)
-        insert_admin_boundaries_data(connection, features)
+        insert_admin_areas_data(connection, features)
         create_gis_index(connection, TABLE_NAME)
 
         # Verify data
@@ -214,4 +214,4 @@ def create_admin_boundaries_tables():
 
 
 if __name__ == "__main__":
-    create_admin_boundaries_tables()
+    create_admin_areas_tables()

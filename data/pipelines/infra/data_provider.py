@@ -1,209 +1,132 @@
+"""
+Class for loading and providing all data sources.
+It loads a config file, and fetches all data source from it.
+
+This file can be run directly to help debug data loading issues.
+"""
+
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from pathlib import Path
 
-from pipelines.infra.config_reader import ConfigReader, DataSourceConfig
+from dotenv import load_dotenv
 
-
-@dataclass
-class DataSource:
-    name: str
-    data: object | None = None
-    error: str | None = None
-    metadata: dict[str, str | int | float | bool] = field(default_factory=dict)
-
+from pipelines.infra.config_reader import ConfigReader
+from pipelines.infra.data_types.admin_area_types import AdminAreasSet
+from pipelines.infra.data_types.data_config_types import DataSource, RunTargetType
+from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
+from pipelines.infra.utils.data_provider_fetchers import load_data_container
 
 logger = logging.getLogger(__name__)
-
-# Placeholder data for developing and testing the pipeline infra end-to-end.
-# Structure approximates real sources but values are synthetic. Will be replaced
-# by actual data loaders (blob, url, local) in a future phase.
-DUMMY_DATA: dict[str, object] = {
-    "glofas_stations": [
-        {
-            "station_code": "glofas-station-A",
-            "station_name": "Station A",
-            "lat": 0.35,
-            "lon": 32.60,
-            "place_codes": ["place-code-1"],
-        },
-        {
-            "station_code": "glofas-station-B",
-            "station_name": "Station B",
-            "lat": 1.50,
-            "lon": 33.00,
-            "place_codes": ["place-code-2"],
-        },
-    ],
-    "glofas_discharge": {
-        # Per station, per lead time (0-7 days), per ensemble member (50):
-        # water_discharge in m³/s
-        "glofas-station-A": {
-            lead_time: {f"member-{m}": 80 + lead_time * 5 + m * 2 for m in range(1, 51)}
-            for lead_time in range(8)
-        },
-        "glofas-station-B": {
-            lead_time: {f"member-{m}": 40 + lead_time * 3 + m for m in range(1, 51)}
-            for lead_time in range(8)
-        },
-    },
-    "admin_boundaries": {
-        # Only deepest-level entries per country.
-        "place-code-1": {
-            "name": "Admin Area 1",
-            "admin_level": 3,
-            "parent_place_code": "place-code-1-parent",
-            "grandparent_place_code": "place-code-top",
-            "great_grandparent_place_code": None,
-            "centroid": {"lat": 0.35, "lon": 32.60},
-        },
-        "place-code-2": {
-            "name": "Admin Area 2",
-            "admin_level": 3,
-            "parent_place_code": "place-code-2-parent",
-            "grandparent_place_code": "place-code-top",
-            "great_grandparent_place_code": None,
-            "centroid": {"lat": 1.50, "lon": 33.00},
-        },
-        # Deepest level for drought (admin_levels: [1, 2])
-        "place-code-2-parent": {
-            "name": "Parent Area 2",
-            "admin_level": 2,
-            "parent_place_code": "place-code-top",
-            "grandparent_place_code": None,
-            "great_grandparent_place_code": None,
-            "centroid": {"lat": 1.50, "lon": 33.00},
-        },
-    },
-    "population": {
-        # In reality a raster (GeoTIFF). Represented here as a dict of
-        # cell_id -> population count to approximate zonal statistics output.
-        "cells": {
-            "cell-0-0": {"lat": 0.35, "lon": 32.60, "population": 1200},
-            "cell-0-1": {"lat": 0.35, "lon": 32.61, "population": 800},
-            "cell-1-0": {"lat": 1.50, "lon": 33.00, "population": 3500},
-            "cell-1-1": {"lat": 1.50, "lon": 33.01, "population": 2100},
-        },
-        "metadata": {
-            "crs": "EPSG:4326",
-            "resolution": 0.01,
-            "nodata": -1,
-        },
-    },
-    "ecmwf_forecast": {
-        # In reality a raster (GRIB/NetCDF) per ensemble member per month.
-        # Represented here as nested dict: month -> ensemble_member -> cell grid
-        # of rainfall anomaly (mm/month).
-        "months": {
-            "2026-03": {
-                f"member-{m}": {
-                    "cell-0-0": 45.0 + m * 0.5,
-                    "cell-0-1": 42.0 + m * 0.3,
-                    "cell-1-0": 60.0 + m * 0.8,
-                    "cell-1-1": 55.0 + m * 0.6,
-                }
-                for m in range(1, 51)
-            },
-            "2026-04": {
-                f"member-{m}": {
-                    "cell-0-0": 50.0 + m * 0.4,
-                    "cell-0-1": 48.0 + m * 0.2,
-                    "cell-1-0": 65.0 + m * 0.7,
-                    "cell-1-1": 58.0 + m * 0.5,
-                }
-                for m in range(1, 51)
-            },
-            "2026-05": {
-                f"member-{m}": {
-                    "cell-0-0": 55.0 + m * 0.3,
-                    "cell-0-1": 52.0 + m * 0.1,
-                    "cell-1-0": 70.0 + m * 0.6,
-                    "cell-1-1": 62.0 + m * 0.4,
-                }
-                for m in range(1, 51)
-            },
-        },
-        "metadata": {
-            "crs": "EPSG:4326",
-            "resolution": 0.01,
-            "nodata": -9999,
-            "unit": "mm/month",
-        },
-    },
-    "climate_regions": [
-        {
-            "id": "climate-region-B",
-            "name": "Region B",
-            "seasons": ["MAM"],
-            "place_codes": ["place-code-2-parent"],
-        },
-    ],
-}
 
 
 class DataProvider:
     def __init__(self) -> None:
-        self.loaded_data: dict[str, DataSource] = {}
-
-    # TODO: add more as needed
-    REQUIRED_DATA_SOURCES = ["admin_boundaries"]
+        self.loaded_data: dict[DataSource, LoadedDataSource] = {}
 
     def try_load_data(
-        self, config_reader: ConfigReader, country_name: str, run_target: str
+        self, config_reader: ConfigReader, country_name: str, run_target: RunTargetType
     ) -> bool:
-        data_sources = config_reader.get_data_sources(country_name, run_target)
+        country_config = config_reader.get_country_config(country_name, run_target)
+        if not country_config:
+            logger.error(
+                f"Country '{country_name}' not found in config for run_target '{run_target}'"
+            )
+            return False
 
+        data_sources = country_config.data_sources
         if not data_sources:
             logger.warning(
                 f"No data sources configured for country '{country_name}' in run_target '{run_target}'"
             )
             return False
 
-        configured_names = {src.name for src in data_sources}
-        for required in self.REQUIRED_DATA_SOURCES:
-            if required not in configured_names:
-                logger.error(
-                    f"Required data source '{required}' is not configured "
-                    f"for country '{country_name}'"
-                )
-                return False
-
         success = True
         for source_config in data_sources:
-            data_source = DataSource(name=source_config.name)
+
+            data_container = LoadedDataSource(
+                data_type=DataType.UNSPECIFIED,
+                data_source=source_config.source,
+            )
+
             try:
-                data_source.data = self._load_from_source(source_config)
-                data_source.metadata["type"] = source_config.type
-                data_source.metadata["source"] = source_config.source
+                load_data_container(country_config, source_config, data_container)
             except Exception as exc:
-                data_source.error = str(exc)
+                data_container.error = str(exc)
                 logger.error(
-                    f"Failed to load data source '{source_config.name}': {exc}"
+                    f"Failed to load data source '{source_config.source}': {exc}"
                 )
                 success = False
 
-            self.loaded_data[source_config.name] = data_source
+            self.loaded_data[source_config.source] = data_container
 
         return success
 
-    def get_data(self, name: str) -> DataSource:
-        if name not in self.loaded_data:
-            raise KeyError(f"Data source '{name}' not loaded")
-        return self.loaded_data[name]
+    def get_data(self, source: DataSource) -> LoadedDataSource:
+        if source not in self.loaded_data:
+            raise KeyError(f"Data source '{source}' not loaded")
+        return self.loaded_data[source]
 
-    def _load_from_source(self, source_config: DataSourceConfig) -> object:
-        if source_config.source == "dummy":
-            return self._load_dummy(source_config)
-        if source_config.source == "local":
-            raise NotImplementedError("Local file loading not yet implemented")
-        if source_config.source == "url":
-            raise NotImplementedError("URL loading not yet implemented")
-        if source_config.source == "blob":
-            raise NotImplementedError("Blob storage loading not yet implemented")
-        raise ValueError(f"Unknown source type: '{source_config.source}'")
 
-    def _load_dummy(self, source_config: DataSourceConfig) -> object:
-        if source_config.name in DUMMY_DATA:
-            return DUMMY_DATA[source_config.name]
-        raise KeyError(f"No dummy data available for source '{source_config.name}'")
+# If the file is run as main, load one of the default config files and load listed data sources
+# This is used for debugging, as well as for sample usage of this class.
+# Rewrite as needed.
+# If you need to refactor too much here, feel free to delete this code, and only add back what is needed for you.
+if __name__ == "__main__":
+    # load the env vars here so our debug code below can use them in the data loader.
+    load_dotenv()
+
+    config_reader = ConfigReader()
+    config_path = Path(__file__).parent / "configs" / "floods.yaml"
+    success = config_reader.load_all(config_path)
+    if not success:
+        print(f"Failed to load config from path {config_path}")
+    else:
+        data = config_reader.run_targets.get(RunTargetType.DEBUG)
+        print(
+            f"Data sources for DEBUG run target: {data.hazard_type} - {data.country_configs}"
+        )
+
+        provider = DataProvider()
+        for country_code in data.country_configs:
+            provider.try_load_data(config_reader, country_code, RunTargetType.DEBUG)
+
+        # For the loaded data, print out some of the printable fields to verify it loaded
+        for container in provider.loaded_data.values():
+            if container.data_type == DataType.ADMIN_AREA_SET:
+                if isinstance(container.data, AdminAreasSet):
+                    first_pcode, first_item = next(
+                        iter(container.data.admin_areas.items())
+                    )
+                    print(
+                        f"  [{container.data_source}] admin level {container.data.admin_level}: ",
+                        f"{first_item.properties.name}, {first_item.properties.pcode}, "
+                        f"parents: {first_item.properties.parent_pcodes}, ",
+                    )
+                else:
+                    print(
+                        f"  ERROR: [{container.data_source}] ({container.data_type}): <no data>"
+                    )
+            elif container.data_type == DataType.LOCATION_POINT_DICT:
+                if isinstance(container.data, dict):
+                    for code, point in container.data.items():
+                        print(
+                            f"  [{container.data_source}] {code}: {point.name} ({point.lat}, {point.lon})"
+                        )
+                else:
+                    print(
+                        f"  ERROR: [{container.data_source}] ({container.data_type}): <no data>"
+                    )
+            elif container.data_type == DataType.STRING:
+                print(
+                    f"  [{container.data_source}] ({container.data_type}): {container.data}"
+                )
+            elif container.data_type == DataType.PNG:
+                crs = container.metadata.get("crs", "N/A")
+                bounds = container.metadata.get("bounds", "N/A")
+                size = len(container.data) if container.data else 0
+                print(
+                    f"  [{container.data_source}] ({container.data_type}): {size} bytes, crs={crs}, bounds={bounds}"
+                )
+    print("Complete")

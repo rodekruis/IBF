@@ -3,23 +3,12 @@ hazard_type: floods
 run_targets:
   DEBUG:
     countries:
-      - name: KEN
-        admin_levels: [1, 2, 3]
+      - iso_3_code: KEN
+        target_admin_level: 3
         data_sources:
-          # eventually from IBF API
-          - name: glofas_stations
-            type: json
-            source: dummy
-          - name: admin_boundaries
-            type: geojson
-            source: dummy
-          # eventually from seed-data repo
-          - name: population
-            type: raster
-            source: dummy
-          # eventually from external sources
-          - name: glofas_discharge
-            type: netcdf
-            source: dummy
+          - source: glofas_stations_seed_repo
+          - source: admin_area_seed_repo
+          - source: population_seed_repo
+          - source: todo_glofas_discharge
         output:
           mode: api
