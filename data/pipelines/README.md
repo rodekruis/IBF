@@ -19,7 +19,7 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG
 | Flag           | Description                                                                      |
 | -------------- | -------------------------------------------------------------------------------- |
 | `--config`     | Path to the hazard YAML config file (e.g. `pipelines/infra/configs/floods.yaml`) |
-| `--run-target` | Run target defined in the config (e.g. `DEBUG`, `LIVE`)                          |
+| `--run-target` | Run target defined in the config (e.g. `DEBUG`, `TEST`)                          |
 
 ## Structure
 
