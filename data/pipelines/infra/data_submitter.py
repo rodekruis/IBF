@@ -5,13 +5,7 @@ import logging
 import os
 from datetime import datetime, timezone
 
-from pipelines.infra.alert_integrity_checks import (
-    check_admin_area_integrity,
-    check_centroid,
-    check_raster_integrity,
-    check_severity_integrity,
-)
-from pipelines.infra.alert_types import (
+from pipelines.infra.data_types.alert_types import (
     AdminAreaExposure,
     Alert,
     Centroid,
@@ -25,7 +19,13 @@ from pipelines.infra.alert_types import (
     RasterExtent,
     SeverityEntry,
 )
-from pipelines.infra.api_client import ApiClient
+from pipelines.infra.utils.alert_integrity_checks import (
+    check_admin_area_integrity,
+    check_centroid,
+    check_raster_integrity,
+    check_severity_integrity,
+)
+from pipelines.infra.utils.api_client import ApiClient
 
 logger = logging.getLogger(__name__)
 

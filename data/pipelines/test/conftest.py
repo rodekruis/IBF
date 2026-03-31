@@ -2,14 +2,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
-from pipelines.infra.alert_types import (
+from pipelines.infra.data_submitter import DataSubmitter
+from pipelines.infra.data_types.alert_types import (
     Centroid,
     EnsembleMemberType,
     ForecastSource,
     HazardType,
     Layer,
 )
-from pipelines.infra.data_submitter import DataSubmitter
 
 ALERT_NAME = "TST_floods_station-test"
 

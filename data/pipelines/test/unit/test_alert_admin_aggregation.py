@@ -3,8 +3,12 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 import pytest
-from pipelines.infra.alert_admin_aggregation import aggregate_to_parent_admin_levels
-from pipelines.infra.alert_types import (
+from pipelines.infra.data_types.admin_area_types import (
+    AdminArea,
+    AdminAreaProperties,
+    AdminAreasSet,
+)
+from pipelines.infra.data_types.alert_types import (
     AdminAreaExposure,
     Alert,
     Centroid,
@@ -13,10 +17,8 @@ from pipelines.infra.alert_types import (
     HazardType,
     Layer,
 )
-from pipelines.infra.data_types.admin_area_types import (
-    AdminArea,
-    AdminAreaProperties,
-    AdminAreasSet,
+from pipelines.infra.utils.alert_admin_aggregation import (
+    aggregate_to_parent_admin_levels,
 )
 
 

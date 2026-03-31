@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
-from pipelines.infra.api_client import ApiClient
+from pipelines.infra.utils.api_client import ApiClient
 
 
 class TestApiClientInit:
