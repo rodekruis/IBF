@@ -1,4 +1,4 @@
-from data.pipelines.infra.data_types.data_config_types import OutputMode
+from pipelines.infra.data_types.data_config_types import OutputMode
 
 
 def test_floods_ken(pipeline):

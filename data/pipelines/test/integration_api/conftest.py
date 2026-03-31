@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 import pytest
-from data.pipelines.infra.data_types.data_config_types import OutputMode
+from pipelines.infra.data_types.data_config_types import OutputMode
 
 
 def _run_pipeline(

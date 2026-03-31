@@ -6,8 +6,6 @@ import os
 import shutil
 from datetime import datetime, timezone
 
-from data.pipelines.infra.data_types.data_config_types import OutputMode
-
 from pipelines.infra.data_types.alert_types import (
     AdminAreaExposure,
     Alert,
@@ -22,6 +20,7 @@ from pipelines.infra.data_types.alert_types import (
     RasterExtent,
     SeverityEntry,
 )
+from pipelines.infra.data_types.data_config_types import OutputMode
 from pipelines.infra.utils.alert_integrity_checks import (
     check_admin_area_integrity,
     check_centroid,
