@@ -12,6 +12,7 @@ from pipelines.infra.alert_types import (
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
+from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.location_point import LocationPoint
 
 
@@ -30,8 +31,12 @@ def calculate_flood_forecasts(
     # 2. Generate actual flood extent rasters instead of placeholders
     # 3. Compute real population exposure from population raster + flood extent
     # 4. Compute geo-feature exposure (hospitals, roads, etc.)
-    stations: dict[str, LocationPoint] = data_provider.get_data("glofas_stations").data
-    target_admin_areas: AdminAreasSet = data_provider.get_data("admin_areas").data
+    stations: dict[str, LocationPoint] = data_provider.get_data(
+        DataSource.GLOFAS_STATIONS_SEED_REPO
+    ).data
+    target_admin_areas: AdminAreasSet = data_provider.get_data(
+        DataSource.ADMIN_AREA_SEED_REPO
+    ).data
 
     if not stations or not target_admin_areas:
         data_submitter.add_error(

@@ -6,13 +6,9 @@ run_targets:
       - iso_3_code: ETH
         target_admin_level: 2
         data_sources:
-          - name: climate_regions
-            source: ibf_api_climate_regions
-          - name: admin_areas
-            source: seed_data_repo_admin
-          - name: population
-            source: seed_data_repo_population
-          - name: ecmwf_forecast
-            source: todo_ecmwf_forecast
+          - source: climate_regions_ibf_api
+          - source: admin_area_seed_repo
+          - source: population_seed_repo
+          - source: todo_ecmwf_forecast
         output:
           mode: api

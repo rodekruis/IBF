@@ -18,7 +18,11 @@ from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.data_config_types import CountryRunConfig, RunTargetType
+from pipelines.infra.data_types.data_config_types import (
+    CountryRunConfig,
+    DataSource,
+    RunTargetType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +61,9 @@ def _run_country(
     )
 
     # --- Post-processing: aggregate deepest-level admin area data upward ---
-    admin_areas: AdminAreasSet = data_provider.get_data("admin_areas").data
+    admin_areas: AdminAreasSet = data_provider.get_data(
+        DataSource.ADMIN_AREA_SEED_REPO
+    ).data
     for alert in data_submitter.get_alerts():
         aggregate_to_parent_admin_levels(alert, admin_areas)
 

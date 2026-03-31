@@ -15,8 +15,8 @@ from pipelines.infra.alert_types import HazardType
 from pipelines.infra.data_types.data_config_types import (
     CountryCodeIso3,
     CountryRunConfig,
+    DataSource,
     DataSourceConfig,
-    DataSourceLocation,
     OutputMode,
     PipelineRunConfig,
     RunTargetType,
@@ -229,28 +229,19 @@ class ConfigReader:
         """Parse data sources from country config and append to provided list."""
         success = True
         for src in country_raw.get("data_sources", []):
-            if "name" not in src:
-                logger.error(
-                    f"Data source in country '{iso_3_code}' "
-                    f"run target '{target}' is missing 'name'"
-                )
-                success = False
-                continue
-
             try:
-                data_source = DataSourceLocation(src.get("source", "todo_data_source"))
+                data_source = DataSource(src.get("source", "todo_data_source"))
             except ValueError:
                 logger.error(
                     f"Invalid data source '{src.get('source')}' in country "
                     f"'{iso_3_code}' run target '{target}', "
-                    f"expected one of: {[e.value for e in DataSourceLocation]}"
+                    f"expected one of: {[e.value for e in DataSource]}"
                 )
                 success = False
                 continue
 
             data_sources.append(
                 DataSourceConfig(
-                    name=src["name"],
                     country_code_iso_3=iso_3_code,
                     source=data_source,
                 )

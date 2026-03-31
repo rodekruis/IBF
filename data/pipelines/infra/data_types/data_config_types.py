@@ -19,17 +19,17 @@ class RunTargetType(StrEnum):
     PROD = "prod"
 
 
-class DataSourceLocation(StrEnum):
+class DataSource(StrEnum):
     """
     Enum of the different data sources that can be loaded.
     The string value (case insensitive) must match the "source" field in the config YAML.
     See the readme for more details on how to add to this.
     """
 
-    SEED_DATA_REPO_ADMIN = "seed_data_repo_admin"
-    SEED_DATA_REPO_POPULATION = "seed_data_repo_population"
-    SEED_DATA_REPO_GLOFAS_STATIONS = "seed_data_repo_glofas_stations"
-    IBF_API_CLIMATE_REGIONS = "ibf_api_climate_regions"
+    ADMIN_AREA_SEED_REPO = "admin_area_seed_repo"
+    POPULATION_SEED_REPO = "population_seed_repo"
+    GLOFAS_STATIONS_SEED_REPO = "glofas_stations_seed_repo"
+    CLIMATE_REGIONS_IBF_API = "climate_regions_ibf_api"
     TODO_ECMWF_FORECAST = "todo_ecmwf_forecast"
     TODO_GLOFAS_DISCHARGE = "todo_glofas_discharge"
     TODO_DATA_SOURCE = "todo_data_source"
@@ -50,9 +50,8 @@ class DataSourceConfig:
     Config for a specific data source, as described in the config file.
     """
 
-    name: str
     country_code_iso_3: CountryCodeIso3
-    source: DataSourceLocation
+    source: DataSource
 
 
 @dataclass

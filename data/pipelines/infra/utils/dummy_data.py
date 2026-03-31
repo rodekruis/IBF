@@ -1,8 +1,11 @@
 # Placeholder data for developing and testing the pipeline infra end-to-end.
 # Structure approximates real sources but values are synthetic. Will be replaced
 # by actual data loaders (blob, url, local) in a future phase.
-DUMMY_DATA: dict[str, object] = {
-    "glofas_discharge": {
+
+from pipelines.infra.data_types.data_config_types import DataSource
+
+DUMMY_DATA: dict[DataSource, object] = {
+    DataSource.TODO_GLOFAS_DISCHARGE: {
         # Per station, per lead time (0-7 days), per ensemble member (50):
         # water_discharge in m³/s
         "glofas-station-A": {
@@ -14,7 +17,7 @@ DUMMY_DATA: dict[str, object] = {
             for lead_time in range(8)
         },
     },
-    "ecmwf_forecast": {
+    DataSource.TODO_ECMWF_FORECAST: {
         # In reality a raster (GRIB/NetCDF) per ensemble member per month.
         # Represented here as nested dict: month -> ensemble_member -> cell grid
         # of rainfall anomaly (mm/month).
@@ -54,7 +57,7 @@ DUMMY_DATA: dict[str, object] = {
             "unit": "mm/month",
         },
     },
-    "climate_regions": [
+    DataSource.CLIMATE_REGIONS_IBF_API: [
         {
             "id": "climate-region-B",
             "name": "Region B",

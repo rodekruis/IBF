@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from pipelines.infra.data_types.data_config_types import DataSourceLocation
+from pipelines.infra.data_types.data_config_types import DataSource
 
 
 class DataType(StrEnum):
@@ -38,9 +38,8 @@ class LoadedDataSource:
     These are provided to the hazard logic pipeline code.
     """
 
-    name: str
     data_type: DataType
-    data_source: DataSourceLocation
+    data_source: DataSource
     data: object | None = None
     error: str | None = None
     metadata: dict[str, str | int | float | bool] = field(default_factory=dict)

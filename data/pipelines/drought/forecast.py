@@ -12,6 +12,7 @@ from pipelines.infra.alert_types import (
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
+from pipelines.infra.data_types.data_config_types import DataSource
 
 
 def calculate_drought_forecasts(
@@ -30,9 +31,11 @@ def calculate_drought_forecasts(
     # 3. Compute real population exposure from population raster + drought extent
     # 4. Compute geo-feature exposure (schools, roads, etc.)
     climate_regions: list[dict[str, object]] = data_provider.get_data(
-        "climate_regions"
+        DataSource.CLIMATE_REGIONS_IBF_API
     ).data
-    target_admin_areas: AdminAreasSet = data_provider.get_data("admin_areas").data
+    target_admin_areas: AdminAreasSet = data_provider.get_data(
+        DataSource.ADMIN_AREA_SEED_REPO
+    ).data
 
     if not climate_regions or not target_admin_areas:
         data_submitter.add_error(

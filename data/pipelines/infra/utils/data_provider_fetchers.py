@@ -12,8 +12,8 @@ import os
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
+    DataSource,
     DataSourceConfig,
-    DataSourceLocation,
 )
 from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
 from pipelines.infra.data_types.location_point import LocationPoint
@@ -31,7 +31,11 @@ SEED_REPO_GLOFAS_STATIONS_PATH = "/country-data/glofas-loc/"
 
 
 def _get_seed_repo_uri() -> str:
-    return os.environ["GITHUB_DATA_BASE_URL"]
+    var_name = "GITHUB_DATA_BASE_URL"
+    uri = os.environ.get(var_name)
+    if not uri:
+        raise ValueError(f"{var_name} environment variable could not be loaded.")
+    return uri
 
 
 def load_data_container(
@@ -41,21 +45,21 @@ def load_data_container(
 ):
 
     match data_config.source:
-        case DataSourceLocation.SEED_DATA_REPO_ADMIN:
+        case DataSource.ADMIN_AREA_SEED_REPO:
             return _load_seed_repo_admin_areas(
                 data_config, container, country_config.target_admin_level
             )
-        case DataSourceLocation.SEED_DATA_REPO_POPULATION:
+        case DataSource.POPULATION_SEED_REPO:
             return _load_seed_repo_population_data(data_config, container)
-        case DataSourceLocation.SEED_DATA_REPO_GLOFAS_STATIONS:
+        case DataSource.GLOFAS_STATIONS_SEED_REPO:
             return _load_seed_repo_glofas_stations(data_config, container)
-        case DataSourceLocation.IBF_API_CLIMATE_REGIONS:
+        case DataSource.CLIMATE_REGIONS_IBF_API:
             return _load_ibf_api_climate_regions(data_config, container)
-        case DataSourceLocation.TODO_ECMWF_FORECAST:
+        case DataSource.TODO_ECMWF_FORECAST:
             return _load_ecmwf_forecast(data_config, container)
-        case DataSourceLocation.TODO_GLOFAS_DISCHARGE:
+        case DataSource.TODO_GLOFAS_DISCHARGE:
             return _load_glofas_discharge(data_config, container)
-        case DataSourceLocation.TODO_DATA_SOURCE:
+        case DataSource.TODO_DATA_SOURCE:
             container.error = "Data source not yet configured"
             raise NotImplementedError("Data source not yet configured")
         case _:
@@ -156,7 +160,7 @@ def _load_ecmwf_forecast(config: DataSourceConfig, container: LoadedDataSource):
     container.data_type = DataType.UNSPECIFIED
     container.data = _load_dummy_data(config)
     if container.data is None:
-        container.error = f"No dummy data found for source '{config.name}'"
+        container.error = f"No dummy data found for source '{config.source}'"
 
 
 def _load_glofas_discharge(config: DataSourceConfig, container: LoadedDataSource):
@@ -164,7 +168,7 @@ def _load_glofas_discharge(config: DataSourceConfig, container: LoadedDataSource
     container.data_type = DataType.UNSPECIFIED
     container.data = _load_dummy_data(config)
     if container.data is None:
-        container.error = f"No dummy data found for source '{config.name}'"
+        container.error = f"No dummy data found for source '{config.source}'"
 
 
 def _load_ibf_api_climate_regions(
@@ -174,10 +178,10 @@ def _load_ibf_api_climate_regions(
     container.data_type = DataType.UNSPECIFIED
     container.data = _load_dummy_data(config)
     if container.data is None:
-        container.error = f"No dummy data found for source '{config.name}'"
+        container.error = f"No dummy data found for source '{config.source}'"
 
 
 def _load_dummy_data(source_config: DataSourceConfig) -> object:
-    if source_config.name in DUMMY_DATA:
-        return DUMMY_DATA[source_config.name]
+    if source_config.source in DUMMY_DATA:
+        return DUMMY_DATA[source_config.source]
     return None
