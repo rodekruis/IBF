@@ -21,15 +21,11 @@ def calculate_drought_forecasts(
     country: str,
     target_admin_level: int,
 ) -> None:
-    # TEMPLATE IMPLEMENTATION — This function loops over climate regions and
-    # seasons from data_provider, but uses dummy/placeholder values for
-    # severity, exposure, and raster output.
-    #
-    # To be implemented by the data scientist:
-    # 1. Compute severity (percentile) data on right
-    # 2. Compute drought extent
-    # 3. Compute real population exposure from population raster + drought extent
-    # 4. Compute geo-feature exposure (schools, roads, etc.)
+    # TEMPLATE IMPLEMENTATION — Replace anything in this file as wished, but be sure to follow
+    # the correct loading and export of the data as outlined here.
+    # To make the code easier to read/maintain, split it into multiple files/methods as needed.
+
+    # Grab the data from the data provider. The sources here match what was in the config file.
     climate_regions: list[dict[str, object]] = data_provider.get_data(
         DataSource.CLIMATE_REGIONS_IBF_API
     ).data
@@ -37,12 +33,22 @@ def calculate_drought_forecasts(
         DataSource.ADMIN_AREA_SEED_REPO
     ).data
 
+    # Note: If you need to prototype quickly, you can just load data from a local file.
+
+    # Make sure your data loaded
     if not climate_regions or not target_admin_areas:
         data_submitter.add_error(
             f"Missing input data: climate_regions={bool(climate_regions)}, admin_areas={bool(target_admin_areas)}"
         )
         return
 
+    # Calculate the forecast. If a given threshold is passed, create an alert.
+    # Replace this with actual code, and split up the logic into multiple files as needed.
+    # This includes doing the following:
+    # 1. Compute severity (percentile) data on right
+    # 2. Compute drought extent
+    # 3. Compute real population exposure from population raster + drought extent
+    # 4. Compute geo-feature exposure (schools, roads, etc.)
     issued_at = datetime.now(timezone.utc)
 
     for region in climate_regions:

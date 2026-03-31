@@ -22,15 +22,11 @@ def calculate_flood_forecasts(
     country: str,
     target_admin_level: int,
 ) -> None:
-    # TEMPLATE IMPLEMENTATION — This function loops over stations from
-    # data_provider, but uses dummy/placeholder values for severity, exposure,
-    # and raster output.
-    #
-    # To be implemented by the data scientist:
-    # 1. Compute aggregate severity per lead time from discharge data
-    # 2. Generate actual flood extent rasters instead of placeholders
-    # 3. Compute real population exposure from population raster + flood extent
-    # 4. Compute geo-feature exposure (hospitals, roads, etc.)
+    # TEMPLATE IMPLEMENTATION — Replace anything in this file as wished, but be sure to follow
+    # the correct loading and export of the data as outlined here.
+    # To make the code easier to read/maintain, split it into multiple files/methods as needed.
+
+    # Grab the data from the data provider. The sources here match what was in the config file.
     stations: dict[str, LocationPoint] = data_provider.get_data(
         DataSource.GLOFAS_STATIONS_SEED_REPO
     ).data
@@ -38,12 +34,23 @@ def calculate_flood_forecasts(
         DataSource.ADMIN_AREA_SEED_REPO
     ).data
 
+    # Note: If you need to prototype quickly, you can just load data from a local file.
+
+    # Make sure your data loaded
     if not stations or not target_admin_areas:
         data_submitter.add_error(
             f"Missing input data: stations={bool(stations)}, admin_areas={bool(target_admin_areas)}"
         )
         return
 
+    # Calculate the forecast. If a given threshold is passed, create an alert
+    # The following code just makes an alert for every glofas station.
+    # Replace this with actual code, and split up the logic into multiple files as needed.
+    # This includes doing the following:
+    # 1. Compute aggregate severity per lead time from discharge data
+    # 2. Generate actual flood extent rasters instead of placeholders
+    # 3. Compute real population exposure from population raster + flood extent
+    # 4. Compute geo-feature exposure (hospitals, roads, etc.)
     issued_at = datetime.now(timezone.utc)
 
     for station_code, station in stations.items():
