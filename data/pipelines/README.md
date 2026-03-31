@@ -19,7 +19,7 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG
 | Flag           | Description                                                                      |
 | -------------- | -------------------------------------------------------------------------------- |
 | `--config`     | Path to the hazard YAML config file (e.g. `pipelines/infra/configs/floods.yaml`) |
-| `--run-target` | Run target defined in the config (e.g. `DEBUG`, `LIVE`)                          |
+| `--run-target` | Run target defined in the config (e.g. `DEBUG`, `TEST`)                          |
 
 ## Structure
 
@@ -67,8 +67,7 @@ run_targets:
       - iso_3_code               # ISO alpha-3 country code (e.g. "KEN", "ETH")
         target_admin_level       # Target admin level to make forecasts on (1–4)
         data_sources:
-          - name                 # Any string to use as a dict key to reference the loaded data
-            source               # DataSource enum showing where to fetch this data.
+          - source               # DataSource enum showing where to fetch this data.
         output:
           mode                   # OutputMode enum (local / api)
           path                   # Optional, used for local output

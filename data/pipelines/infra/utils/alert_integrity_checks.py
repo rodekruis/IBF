@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pipelines.infra.alert_types import Alert, Centroid, EnsembleMemberType, Layer
+from pipelines.infra.data_types.alert_types import (
+    Alert,
+    Centroid,
+    EnsembleMemberType,
+    Layer,
+)
 
 
 def check_centroid(alert_name: str, centroid: Centroid) -> list[str]:

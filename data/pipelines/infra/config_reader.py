@@ -11,7 +11,7 @@ from pathlib import Path
 
 import yaml
 
-from pipelines.infra.alert_types import HazardType
+from pipelines.infra.data_types.alert_types import HazardType
 from pipelines.infra.data_types.data_config_types import (
     CountryCodeIso3,
     CountryRunConfig,
