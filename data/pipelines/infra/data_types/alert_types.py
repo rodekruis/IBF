@@ -162,6 +162,6 @@ class Alert:
             "centroid": self.centroid.to_dict(),
             "hazardTypes": list(self.hazard_types),
             "forecastSources": list(self.forecast_sources),
-            "severityData": [entry.to_dict() for entry in self.severity_data],
+            "severityEntries": [entry.to_dict() for entry in self.severity_data],
             "exposure": self.exposure.to_dict(),
         }

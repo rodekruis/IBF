@@ -30,7 +30,7 @@ def test_drought_eth(pipeline):
     assert alert["alertName"] == "ETH_drought_climate-region-B_season-MAM"
     assert "ECMWF" in alert["forecastSources"]
 
-    for entry in alert["severityData"]:
+    for entry in alert["severityEntries"]:
         assert entry["severityKey"] == "percentile"
 
     admin_levels = {r["adminLevel"] for r in alert["exposure"]["adminArea"]}

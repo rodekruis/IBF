@@ -18,7 +18,7 @@ function buildValidAlert(
     centroid: { latitude: 0.35, longitude: 32.6 },
     hazardTypes: [HazardType.floods],
     forecastSources: [ForecastSource.glofas],
-    severityData: [
+    severityEntries: [
       {
         leadTime: {
           start: '2026-03-20T00:00:00Z',
@@ -139,7 +139,7 @@ describe('AlertsService', () => {
 
   describe('submitAlerts – severity validation', () => {
     it('should reject empty severity data', async () => {
-      const alerts = [buildValidAlert({ severityData: [] })];
+      const alerts = [buildValidAlert({ severityEntries: [] })];
       await expect(service.submitAlerts({ alerts })).rejects.toThrow(
         HttpException,
       );
@@ -148,7 +148,7 @@ describe('AlertsService', () => {
     it('should reject lead time where start >= end', async () => {
       const alerts = [
         buildValidAlert({
-          severityData: [
+          severityEntries: [
             {
               leadTime: {
                 start: '2026-03-21T00:00:00Z',
@@ -188,7 +188,7 @@ describe('AlertsService', () => {
     it('should reject when median record is missing', async () => {
       const alerts = [
         buildValidAlert({
-          severityData: [
+          severityEntries: [
             {
               leadTime: {
                 start: '2026-03-20T00:00:00Z',
@@ -219,7 +219,7 @@ describe('AlertsService', () => {
     it('should reject when no ensemble-run record exists', async () => {
       const alerts = [
         buildValidAlert({
-          severityData: [
+          severityEntries: [
             {
               leadTime: {
                 start: '2026-03-20T00:00:00Z',
@@ -464,7 +464,7 @@ describe('AlertsService', () => {
     it('should return BAD_REQUEST with message and errors array', async () => {
       const alerts = [
         buildValidAlert({
-          severityData: [],
+          severityEntries: [],
           centroid: { latitude: 100, longitude: 0 },
         }),
       ];

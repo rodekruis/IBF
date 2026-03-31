@@ -21,7 +21,7 @@ export class AlertsRepository {
             hazardTypes: alert.hazardTypes,
             forecastSources: alert.forecastSources,
             severity: {
-              create: alert.severityData.map((entry) => ({
+              create: alert.severityEntries.map((entry) => ({
                 leadTime: { ...entry.leadTime },
                 ensembleMemberType: entry.ensembleMemberType,
                 severityKey: entry.severityKey,

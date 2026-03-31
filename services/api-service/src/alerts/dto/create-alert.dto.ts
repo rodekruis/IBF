@@ -76,7 +76,7 @@ export class CreateAlertDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SeverityEntryDto)
-  public readonly severityData: SeverityEntryDto[];
+  public readonly severityEntries: SeverityEntryDto[];
 
   @ApiProperty({ type: ExposureDto })
   @ValidateNested()
