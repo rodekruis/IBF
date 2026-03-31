@@ -22,19 +22,22 @@ def calculate_flood_forecasts(
     country: str,
     target_admin_level: int,
 ) -> None:
-    # TEMPLATE IMPLEMENTATION — Replace anything in this file as wished, but be sure to follow
-    # the correct loading and export of the data as outlined here.
-    # To make the code easier to read/maintain, split it into multiple files/methods as needed.
+    ##################################################################################################################################
+    # TEMPLATE IMPLEMENTATION
+    # — Replace anything in this method/file as wished, but be sure to follow the correct loading and export of the data as outlined here.
+    # - To make the code easier to read/maintain, split it into multiple files/methods as needed.
+    ##################################################################################################################################
 
-    # Grab the data from the data provider. The sources here match what was in the config file.
+    # Step 1 - Get data supplied by the data provider
+    # For early prototyping, just fetch a new data source here directly.
+    # As soon as the source is stable enough, inform software-dev to fetch it through the data provider instead.
+
     stations: dict[str, LocationPoint] = data_provider.get_data(
         DataSource.GLOFAS_STATIONS_SEED_REPO
     ).data
     target_admin_areas: AdminAreasSet = data_provider.get_data(
         DataSource.ADMIN_AREA_SEED_REPO
     ).data
-
-    # Note: If you need to prototype quickly, you can just load data from a local file.
 
     # Make sure your data loaded
     if not stations or not target_admin_areas:
@@ -43,14 +46,15 @@ def calculate_flood_forecasts(
         )
         return
 
-    # Calculate the forecast. If a given threshold is passed, create an alert
-    # The following code just makes an alert for every glofas station.
-    # Replace this with actual code, and split up the logic into multiple files as needed.
-    # This includes doing the following:
-    # 1. Compute aggregate severity per lead time from discharge data
-    # 2. Generate actual flood extent rasters instead of placeholders
-    # 3. Compute real population exposure from population raster + flood extent
-    # 4. Compute geo-feature exposure (hospitals, roads, etc.)
+    # Step 2 - Calculate the forecast
+    # NOTE: the code in here is purely for demonstration purposes and should be replaced with actual logic, which should include:
+    # - Loop over potential spatial extents (glofas stations)
+    # - Compute aggregate severity per lead time and overall
+    # - If minimum severity threshold is passed, create an alert
+    # - Generate actual flood extent rasters instead of placeholders
+    # - Compute real population exposure from population raster + flood extent
+    # - Compute geo-feature exposure (hospitals, roads, etc.)
+
     issued_at = datetime.now(timezone.utc)
 
     for station_code, station in stations.items():
@@ -91,6 +95,7 @@ def calculate_flood_forecasts(
             target_admin_areas.admin_areas.keys()
         )[:2]
 
+        # TODO: actually, do not call add_admin_area_exposure per place_code, but just once (per layer)
         for place_code in debug_alert_place_codes:
             data_submitter.add_admin_area_exposure(
                 alert_name=alert_name,
