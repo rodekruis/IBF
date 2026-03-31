@@ -178,23 +178,26 @@ class DataSubmitter:
         alerts_list = [alert.to_dict() for alert in self._alerts.values()]
 
         file_errors = self._write_to_file(alerts_list, output_path)
-        if file_errors:
-            return file_errors
 
         if output_mode == OutputMode.API:
+            if file_errors:
+                logger.warning(f"Local debug write failed: {file_errors}")
             api_errors = self._send_to_api(alerts_list)
             if not api_errors:
                 shutil.rmtree(output_path, ignore_errors=True)
                 logger.info(f"Cleaned up local output at {output_path}")
             return api_errors
 
-        return []
+        return file_errors
 
     def _write_to_file(self, alerts_list: list[dict], output_dir: str) -> list[str]:
-        os.makedirs(output_dir, exist_ok=True)
-        file_path = os.path.join(output_dir, "alerts_object.json")
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(alerts_list, f, indent=2)
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+            file_path = os.path.join(output_dir, "alerts_object.json")
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(alerts_list, f, indent=2)
+        except OSError as e:
+            return [f"Failed to write alerts to {output_dir}: {e}"]
 
         logger.info(f"Wrote {len(alerts_list)} alerts to {file_path}")
         return []
