@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pipelines.flood.determine_alerts import determine_triggered_stations
 from pipelines.flood.determine_exposure import determine_admin_area_exposure
 from pipelines.flood.extract_glofas_data import extract_glofas_station_discharge
+from pipelines.flood.resolve_flood_extent import resolve_flood_extent_raster
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
@@ -64,6 +65,7 @@ def calculate_flood_forecasts(
     thresholds: dict[str, dict[str, float]] = {}  # TODO: station_code -> {return_period -> value}
     basins_geojson: dict = {"type": "FeatureCollection", "features": []}  # TODO: HydroSHEDS basins
     population_raster_path: str = ""  # TODO: path to global population raster (e.g. WorldPop)
+    flood_extent_directory: str = ""  # TODO: directory with pre-computed flood extent rasters per return period
 
     # Step 2 - Compute country bounding box and prepare country-level data
     country_bounds = get_bounding_box(target_admin_areas)
@@ -131,12 +133,25 @@ def calculate_flood_forecasts(
                 severity_value=severity.median_discharge,
             )
 
+        # TODO: consider compacting this resolve method
+        # Resolve flood extent raster for the highest matched return period
+        highest_rp = max(
+            triggered.lead_time_severities,
+            key=lambda s: s.median_discharge,
+        ).matched_return_period
+
+        flood_extent_path = resolve_flood_extent_raster(
+            matched_return_period=highest_rp,
+            flood_extent_directory=flood_extent_directory,
+        ) if flood_extent_directory else None
+
         # Determine spatial and population exposure via basin -> admin area mapping
         exposure = determine_admin_area_exposure(
             station=triggered.station,
             basins_geojson=basins_geojson,
             admin_areas=target_admin_areas,
             population_raster_path=population_raster_path,
+            flood_extent_raster_path=flood_extent_path,
             target_admin_level=target_admin_level,
         )
 
