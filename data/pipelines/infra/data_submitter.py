@@ -15,10 +15,10 @@ from pipelines.infra.data_types.alert_types import (
     GeoFeatureExposure,
     HazardType,
     Layer,
-    LeadTime,
     RasterExposure,
     RasterExtent,
-    SeverityEntry,
+    Severity,
+    TimeInterval,
 )
 from pipelines.infra.data_types.data_config_types import OutputMode
 from pipelines.infra.utils.alert_integrity_checks import (
@@ -86,8 +86,8 @@ class DataSubmitter:
     def add_severity_data(
         self,
         alert_name: str,
-        lead_time_start: str,
-        lead_time_end: str,
+        time_interval_start: str,
+        time_interval_end: str,
         ensemble_member_type: EnsembleMemberType,
         severity_key: str,
         severity_value: float | int,
@@ -96,9 +96,11 @@ class DataSubmitter:
         if alert is None:
             return
 
-        alert.severity_data.append(
-            SeverityEntry(
-                lead_time=LeadTime(start=lead_time_start, end=lead_time_end),
+        alert.severity.append(
+            Severity(
+                time_interval=TimeInterval(
+                    start=time_interval_start, end=time_interval_end
+                ),
                 ensemble_member_type=ensemble_member_type,
                 severity_key=severity_key,
                 severity_value=severity_value,

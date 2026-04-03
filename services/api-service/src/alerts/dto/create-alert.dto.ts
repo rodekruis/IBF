@@ -11,7 +11,7 @@ import {
 
 import { CentroidDto } from '@api-service/src/alerts/dto/centroid.dto';
 import { ExposureDto } from '@api-service/src/alerts/dto/exposure.dto';
-import { SeverityEntryDto } from '@api-service/src/alerts/dto/severity-entry.dto';
+import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
@@ -51,10 +51,10 @@ export class CreateAlertDto {
   public readonly forecastSources: ForecastSource[];
 
   @ApiProperty({
-    type: [SeverityEntryDto],
+    type: [SeverityDto],
     example: [
       {
-        leadTime: {
+        timeInterval: {
           start: '2026-03-20T00:00:00Z',
           end: '2026-03-20T23:59:59Z',
         },
@@ -63,7 +63,7 @@ export class CreateAlertDto {
         severityValue: 120.5,
       },
       {
-        leadTime: {
+        timeInterval: {
           start: '2026-03-20T00:00:00Z',
           end: '2026-03-20T23:59:59Z',
         },
@@ -75,8 +75,8 @@ export class CreateAlertDto {
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => SeverityEntryDto)
-  public readonly severityEntries: SeverityEntryDto[];
+  @Type(() => SeverityDto)
+  public readonly severity: SeverityDto[];
 
   @ApiProperty({ type: ExposureDto })
   @ValidateNested()

@@ -18,9 +18,9 @@ function createMockValidAlert(
     centroid: { latitude: 0.35, longitude: 32.6 },
     hazardTypes: [HazardType.floods],
     forecastSources: [ForecastSource.glofas],
-    severityEntries: [
+    severity: [
       {
-        leadTime: {
+        timeInterval: {
           start: '2026-03-20T00:00:00Z',
           end: '2026-03-20T23:59:59Z',
         },
@@ -29,7 +29,7 @@ function createMockValidAlert(
         severityValue: 120.5,
       },
       {
-        leadTime: {
+        timeInterval: {
           start: '2026-03-20T00:00:00Z',
           end: '2026-03-20T23:59:59Z',
         },
@@ -139,18 +139,18 @@ describe('AlertsService', () => {
 
   describe('submitAlerts – severity validation', () => {
     it('should reject empty severity data', async () => {
-      const alerts = [createMockValidAlert({ severityEntries: [] })];
+      const alerts = [createMockValidAlert({ severity: [] })];
       await expect(service.submitAlerts({ alerts })).rejects.toThrow(
         HttpException,
       );
     });
 
-    it('should reject lead time where start >= end', async () => {
+    it('should reject time interval where start >= end', async () => {
       const alerts = [
         createMockValidAlert({
-          severityEntries: [
+          severity: [
             {
-              leadTime: {
+              timeInterval: {
                 start: '2026-03-21T00:00:00Z',
                 end: '2026-03-20T00:00:00Z',
               },
@@ -159,7 +159,7 @@ describe('AlertsService', () => {
               severityValue: 1,
             },
             {
-              leadTime: {
+              timeInterval: {
                 start: '2026-03-21T00:00:00Z',
                 end: '2026-03-20T00:00:00Z',
               },
@@ -188,9 +188,9 @@ describe('AlertsService', () => {
     it('should reject when median record is missing', async () => {
       const alerts = [
         createMockValidAlert({
-          severityEntries: [
+          severity: [
             {
-              leadTime: {
+              timeInterval: {
                 start: '2026-03-20T00:00:00Z',
                 end: '2026-03-20T23:59:59Z',
               },
@@ -219,9 +219,9 @@ describe('AlertsService', () => {
     it('should reject when no ensemble-run record exists', async () => {
       const alerts = [
         createMockValidAlert({
-          severityEntries: [
+          severity: [
             {
-              leadTime: {
+              timeInterval: {
                 start: '2026-03-20T00:00:00Z',
                 end: '2026-03-20T23:59:59Z',
               },
@@ -464,7 +464,7 @@ describe('AlertsService', () => {
     it('should return BAD_REQUEST with message and errors array', async () => {
       const alerts = [
         createMockValidAlert({
-          severityEntries: [],
+          severity: [],
           centroid: { latitude: 100, longitude: 0 },
         }),
       ];

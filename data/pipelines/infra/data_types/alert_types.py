@@ -15,7 +15,7 @@ class Centroid:
 
 
 @dataclass
-class LeadTime:
+class TimeInterval:
     start: str
     end: str
 
@@ -45,15 +45,15 @@ class Layer(StrEnum):
 
 
 @dataclass
-class SeverityEntry:
-    lead_time: LeadTime
+class Severity:
+    time_interval: TimeInterval
     ensemble_member_type: EnsembleMemberType
     severity_key: str
     severity_value: float | int
 
     def to_dict(self) -> dict[str, str | float | int | dict[str, str]]:
         return {
-            "leadTime": self.lead_time.to_dict(),
+            "timeInterval": self.time_interval.to_dict(),
             "ensembleMemberType": self.ensemble_member_type,
             "severityKey": self.severity_key,
             "severityValue": self.severity_value,
@@ -143,7 +143,7 @@ class Alert:
     centroid: Centroid
     hazard_types: list[HazardType]
     forecast_sources: list[ForecastSource] = field(default_factory=list)
-    severity_data: list[SeverityEntry] = field(default_factory=list)
+    severity: list[Severity] = field(default_factory=list)
     exposure: Exposure = field(default_factory=Exposure)
 
     def to_dict(
@@ -162,6 +162,6 @@ class Alert:
             "centroid": self.centroid.to_dict(),
             "hazardTypes": list(self.hazard_types),
             "forecastSources": list(self.forecast_sources),
-            "severityEntries": [entry.to_dict() for entry in self.severity_data],
+            "severity": [entry.to_dict() for entry in self.severity],
             "exposure": self.exposure.to_dict(),
         }

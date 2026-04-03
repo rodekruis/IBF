@@ -49,7 +49,7 @@ def calculate_flood_forecasts(
     # Step 2 - Calculate the forecast
     # NOTE: the code in here is purely for demonstration purposes and should be replaced with actual logic, which should include:
     # - Loop over potential spatial extents (glofas stations)
-    # - Compute aggregate severity per lead time and overall
+    # - Compute aggregate severity per time interval and overall
     # - If minimum severity threshold is passed, create an alert
     # - Generate actual flood extent rasters instead of placeholders
     # - Compute real population exposure from population raster + flood extent
@@ -74,16 +74,16 @@ def calculate_flood_forecasts(
         for _ in range(2):
             data_submitter.add_severity_data(
                 alert_name=alert_name,
-                lead_time_start="2026-03-20T00:00:00Z",
-                lead_time_end="2026-03-20T23:59:59Z",
+                time_interval_start="2026-03-20T00:00:00Z",
+                time_interval_end="2026-03-20T23:59:59Z",
                 ensemble_member_type=EnsembleMemberType.RUN,
                 severity_key="water_discharge",
                 severity_value=0,
             )
         data_submitter.add_severity_data(
             alert_name=alert_name,
-            lead_time_start="2026-03-20T00:00:00Z",
-            lead_time_end="2026-03-20T23:59:59Z",
+            time_interval_start="2026-03-20T00:00:00Z",
+            time_interval_end="2026-03-20T23:59:59Z",
             ensemble_member_type=EnsembleMemberType.MEDIAN,
             severity_key="water_discharge",
             severity_value=0,

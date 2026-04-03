@@ -54,24 +54,24 @@ export class AlertsService {
   private checkSeverity(alert: CreateAlertDto): string[] {
     const errors: string[] = [];
 
-    if (alert.severityEntries.length === 0) {
+    if (alert.severity.length === 0) {
       errors.push(`Alert '${alert.alertName}' has no severity data`);
       return errors;
     }
 
-    const leadTimes = new Map<string, EnsembleMemberType[]>();
-    for (const entry of alert.severityEntries) {
-      const key = `${entry.leadTime.start}|${entry.leadTime.end}`;
-      const types = leadTimes.get(key) ?? [];
+    const timeIntervals = new Map<string, EnsembleMemberType[]>();
+    for (const entry of alert.severity) {
+      const key = `${entry.timeInterval.start}|${entry.timeInterval.end}`;
+      const types = timeIntervals.get(key) ?? [];
       types.push(entry.ensembleMemberType);
-      leadTimes.set(key, types);
+      timeIntervals.set(key, types);
     }
 
-    for (const [key, types] of leadTimes) {
+    for (const [key, types] of timeIntervals) {
       const [start, end] = key.split('|');
       if (new Date(start) >= new Date(end)) {
         errors.push(
-          `Alert '${alert.alertName}' lead time ${start}\u2013${end}: start must be before end`,
+          `Alert '${alert.alertName}' time interval ${start}\u2013${end}: start must be before end`,
         );
       }
 
@@ -82,12 +82,12 @@ export class AlertsService {
 
       if (medianCount !== 1) {
         errors.push(
-          `Alert '${alert.alertName}' lead time ${start}\u2013${end}: expected 1 median record, found ${medianCount}`,
+          `Alert '${alert.alertName}' time interval ${start}\u2013${end}: expected 1 median record, found ${medianCount}`,
         );
       }
       if (runCount < 1) {
         errors.push(
-          `Alert '${alert.alertName}' lead time ${start}\u2013${end}: expected at least 1 ensemble-run record, found 0`,
+          `Alert '${alert.alertName}' time interval ${start}\u2013${end}: expected at least 1 ensemble-run record, found 0`,
         );
       }
     }

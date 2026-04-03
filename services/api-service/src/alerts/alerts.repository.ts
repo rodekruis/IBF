@@ -7,9 +7,6 @@ import { PrismaService } from '@api-service/src/prisma/prisma.service';
 export class AlertsRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  // TODO: Add time-window-based deduplication. The deduplication window
-  // differs per hazard type (e.g. daily for floods, monthly for drought).
-  // If a submission falls within the same window, replace; otherwise append.
   public async createAlerts(alerts: CreateAlertDto[]): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       for (const alert of alerts) {
@@ -21,8 +18,8 @@ export class AlertsRepository {
             hazardTypes: alert.hazardTypes,
             forecastSources: alert.forecastSources,
             severity: {
-              create: alert.severityEntries.map((entry) => ({
-                leadTime: { ...entry.leadTime },
+              create: alert.severity.map((entry) => ({
+                timeInterval: { ...entry.timeInterval },
                 ensembleMemberType: entry.ensembleMemberType,
                 severityKey: entry.severityKey,
                 severityValue: entry.severityValue,

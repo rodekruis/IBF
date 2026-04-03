@@ -14,15 +14,21 @@ const VALID_ALERT = {
   centroid: { latitude: 0.35, longitude: 32.6 },
   hazardTypes: [HazardType.floods],
   forecastSources: [ForecastSource.glofas],
-  severityEntries: [
+  severity: [
     {
-      leadTime: { start: '2026-03-23T00:00:00Z', end: '2026-03-23T23:59:59Z' },
+      timeInterval: {
+        start: '2026-03-23T00:00:00Z',
+        end: '2026-03-23T23:59:59Z',
+      },
       ensembleMemberType: EnsembleMemberType.median,
       severityKey: 'water_discharge',
       severityValue: 120.5,
     },
     {
-      leadTime: { start: '2026-03-23T00:00:00Z', end: '2026-03-23T23:59:59Z' },
+      timeInterval: {
+        start: '2026-03-23T00:00:00Z',
+        end: '2026-03-23T23:59:59Z',
+      },
       ensembleMemberType: EnsembleMemberType.run,
       severityKey: 'water_discharge',
       severityValue: 135.0,
@@ -108,10 +114,10 @@ describe('/ Alerts', () => {
     it('should reject alert failing integrity check', async () => {
       const badAlert = {
         ...VALID_ALERT,
-        alertName: 'BAD-lead-time',
-        severityEntries: [
+        alertName: 'BAD-time-interval',
+        severity: [
           {
-            leadTime: {
+            timeInterval: {
               start: '2026-03-21T00:00:00Z',
               end: '2026-03-20T00:00:00Z',
             },
@@ -120,7 +126,7 @@ describe('/ Alerts', () => {
             severityValue: 1,
           },
           {
-            leadTime: {
+            timeInterval: {
               start: '2026-03-21T00:00:00Z',
               end: '2026-03-20T00:00:00Z',
             },
