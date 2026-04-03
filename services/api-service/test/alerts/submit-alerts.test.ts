@@ -14,7 +14,7 @@ const VALID_ALERT = {
   centroid: { latitude: 0.35, longitude: 32.6 },
   hazardTypes: [HazardType.floods],
   forecastSources: [ForecastSource.glofas],
-  severityEntries: [
+  severity: [
     {
       timeInterval: {
         start: '2026-03-23T00:00:00Z',
@@ -115,7 +115,7 @@ describe('/ Alerts', () => {
       const badAlert = {
         ...VALID_ALERT,
         alertName: 'BAD-time-interval',
-        severityEntries: [
+        severity: [
           {
             timeInterval: {
               start: '2026-03-21T00:00:00Z',

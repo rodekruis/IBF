@@ -17,7 +17,7 @@ from pipelines.infra.data_types.alert_types import (
     Layer,
     RasterExposure,
     RasterExtent,
-    SeverityEntry,
+    Severity,
     TimeInterval,
 )
 from pipelines.infra.data_types.data_config_types import OutputMode
@@ -96,8 +96,8 @@ class DataSubmitter:
         if alert is None:
             return
 
-        alert.severity_data.append(
-            SeverityEntry(
+        alert.severity.append(
+            Severity(
                 time_interval=TimeInterval(
                     start=time_interval_start, end=time_interval_end
                 ),

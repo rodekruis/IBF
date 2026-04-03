@@ -5,7 +5,7 @@ import { IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
 import { TimeIntervalDto } from '@api-service/src/alerts/dto/time-interval.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 
-export class SeverityEntryDto {
+export class SeverityDto {
   @ApiProperty({ type: TimeIntervalDto })
   @ValidateNested()
   @Type(() => TimeIntervalDto)

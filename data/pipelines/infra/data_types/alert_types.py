@@ -45,7 +45,7 @@ class Layer(StrEnum):
 
 
 @dataclass
-class SeverityEntry:
+class Severity:
     time_interval: TimeInterval
     ensemble_member_type: EnsembleMemberType
     severity_key: str
@@ -143,7 +143,7 @@ class Alert:
     centroid: Centroid
     hazard_types: list[HazardType]
     forecast_sources: list[ForecastSource] = field(default_factory=list)
-    severity_data: list[SeverityEntry] = field(default_factory=list)
+    severity: list[Severity] = field(default_factory=list)
     exposure: Exposure = field(default_factory=Exposure)
 
     def to_dict(
@@ -162,6 +162,6 @@ class Alert:
             "centroid": self.centroid.to_dict(),
             "hazardTypes": list(self.hazard_types),
             "forecastSources": list(self.forecast_sources),
-            "severityEntries": [entry.to_dict() for entry in self.severity_data],
+            "severity": [entry.to_dict() for entry in self.severity],
             "exposure": self.exposure.to_dict(),
         }

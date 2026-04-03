@@ -21,7 +21,7 @@ EXPECTED_ALERT_KEYS = {
     "centroid",
     "hazardTypes",
     "forecastSources",
-    "severityEntries",
+    "severity",
     "exposure",
 }
 
@@ -86,10 +86,10 @@ def _assert_alert_structure(alert: dict) -> None:
     assert isinstance(alert["hazardTypes"], list)
     assert len(alert["hazardTypes"]) > 0
 
-    assert isinstance(alert["severityEntries"], list)
-    assert len(alert["severityEntries"]) > 0
+    assert isinstance(alert["severity"], list)
+    assert len(alert["severity"]) > 0
 
-    for entry in alert["severityEntries"]:
+    for entry in alert["severity"]:
         assert "timeInterval" in entry
         assert isinstance(entry["timeInterval"], dict)
         assert "start" in entry["timeInterval"]

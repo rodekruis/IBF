@@ -54,13 +54,13 @@ export class AlertsService {
   private checkSeverity(alert: CreateAlertDto): string[] {
     const errors: string[] = [];
 
-    if (alert.severityEntries.length === 0) {
+    if (alert.severity.length === 0) {
       errors.push(`Alert '${alert.alertName}' has no severity data`);
       return errors;
     }
 
     const timeIntervals = new Map<string, EnsembleMemberType[]>();
-    for (const entry of alert.severityEntries) {
+    for (const entry of alert.severity) {
       const key = `${entry.timeInterval.start}|${entry.timeInterval.end}`;
       const types = timeIntervals.get(key) ?? [];
       types.push(entry.ensembleMemberType);

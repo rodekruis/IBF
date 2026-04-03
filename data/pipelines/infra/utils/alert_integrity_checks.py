@@ -27,12 +27,12 @@ def check_centroid(alert_name: str, centroid: Centroid) -> list[str]:
 
 def check_severity_integrity(alert_name: str, alert: Alert) -> list[str]:
     errors: list[str] = []
-    if not alert.severity_data:
+    if not alert.severity:
         errors.append(f"Alert '{alert_name}' has no severity data")
         return errors  # return early since no data
 
     time_intervals: dict[tuple[str, str], list[EnsembleMemberType]] = {}
-    for entry in alert.severity_data:
+    for entry in alert.severity:
         key = (entry.time_interval.start, entry.time_interval.end)
         time_intervals.setdefault(key, []).append(entry.ensemble_member_type)
 
