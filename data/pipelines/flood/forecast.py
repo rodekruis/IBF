@@ -49,7 +49,7 @@ def calculate_flood_forecasts(
     # Step 2 - Calculate the forecast
     # NOTE: the code in here is purely for demonstration purposes and should be replaced with actual logic, which should include:
     # - Loop over potential spatial extents (glofas stations)
-    # - Compute aggregate severity per lead time and overall
+    # - Compute aggregate severity per time interval and overall
     # - If minimum severity threshold is passed, create an alert
     # - Generate actual flood extent rasters instead of placeholders
     # - Compute real population exposure from population raster + flood extent

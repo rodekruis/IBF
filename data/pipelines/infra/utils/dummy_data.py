@@ -6,7 +6,7 @@ from pipelines.infra.data_types.data_config_types import DataSource
 
 DUMMY_DATA: dict[DataSource, object] = {
     DataSource.TODO_GLOFAS_DISCHARGE: {
-        # Per station, per lead time (0-7 days), per ensemble member (50):
+        # Per station, per time interval (0-7 days), per ensemble member (50):
         # water_discharge in m³/s
         "glofas-station-A": {
             time_interval: {

@@ -39,7 +39,7 @@ def check_severity_integrity(alert_name: str, alert: Alert) -> list[str]:
     for (start, end), types in time_intervals.items():
         if datetime.fromisoformat(start) >= datetime.fromisoformat(end):
             errors.append(
-                f"Alert '{alert_name}' lead time {start}–{end}: "
+                f"Alert '{alert_name}' time interval {start}–{end}: "
                 f"start must be before end"
             )
         # TODO: maybe also check that start and end relate to a day for floods and a season for droughts? So generically to the 'temporal unit' defined for a hazard type?
@@ -47,12 +47,12 @@ def check_severity_integrity(alert_name: str, alert: Alert) -> list[str]:
         ensemble_count = types.count(EnsembleMemberType.RUN)
         if median_count != 1:
             errors.append(
-                f"Alert '{alert_name}' lead time {start}–{end}: "
+                f"Alert '{alert_name}' time interval {start}–{end}: "
                 f"expected 1 median record, found {median_count}"
             )
         if ensemble_count < 1:
             errors.append(
-                f"Alert '{alert_name}' lead time {start}–{end}: "
+                f"Alert '{alert_name}' time interval {start}–{end}: "
                 f"expected at least 1 ensemble-run record, found 0"
             )
     return errors

@@ -145,7 +145,7 @@ describe('AlertsService', () => {
       );
     });
 
-    it('should reject lead time where start >= end', async () => {
+    it('should reject time interval where start >= end', async () => {
       const alerts = [
         createMockValidAlert({
           severity: [

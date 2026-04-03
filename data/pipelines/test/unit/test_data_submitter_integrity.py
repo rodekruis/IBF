@@ -35,7 +35,7 @@ def test_incomplete_alert_is_rejected(tmp_output: Path):
 def test_severity_missing_median_is_rejected(
     valid_submitter: DataSubmitter, tmp_output: Path
 ):
-    """A lead time with ensemble runs but no median record is rejected."""
+    """A time interval with ensemble runs but no median record is rejected."""
     valid_submitter.add_severity_data(
         alert_name=ALERT_NAME,
         time_interval_start="2026-03-21T00:00:00Z",
@@ -54,7 +54,7 @@ def test_severity_missing_median_is_rejected(
 def test_severity_missing_ensemble_is_rejected(
     valid_submitter: DataSubmitter, tmp_output: Path
 ):
-    """A lead time with a median but no ensemble runs is rejected."""
+    """A time interval with a median but no ensemble runs is rejected."""
     valid_submitter.add_severity_data(
         alert_name=ALERT_NAME,
         time_interval_start="2026-03-21T00:00:00Z",
@@ -208,7 +208,7 @@ def test_raster_invalid_extent_is_rejected(
 def test_time_interval_start_after_end_is_rejected(
     valid_submitter: DataSubmitter, tmp_output: Path
 ):
-    """A lead time whose start timestamp is after its end timestamp is rejected."""
+    """A time interval whose start timestamp is after its end timestamp is rejected."""
     valid_submitter.add_severity_data(
         alert_name=ALERT_NAME,
         time_interval_start="2026-03-22T00:00:00Z",
