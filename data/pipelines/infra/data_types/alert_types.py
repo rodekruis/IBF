@@ -15,7 +15,7 @@ class Centroid:
 
 
 @dataclass
-class LeadTime:
+class TimeInterval:
     start: str
     end: str
 
@@ -46,14 +46,14 @@ class Layer(StrEnum):
 
 @dataclass
 class SeverityEntry:
-    lead_time: LeadTime
+    time_interval: TimeInterval
     ensemble_member_type: EnsembleMemberType
     severity_key: str
     severity_value: float | int
 
     def to_dict(self) -> dict[str, str | float | int | dict[str, str]]:
         return {
-            "leadTime": self.lead_time.to_dict(),
+            "timeInterval": self.time_interval.to_dict(),
             "ensembleMemberType": self.ensemble_member_type,
             "severityKey": self.severity_key,
             "severityValue": self.severity_value,

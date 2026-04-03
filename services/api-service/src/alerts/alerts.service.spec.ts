@@ -20,7 +20,7 @@ function createMockValidAlert(
     forecastSources: [ForecastSource.glofas],
     severityEntries: [
       {
-        leadTime: {
+        timeInterval: {
           start: '2026-03-20T00:00:00Z',
           end: '2026-03-20T23:59:59Z',
         },
@@ -29,7 +29,7 @@ function createMockValidAlert(
         severityValue: 120.5,
       },
       {
-        leadTime: {
+        timeInterval: {
           start: '2026-03-20T00:00:00Z',
           end: '2026-03-20T23:59:59Z',
         },
@@ -150,7 +150,7 @@ describe('AlertsService', () => {
         createMockValidAlert({
           severityEntries: [
             {
-              leadTime: {
+              timeInterval: {
                 start: '2026-03-21T00:00:00Z',
                 end: '2026-03-20T00:00:00Z',
               },
@@ -159,7 +159,7 @@ describe('AlertsService', () => {
               severityValue: 1,
             },
             {
-              leadTime: {
+              timeInterval: {
                 start: '2026-03-21T00:00:00Z',
                 end: '2026-03-20T00:00:00Z',
               },
@@ -190,7 +190,7 @@ describe('AlertsService', () => {
         createMockValidAlert({
           severityEntries: [
             {
-              leadTime: {
+              timeInterval: {
                 start: '2026-03-20T00:00:00Z',
                 end: '2026-03-20T23:59:59Z',
               },
@@ -221,7 +221,7 @@ describe('AlertsService', () => {
         createMockValidAlert({
           severityEntries: [
             {
-              leadTime: {
+              timeInterval: {
                 start: '2026-03-20T00:00:00Z',
                 end: '2026-03-20T23:59:59Z',
               },

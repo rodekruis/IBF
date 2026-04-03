@@ -59,15 +59,15 @@ export class AlertsService {
       return errors;
     }
 
-    const leadTimes = new Map<string, EnsembleMemberType[]>();
+    const timeIntervals = new Map<string, EnsembleMemberType[]>();
     for (const entry of alert.severityEntries) {
-      const key = `${entry.leadTime.start}|${entry.leadTime.end}`;
-      const types = leadTimes.get(key) ?? [];
+      const key = `${entry.timeInterval.start}|${entry.timeInterval.end}`;
+      const types = timeIntervals.get(key) ?? [];
       types.push(entry.ensembleMemberType);
-      leadTimes.set(key, types);
+      timeIntervals.set(key, types);
     }
 
-    for (const [key, types] of leadTimes) {
+    for (const [key, types] of timeIntervals) {
       const [start, end] = key.split('|');
       if (new Date(start) >= new Date(end)) {
         errors.push(

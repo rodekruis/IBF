@@ -54,7 +54,7 @@ model AlertSeverity {
   updated            DateTime @updatedAt
   alertId            Int
   alert              Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  leadTime           Json
+  timeInterval       Json
   ensembleMemberType String
   severityKey        String
   severityValue      Float

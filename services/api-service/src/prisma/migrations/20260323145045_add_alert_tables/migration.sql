@@ -18,7 +18,7 @@ CREATE TABLE "alert-severity" (
     "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated" TIMESTAMP(3) NOT NULL,
     "alertId" INTEGER NOT NULL,
-    "leadTime" JSONB NOT NULL,
+    "timeInterval" JSONB NOT NULL,
     "ensembleMemberType" TEXT NOT NULL,
     "severityKey" TEXT NOT NULL,
     "severityValue" DOUBLE PRECISION NOT NULL,

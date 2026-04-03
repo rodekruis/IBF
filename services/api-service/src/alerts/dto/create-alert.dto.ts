@@ -54,7 +54,7 @@ export class CreateAlertDto {
     type: [SeverityEntryDto],
     example: [
       {
-        leadTime: {
+        timeInterval: {
           start: '2026-03-20T00:00:00Z',
           end: '2026-03-20T23:59:59Z',
         },
@@ -63,7 +63,7 @@ export class CreateAlertDto {
         severityValue: 120.5,
       },
       {
-        leadTime: {
+        timeInterval: {
           start: '2026-03-20T00:00:00Z',
           end: '2026-03-20T23:59:59Z',
         },

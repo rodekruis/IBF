@@ -74,16 +74,16 @@ def calculate_flood_forecasts(
         for _ in range(2):
             data_submitter.add_severity_data(
                 alert_name=alert_name,
-                lead_time_start="2026-03-20T00:00:00Z",
-                lead_time_end="2026-03-20T23:59:59Z",
+                time_interval_start="2026-03-20T00:00:00Z",
+                time_interval_end="2026-03-20T23:59:59Z",
                 ensemble_member_type=EnsembleMemberType.RUN,
                 severity_key="water_discharge",
                 severity_value=0,
             )
         data_submitter.add_severity_data(
             alert_name=alert_name,
-            lead_time_start="2026-03-20T00:00:00Z",
-            lead_time_end="2026-03-20T23:59:59Z",
+            time_interval_start="2026-03-20T00:00:00Z",
+            time_interval_end="2026-03-20T23:59:59Z",
             ensemble_member_type=EnsembleMemberType.MEDIAN,
             severity_key="water_discharge",
             severity_value=0,

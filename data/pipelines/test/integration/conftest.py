@@ -90,10 +90,10 @@ def _assert_alert_structure(alert: dict) -> None:
     assert len(alert["severityEntries"]) > 0
 
     for entry in alert["severityEntries"]:
-        assert "leadTime" in entry
-        assert isinstance(entry["leadTime"], dict)
-        assert "start" in entry["leadTime"]
-        assert "end" in entry["leadTime"]
+        assert "timeInterval" in entry
+        assert isinstance(entry["timeInterval"], dict)
+        assert "start" in entry["timeInterval"]
+        assert "end" in entry["timeInterval"]
         assert "ensembleMemberType" in entry
         assert "severityKey" in entry
         assert "severityValue" in entry

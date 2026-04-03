@@ -31,12 +31,12 @@ def check_severity_integrity(alert_name: str, alert: Alert) -> list[str]:
         errors.append(f"Alert '{alert_name}' has no severity data")
         return errors  # return early since no data
 
-    lead_times: dict[tuple[str, str], list[EnsembleMemberType]] = {}
+    time_intervals: dict[tuple[str, str], list[EnsembleMemberType]] = {}
     for entry in alert.severity_data:
-        key = (entry.lead_time.start, entry.lead_time.end)
-        lead_times.setdefault(key, []).append(entry.ensemble_member_type)
+        key = (entry.time_interval.start, entry.time_interval.end)
+        time_intervals.setdefault(key, []).append(entry.ensemble_member_type)
 
-    for (start, end), types in lead_times.items():
+    for (start, end), types in time_intervals.items():
         if datetime.fromisoformat(start) >= datetime.fromisoformat(end):
             errors.append(
                 f"Alert '{alert_name}' lead time {start}–{end}: "
