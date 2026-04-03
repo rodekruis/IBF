@@ -70,22 +70,18 @@ def _run_country(
         aggregate_to_parent_admin_levels(alert, admin_areas)
 
     # --- Write output ---
-    # NOTE: local file output is kept for now for /integration tests only
     output_config = config_reader.get_country_config(
         country.country_code_iso_3, run_target
     )
     output_mode = os.environ.get("IBF_OUTPUT_MODE", output_config.output_mode)
 
-    if output_mode == "local":
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        output_path = str(
-            Path(output_config.output_path)
-            / hazard_type
-            / country.country_code_iso_3
-            / timestamp
-        )
-    else:
-        output_path = ""
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    output_path = str(
+        Path(output_config.output_path)
+        / hazard_type
+        / country.country_code_iso_3
+        / timestamp
+    )
 
     return data_submitter.send_all(output_mode, output_path)
 

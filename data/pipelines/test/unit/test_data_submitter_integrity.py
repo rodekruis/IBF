@@ -9,6 +9,7 @@ from pipelines.infra.data_types.alert_types import (
     HazardType,
     Layer,
 )
+from pipelines.infra.data_types.data_config_types import OutputMode
 
 ALERT_NAME = "TST_floods_station-test"
 
@@ -24,7 +25,7 @@ def test_incomplete_alert_is_rejected(tmp_output: Path):
         forecast_sources=[ForecastSource.GLOFAS],
     )
 
-    errors = submitter.send_all("local", str(tmp_output))
+    errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert len(errors) > 0
     assert any("no severity data" in e for e in errors)
@@ -44,7 +45,7 @@ def test_severity_missing_median_is_rejected(
         severity_value=0,
     )
 
-    errors = valid_submitter.send_all("local", str(tmp_output))
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("expected 1 median record, found 0" in e for e in errors)
     assert not (tmp_output / "alerts_object.json").exists()
@@ -63,7 +64,7 @@ def test_severity_missing_ensemble_is_rejected(
         severity_value=0,
     )
 
-    errors = valid_submitter.send_all("local", str(tmp_output))
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("at least 1 ensemble-run record" in e for e in errors)
     assert not (tmp_output / "alerts_object.json").exists()
@@ -88,7 +89,7 @@ def test_admin_area_unequal_layer_counts_is_rejected(
         value=True,
     )
 
-    errors = valid_submitter.send_all("local", str(tmp_output))
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("record count differs across layers" in e for e in errors)
     assert not (tmp_output / "alerts_object.json").exists()
@@ -134,7 +135,7 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
 
-    errors = submitter.send_all("local", str(tmp_output))
+    errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("missing required 'alert_extent' layer" in e for e in errors)
     assert not (tmp_output / "alerts_object.json").exists()
@@ -180,7 +181,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
 
-    errors = submitter.send_all("local", str(tmp_output))
+    errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("latitude 91.0 out of range" in e for e in errors)
     assert any("longitude 200.0 out of range" in e for e in errors)
@@ -198,7 +199,7 @@ def test_raster_invalid_extent_is_rejected(
         extent={"xmin": 38.0, "ymin": 2.0, "xmax": 36.0, "ymax": 0.0},
     )
 
-    errors = valid_submitter.send_all("local", str(tmp_output))
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("invalid extent" in e for e in errors)
     assert not (tmp_output / "alerts_object.json").exists()
@@ -217,7 +218,7 @@ def test_lead_time_start_after_end_is_rejected(
         severity_value=0,
     )
 
-    errors = valid_submitter.send_all("local", str(tmp_output))
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("start must be before end" in e for e in errors)
     assert not (tmp_output / "alerts_object.json").exists()
@@ -256,7 +257,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
 
-    errors = submitter.send_all("local", str(tmp_output))
+    errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("expected at least 1 record" in e for e in errors)
     assert not (tmp_output / "alerts_object.json").exists()

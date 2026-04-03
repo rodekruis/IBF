@@ -14,7 +14,7 @@ const VALID_ALERT = {
   centroid: { latitude: 0.35, longitude: 32.6 },
   hazardTypes: [HazardType.floods],
   forecastSources: [ForecastSource.glofas],
-  severityData: [
+  severityEntries: [
     {
       leadTime: { start: '2026-03-23T00:00:00Z', end: '2026-03-23T23:59:59Z' },
       ensembleMemberType: EnsembleMemberType.median,
@@ -109,7 +109,7 @@ describe('/ Alerts', () => {
       const badAlert = {
         ...VALID_ALERT,
         alertName: 'BAD-lead-time',
-        severityData: [
+        severityEntries: [
           {
             leadTime: {
               start: '2026-03-21T00:00:00Z',

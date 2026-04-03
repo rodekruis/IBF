@@ -9,7 +9,7 @@ import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enu
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
-function buildValidAlert(
+function createMockValidAlert(
   overrides: Partial<CreateAlertDto> = {},
 ): CreateAlertDto {
   return {
@@ -18,7 +18,7 @@ function buildValidAlert(
     centroid: { latitude: 0.35, longitude: 32.6 },
     hazardTypes: [HazardType.floods],
     forecastSources: [ForecastSource.glofas],
-    severityData: [
+    severityEntries: [
       {
         leadTime: {
           start: '2026-03-20T00:00:00Z',
@@ -84,7 +84,7 @@ describe('AlertsService', () => {
 
   describe('submitAlerts – valid data', () => {
     it('should create alerts when integrity checks pass', async () => {
-      const alerts = [buildValidAlert()];
+      const alerts = [createMockValidAlert()];
       await service.submitAlerts({ alerts });
       expect(repository.createAlerts).toHaveBeenCalledWith(alerts);
     });
@@ -93,7 +93,7 @@ describe('AlertsService', () => {
   describe('submitAlerts – centroid validation', () => {
     it('should reject latitude out of range', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           centroid: { latitude: 91, longitude: 0 },
         }),
       ];
@@ -104,7 +104,7 @@ describe('AlertsService', () => {
 
     it('should reject longitude out of range', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           centroid: { latitude: 0, longitude: -181 },
         }),
       ];
@@ -115,7 +115,7 @@ describe('AlertsService', () => {
 
     it('should include alert name in centroid error message', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           alertName: 'BAD-centroid',
           centroid: { latitude: 100, longitude: 200 },
         }),
@@ -139,7 +139,7 @@ describe('AlertsService', () => {
 
   describe('submitAlerts – severity validation', () => {
     it('should reject empty severity data', async () => {
-      const alerts = [buildValidAlert({ severityData: [] })];
+      const alerts = [createMockValidAlert({ severityEntries: [] })];
       await expect(service.submitAlerts({ alerts })).rejects.toThrow(
         HttpException,
       );
@@ -147,8 +147,8 @@ describe('AlertsService', () => {
 
     it('should reject lead time where start >= end', async () => {
       const alerts = [
-        buildValidAlert({
-          severityData: [
+        createMockValidAlert({
+          severityEntries: [
             {
               leadTime: {
                 start: '2026-03-21T00:00:00Z',
@@ -187,8 +187,8 @@ describe('AlertsService', () => {
 
     it('should reject when median record is missing', async () => {
       const alerts = [
-        buildValidAlert({
-          severityData: [
+        createMockValidAlert({
+          severityEntries: [
             {
               leadTime: {
                 start: '2026-03-20T00:00:00Z',
@@ -218,8 +218,8 @@ describe('AlertsService', () => {
 
     it('should reject when no ensemble-run record exists', async () => {
       const alerts = [
-        buildValidAlert({
-          severityData: [
+        createMockValidAlert({
+          severityEntries: [
             {
               leadTime: {
                 start: '2026-03-20T00:00:00Z',
@@ -251,7 +251,7 @@ describe('AlertsService', () => {
   describe('submitAlerts – admin-area validation', () => {
     it('should reject empty admin-area', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           exposure: {
             adminArea: [],
             rasters: [
@@ -281,7 +281,7 @@ describe('AlertsService', () => {
 
     it('should reject unequal record counts across layers', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           exposure: {
             adminArea: [
               {
@@ -332,7 +332,7 @@ describe('AlertsService', () => {
   describe('submitAlerts – raster validation', () => {
     it('should reject rasters missing alert_extent layer', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           exposure: {
             adminArea: [
               {
@@ -369,7 +369,7 @@ describe('AlertsService', () => {
 
     it('should reject raster with invalid extent', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           exposure: {
             adminArea: [
               {
@@ -404,7 +404,7 @@ describe('AlertsService', () => {
 
     it('should reject alert with empty rasters array', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           exposure: {
             adminArea: [
               {
@@ -435,7 +435,7 @@ describe('AlertsService', () => {
 
     it('should accept rasters with valid alert_extent', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           exposure: {
             adminArea: [
               {
@@ -463,8 +463,8 @@ describe('AlertsService', () => {
   describe('submitAlerts – error response format', () => {
     it('should return BAD_REQUEST with message and errors array', async () => {
       const alerts = [
-        buildValidAlert({
-          severityData: [],
+        createMockValidAlert({
+          severityEntries: [],
           centroid: { latitude: 100, longitude: 0 },
         }),
       ];

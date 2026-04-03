@@ -1,3 +1,9 @@
+"""Shared pytest fixtures for local integration tests.
+
+Provides helpers to run pipeline subprocesses with local file output,
+load and validate the resulting alert JSON, and clean up output directories.
+"""
+
 import json
 import os
 import shutil
@@ -15,7 +21,7 @@ EXPECTED_ALERT_KEYS = {
     "centroid",
     "hazardTypes",
     "forecastSources",
-    "severityData",
+    "severityEntries",
     "exposure",
 }
 
@@ -80,10 +86,10 @@ def _assert_alert_structure(alert: dict) -> None:
     assert isinstance(alert["hazardTypes"], list)
     assert len(alert["hazardTypes"]) > 0
 
-    assert isinstance(alert["severityData"], list)
-    assert len(alert["severityData"]) > 0
+    assert isinstance(alert["severityEntries"], list)
+    assert len(alert["severityEntries"]) > 0
 
-    for entry in alert["severityData"]:
+    for entry in alert["severityEntries"]:
         assert "leadTime" in entry
         assert isinstance(entry["leadTime"], dict)
         assert "start" in entry["leadTime"]
