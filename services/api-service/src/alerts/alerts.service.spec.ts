@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 
 import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
@@ -69,7 +69,12 @@ describe('AlertsService', () => {
         AlertsService,
         {
           provide: AlertsRepository,
-          useValue: { createAlerts: jest.fn() },
+          useValue: {
+            createAlerts: jest.fn(),
+            getAlerts: jest.fn(),
+            getAlertOrThrow: jest.fn(),
+            deleteAlertOrThrow: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -480,6 +485,62 @@ describe('AlertsService', () => {
         expect(response.message).toBe('Alert integrity check failed');
         expect(response.errors.length).toBeGreaterThanOrEqual(2);
       }
+    });
+  });
+
+  describe('getAlerts', () => {
+    it('should return all alerts from the repository', async () => {
+      const mockAlerts = [{ id: 1, alertName: 'KEN-flood-2026-03-20' }];
+      jest.mocked(repository.getAlerts).mockResolvedValue(mockAlerts as never);
+
+      const result = await service.getAlerts();
+
+      expect(repository.getAlerts).toHaveBeenCalled();
+      expect(result).toBe(mockAlerts);
+    });
+  });
+
+  describe('getAlertOrThrow', () => {
+    it('should return the alert for the given id', async () => {
+      const mockAlert = { id: 1, alertName: 'KEN-flood-2026-03-20' };
+      jest
+        .mocked(repository.getAlertOrThrow)
+        .mockResolvedValue(mockAlert as never);
+
+      const result = await service.getAlertOrThrow(1);
+
+      expect(repository.getAlertOrThrow).toHaveBeenCalledWith(1);
+      expect(result).toBe(mockAlert);
+    });
+
+    it('should propagate NotFoundException when alert is not found', async () => {
+      jest
+        .mocked(repository.getAlertOrThrow)
+        .mockRejectedValue(new NotFoundException('Alert with id 99 not found'));
+
+      await expect(service.getAlertOrThrow(99)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('deleteAlertOrThrow', () => {
+    it('should delete the alert for the given id', async () => {
+      jest.mocked(repository.deleteAlertOrThrow).mockResolvedValue(undefined);
+
+      await service.deleteAlertOrThrow(1);
+
+      expect(repository.deleteAlertOrThrow).toHaveBeenCalledWith(1);
+    });
+
+    it('should propagate NotFoundException when alert is not found', async () => {
+      jest
+        .mocked(repository.deleteAlertOrThrow)
+        .mockRejectedValue(new NotFoundException('Alert with id 99 not found'));
+
+      await expect(service.deleteAlertOrThrow(99)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

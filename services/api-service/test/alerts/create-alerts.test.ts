@@ -1,57 +1,11 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
-import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
-import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
-import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
+import { createAlert } from '@api-service/test/helpers/alert.helper';
 import { getServer, resetDB } from '@api-service/test/helpers/utility.helper';
 
-const VALID_ALERT = {
-  alertName: 'TEST-flood-2026-03-23',
-  issuedAt: '2026-03-23T12:00:00Z',
-  centroid: { latitude: 0.35, longitude: 32.6 },
-  hazardTypes: [HazardType.floods],
-  forecastSources: [ForecastSource.glofas],
-  severity: [
-    {
-      timeInterval: {
-        start: '2026-03-23T00:00:00Z',
-        end: '2026-03-23T23:59:59Z',
-      },
-      ensembleMemberType: EnsembleMemberType.median,
-      severityKey: 'water_discharge',
-      severityValue: 120.5,
-    },
-    {
-      timeInterval: {
-        start: '2026-03-23T00:00:00Z',
-        end: '2026-03-23T23:59:59Z',
-      },
-      ensembleMemberType: EnsembleMemberType.run,
-      severityKey: 'water_discharge',
-      severityValue: 135.0,
-    },
-  ],
-  exposure: {
-    adminArea: [
-      {
-        placeCode: 'KEN_01_001',
-        adminLevel: 3,
-        layer: Layer.populationExposed,
-        value: 1,
-      },
-    ],
-    rasters: [
-      {
-        layer: Layer.alertExtent,
-        value: 'raster-file-path.tif',
-        extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
-      },
-    ],
-  },
-};
+const VALID_ALERT = createAlert('TEST-flood-2026-03-23');
 
 describe('/ Alerts', () => {
   const apiKey = env.PIPELINE_API_KEY;

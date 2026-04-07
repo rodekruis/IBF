@@ -54,7 +54,7 @@ export class AlertsController {
     return this.alertsService.getAlertOrThrow(id);
   }
 
-  @AuthenticatedUser({ isAdmin: true })
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete alert by id' })
@@ -72,7 +72,7 @@ export class AlertsController {
     await this.alertsService.deleteAlertOrThrow(id);
   }
 
-  @AuthenticatedUser({ allowPipelineApiKey: true })
+  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Post()
   @ApiOperation({ summary: 'Submit forecast alerts' })
   @ApiResponse({
