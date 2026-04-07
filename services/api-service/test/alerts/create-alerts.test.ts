@@ -21,7 +21,7 @@ describe('/ Alerts', () => {
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', apiKey!)
-        .send({ alerts: [VALID_ALERT] });
+        .send([VALID_ALERT]);
 
       expect(response.status).toBe(HttpStatus.CREATED);
     });
@@ -31,7 +31,7 @@ describe('/ Alerts', () => {
     it('should reject request without API key', async () => {
       const response = await getServer()
         .post('/alerts')
-        .send({ alerts: [VALID_ALERT] });
+        .send([VALID_ALERT]);
 
       expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
     });
@@ -40,7 +40,7 @@ describe('/ Alerts', () => {
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', 'wrong-key-that-is-at-least-32-chars!!')
-        .send({ alerts: [VALID_ALERT] });
+        .send([VALID_ALERT]);
 
       expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
     });
@@ -51,7 +51,7 @@ describe('/ Alerts', () => {
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', apiKey!)
-        .send({ alerts: [] });
+        .send([]);
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
@@ -60,7 +60,7 @@ describe('/ Alerts', () => {
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', apiKey!)
-        .send({ alerts: [{ alertName: 'incomplete' }] });
+        .send([{ alertName: 'incomplete' }]);
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
@@ -94,7 +94,7 @@ describe('/ Alerts', () => {
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', apiKey!)
-        .send({ alerts: [badAlert] });
+        .send([badAlert]);
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
       expect(response.body.errors).toBeDefined();
