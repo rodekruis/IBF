@@ -93,6 +93,11 @@ export class CreateAlertDto {
 }
 
 export class ReadAlertDto extends IntersectionType(BaseDto, CreateAlertDto) {
+  @ApiProperty({ type: [ReadSeverityDto] })
+  @Type(() => ReadSeverityDto)
   declare public readonly severity: ReadSeverityDto[];
+
+  @ApiProperty({ type: ReadExposureDto })
+  @Type(() => ReadExposureDto)
   declare public readonly exposure: ReadExposureDto;
 }

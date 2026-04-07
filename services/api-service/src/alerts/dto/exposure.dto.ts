@@ -54,7 +54,17 @@ export class ExposureDto {
 }
 
 export class ReadExposureDto extends ExposureDto {
+  @ApiProperty({
+    type: [ReadAdminAreaExposureDto],
+  })
+  @Type(() => ReadAdminAreaExposureDto)
   declare public readonly adminArea: ReadAdminAreaExposureDto[];
-  declare public readonly geoFeatures: ReadGeoFeatureExposureDto[];
+
+  @ApiProperty({ type: [ReadGeoFeatureExposureDto] })
+  @Type(() => ReadGeoFeatureExposureDto)
+  declare public readonly geoFeatures?: ReadGeoFeatureExposureDto[];
+
+  @ApiProperty({ type: [ReadRasterExposureDto] })
+  @Type(() => ReadRasterExposureDto)
   declare public readonly rasters: ReadRasterExposureDto[];
 }
