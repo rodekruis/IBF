@@ -2,9 +2,18 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsArray, IsOptional, ValidateNested } from 'class-validator';
 
-import { AdminAreaExposureDto } from '@api-service/src/alerts/dto/admin-area-exposure.dto';
-import { GeoFeatureExposureDto } from '@api-service/src/alerts/dto/geo-feature-exposure.dto';
-import { RasterExposureDto } from '@api-service/src/alerts/dto/raster-exposure.dto';
+import {
+  AdminAreaExposureDto,
+  ReadAdminAreaExposureDto,
+} from '@api-service/src/alerts/dto/admin-area-exposure.dto';
+import {
+  GeoFeatureExposureDto,
+  ReadGeoFeatureExposureDto,
+} from '@api-service/src/alerts/dto/geo-feature-exposure.dto';
+import {
+  RasterExposureDto,
+  ReadRasterExposureDto,
+} from '@api-service/src/alerts/dto/raster-exposure.dto';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
 export class ExposureDto {
@@ -42,4 +51,10 @@ export class ExposureDto {
   @ValidateNested({ each: true })
   @Type(() => RasterExposureDto)
   public readonly rasters: RasterExposureDto[];
+}
+
+export class ReadExposureDto extends ExposureDto {
+  declare public readonly adminArea: ReadAdminAreaExposureDto[];
+  declare public readonly geoFeatures: ReadGeoFeatureExposureDto[];
+  declare public readonly rasters: ReadRasterExposureDto[];
 }

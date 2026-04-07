@@ -1,7 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { IsEnum, IsObject, IsString } from 'class-validator';
 
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import { BaseDto } from '@api-service/src/shared/dto/base.dto';
 
 export class GeoFeatureExposureDto {
   @ApiProperty({ example: 'station-001' })
@@ -16,3 +17,8 @@ export class GeoFeatureExposureDto {
   @IsObject()
   public readonly attributes: Record<string, unknown>;
 }
+
+export class ReadGeoFeatureExposureDto extends IntersectionType(
+  BaseDto,
+  GeoFeatureExposureDto,
+) {}

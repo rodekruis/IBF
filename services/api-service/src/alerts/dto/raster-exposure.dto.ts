@@ -1,9 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsEnum, IsString, ValidateNested } from 'class-validator';
 
 import { RasterExtentDto } from '@api-service/src/alerts/dto/raster-extent.dto';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import { BaseDto } from '@api-service/src/shared/dto/base.dto';
 
 export class RasterExposureDto {
   @ApiProperty({ enum: Layer, example: Layer.alertExtent })
@@ -19,3 +20,8 @@ export class RasterExposureDto {
   @Type(() => RasterExtentDto)
   public readonly extent: RasterExtentDto;
 }
+
+export class ReadRasterExposureDto extends IntersectionType(
+  BaseDto,
+  RasterExposureDto,
+) {}

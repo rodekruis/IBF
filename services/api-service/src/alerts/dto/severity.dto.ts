@@ -1,9 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
 
 import { TimeIntervalDto } from '@api-service/src/alerts/dto/time-interval.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
+import { BaseDto } from '@api-service/src/shared/dto/base.dto';
 
 export class SeverityDto {
   @ApiProperty({ type: TimeIntervalDto })
@@ -23,3 +24,5 @@ export class SeverityDto {
   @IsNumber()
   public readonly severityValue: number;
 }
+
+export class ReadSeverityDto extends IntersectionType(BaseDto, SeverityDto) {}

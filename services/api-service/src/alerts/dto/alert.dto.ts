@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
@@ -10,11 +10,18 @@ import {
 } from 'class-validator';
 
 import { CentroidDto } from '@api-service/src/alerts/dto/centroid.dto';
-import { ExposureDto } from '@api-service/src/alerts/dto/exposure.dto';
-import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
+import {
+  ExposureDto,
+  ReadExposureDto,
+} from '@api-service/src/alerts/dto/exposure.dto';
+import {
+  ReadSeverityDto,
+  SeverityDto,
+} from '@api-service/src/alerts/dto/severity.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
+import { BaseDto } from '@api-service/src/shared/dto/base.dto';
 
 export class CreateAlertDto {
   @ApiProperty({ example: 'KEN-flood-2026-03-20' })
@@ -23,7 +30,7 @@ export class CreateAlertDto {
 
   @ApiProperty({ example: '2026-03-20T12:00:00Z' })
   @IsDateString()
-  public readonly issuedAt: string;
+  public readonly issuedAt: Date;
 
   @ApiProperty({ type: CentroidDto })
   @ValidateNested()
@@ -82,4 +89,9 @@ export class CreateAlertDto {
   @ValidateNested()
   @Type(() => ExposureDto)
   public readonly exposure: ExposureDto;
+}
+
+export class ReadAlertDto extends IntersectionType(BaseDto, CreateAlertDto) {
+  declare public readonly severity: ReadSeverityDto[];
+  declare public readonly exposure: ReadExposureDto;
 }

@@ -1,7 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsNumber, IsString, Min } from 'class-validator';
 
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import { BaseDto } from '@api-service/src/shared/dto/base.dto';
 
 export class AdminAreaExposureDto {
   @ApiProperty({ example: 'KEN_01_001' })
@@ -21,3 +22,8 @@ export class AdminAreaExposureDto {
   @IsNumber()
   public readonly value: number;
 }
+
+export class ReadAdminAreaExposureDto extends IntersectionType(
+  BaseDto,
+  AdminAreaExposureDto,
+) {}

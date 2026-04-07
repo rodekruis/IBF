@@ -1,7 +1,10 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
-import { CreateAlertDto } from '@api-service/src/alerts/dto/create-alert.dto';
+import {
+  CreateAlertDto,
+  ReadAlertDto,
+} from '@api-service/src/alerts/dto/alert.dto';
 import { SubmitAlertsDto } from '@api-service/src/alerts/dto/submit-alerts.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
@@ -9,6 +12,18 @@ import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 @Injectable()
 export class AlertsService {
   public constructor(private readonly alertsRepository: AlertsRepository) {}
+
+  public async getAlerts(): Promise<ReadAlertDto[]> {
+    return this.alertsRepository.getAlerts();
+  }
+
+  public async getAlertOrThrow(id: number): Promise<ReadAlertDto> {
+    return this.alertsRepository.getAlertOrThrow(id);
+  }
+
+  public async deleteAlertOrThrow(id: number): Promise<void> {
+    await this.alertsRepository.deleteAlertOrThrow(id);
+  }
 
   public async submitAlerts(dto: SubmitAlertsDto): Promise<void> {
     const errors = this.validateIntegrity(dto.alerts);

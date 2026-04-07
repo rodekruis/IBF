@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 
 import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
-import { CreateAlertDto } from '@api-service/src/alerts/dto/create-alert.dto';
+import { CreateAlertDto } from '@api-service/src/alerts/dto/alert.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
@@ -14,7 +14,7 @@ function createMockValidAlert(
 ): CreateAlertDto {
   return {
     alertName: 'KEN-flood-2026-03-20',
-    issuedAt: '2026-03-20T12:00:00Z',
+    issuedAt: new Date('2026-03-20T12:00:00Z'),
     centroid: { latitude: 0.35, longitude: 32.6 },
     hazardTypes: [HazardType.floods],
     forecastSources: [ForecastSource.glofas],
