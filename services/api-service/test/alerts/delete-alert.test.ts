@@ -45,9 +45,8 @@ describe('/ Alerts', () => {
         .set('Cookie', [adminAccessToken]);
 
       expect(deleteResponse.status).toBe(HttpStatus.NO_CONTENT);
-    });
 
-    it('should no longer return the alert after deletion', async () => {
+      // alert should no longer be retrievable
       const getResponse = await getServer()
         .get(`/alerts/${seededAlertId}`)
         .set('Cookie', [adminAccessToken]);
