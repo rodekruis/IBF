@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
-  IsDateString,
+  IsDate,
   IsEnum,
   IsString,
   ValidateNested,
@@ -29,7 +29,8 @@ export class CreateAlertDto {
   public readonly alertName: string;
 
   @ApiProperty({ example: '2026-03-20T12:00:00Z' })
-  @IsDateString()
+  @IsDate()
+  @Type(() => Date)
   public readonly issuedAt: Date;
 
   @ApiProperty({ type: CentroidDto })

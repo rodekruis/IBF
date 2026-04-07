@@ -21,8 +21,8 @@ function createMockValidAlert(
     severity: [
       {
         timeInterval: {
-          start: '2026-03-20T00:00:00Z',
-          end: '2026-03-20T23:59:59Z',
+          start: new Date('2026-03-20T00:00:00Z'),
+          end: new Date('2026-03-20T23:59:59Z'),
         },
         ensembleMemberType: EnsembleMemberType.median,
         severityKey: 'water_discharge',
@@ -30,8 +30,8 @@ function createMockValidAlert(
       },
       {
         timeInterval: {
-          start: '2026-03-20T00:00:00Z',
-          end: '2026-03-20T23:59:59Z',
+          start: new Date('2026-03-20T00:00:00Z'),
+          end: new Date('2026-03-20T23:59:59Z'),
         },
         ensembleMemberType: EnsembleMemberType.run,
         severityKey: 'water_discharge',
@@ -150,8 +150,8 @@ describe('AlertsService', () => {
           severity: [
             {
               timeInterval: {
-                start: '2026-03-21T00:00:00Z',
-                end: '2026-03-20T00:00:00Z',
+                start: new Date('2026-03-21T00:00:00Z'),
+                end: new Date('2026-03-20T00:00:00Z'),
               },
               ensembleMemberType: EnsembleMemberType.median,
               severityKey: 'k',
@@ -159,8 +159,8 @@ describe('AlertsService', () => {
             },
             {
               timeInterval: {
-                start: '2026-03-21T00:00:00Z',
-                end: '2026-03-20T00:00:00Z',
+                start: new Date('2026-03-21T00:00:00Z'),
+                end: new Date('2026-03-20T00:00:00Z'),
               },
               ensembleMemberType: EnsembleMemberType.run,
               severityKey: 'k',
@@ -190,8 +190,8 @@ describe('AlertsService', () => {
           severity: [
             {
               timeInterval: {
-                start: '2026-03-20T00:00:00Z',
-                end: '2026-03-20T23:59:59Z',
+                start: new Date('2026-03-20T00:00:00Z'),
+                end: new Date('2026-03-20T23:59:59Z'),
               },
               ensembleMemberType: EnsembleMemberType.run,
               severityKey: 'k',
@@ -221,8 +221,8 @@ describe('AlertsService', () => {
           severity: [
             {
               timeInterval: {
-                start: '2026-03-20T00:00:00Z',
-                end: '2026-03-20T23:59:59Z',
+                start: new Date('2026-03-20T00:00:00Z'),
+                end: new Date('2026-03-20T23:59:59Z'),
               },
               ensembleMemberType: EnsembleMemberType.median,
               severityKey: 'k',
