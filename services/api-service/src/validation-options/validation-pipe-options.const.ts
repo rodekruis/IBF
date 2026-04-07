@@ -1,10 +1,15 @@
-import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  ValidationError,
+} from '@nestjs/common';
 
 export const ValidationPipeOptions = {
   whitelist: true,
   forbidNonWhitelisted: false,
   forbidUnknownValues: true,
-  exceptionFactory: (errors) => {
+  exceptionFactory: (errors: ValidationError[]) => {
     for (const e of errors) {
       if (e.constraints && e.constraints['unknownValue']) {
         console.log('e: ', e);
