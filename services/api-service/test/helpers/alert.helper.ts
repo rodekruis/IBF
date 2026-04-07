@@ -1,3 +1,4 @@
+import { CreateAlertDto } from '@api-service/src/alerts/dto/alert.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
@@ -7,18 +8,18 @@ import {
   getServer,
 } from '@api-service/test/helpers/utility.helper';
 
-export function createAlert(alertName: string): object {
+export function createAlert(alertName: string): CreateAlertDto {
   return {
     alertName,
-    issuedAt: '2026-03-23T12:00:00Z',
+    issuedAt: new Date('2026-03-23T12:00:00Z'),
     centroid: { latitude: 0.35, longitude: 32.6 },
     hazardTypes: [HazardType.floods],
     forecastSources: [ForecastSource.glofas],
     severity: [
       {
         timeInterval: {
-          start: '2026-03-23T00:00:00Z',
-          end: '2026-03-23T23:59:59Z',
+          start: new Date('2026-03-23T00:00:00Z'),
+          end: new Date('2026-03-23T23:59:59Z'),
         },
         ensembleMemberType: EnsembleMemberType.median,
         severityKey: 'water_discharge',
@@ -26,8 +27,8 @@ export function createAlert(alertName: string): object {
       },
       {
         timeInterval: {
-          start: '2026-03-23T00:00:00Z',
-          end: '2026-03-23T23:59:59Z',
+          start: new Date('2026-03-23T00:00:00Z'),
+          end: new Date('2026-03-23T23:59:59Z'),
         },
         ensembleMemberType: EnsembleMemberType.run,
         severityKey: 'water_discharge',
