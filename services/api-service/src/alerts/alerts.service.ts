@@ -24,7 +24,9 @@ export class AlertsService {
     await this.alertsRepository.deleteAlertOrThrow(id);
   }
 
-  public async createAlerts(createAlertDtos: CreateAlertDto[]): Promise<void> {
+  public async createAlerts(
+    createAlertDtos: CreateAlertDto[],
+  ): Promise<ReadAlertDto[]> {
     const errors = this.validateIntegrity(createAlertDtos);
     if (errors.length > 0) {
       throw new HttpException(
@@ -33,7 +35,7 @@ export class AlertsService {
       );
     }
 
-    await this.alertsRepository.createAlerts(createAlertDtos);
+    return this.alertsRepository.createAlerts(createAlertDtos);
   }
 
   // TODO: as this file grows, consider moving this into a separate service

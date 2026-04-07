@@ -2,10 +2,10 @@ import { HttpStatus } from '@nestjs/common';
 
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { createAlert } from '@api-service/test/helpers/alert.helper';
+import { getCreateAlertDto } from '@api-service/test/helpers/alert.helper';
 import { getServer, resetDB } from '@api-service/test/helpers/utility.helper';
 
-const VALID_ALERT = createAlert('TEST-flood-2026-03-23');
+const VALID_ALERT = getCreateAlertDto('TEST-flood-2026-03-23');
 
 describe('/ Alerts', () => {
   const apiKey = env.PIPELINE_API_KEY;

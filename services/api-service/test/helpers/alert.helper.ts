@@ -8,7 +8,7 @@ import {
   getServer,
 } from '@api-service/test/helpers/utility.helper';
 
-export function createAlert(alertName: string): CreateAlertDto {
+export function getCreateAlertDto(alertName: string): CreateAlertDto {
   return {
     alertName,
     issuedAt: new Date('2026-03-23T12:00:00Z'),
@@ -55,22 +55,19 @@ export function createAlert(alertName: string): CreateAlertDto {
   };
 }
 
-export async function seedAlertAndGetId(
+export async function createAlert(
   alertName: string,
   apiKey: string,
 ): Promise<{ adminAccessToken: string; alertId: number }> {
   const adminAccessToken = await getAccessToken();
-  const alert = createAlert(alertName);
+  const createAlertDto = getCreateAlertDto(alertName);
 
-  await getServer().post('/alerts').set('x-api-key', apiKey).send([alert]);
+  const response = await getServer()
+    .post('/alerts')
+    .set('x-api-key', apiKey)
+    .send([createAlertDto]);
 
-  const alertsResponse = await getServer()
-    .get('/alerts')
-    .set('Cookie', [adminAccessToken]);
-
-  const seededAlert = alertsResponse.body.find(
-    (a: { alertName: string }) => a.alertName === alertName,
-  );
+  const seededAlert = response.body[0];
 
   return { adminAccessToken, alertId: seededAlert.id };
 }

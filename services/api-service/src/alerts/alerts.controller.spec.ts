@@ -101,4 +101,16 @@ describe('AlertsController', () => {
       expect(metadata).toMatchObject({ isAdmin: true });
     });
   });
+
+  describe('createAlerts', () => {
+    it('should return the created alerts from the service', async () => {
+      const mockAlerts = [{ id: 1 }, { id: 2 }] as ReadAlertDto[];
+      jest.mocked(service.createAlerts).mockResolvedValue(mockAlerts);
+
+      const result = await controller.createAlerts([]);
+
+      expect(service.createAlerts).toHaveBeenCalledWith([]);
+      expect(result).toBe(mockAlerts);
+    });
+  });
 });

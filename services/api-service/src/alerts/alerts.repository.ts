@@ -74,10 +74,11 @@ export class AlertsRepository {
     await this.prisma.alert.delete({ where: { id } });
   }
 
-  public async createAlerts(alerts: CreateAlertDto[]): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
+  public async createAlerts(alerts: CreateAlertDto[]): Promise<ReadAlertDto[]> {
+    return this.prisma.$transaction(async (tx) => {
+      const created: ReadAlertDto[] = [];
       for (const alert of alerts) {
-        await tx.alert.create({
+        const record = await tx.alert.create({
           data: {
             alertName: alert.alertName,
             issuedAt: new Date(alert.issuedAt),
@@ -118,8 +119,11 @@ export class AlertsRepository {
               })),
             },
           },
+          include: alertInclude,
         });
+        created.push(this.getReadAlertDto(record));
       }
+      return created;
     });
   }
 }

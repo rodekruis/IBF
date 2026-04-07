@@ -83,6 +83,7 @@ export class AlertsController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Alerts persisted successfully',
+    type: [ReadAlertDto],
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -93,7 +94,7 @@ export class AlertsController {
       new ParseArrayPipe({ items: CreateAlertDto, ...ValidationPipeOptions }),
     )
     createAlertDtos: CreateAlertDto[],
-  ): Promise<void> {
-    await this.alertsService.createAlerts(createAlertDtos);
+  ): Promise<ReadAlertDto[]> {
+    return this.alertsService.createAlerts(createAlertDtos);
   }
 }
