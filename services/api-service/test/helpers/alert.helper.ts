@@ -61,10 +61,7 @@ export async function seedAlertAndGetId(
   const adminAccessToken = await getAccessToken();
   const alert = createAlert(alertName);
 
-  await getServer()
-    .post('/alerts')
-    .set('x-api-key', apiKey)
-    .send([alert]);
+  await getServer().post('/alerts').set('x-api-key', apiKey).send([alert]);
 
   const alertsResponse = await getServer()
     .get('/alerts')

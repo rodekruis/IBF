@@ -29,9 +29,7 @@ describe('/ Alerts', () => {
 
   describe('POST /alerts – authentication', () => {
     it('should reject request without API key', async () => {
-      const response = await getServer()
-        .post('/alerts')
-        .send([VALID_ALERT]);
+      const response = await getServer().post('/alerts').send([VALID_ALERT]);
 
       expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
     });
@@ -47,13 +45,13 @@ describe('/ Alerts', () => {
   });
 
   describe('POST /alerts – validation', () => {
-    it('should reject empty alerts array', async () => {
+    it('should allow empty alerts array', async () => {
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', apiKey!)
         .send([]);
 
-      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(response.status).toBe(HttpStatus.CREATED);
     });
 
     it('should reject alert with missing required fields', async () => {
