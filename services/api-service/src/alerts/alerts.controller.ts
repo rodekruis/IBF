@@ -10,11 +10,13 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
-import { ReadAlertDto } from '@api-service/src/alerts/dto/alert.dto';
-import { SubmitAlertsDto } from '@api-service/src/alerts/dto/submit-alerts.dto';
+import {
+  CreateAlertDto,
+  ReadAlertDto,
+} from '@api-service/src/alerts/dto/alert.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 
@@ -74,7 +76,8 @@ export class AlertsController {
 
   @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Post()
-  @ApiOperation({ summary: 'Submit forecast alerts' })
+  @ApiOperation({ summary: 'Create forecast alerts' })
+  @ApiBody({ type: [CreateAlertDto] })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Alerts persisted successfully',
@@ -83,9 +86,9 @@ export class AlertsController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Integrity check failed',
   })
-  public async submitAlerts(
-    @Body() submitAlertsDto: SubmitAlertsDto,
+  public async createAlerts(
+    @Body() createAlertDtos: CreateAlertDto[],
   ): Promise<void> {
-    await this.alertsService.submitAlerts(submitAlertsDto);
+    await this.alertsService.createAlerts(createAlertDtos);
   }
 }

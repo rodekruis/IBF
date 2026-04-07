@@ -25,7 +25,7 @@ describe('AlertsController', () => {
             getAlerts: jest.fn(),
             getAlertOrThrow: jest.fn(),
             deleteAlertOrThrow: jest.fn(),
-            submitAlerts: jest.fn(),
+            createAlerts: jest.fn(),
           },
         },
         Reflector,

@@ -5,7 +5,6 @@ import {
   CreateAlertDto,
   ReadAlertDto,
 } from '@api-service/src/alerts/dto/alert.dto';
-import { SubmitAlertsDto } from '@api-service/src/alerts/dto/submit-alerts.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
@@ -25,8 +24,8 @@ export class AlertsService {
     await this.alertsRepository.deleteAlertOrThrow(id);
   }
 
-  public async submitAlerts(dto: SubmitAlertsDto): Promise<void> {
-    const errors = this.validateIntegrity(dto.alerts);
+  public async createAlerts(createAlertDtos: CreateAlertDto[]): Promise<void> {
+    const errors = this.validateIntegrity(createAlertDtos);
     if (errors.length > 0) {
       throw new HttpException(
         { message: 'Alert integrity check failed', errors },
@@ -34,7 +33,7 @@ export class AlertsService {
       );
     }
 
-    await this.alertsRepository.createAlerts(dto.alerts);
+    await this.alertsRepository.createAlerts(createAlertDtos);
   }
 
   // TODO: as this file grows, consider moving this into a separate service

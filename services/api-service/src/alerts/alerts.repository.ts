@@ -2,11 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import { ReadAdminAreaExposureDto } from '@api-service/src/alerts/dto/admin-area-exposure.dto';
-import { CentroidDto } from '@api-service/src/alerts/dto/centroid.dto';
 import {
   CreateAlertDto,
   ReadAlertDto,
 } from '@api-service/src/alerts/dto/alert.dto';
+import { CentroidDto } from '@api-service/src/alerts/dto/centroid.dto';
 import { ReadGeoFeatureExposureDto } from '@api-service/src/alerts/dto/geo-feature-exposure.dto';
 import { ReadRasterExposureDto } from '@api-service/src/alerts/dto/raster-exposure.dto';
 import { ReadSeverityDto } from '@api-service/src/alerts/dto/severity.dto';
