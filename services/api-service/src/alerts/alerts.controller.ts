@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseArrayPipe,
   ParseIntPipe,
   Post,
   UseGuards,
@@ -19,6 +20,7 @@ import {
 } from '@api-service/src/alerts/dto/alert.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
+import { ValidationPipeOptions } from '@api-service/src/validation-options/validation-pipe-options.const';
 
 @ApiTags('alerts')
 @UseGuards(AuthenticatedUserGuard)
@@ -87,7 +89,10 @@ export class AlertsController {
     description: 'Integrity check failed',
   })
   public async createAlerts(
-    @Body() createAlertDtos: CreateAlertDto[],
+    @Body(
+      new ParseArrayPipe({ items: CreateAlertDto, ...ValidationPipeOptions }),
+    )
+    createAlertDtos: CreateAlertDto[],
   ): Promise<void> {
     await this.alertsService.createAlerts(createAlertDtos);
   }
