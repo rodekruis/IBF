@@ -47,12 +47,12 @@ class TestSubmitAlerts:
 
     @patch.object(requests.Session, "post")
     def test_posts_to_alerts_endpoint(self, mock_post: MagicMock) -> None:
-        """Alerts are POSTed to /api/alerts wrapped in an {alerts: [...]} envelope."""
+        """Alerts are POSTed to /api/alerts in an array."""
         mock_post.return_value = MagicMock(status_code=201)
         self.client.submit_alerts([{"alertName": "test"}])
         mock_post.assert_called_once_with(
             "http://localhost:4000/api/alerts",
-            json={"alerts": [{"alertName": "test"}]},
+            json=[{"alertName": "test"}],
             timeout=60,
         )
 
