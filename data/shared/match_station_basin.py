@@ -33,9 +33,9 @@ def match_station_basin(
     stations_gdf: gpd.GeoDataFrame,
     basins_dir: str,
     country_code: str,
-    min_level: int = 4,
-    max_level: int = 12,
-    max_basin_area_km2: float = 50_000,
+    min_level: int = MIN_LEVEL,
+    max_level: int = MAX_LEVEL,
+    max_basin_area_km2: float = MAX_BASIN_AREA_KM2,
 ) -> gpd.GeoDataFrame:
     """
     Find the highest-level (largest) HydroBASINS basin for all GloFAS stations in a country.
