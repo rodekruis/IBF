@@ -83,10 +83,25 @@ def match_station_basin(
     # Reproject all basin levels to match the stations CRS so that spatial
     # joins and the output geometries are all in a consistent coordinate system
     stations_crs = stations_with_country.crs
-    basins = {
-        level: gdf.to_crs(stations_crs) if gdf.crs != stations_crs else gdf
-        for level, gdf in basins.items()
-    }
+    if stations_crs is None:
+        raise ValueError(
+            "stations_gdf must have a CRS set. "
+            "Assign a CRS with stations_gdf.set_crs(...) before calling this function."
+        )
+    reprojected_basins = {}
+    for level, gdf in basins.items():
+        if gdf.crs is None:
+            pattern = os.path.join(basins_dir, f"*lev{level:02d}*.shp")
+            matching_files = sorted(glob.glob(pattern))
+            filenames = ", ".join(os.path.basename(p) for p in matching_files)
+            raise ValueError(
+                f"Basin shapefile for level {level} is missing CRS metadata"
+                + (f": {filenames}" if filenames else f" (pattern: {pattern})")
+            )
+        reprojected_basins[level] = (
+            gdf.to_crs(stations_crs) if gdf.crs != stations_crs else gdf
+        )
+    basins = reprojected_basins
 
     # Find best basin for each station
     best_basin_per_station = _find_highest_unique_basin(
