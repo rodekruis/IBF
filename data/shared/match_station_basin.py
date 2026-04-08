@@ -21,13 +21,9 @@ Key outputs:
 
 import glob
 import os
-import warnings
 from typing import Union
 
 import geopandas as gpd
-
-warnings.filterwarnings("ignore")
-
 MIN_LEVEL = 4
 MAX_LEVEL = 12
 MAX_BASIN_AREA_KM2 = 50_000  # discard basins larger than this
