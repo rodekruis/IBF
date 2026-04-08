@@ -15,7 +15,7 @@ export class GeoFeatureExposureDto {
 
   @ApiProperty({ example: { triggered: true, severity: 0.8 } })
   @IsObject()
-  public readonly attributes: Record<string, unknown>;
+  public readonly attributes: Record<string, string | number | boolean>;
 }
 
 export class ReadGeoFeatureExposureDto extends IntersectionType(

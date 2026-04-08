@@ -122,7 +122,7 @@ class RasterExposure:
 
 @dataclass
 class Exposure:
-    admin_area: list[AdminAreaExposure] = field(default_factory=list)
+    admin_areas: list[AdminAreaExposure] = field(default_factory=list)
     geo_features: list[GeoFeatureExposure] = field(default_factory=list)
     rasters: list[RasterExposure] = field(default_factory=list)
 
@@ -130,7 +130,7 @@ class Exposure:
         self,
     ) -> dict[str, list[dict[str, str | bool | int | float | dict[str, float]]]]:
         return {
-            "adminArea": [item.to_dict() for item in self.admin_area],
+            "adminAreas": [item.to_dict() for item in self.admin_areas],
             "geoFeatures": [item.to_dict() for item in self.geo_features],
             "rasters": [item.to_dict() for item in self.rasters],
         }

@@ -36,7 +36,7 @@ export function getCreateAlertDto(alertName: string): CreateAlertDto {
       },
     ],
     exposure: {
-      adminArea: [
+      adminAreas: [
         {
           placeCode: 'KEN_01_001',
           adminLevel: 3,

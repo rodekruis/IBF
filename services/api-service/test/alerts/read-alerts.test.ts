@@ -78,7 +78,7 @@ describe('/ Alerts', () => {
       expect(response.body.severity).toBeDefined();
       expect(Array.isArray(response.body.severity)).toBe(true);
       expect(response.body.exposure).toBeDefined();
-      expect(Array.isArray(response.body.exposure.adminArea)).toBe(true);
+      expect(Array.isArray(response.body.exposure.adminAreas)).toBe(true);
       expect(Array.isArray(response.body.exposure.rasters)).toBe(true);
     });
   });

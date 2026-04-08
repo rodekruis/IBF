@@ -25,7 +25,7 @@ EXPECTED_ALERT_KEYS = {
     "exposure",
 }
 
-EXPECTED_EXPOSURE_KEYS = {"adminArea", "geoFeatures", "rasters"}
+EXPECTED_EXPOSURE_KEYS = {"adminAreas", "geoFeatures", "rasters"}
 
 OUTPUT_BASE = Path("pipelines/output")
 
@@ -103,7 +103,7 @@ def _assert_alert_structure(alert: dict) -> None:
         exposure.keys()
     ), f"Exposure missing keys: {EXPECTED_EXPOSURE_KEYS - exposure.keys()}"
 
-    for admin_area in exposure["adminArea"]:
+    for admin_area in exposure["adminAreas"]:
         assert "placeCode" in admin_area
         assert "adminLevel" in admin_area
         assert "layer" in admin_area

@@ -39,7 +39,7 @@ function createMockValidAlert(
       },
     ],
     exposure: {
-      adminArea: [
+      adminAreas: [
         {
           placeCode: 'KEN_01_001',
           adminLevel: 3,
@@ -252,7 +252,7 @@ describe('AlertsService', () => {
       const alerts = [
         createMockValidAlert({
           exposure: {
-            adminArea: [],
+            adminAreas: [],
             rasters: [
               {
                 layer: Layer.alertExtent,
@@ -282,7 +282,7 @@ describe('AlertsService', () => {
       const alerts = [
         createMockValidAlert({
           exposure: {
-            adminArea: [
+            adminAreas: [
               {
                 placeCode: 'A',
                 adminLevel: 3,
@@ -333,7 +333,7 @@ describe('AlertsService', () => {
       const alerts = [
         createMockValidAlert({
           exposure: {
-            adminArea: [
+            adminAreas: [
               {
                 placeCode: 'A',
                 adminLevel: 3,
@@ -370,7 +370,7 @@ describe('AlertsService', () => {
       const alerts = [
         createMockValidAlert({
           exposure: {
-            adminArea: [
+            adminAreas: [
               {
                 placeCode: 'A',
                 adminLevel: 3,
@@ -405,7 +405,7 @@ describe('AlertsService', () => {
       const alerts = [
         createMockValidAlert({
           exposure: {
-            adminArea: [
+            adminAreas: [
               {
                 placeCode: 'A',
                 adminLevel: 3,
@@ -436,7 +436,7 @@ describe('AlertsService', () => {
       const alerts = [
         createMockValidAlert({
           exposure: {
-            adminArea: [
+            adminAreas: [
               {
                 placeCode: 'A',
                 adminLevel: 3,

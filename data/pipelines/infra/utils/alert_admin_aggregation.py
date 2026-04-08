@@ -26,9 +26,9 @@ def aggregate_to_parent_admin_levels(
     field is missing/None are silently skipped. Downstream integrity checks
     (alert_integrity_checks) will catch incomplete results.
 
-    The aggregated entries are appended directly to ``alert.exposure.admin_area``.
+    The aggregated entries are appended directly to ``alert.exposure.admin_areas``.
     """
-    deepest_entries = list(alert.exposure.admin_area)
+    deepest_entries = list(alert.exposure.admin_areas)
     if not deepest_entries:
         return
 
@@ -68,7 +68,7 @@ def aggregate_to_parent_admin_levels(
                     f"place_code={place_code}, admin_level={target_level}: {values}"
                 )
 
-            alert.exposure.admin_area.append(
+            alert.exposure.admin_areas.append(
                 AdminAreaExposure(
                     place_code=place_code,
                     admin_level=target_level,

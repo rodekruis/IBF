@@ -119,7 +119,7 @@ class DataSubmitter:
         if alert is None:
             return
 
-        alert.exposure.admin_area.append(
+        alert.exposure.admin_areas.append(
             AdminAreaExposure(
                 place_code=place_code,
                 admin_level=admin_level,

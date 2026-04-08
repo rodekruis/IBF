@@ -52,19 +52,19 @@ MOCK_ADMIN_AREAS_LEVEL_2: AdminAreasSet = AdminAreasSet(
 )
 
 
-def _make_alert(entries: list[AdminAreaExposure]) -> Alert:
+def _make_alert(admin_areas: list[AdminAreaExposure]) -> Alert:
     return Alert(
         alert_name="test-alert",
         issued_at=datetime.now(timezone.utc),
         centroid=Centroid(latitude=0.0, longitude=0.0),
         hazard_types=[HazardType.FLOODS],
         forecast_sources=[ForecastSource.GLOFAS],
-        exposure=Exposure(admin_area=entries),
+        exposure=Exposure(admin_areas=admin_areas),
     )
 
 
 def _entries_at_level(alert: Alert, level: int) -> list[AdminAreaExposure]:
-    return [e for e in alert.exposure.admin_area if e.admin_level == level]
+    return [e for e in alert.exposure.admin_areas if e.admin_level == level]
 
 
 def test_boolean_aggregation_uses_any():
@@ -122,7 +122,7 @@ def test_aggregation_produces_all_levels():
 
     aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
 
-    levels = {e.admin_level for e in alert.exposure.admin_area}
+    levels = {e.admin_level for e in alert.exposure.admin_areas}
     assert levels == {1, 2, 3}
 
     level_1 = _entries_at_level(alert, 1)
@@ -168,7 +168,7 @@ def test_empty_alert_is_noop():
     # No entries in, no entries out
     alert = _make_alert([])
     aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
-    assert alert.exposure.admin_area == []
+    assert alert.exposure.admin_areas == []
 
 
 def test_unknown_place_code_is_skipped():
@@ -181,7 +181,7 @@ def test_unknown_place_code_is_skipped():
 
     aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
 
-    assert len(alert.exposure.admin_area) == 1
+    assert len(alert.exposure.admin_areas) == 1
 
 
 def test_multiple_layers_aggregated_independently():

@@ -37,7 +37,7 @@ export class ExposureDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => AdminAreaExposureDto)
-  public readonly adminArea: AdminAreaExposureDto[];
+  public readonly adminAreas: AdminAreaExposureDto[];
 
   @ApiProperty({ type: [GeoFeatureExposureDto], required: false })
   @IsOptional()
@@ -58,7 +58,7 @@ export class ReadExposureDto extends ExposureDto {
     type: [ReadAdminAreaExposureDto],
   })
   @Type(() => ReadAdminAreaExposureDto)
-  declare public readonly adminArea: ReadAdminAreaExposureDto[];
+  declare public readonly adminAreas: ReadAdminAreaExposureDto[];
 
   @ApiProperty({ type: [ReadGeoFeatureExposureDto] })
   @Type(() => ReadGeoFeatureExposureDto)

@@ -41,7 +41,7 @@ export class AlertsRepository {
       forecastSources: alert.forecastSources as ForecastSource[],
       severity: alert.severity as unknown as ReadSeverityDto[],
       exposure: {
-        adminArea: alert.exposureAdminArea as ReadAdminAreaExposureDto[],
+        adminAreas: alert.exposureAdminArea as ReadAdminAreaExposureDto[],
         geoFeatures: alert.exposureGeoFeature as ReadGeoFeatureExposureDto[],
         rasters: alert.exposureRasterData as unknown as ReadRasterExposureDto[],
       },
@@ -94,7 +94,7 @@ export class AlertsRepository {
               })),
             },
             exposureAdminArea: {
-              create: alert.exposure.adminArea.map((entry) => ({
+              create: alert.exposure.adminAreas.map((entry) => ({
                 placeCode: entry.placeCode,
                 adminLevel: entry.adminLevel,
                 layer: entry.layer,

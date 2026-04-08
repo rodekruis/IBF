@@ -113,9 +113,9 @@ export class AlertsService {
 
   private checkAdminArea(alert: CreateAlertDto): string[] {
     const errors: string[] = [];
-    const adminArea = alert.exposure.adminArea;
+    const adminAreas = alert.exposure.adminAreas;
 
-    if (adminArea.length === 0) {
+    if (adminAreas.length === 0) {
       errors.push(
         `Alert '${alert.alertName}' admin-area: expected at least 1 record`,
       );
@@ -123,7 +123,7 @@ export class AlertsService {
     }
 
     const layers = new Map<string, number>();
-    for (const entry of adminArea) {
+    for (const entry of adminAreas) {
       layers.set(entry.layer, (layers.get(entry.layer) ?? 0) + 1);
     }
 
