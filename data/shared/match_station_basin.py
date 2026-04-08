@@ -24,6 +24,7 @@ import os
 from typing import Union
 
 import geopandas as gpd
+
 MIN_LEVEL = 4
 MAX_LEVEL = 12
 MAX_BASIN_AREA_KM2 = 50_000  # discard basins larger than this
@@ -85,6 +86,14 @@ def match_station_basin(
         basins = _load_basins_from_path(basins_path_or_gdf, min_level, max_level)
     else:
         basins = {max_level: basins_path_or_gdf}  # assume single level for now
+
+    # Reproject all basin levels to match the stations CRS so that spatial
+    # joins and the output geometries are all in a consistent coordinate system
+    stations_crs = stations_with_country.crs
+    basins = {
+        level: gdf.to_crs(stations_crs) if gdf.crs != stations_crs else gdf
+        for level, gdf in basins.items()
+    }
 
     # Find best basin for each station
     best_basin_per_station = _find_highest_unique_basin(
