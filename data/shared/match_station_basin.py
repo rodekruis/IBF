@@ -21,7 +21,6 @@ Key outputs:
 
 import glob
 import os
-from typing import Union
 
 import geopandas as gpd
 
@@ -32,7 +31,7 @@ MAX_BASIN_AREA_KM2 = 50_000  # discard basins larger than this
 
 def match_station_basin(
     stations_gdf: gpd.GeoDataFrame,
-    basins_path_or_gdf: Union[str, gpd.GeoDataFrame],
+    basins_dir: str,
     country_code: str,
     min_level: int = 4,
     max_level: int = 12,
@@ -47,12 +46,9 @@ def match_station_basin(
         GeoDataFrame with GloFAS stations from a specific country. Must include:
         - 'stationCode': unique station identifier
         - geometry: Point geometries
-    basins_path_or_gdf : str or gpd.GeoDataFrame
-        Either:
-        - Path to directory containing hydrobasins shapefiles named like
-          'hybas_*_lev{level:02d}_*.shp'
-        - Single GeoDataFrame with all basin levels (must have 'HYBAS_ID',
-          'SUB_AREA', and a level indicator column)
+    basins_dir : str
+        Path to directory containing HydroBASINS shapefiles named like
+        'hybas_*_lev{level:02d}_*.shp'
     country_code : str
         Country identifier code (e.g., 'UGA', 'KEN', 'TZA')
     min_level : int, default 4
@@ -82,10 +78,7 @@ def match_station_basin(
     stations_with_country["_country"] = country_code
 
     # Load basins excluding levels outside the specified range
-    if isinstance(basins_path_or_gdf, str):
-        basins = _load_basins_from_path(basins_path_or_gdf, min_level, max_level)
-    else:
-        basins = {max_level: basins_path_or_gdf}  # assume single level for now
+    basins = _load_basins_from_path(basins_dir, min_level, max_level)
 
     # Reproject all basin levels to match the stations CRS so that spatial
     # joins and the output geometries are all in a consistent coordinate system
