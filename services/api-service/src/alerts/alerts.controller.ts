@@ -30,7 +30,10 @@ export class AlertsController {
 
   @AuthenticatedUser()
   @Get()
-  @ApiOperation({ summary: 'Get alerts' })
+  @ApiOperation({
+    summary:
+      'Get alerts. This endpoint is not intended for use in pipelines or frontends, only for debugging.',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Alerts returned successfully',
@@ -42,7 +45,10 @@ export class AlertsController {
 
   @AuthenticatedUser()
   @Get(':id')
-  @ApiOperation({ summary: 'Get alert by id' })
+  @ApiOperation({
+    summary:
+      'Get alert by id. This endpoint is not intended for use in pipelines or frontends, only for debugging.',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Alert returned successfully',
@@ -61,7 +67,10 @@ export class AlertsController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete alert by id' })
+  @ApiOperation({
+    summary:
+      'Delete alert by id. This endpoint is not intended for use in pipelines or frontends, only for debugging.',
+  })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Alert deleted successfully',
