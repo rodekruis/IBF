@@ -1,5 +1,5 @@
-import { Controller, Get, HttpStatus, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, HttpStatus, Query, UseGuards } from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
 import { EventsService } from '@api-service/src/events/events.service';
@@ -15,12 +15,22 @@ export class EventsController {
   @AuthenticatedUser()
   @Get()
   @ApiOperation({ summary: 'Get all open events' })
+  @ApiQuery({
+    name: 'timestamp',
+    type: String,
+    required: false,
+    description:
+      'ISO 8601 timestamp used to determine if ongoing at time of request. Defaults to now.',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Returns all open events',
     type: [EventResponseDto],
   })
-  public async getOpenEvents(): Promise<EventResponseDto[]> {
-    return this.eventsService.getOpenEvents();
+  public async getOpenEvents(
+    @Query('timestamp') timestamp?: string,
+  ): Promise<EventResponseDto[]> {
+    const viewTime = timestamp ? new Date(timestamp) : new Date();
+    return this.eventsService.getOpenEvents(viewTime);
   }
 }

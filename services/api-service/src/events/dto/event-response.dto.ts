@@ -39,4 +39,7 @@ export class EventResponseDto {
 
   @ApiProperty()
   public readonly updated: Date;
+
+  @ApiProperty()
+  public readonly isOngoing: boolean;
 }

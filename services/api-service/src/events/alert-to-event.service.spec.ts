@@ -2,11 +2,11 @@ import { Test } from '@nestjs/testing';
 
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
-import { buildAlert } from '@api-service/src/alerts/test-helpers/alert.builders';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
+import { buildAlert } from '@api-service/test/helpers/alert.helper';
 
 function buildClassificationResult(
   overrides: Partial<ClassificationResult> = {},
@@ -39,6 +39,7 @@ describe('AlertToEventService', () => {
           provide: EventsRepository,
           useValue: {
             getOpenEventByName: jest.fn(),
+            getAlertHistoryForEvent: jest.fn(),
             createEvent: jest.fn(),
             updateEvent: jest.fn(),
             closeOpenEventsByName: jest.fn(),
@@ -102,12 +103,18 @@ describe('AlertToEventService', () => {
       });
     });
 
-    it('should update existing event with latest classification when not ongoing', async () => {
+    it('should set event startAt to latest alert startAt when no history is ongoing', async () => {
       const classification = buildClassificationResult({
-        startAt: new Date('2026-04-05T00:00:00Z'),
+        startAt: new Date('2026-04-08T00:00:00Z'),
         endAt: new Date('2026-04-06T00:00:00Z'),
       });
-      classificationService.classifyAlert.mockReturnValue(classification);
+      classificationService.classifyAlert
+        .mockReturnValueOnce(classification)
+        .mockReturnValueOnce(
+          buildClassificationResult({
+            startAt: new Date('2026-04-10T00:00:00Z'),
+          }),
+        );
 
       const existingEvent = {
         id: 42,
@@ -125,23 +132,41 @@ describe('AlertToEventService', () => {
         closedAt: null,
       };
       repository.getOpenEventByName.mockResolvedValue(existingEvent);
+      repository.getAlertHistoryForEvent.mockResolvedValue([
+        {
+          issuedAt: new Date('2026-04-01T00:00:00Z'),
+          hazardTypes: [HazardType.floods],
+          severityData: [],
+        },
+      ]);
 
       await service.matchAndStore(buildAlert());
 
       expect(repository.updateEvent).toHaveBeenCalledWith(42, {
         alertClass: 'max',
         trigger: true,
-        startAt: classification.startAt,
+        startAt: new Date('2026-04-08T00:00:00Z'),
         reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
         endAt: classification.endAt,
       });
     });
 
-    it('should stabilize startAt to earliest when event is ongoing', async () => {
+    it('should set event startAt to first ongoing historical alert startAt when history is ongoing', async () => {
       const classification = buildClassificationResult({
-        startAt: new Date('2026-04-03T00:00:00Z'),
+        startAt: new Date('2026-04-08T00:00:00Z'),
       });
-      classificationService.classifyAlert.mockReturnValue(classification);
+      classificationService.classifyAlert
+        .mockReturnValueOnce(classification)
+        .mockReturnValueOnce(
+          buildClassificationResult({
+            startAt: new Date('2026-04-03T00:00:00Z'),
+          }),
+        )
+        .mockReturnValueOnce(
+          buildClassificationResult({
+            startAt: new Date('2026-03-27T00:00:00Z'),
+          }),
+        );
 
       const existingEvent = {
         id: 42,
@@ -159,6 +184,18 @@ describe('AlertToEventService', () => {
         closedAt: null,
       };
       repository.getOpenEventByName.mockResolvedValue(existingEvent);
+      repository.getAlertHistoryForEvent.mockResolvedValue([
+        {
+          issuedAt: new Date('2026-03-30T00:00:00Z'),
+          hazardTypes: [HazardType.floods],
+          severityData: [],
+        },
+        {
+          issuedAt: new Date('2026-04-01T00:00:00Z'),
+          hazardTypes: [HazardType.floods],
+          severityData: [],
+        },
+      ]);
 
       await service.matchAndStore(
         buildAlert({ issuedAt: '2026-04-02T00:00:00Z' }),
@@ -167,7 +204,7 @@ describe('AlertToEventService', () => {
       expect(repository.updateEvent).toHaveBeenCalledWith(
         42,
         expect.objectContaining({
-          startAt: new Date('2026-04-01T00:00:00Z'),
+          startAt: new Date('2026-03-27T00:00:00Z'),
         }),
       );
     });

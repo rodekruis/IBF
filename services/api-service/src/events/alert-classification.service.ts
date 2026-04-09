@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 
-import { CreateAlertDto } from '@api-service/src/alerts/dto/create-alert.dto';
 import { SeverityEntryDto } from '@api-service/src/alerts/dto/severity-entry.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { MOCK_ALERT_CLASSIFICATION_CONFIGS } from '@api-service/src/events/alert-classification-config.mock';
@@ -17,19 +16,31 @@ interface LeadTimeGroup {
   readonly runValues: number[];
 }
 
+export interface AlertClassificationInput {
+  readonly hazardType: string;
+  readonly issuedAt: string;
+  readonly severityData: SeverityEntryDto[];
+}
+
 @Injectable()
 export class AlertClassificationService {
-  public classifyAlert(alert: CreateAlertDto): ClassificationResult {
+  public classifyAlert(
+    classificationInput: AlertClassificationInput,
+  ): ClassificationResult {
     // TODO: replace mock config lookup with alert-config DB table
-    const hazardType = alert.hazardTypes[0];
-    const config = MOCK_ALERT_CLASSIFICATION_CONFIGS[hazardType];
+    const config =
+      MOCK_ALERT_CLASSIFICATION_CONFIGS[classificationInput.hazardType];
     if (!config) {
       throw new Error(
-        `No classification config found for hazard type '${hazardType}'`,
+        `No classification config found for hazard type '${classificationInput.hazardType}'`,
       );
     }
 
-    return this.classify(alert.severityData, alert.issuedAt, config);
+    return this.classify(
+      classificationInput.severityData,
+      classificationInput.issuedAt,
+      config,
+    );
   }
 
   private classify(

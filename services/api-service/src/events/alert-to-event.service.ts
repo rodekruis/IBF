@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { CreateAlertDto } from '@api-service/src/alerts/dto/create-alert.dto';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
+import { EventAlertHistoryRecord } from '@api-service/src/events/events.repository';
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
 
@@ -13,11 +14,16 @@ export class AlertToEventService {
   ) {}
 
   public async matchAndStore(alert: CreateAlertDto): Promise<void> {
-    const classification = this.alertClassificationService.classifyAlert(alert);
+    const classification = this.alertClassificationService.classifyAlert({
+      hazardType: alert.hazardTypes[0],
+      issuedAt: alert.issuedAt,
+      severityData: alert.severityData,
+    });
     const issuedAt = new Date(alert.issuedAt);
 
     if (classification.alertClass === null) {
       // If below any threshold, then close open event (if any) and do not create new event
+      // This can happen if the minimum threshold the pipeline employs is more conservative than the actual alert thresholds.
       await this.eventsRepository.closeOpenEventsByName(
         alert.alertName,
         issuedAt,
@@ -25,12 +31,16 @@ export class AlertToEventService {
       return;
     }
 
-    const openEvent = await this.eventsRepository.getOpenEventByName(
+    const existingOpenEvent = await this.eventsRepository.getOpenEventByName(
       alert.alertName,
     );
 
-    if (openEvent) {
-      await this.updateExistingEvent(openEvent, classification, issuedAt);
+    if (existingOpenEvent) {
+      await this.updateExistingEvent(
+        existingOpenEvent,
+        classification,
+        issuedAt,
+      );
     } else {
       await this.createNewEvent(alert, classification, issuedAt);
     }
@@ -55,15 +65,19 @@ export class AlertToEventService {
   }
 
   private async updateExistingEvent(
-    existingEvent: { id: number; startAt: Date },
+    existingEvent: {
+      id: number;
+      eventName: string;
+      firstIssuedAt: Date;
+    },
     latestAlert: ClassificationResult,
     issuedAt: Date,
   ): Promise<void> {
-    const isOngoing =
-      existingEvent.startAt <= issuedAt || latestAlert.startAt <= issuedAt;
-    const startAt = isOngoing
-      ? this.resolveOngoingStartAt(existingEvent.startAt, latestAlert.startAt)
-      : latestAlert.startAt;
+    const startAt = await this.resolveStartAtFromAlertHistory(
+      existingEvent,
+      latestAlert,
+      issuedAt,
+    );
 
     await this.eventsRepository.updateEvent(existingEvent.id, {
       alertClass: latestAlert.alertClass!,
@@ -74,8 +88,47 @@ export class AlertToEventService {
     });
   }
 
-  private resolveOngoingStartAt(existingStartAt: Date, newStartAt: Date): Date {
-    return existingStartAt < newStartAt ? existingStartAt : newStartAt;
+  private async resolveStartAtFromAlertHistory(
+    existingEvent: {
+      eventName: string;
+      firstIssuedAt: Date;
+    },
+    latestAlert: ClassificationResult,
+    latestIssuedAt: Date,
+  ): Promise<Date> {
+    const historicalAlertsForEvent =
+      await this.eventsRepository.getAlertHistoryForEvent({
+        eventName: existingEvent.eventName,
+        firstIssuedAt: existingEvent.firstIssuedAt,
+        latestIssuedAt,
+      });
+
+    const historicalIssuedAndStart = historicalAlertsForEvent.map(
+      (historicalAlert) => ({
+        issuedAt: historicalAlert.issuedAt,
+        startAt: this.classifyHistoricalAlert(historicalAlert).startAt, // NOTE: this basically reclassifies all alerts again, just to get the startAt, but is "cleaner" than writing new code to just get startAt
+      }),
+    );
+
+    const firstOngoingHistoricalAlert = historicalIssuedAndStart.find(
+      (historicalAlert) => historicalAlert.issuedAt > historicalAlert.startAt,
+    );
+
+    if (firstOngoingHistoricalAlert) {
+      return firstOngoingHistoricalAlert.startAt;
+    }
+
+    return latestAlert.startAt;
+  }
+
+  private classifyHistoricalAlert(
+    historicalAlert: EventAlertHistoryRecord,
+  ): ClassificationResult {
+    return this.alertClassificationService.classifyAlert({
+      hazardType: historicalAlert.hazardTypes[0],
+      issuedAt: historicalAlert.issuedAt.toISOString(),
+      severityData: historicalAlert.severityData,
+    });
   }
 
   public async closeStaleEvents(

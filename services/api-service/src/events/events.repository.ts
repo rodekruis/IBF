@@ -1,14 +1,36 @@
 import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
 
+import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
+
+interface EventAlertHistorySeverity {
+  readonly leadTime: {
+    readonly start: string;
+    readonly end: string;
+  };
+  readonly ensembleMemberType: EnsembleMemberType;
+  readonly severityKey: string;
+  readonly severityValue: number;
+}
+
+export interface EventAlertHistoryRecord {
+  readonly issuedAt: Date;
+  readonly hazardTypes: string[];
+  readonly severityData: EventAlertHistorySeverity[];
+}
 
 @Injectable()
 export class EventsRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  public async getOpenEvents(): Promise<Event[]> {
-    return this.prisma.event.findMany({ where: { closedAt: null } });
+  public async getOpenEvents(viewTime: Date): Promise<Event[]> {
+    return this.prisma.event.findMany({
+      where: {
+        closedAt: null,
+        endAt: { gt: viewTime },
+      },
+    });
   }
 
   public async getOpenEventByName(eventName: string): Promise<Event | null> {
@@ -54,6 +76,50 @@ export class EventsRepository {
       where: { id },
       data,
     });
+  }
+
+  public async getAlertHistoryForEvent({
+    eventName,
+    firstIssuedAt,
+    latestIssuedAt,
+  }: {
+    eventName: string;
+    firstIssuedAt: Date;
+    latestIssuedAt: Date;
+  }): Promise<EventAlertHistoryRecord[]> {
+    const alerts = await this.prisma.alert.findMany({
+      where: {
+        alertName: eventName,
+        issuedAt: {
+          gte: firstIssuedAt,
+          lte: latestIssuedAt,
+        },
+      },
+      orderBy: { issuedAt: 'asc' },
+      select: {
+        issuedAt: true,
+        hazardTypes: true,
+        severity: {
+          select: {
+            leadTime: true,
+            ensembleMemberType: true,
+            severityKey: true,
+            severityValue: true,
+          },
+        },
+      },
+    });
+
+    return alerts.map((alert) => ({
+      issuedAt: alert.issuedAt,
+      hazardTypes: alert.hazardTypes,
+      severityData: alert.severity.map((severity) => ({
+        leadTime: severity.leadTime as { start: string; end: string },
+        ensembleMemberType: severity.ensembleMemberType as EnsembleMemberType,
+        severityKey: severity.severityKey,
+        severityValue: severity.severityValue,
+      })),
+    }));
   }
 
   public async closeOpenEventsByName(
