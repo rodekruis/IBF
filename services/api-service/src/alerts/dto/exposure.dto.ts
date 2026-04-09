@@ -2,23 +2,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsArray, IsOptional, ValidateNested } from 'class-validator';
 
-import {
-  AdminAreaExposureDto,
-  ReadAdminAreaExposureDto,
-} from '@api-service/src/alerts/dto/admin-area-exposure.dto';
-import {
-  GeoFeatureExposureDto,
-  ReadGeoFeatureExposureDto,
-} from '@api-service/src/alerts/dto/geo-feature-exposure.dto';
-import {
-  RasterExposureDto,
-  ReadRasterExposureDto,
-} from '@api-service/src/alerts/dto/raster-exposure.dto';
+import { ExposureAdminAreaDto } from '@api-service/src/alerts/dto/exposure-admin-area.dto';
+import { ExposureGeoFeatureDto } from '@api-service/src/alerts/dto/exposure-geo-feature.dto';
+import { ExposureRasterDto } from '@api-service/src/alerts/dto/exposure-raster.dto';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
 export class ExposureDto {
   @ApiProperty({
-    type: [AdminAreaExposureDto],
+    type: [ExposureAdminAreaDto],
     example: [
       {
         placeCode: 'KEN_01_001',
@@ -36,35 +27,19 @@ export class ExposureDto {
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => AdminAreaExposureDto)
-  public readonly adminAreas: AdminAreaExposureDto[];
+  @Type(() => ExposureAdminAreaDto)
+  public readonly adminAreas: ExposureAdminAreaDto[];
 
-  @ApiProperty({ type: [GeoFeatureExposureDto], required: false })
+  @ApiProperty({ type: [ExposureGeoFeatureDto], required: false })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => GeoFeatureExposureDto)
-  public readonly geoFeatures?: GeoFeatureExposureDto[];
+  @Type(() => ExposureGeoFeatureDto)
+  public readonly geoFeatures?: ExposureGeoFeatureDto[];
 
-  @ApiProperty({ type: [RasterExposureDto] })
+  @ApiProperty({ type: [ExposureRasterDto] })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => RasterExposureDto)
-  public readonly rasters: RasterExposureDto[];
-}
-
-export class ReadExposureDto extends ExposureDto {
-  @ApiProperty({
-    type: [ReadAdminAreaExposureDto],
-  })
-  @Type(() => ReadAdminAreaExposureDto)
-  declare public readonly adminAreas: ReadAdminAreaExposureDto[];
-
-  @ApiProperty({ type: [ReadGeoFeatureExposureDto] })
-  @Type(() => ReadGeoFeatureExposureDto)
-  declare public readonly geoFeatures?: ReadGeoFeatureExposureDto[];
-
-  @ApiProperty({ type: [ReadRasterExposureDto] })
-  @Type(() => ReadRasterExposureDto)
-  declare public readonly rasters: ReadRasterExposureDto[];
+  @Type(() => ExposureRasterDto)
+  public readonly rasters: ExposureRasterDto[];
 }

@@ -1,4 +1,4 @@
-import { CreateAlertDto } from '@api-service/src/alerts/dto/alert.dto';
+import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
@@ -8,7 +8,7 @@ import {
   getServer,
 } from '@api-service/test/helpers/utility.helper';
 
-export function getCreateAlertDto(alertName: string): CreateAlertDto {
+export function getAlertCreateDto(alertName: string): AlertCreateDto {
   return {
     alertName,
     issuedAt: new Date('2026-03-23T12:00:00Z'),
@@ -60,12 +60,12 @@ export async function createAlert(
   apiKey: string,
 ): Promise<{ adminAccessToken: string; alertId: number }> {
   const adminAccessToken = await getAccessToken();
-  const createAlertDto = getCreateAlertDto(alertName);
+  const alertCreateDto = getAlertCreateDto(alertName);
 
   const response = await getServer()
     .post('/alerts')
     .set('x-api-key', apiKey)
-    .send([createAlertDto]);
+    .send([alertCreateDto]);
 
   const seededAlert = response.body[0];
 

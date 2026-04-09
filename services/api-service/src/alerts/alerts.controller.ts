@@ -14,10 +14,8 @@ import {
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
-import {
-  CreateAlertDto,
-  ReadAlertDto,
-} from '@api-service/src/alerts/dto/alert.dto';
+import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
+import { AlertReadDto } from '@api-service/src/alerts/dto/alert-read.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 import { ValidationPipeOptions } from '@api-service/src/validation-options/validation-pipe-options.const';
@@ -37,9 +35,9 @@ export class AlertsController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Alerts returned successfully',
-    type: [ReadAlertDto],
+    type: [AlertReadDto],
   })
-  public async getAlerts(): Promise<ReadAlertDto[]> {
+  public async getAlerts(): Promise<AlertReadDto[]> {
     return this.alertsService.getAlerts();
   }
 
@@ -52,7 +50,7 @@ export class AlertsController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Alert returned successfully',
-    type: ReadAlertDto,
+    type: AlertReadDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -60,7 +58,7 @@ export class AlertsController {
   })
   public async getAlert(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<ReadAlertDto> {
+  ): Promise<AlertReadDto> {
     return this.alertsService.getAlertOrThrow(id);
   }
 
@@ -88,11 +86,11 @@ export class AlertsController {
   @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Post()
   @ApiOperation({ summary: 'Create forecast alerts' })
-  @ApiBody({ type: [CreateAlertDto] })
+  @ApiBody({ type: [AlertCreateDto] })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Alerts persisted successfully',
-    type: [ReadAlertDto],
+    type: [AlertReadDto],
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -100,10 +98,10 @@ export class AlertsController {
   })
   public async createAlerts(
     @Body(
-      new ParseArrayPipe({ items: CreateAlertDto, ...ValidationPipeOptions }),
+      new ParseArrayPipe({ items: AlertCreateDto, ...ValidationPipeOptions }),
     )
-    createAlertDtos: CreateAlertDto[],
-  ): Promise<ReadAlertDto[]> {
-    return this.alertsService.createAlerts(createAlertDtos);
+    alertCreateDtos: AlertCreateDto[],
+  ): Promise<AlertReadDto[]> {
+    return this.alertsService.createAlerts(alertCreateDtos);
   }
 }

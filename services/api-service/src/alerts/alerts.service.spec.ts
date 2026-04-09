@@ -3,15 +3,15 @@ import { Test } from '@nestjs/testing';
 
 import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
-import { CreateAlertDto } from '@api-service/src/alerts/dto/alert.dto';
+import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
 function createMockValidAlert(
-  overrides: Partial<CreateAlertDto> = {},
-): CreateAlertDto {
+  overrides: Partial<AlertCreateDto> = {},
+): AlertCreateDto {
   return {
     alertName: 'KEN-flood-2026-03-20',
     issuedAt: new Date('2026-03-20T12:00:00Z'),

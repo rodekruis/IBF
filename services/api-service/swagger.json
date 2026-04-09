@@ -54,7 +54,7 @@
     "params": [
       "id"
     ],
-    "returnType": "ReadAlertDto"
+    "returnType": "AlertReadDto"
   },
   {
     "method": "delete",

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import AdminAreaExposure, Alert, Layer
+from pipelines.infra.data_types.alert_types import ExposureAdminArea, Alert, Layer
 
 
 def aggregate_to_parent_admin_levels(
@@ -69,7 +69,7 @@ def aggregate_to_parent_admin_levels(
                 )
 
             alert.exposure.admin_areas.append(
-                AdminAreaExposure(
+                ExposureAdminArea(
                     place_code=place_code,
                     admin_level=target_level,
                     layer=layer,

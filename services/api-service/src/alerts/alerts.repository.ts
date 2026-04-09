@@ -1,15 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
-import { ReadAdminAreaExposureDto } from '@api-service/src/alerts/dto/admin-area-exposure.dto';
-import {
-  CreateAlertDto,
-  ReadAlertDto,
-} from '@api-service/src/alerts/dto/alert.dto';
+import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
+import { AlertReadDto } from '@api-service/src/alerts/dto/alert-read.dto';
 import { CentroidDto } from '@api-service/src/alerts/dto/centroid.dto';
-import { ReadGeoFeatureExposureDto } from '@api-service/src/alerts/dto/geo-feature-exposure.dto';
-import { ReadRasterExposureDto } from '@api-service/src/alerts/dto/raster-exposure.dto';
-import { ReadSeverityDto } from '@api-service/src/alerts/dto/severity.dto';
+import { ExposureAdminAreaReadDto } from '@api-service/src/alerts/dto/exposure-admin-area-read.dto';
+import { ExposureGeoFeatureReadDto } from '@api-service/src/alerts/dto/exposure-geo-feature-read.dto';
+import { ExposureRasterReadDto } from '@api-service/src/alerts/dto/exposure-raster-read.dto';
+import { SeverityReadDto } from '@api-service/src/alerts/dto/severity-read.dto';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
@@ -29,7 +27,7 @@ type AlertWithRelations = Prisma.AlertGetPayload<{
 export class AlertsRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  private getReadAlertDto(alert: AlertWithRelations): ReadAlertDto {
+  private getAlertReadDto(alert: AlertWithRelations): AlertReadDto {
     return {
       id: alert.id,
       created: alert.created,
@@ -39,23 +37,23 @@ export class AlertsRepository {
       centroid: alert.centroid as unknown as CentroidDto,
       hazardTypes: alert.hazardTypes as HazardType[],
       forecastSources: alert.forecastSources as ForecastSource[],
-      severity: alert.severity as unknown as ReadSeverityDto[],
+      severity: alert.severity as unknown as SeverityReadDto[],
       exposure: {
-        adminAreas: alert.exposureAdminArea as ReadAdminAreaExposureDto[],
-        geoFeatures: alert.exposureGeoFeature as ReadGeoFeatureExposureDto[],
-        rasters: alert.exposureRasterData as unknown as ReadRasterExposureDto[],
+        adminAreas: alert.exposureAdminArea as ExposureAdminAreaReadDto[],
+        geoFeatures: alert.exposureGeoFeature as ExposureGeoFeatureReadDto[],
+        rasters: alert.exposureRasterData as unknown as ExposureRasterReadDto[],
       },
     };
   }
 
-  public async getAlerts(): Promise<ReadAlertDto[]> {
+  public async getAlerts(): Promise<AlertReadDto[]> {
     const alerts = await this.prisma.alert.findMany({
       include: alertInclude,
     });
-    return alerts.map((alert) => this.getReadAlertDto(alert));
+    return alerts.map((alert) => this.getAlertReadDto(alert));
   }
 
-  public async getAlertOrThrow(id: number): Promise<ReadAlertDto> {
+  public async getAlertOrThrow(id: number): Promise<AlertReadDto> {
     const alert = await this.prisma.alert.findUnique({
       where: { id },
       include: alertInclude,
@@ -63,7 +61,7 @@ export class AlertsRepository {
     if (!alert) {
       throw new NotFoundException(`Alert with id ${id} not found`);
     }
-    return this.getReadAlertDto(alert);
+    return this.getAlertReadDto(alert);
   }
 
   public async deleteAlertOrThrow(id: number): Promise<void> {
@@ -74,19 +72,22 @@ export class AlertsRepository {
     await this.prisma.alert.delete({ where: { id } });
   }
 
-  public async createAlerts(alerts: CreateAlertDto[]): Promise<ReadAlertDto[]> {
+  public async createAlerts(
+    alertCreateDtos: AlertCreateDto[],
+  ): Promise<AlertReadDto[]> {
     return this.prisma.$transaction(async (tx) => {
-      const created: ReadAlertDto[] = [];
-      for (const alert of alerts) {
+      const created: AlertReadDto[] = [];
+
+      for (const alertCreateDto of alertCreateDtos) {
         const record = await tx.alert.create({
           data: {
-            alertName: alert.alertName,
-            issuedAt: new Date(alert.issuedAt),
-            centroid: { ...alert.centroid },
-            hazardTypes: alert.hazardTypes,
-            forecastSources: alert.forecastSources,
+            alertName: alertCreateDto.alertName,
+            issuedAt: new Date(alertCreateDto.issuedAt),
+            centroid: { ...alertCreateDto.centroid },
+            hazardTypes: alertCreateDto.hazardTypes,
+            forecastSources: alertCreateDto.forecastSources,
             severity: {
-              create: alert.severity.map((entry) => ({
+              create: alertCreateDto.severity.map((entry) => ({
                 timeInterval: { ...entry.timeInterval },
                 ensembleMemberType: entry.ensembleMemberType,
                 severityKey: entry.severityKey,
@@ -94,7 +95,7 @@ export class AlertsRepository {
               })),
             },
             exposureAdminArea: {
-              create: alert.exposure.adminAreas.map((entry) => ({
+              create: alertCreateDto.exposure.adminAreas.map((entry) => ({
                 placeCode: entry.placeCode,
                 adminLevel: entry.adminLevel,
                 layer: entry.layer,
@@ -102,17 +103,19 @@ export class AlertsRepository {
               })),
             },
             exposureGeoFeature: {
-              create: (alert.exposure.geoFeatures ?? []).map((entry) => ({
-                geoFeatureId: entry.geoFeatureId,
-                layer: entry.layer,
-                attributes: entry.attributes as Record<
-                  string,
-                  string | number | boolean
-                >,
-              })),
+              create: (alertCreateDto.exposure.geoFeatures ?? []).map(
+                (entry) => ({
+                  geoFeatureId: entry.geoFeatureId,
+                  layer: entry.layer,
+                  attributes: entry.attributes as Record<
+                    string,
+                    string | number | boolean
+                  >,
+                }),
+              ),
             },
             exposureRasterData: {
-              create: (alert.exposure.rasters ?? []).map((entry) => ({
+              create: (alertCreateDto.exposure.rasters ?? []).map((entry) => ({
                 layer: entry.layer,
                 value: entry.value,
                 extent: { ...entry.extent },
@@ -121,8 +124,10 @@ export class AlertsRepository {
           },
           include: alertInclude,
         });
-        created.push(this.getReadAlertDto(record));
+
+        created.push(this.getAlertReadDto(record));
       }
+
       return created;
     });
   }

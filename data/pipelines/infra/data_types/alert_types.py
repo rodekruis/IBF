@@ -61,7 +61,7 @@ class Severity:
 
 
 @dataclass
-class AdminAreaExposure:
+class ExposureAdminArea:
     place_code: str
     admin_level: int
     layer: Layer
@@ -77,7 +77,7 @@ class AdminAreaExposure:
 
 
 @dataclass
-class GeoFeatureExposure:
+class ExposureGeoFeature:
     geo_feature_id: str
     layer: str
     value: dict[str, bool | str | int | float]
@@ -107,7 +107,7 @@ class RasterExtent:
 
 
 @dataclass
-class RasterExposure:
+class ExposureRaster:
     layer: str
     value: str
     extent: RasterExtent
@@ -122,9 +122,9 @@ class RasterExposure:
 
 @dataclass
 class Exposure:
-    admin_areas: list[AdminAreaExposure] = field(default_factory=list)
-    geo_features: list[GeoFeatureExposure] = field(default_factory=list)
-    rasters: list[RasterExposure] = field(default_factory=list)
+    admin_areas: list[ExposureAdminArea] = field(default_factory=list)
+    geo_features: list[ExposureGeoFeature] = field(default_factory=list)
+    rasters: list[ExposureRaster] = field(default_factory=list)
 
     def to_dict(
         self,

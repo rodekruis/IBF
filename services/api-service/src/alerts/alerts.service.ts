@@ -1,10 +1,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
-import {
-  CreateAlertDto,
-  ReadAlertDto,
-} from '@api-service/src/alerts/dto/alert.dto';
+import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
+import { AlertReadDto } from '@api-service/src/alerts/dto/alert-read.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
@@ -12,11 +10,11 @@ import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 export class AlertsService {
   public constructor(private readonly alertsRepository: AlertsRepository) {}
 
-  public async getAlerts(): Promise<ReadAlertDto[]> {
+  public async getAlerts(): Promise<AlertReadDto[]> {
     return this.alertsRepository.getAlerts();
   }
 
-  public async getAlertOrThrow(id: number): Promise<ReadAlertDto> {
+  public async getAlertOrThrow(id: number): Promise<AlertReadDto> {
     return this.alertsRepository.getAlertOrThrow(id);
   }
 
@@ -25,9 +23,9 @@ export class AlertsService {
   }
 
   public async createAlerts(
-    createAlertDtos: CreateAlertDto[],
-  ): Promise<ReadAlertDto[]> {
-    const errors = this.validateIntegrity(createAlertDtos);
+    alertCreateDtos: AlertCreateDto[],
+  ): Promise<AlertReadDto[]> {
+    const errors = this.validateIntegrity(alertCreateDtos);
     if (errors.length > 0) {
       throw new HttpException(
         { message: 'Alert integrity check failed', errors },
@@ -35,23 +33,23 @@ export class AlertsService {
       );
     }
 
-    return this.alertsRepository.createAlerts(createAlertDtos);
+    return this.alertsRepository.createAlerts(alertCreateDtos);
   }
 
   // TODO: as this file grows, consider moving this into a separate service
-  private validateIntegrity(alerts: CreateAlertDto[]): string[] {
+  private validateIntegrity(alerts: AlertCreateDto[]): string[] {
     // NOTE: this validation mimics the validation on the pipeline-side. Make sure to keep this in sync.
     const errors: string[] = [];
     for (const alert of alerts) {
       errors.push(...this.checkCentroid(alert));
       errors.push(...this.checkSeverity(alert));
-      errors.push(...this.checkAdminArea(alert));
-      errors.push(...this.checkRasters(alert));
+      errors.push(...this.checkExposureAdminAreas(alert));
+      errors.push(...this.checkExposureRasters(alert));
     }
     return errors;
   }
 
-  private checkCentroid(alert: CreateAlertDto): string[] {
+  private checkCentroid(alert: AlertCreateDto): string[] {
     const errors: string[] = [];
     const { latitude, longitude } = alert.centroid;
     if (latitude < -90 || latitude > 90) {
@@ -67,7 +65,7 @@ export class AlertsService {
     return errors;
   }
 
-  private checkSeverity(alert: CreateAlertDto): string[] {
+  private checkSeverity(alert: AlertCreateDto): string[] {
     const errors: string[] = [];
 
     if (alert.severity.length === 0) {
@@ -111,7 +109,7 @@ export class AlertsService {
     return errors;
   }
 
-  private checkAdminArea(alert: CreateAlertDto): string[] {
+  private checkExposureAdminAreas(alert: AlertCreateDto): string[] {
     const errors: string[] = [];
     const adminAreas = alert.exposure.adminAreas;
 
@@ -140,7 +138,7 @@ export class AlertsService {
     return errors;
   }
 
-  private checkRasters(alert: CreateAlertDto): string[] {
+  private checkExposureRasters(alert: AlertCreateDto): string[] {
     const errors: string[] = [];
     const rasters = alert.exposure.rasters;
 
