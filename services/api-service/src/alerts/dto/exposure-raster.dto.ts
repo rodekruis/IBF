@@ -5,7 +5,7 @@ import { IsEnum, IsString, ValidateNested } from 'class-validator';
 import { RasterExtentDto } from '@api-service/src/alerts/dto/raster-extent.dto';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
-export class RasterExposureDto {
+export class ExposureRasterDto {
   @ApiProperty({ enum: Layer, example: Layer.alertExtent })
   @IsEnum(Layer)
   public readonly layer: Layer;

@@ -61,12 +61,12 @@ def check_severity_integrity(alert_name: str, alert: Alert) -> list[str]:
 def check_admin_area_integrity(alert_name: str, alert: Alert) -> list[str]:
     errors: list[str] = []
 
-    if not alert.exposure.admin_area:
+    if not alert.exposure.admin_areas:
         errors.append(f"Alert '{alert_name}' admin-area: expected at least 1 record")
         return errors
 
     levels: dict[int, dict[Layer, int]] = {}
-    for entry in alert.exposure.admin_area:
+    for entry in alert.exposure.admin_areas:
         level_layers = levels.setdefault(entry.admin_level, {})
         level_layers[entry.layer] = level_layers.get(entry.layer, 0) + 1
 

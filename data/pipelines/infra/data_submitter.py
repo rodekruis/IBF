@@ -7,15 +7,15 @@ import shutil
 from datetime import datetime, timezone
 
 from pipelines.infra.data_types.alert_types import (
-    AdminAreaExposure,
+    ExposureAdminArea,
     Alert,
     Centroid,
     EnsembleMemberType,
     ForecastSource,
-    GeoFeatureExposure,
+    ExposureGeoFeature,
     HazardType,
     Layer,
-    RasterExposure,
+    ExposureRaster,
     RasterExtent,
     Severity,
     TimeInterval,
@@ -119,8 +119,8 @@ class DataSubmitter:
         if alert is None:
             return
 
-        alert.exposure.admin_area.append(
-            AdminAreaExposure(
+        alert.exposure.admin_areas.append(
+            ExposureAdminArea(
                 place_code=place_code,
                 admin_level=admin_level,
                 layer=layer,
@@ -140,7 +140,7 @@ class DataSubmitter:
             return
 
         alert.exposure.geo_features.append(
-            GeoFeatureExposure(geo_feature_id=geo_feature_id, layer=layer, value=value)
+            ExposureGeoFeature(geo_feature_id=geo_feature_id, layer=layer, value=value)
         )
 
     def add_raster_exposure(
@@ -155,7 +155,7 @@ class DataSubmitter:
             return
 
         alert.exposure.rasters.append(
-            RasterExposure(
+            ExposureRaster(
                 layer=layer,
                 value=value,
                 extent=RasterExtent(

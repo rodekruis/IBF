@@ -1,8 +1,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
-import { CreateAlertDto } from '@api-service/src/alerts/dto/create-alert.dto';
-import { SubmitAlertsDto } from '@api-service/src/alerts/dto/submit-alerts.dto';
+import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
+import { AlertReadDto } from '@api-service/src/alerts/dto/alert-read.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
@@ -10,8 +10,22 @@ import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 export class AlertsService {
   public constructor(private readonly alertsRepository: AlertsRepository) {}
 
-  public async submitAlerts(dto: SubmitAlertsDto): Promise<void> {
-    const errors = this.validateIntegrity(dto.alerts);
+  public async getAlerts(): Promise<AlertReadDto[]> {
+    return this.alertsRepository.getAlerts();
+  }
+
+  public async getAlertOrThrow(id: number): Promise<AlertReadDto> {
+    return this.alertsRepository.getAlertOrThrow(id);
+  }
+
+  public async deleteAlertOrThrow(id: number): Promise<void> {
+    await this.alertsRepository.deleteAlertOrThrow(id);
+  }
+
+  public async createAlerts(
+    alertCreateDtos: AlertCreateDto[],
+  ): Promise<AlertReadDto[]> {
+    const errors = this.validateIntegrity(alertCreateDtos);
     if (errors.length > 0) {
       throw new HttpException(
         { message: 'Alert integrity check failed', errors },
@@ -19,23 +33,23 @@ export class AlertsService {
       );
     }
 
-    await this.alertsRepository.createAlerts(dto.alerts);
+    return this.alertsRepository.createAlerts(alertCreateDtos);
   }
 
   // TODO: as this file grows, consider moving this into a separate service
-  private validateIntegrity(alerts: CreateAlertDto[]): string[] {
+  private validateIntegrity(alerts: AlertCreateDto[]): string[] {
     // NOTE: this validation mimics the validation on the pipeline-side. Make sure to keep this in sync.
     const errors: string[] = [];
     for (const alert of alerts) {
       errors.push(...this.checkCentroid(alert));
       errors.push(...this.checkSeverity(alert));
-      errors.push(...this.checkAdminArea(alert));
-      errors.push(...this.checkRasters(alert));
+      errors.push(...this.checkExposureAdminAreas(alert));
+      errors.push(...this.checkExposureRasters(alert));
     }
     return errors;
   }
 
-  private checkCentroid(alert: CreateAlertDto): string[] {
+  private checkCentroid(alert: AlertCreateDto): string[] {
     const errors: string[] = [];
     const { latitude, longitude } = alert.centroid;
     if (latitude < -90 || latitude > 90) {
@@ -51,7 +65,7 @@ export class AlertsService {
     return errors;
   }
 
-  private checkSeverity(alert: CreateAlertDto): string[] {
+  private checkSeverity(alert: AlertCreateDto): string[] {
     const errors: string[] = [];
 
     if (alert.severity.length === 0) {
@@ -95,11 +109,11 @@ export class AlertsService {
     return errors;
   }
 
-  private checkAdminArea(alert: CreateAlertDto): string[] {
+  private checkExposureAdminAreas(alert: AlertCreateDto): string[] {
     const errors: string[] = [];
-    const adminArea = alert.exposure.adminArea;
+    const adminAreas = alert.exposure.adminAreas;
 
-    if (adminArea.length === 0) {
+    if (adminAreas.length === 0) {
       errors.push(
         `Alert '${alert.alertName}' admin-area: expected at least 1 record`,
       );
@@ -107,7 +121,7 @@ export class AlertsService {
     }
 
     const layers = new Map<string, number>();
-    for (const entry of adminArea) {
+    for (const entry of adminAreas) {
       layers.set(entry.layer, (layers.get(entry.layer) ?? 0) + 1);
     }
 
@@ -124,7 +138,7 @@ export class AlertsService {
     return errors;
   }
 
-  private checkRasters(alert: CreateAlertDto): string[] {
+  private checkExposureRasters(alert: AlertCreateDto): string[] {
     const errors: string[] = [];
     const rasters = alert.exposure.rasters;
 

@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
-  IsDateString,
+  IsDate,
   IsEnum,
   IsString,
   ValidateNested,
@@ -16,14 +16,15 @@ import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 
-export class CreateAlertDto {
+export class AlertCreateDto {
   @ApiProperty({ example: 'KEN-flood-2026-03-20' })
   @IsString()
   public readonly alertName: string;
 
   @ApiProperty({ example: '2026-03-20T12:00:00Z' })
-  @IsDateString()
-  public readonly issuedAt: string;
+  @IsDate()
+  @Type(() => Date)
+  public readonly issuedAt: Date;
 
   @ApiProperty({ type: CentroidDto })
   @ValidateNested()

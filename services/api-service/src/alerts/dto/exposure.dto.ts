@@ -2,14 +2,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsArray, IsOptional, ValidateNested } from 'class-validator';
 
-import { AdminAreaExposureDto } from '@api-service/src/alerts/dto/admin-area-exposure.dto';
-import { GeoFeatureExposureDto } from '@api-service/src/alerts/dto/geo-feature-exposure.dto';
-import { RasterExposureDto } from '@api-service/src/alerts/dto/raster-exposure.dto';
+import { ExposureAdminAreaDto } from '@api-service/src/alerts/dto/exposure-admin-area.dto';
+import { ExposureGeoFeatureDto } from '@api-service/src/alerts/dto/exposure-geo-feature.dto';
+import { ExposureRasterDto } from '@api-service/src/alerts/dto/exposure-raster.dto';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
 export class ExposureDto {
   @ApiProperty({
-    type: [AdminAreaExposureDto],
+    type: [ExposureAdminAreaDto],
     example: [
       {
         placeCode: 'KEN_01_001',
@@ -27,19 +27,19 @@ export class ExposureDto {
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => AdminAreaExposureDto)
-  public readonly adminArea: AdminAreaExposureDto[];
+  @Type(() => ExposureAdminAreaDto)
+  public readonly adminAreas: ExposureAdminAreaDto[];
 
-  @ApiProperty({ type: [GeoFeatureExposureDto], required: false })
+  @ApiProperty({ type: [ExposureGeoFeatureDto], required: false })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => GeoFeatureExposureDto)
-  public readonly geoFeatures?: GeoFeatureExposureDto[];
+  @Type(() => ExposureGeoFeatureDto)
+  public readonly geoFeatures?: ExposureGeoFeatureDto[];
 
-  @ApiProperty({ type: [RasterExposureDto] })
+  @ApiProperty({ type: [ExposureRasterDto] })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => RasterExposureDto)
-  public readonly rasters: RasterExposureDto[];
+  @Type(() => ExposureRasterDto)
+  public readonly rasters: ExposureRasterDto[];
 }

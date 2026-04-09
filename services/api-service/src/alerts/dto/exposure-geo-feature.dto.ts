@@ -3,7 +3,7 @@ import { IsEnum, IsObject, IsString } from 'class-validator';
 
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
-export class GeoFeatureExposureDto {
+export class ExposureGeoFeatureDto {
   @ApiProperty({ example: 'station-001' })
   @IsString()
   public readonly geoFeatureId: string;
@@ -14,5 +14,5 @@ export class GeoFeatureExposureDto {
 
   @ApiProperty({ example: { triggered: true, severity: 0.8 } })
   @IsObject()
-  public readonly attributes: Record<string, unknown>;
+  public readonly attributes: Record<string, string | number | boolean>;
 }
