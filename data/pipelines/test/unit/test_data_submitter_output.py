@@ -1,7 +1,10 @@
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
 from pipelines.infra.data_submitter import DataSubmitter
+from pipelines.infra.data_types.alert_types import ForecastSource, HazardType
 from pipelines.infra.data_types.data_config_types import OutputMode
 
 
@@ -30,6 +33,29 @@ class TestLocalMode:
         assert "Failed to write" in errors[0]
 
         read_only_dir.chmod(0o755)
+
+    def test_writes_forecast_with_empty_alerts_when_no_alerts_created(
+        self, tmp_output: Path
+    ):
+        """Local mode writes a valid forecast envelope with empty alerts when no alerts are created."""
+        submitter = DataSubmitter()
+        submitter.set_forecast_metadata(
+            issued_at=datetime.now(timezone.utc),
+            hazard_types=[HazardType.FLOODS],
+            forecast_sources=[ForecastSource.GLOFAS],
+        )
+
+        errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+        assert errors == []
+        file_path = tmp_output / "forecast.json"
+        assert file_path.exists()
+        with file_path.open("r", encoding="utf-8") as f:
+            forecast = json.load(f)
+
+        assert forecast["hazardTypes"] == ["floods"]
+        assert forecast["forecastSources"] == ["glofas"]
+        assert forecast["alerts"] == []
 
 
 class TestApiMode:
@@ -88,3 +114,30 @@ class TestApiMode:
         mock_submit.assert_called_once()
 
         read_only_dir.chmod(0o755)
+
+    @patch.dict(
+        "os.environ",
+        {"IBF_API_URL": "http://localhost:4000", "IBF_PIPELINE_API_KEY": "a" * 32},
+    )
+    @patch(
+        "pipelines.infra.utils.api_client.ApiClient.submit_forecast", return_value=[]
+    )
+    def test_posts_forecast_with_empty_alerts_when_no_alerts_created(
+        self, mock_submit, tmp_output: Path
+    ):
+        """API mode posts a valid forecast envelope with empty alerts when no alerts are created."""
+        submitter = DataSubmitter()
+        submitter.set_forecast_metadata(
+            issued_at=datetime.now(timezone.utc),
+            hazard_types=[HazardType.FLOODS],
+            forecast_sources=[ForecastSource.GLOFAS],
+        )
+
+        errors = submitter.send_all(OutputMode.API, str(tmp_output))
+
+        assert errors == []
+        mock_submit.assert_called_once()
+        submitted_forecast = mock_submit.call_args.args[0]
+        assert submitted_forecast["hazardTypes"] == ["floods"]
+        assert submitted_forecast["forecastSources"] == ["glofas"]
+        assert submitted_forecast["alerts"] == []
