@@ -3,6 +3,7 @@ import { HttpStatus } from '@nestjs/common';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   buildAlert,
+  buildForecast,
   createAlerts,
   readAlertById,
   readAlerts,
@@ -21,7 +22,7 @@ describe('/ Alerts', () => {
   beforeAll(async () => {
     await resetDB(SeedScript.initialState, __filename);
     const alert = buildAlert({ alertName: ALERT_NAME });
-    await createAlerts([alert]);
+    await createAlerts(buildForecast([alert]));
     adminAccessToken = await getAccessToken();
     seededAlertId = (await readAlerts(adminAccessToken)).body[0].id;
   });

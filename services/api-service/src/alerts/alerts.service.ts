@@ -3,6 +3,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { AlertReadDto } from '@api-service/src/alerts/dto/alert-read.dto';
+import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
@@ -26,8 +27,10 @@ export class AlertsService {
     await this.alertsRepository.deleteAlertOrThrow(id);
   }
 
-  public async createAlerts(alerts: AlertCreateDto[]): Promise<AlertReadDto[]> {
-    const errors = this.validateIntegrity(alerts);
+  public async createAlerts(
+    forecast: ForecastCreateDto,
+  ): Promise<AlertReadDto[]> {
+    const errors = this.validateIntegrity(forecast.alerts);
     if (errors.length > 0) {
       throw new HttpException(
         { message: 'Alert integrity check failed', errors },
@@ -35,35 +38,33 @@ export class AlertsService {
       );
     }
 
+    const forecastContext = {
+      hazardTypes: forecast.hazardTypes,
+      forecastSources: forecast.forecastSources,
+      issuedAt: forecast.issuedAt,
+    };
+
     await Promise.all(
-      alerts.map((alert) => this.alertToEventService.matchAndStore(alert)),
+      forecast.alerts.map((alert) =>
+        this.alertToEventService.matchAndStore(alert, forecastContext),
+      ),
     );
 
-    await this.closeStaleEvents(alerts);
+    await this.closeStaleEvents(forecast);
 
     // Store alerts at the end, so that they are not stored in case of errors on event matching/storing/closing
-    return await this.alertsRepository.createAlerts(alerts);
+    return await this.alertsRepository.createAlerts(
+      forecast.alerts,
+      forecastContext,
+    );
   }
 
-  private async closeStaleEvents(alerts: AlertCreateDto[]): Promise<void> {
-    const alertNamesByHazardType = new Map<string, string[]>();
-    for (const alert of alerts) {
-      const hazardType = alert.hazardTypes[0];
-      const names = alertNamesByHazardType.get(hazardType) ?? [];
-      names.push(alert.alertName);
-      alertNamesByHazardType.set(hazardType, names);
-    }
-
-    // TODO: make this a forecast-level attribute instead, and/or set as 'now' on submission?
-    const issuedAt = new Date(alerts[0].issuedAt);
-
-    for (const [hazardType, activeNames] of alertNamesByHazardType) {
-      await this.alertToEventService.closeStaleEvents(
-        hazardType,
-        activeNames,
-        issuedAt,
-      );
-    }
+  private async closeStaleEvents(forecast: ForecastCreateDto): Promise<void> {
+    await this.alertToEventService.closeStaleEvents({
+      hazardType: forecast.hazardTypes[0], // assuming one hazard type for now
+      excludeEventNames: forecast.alerts.map((a) => a.alertName),
+      closedAt: forecast.issuedAt,
+    });
   }
 
   // TODO: as this file grows, consider moving this into a separate service

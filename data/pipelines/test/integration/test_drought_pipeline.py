@@ -23,15 +23,16 @@ def test_drought_eth(pipeline):
     ), f"Pipeline failed.\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
 
     latest = pipeline.find_latest_output("drought", "ETH")
-    alerts = pipeline.load_alerts(latest)
+    forecast = pipeline.load_forecast(latest)
+    alerts = forecast["alerts"]
+    assert forecast["hazardTypes"] == ["drought"]
+    assert "ECMWF" in forecast["forecastSources"]
 
     assert len(alerts) == 1
 
     alert = alerts[0]
     pipeline.assert_alert_structure(alert)
-    assert alert["hazardTypes"] == ["drought"]
     assert alert["alertName"] == "ETH_drought_climate-region-B_season-MAM"
-    assert "ECMWF" in alert["forecastSources"]
 
     for entry in alert["severity"]:
         assert entry["severityKey"] == "percentile"

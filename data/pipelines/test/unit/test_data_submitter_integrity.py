@@ -17,19 +17,21 @@ ALERT_NAME = "TST_floods_station-test"
 def test_incomplete_alert_is_rejected(tmp_output: Path):
     """An alert with only metadata and no severity/exposure data is rejected."""
     submitter = DataSubmitter()
+    submitter.set_forecast_metadata(
+        issued_at=datetime.now(timezone.utc),
+        hazard_types=[HazardType.FLOODS],
+        forecast_sources=[ForecastSource.GLOFAS],
+    )
     submitter.create_alert(
         alert_name=ALERT_NAME,
-        hazard_types=[HazardType.FLOODS],
         centroid=Centroid(latitude=1.0, longitude=37.0),
-        issued_at=datetime.now(timezone.utc),
-        forecast_sources=[ForecastSource.GLOFAS],
     )
 
     errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert len(errors) > 0
     assert any("no severity data" in e for e in errors)
-    assert not (tmp_output / "alerts_object.json").exists()
+    assert not (tmp_output / "forecast.json").exists()
 
 
 def test_severity_missing_median_is_rejected(
@@ -48,7 +50,7 @@ def test_severity_missing_median_is_rejected(
     errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("expected 1 median record, found 0" in e for e in errors)
-    assert not (tmp_output / "alerts_object.json").exists()
+    assert not (tmp_output / "forecast.json").exists()
 
 
 def test_severity_missing_ensemble_is_rejected(
@@ -67,7 +69,7 @@ def test_severity_missing_ensemble_is_rejected(
     errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("at least 1 ensemble-run record" in e for e in errors)
-    assert not (tmp_output / "alerts_object.json").exists()
+    assert not (tmp_output / "forecast.json").exists()
 
 
 def test_admin_area_unequal_layer_counts_is_rejected(
@@ -92,18 +94,20 @@ def test_admin_area_unequal_layer_counts_is_rejected(
     errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("record count differs across layers" in e for e in errors)
-    assert not (tmp_output / "alerts_object.json").exists()
+    assert not (tmp_output / "forecast.json").exists()
 
 
 def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
     """Raster exposure without the required 'alert_extent' layer is rejected."""
     submitter = DataSubmitter()
+    submitter.set_forecast_metadata(
+        issued_at=datetime.now(timezone.utc),
+        hazard_types=[HazardType.FLOODS],
+        forecast_sources=[ForecastSource.GLOFAS],
+    )
     submitter.create_alert(
         alert_name=ALERT_NAME,
-        hazard_types=[HazardType.FLOODS],
         centroid=Centroid(latitude=1.0, longitude=37.0),
-        issued_at=datetime.now(timezone.utc),
-        forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.add_severity_data(
         alert_name=ALERT_NAME,
@@ -138,18 +142,20 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
     errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("missing required 'alert_extent' layer" in e for e in errors)
-    assert not (tmp_output / "alerts_object.json").exists()
+    assert not (tmp_output / "forecast.json").exists()
 
 
 def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     """A centroid with latitude or longitude outside valid WGS84 bounds is rejected."""
     submitter = DataSubmitter()
+    submitter.set_forecast_metadata(
+        issued_at=datetime.now(timezone.utc),
+        hazard_types=[HazardType.FLOODS],
+        forecast_sources=[ForecastSource.GLOFAS],
+    )
     submitter.create_alert(
         alert_name=ALERT_NAME,
-        hazard_types=[HazardType.FLOODS],
         centroid=Centroid(latitude=91.0, longitude=200.0),
-        issued_at=datetime.now(timezone.utc),
-        forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.add_severity_data(
         alert_name=ALERT_NAME,
@@ -185,7 +191,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
 
     assert any("latitude 91.0 out of range" in e for e in errors)
     assert any("longitude 200.0 out of range" in e for e in errors)
-    assert not (tmp_output / "alerts_object.json").exists()
+    assert not (tmp_output / "forecast.json").exists()
 
 
 def test_raster_invalid_extent_is_rejected(
@@ -202,7 +208,7 @@ def test_raster_invalid_extent_is_rejected(
     errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("invalid extent" in e for e in errors)
-    assert not (tmp_output / "alerts_object.json").exists()
+    assert not (tmp_output / "forecast.json").exists()
 
 
 def test_time_interval_start_after_end_is_rejected(
@@ -221,18 +227,20 @@ def test_time_interval_start_after_end_is_rejected(
     errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("start must be before end" in e for e in errors)
-    assert not (tmp_output / "alerts_object.json").exists()
+    assert not (tmp_output / "forecast.json").exists()
 
 
 def test_admin_area_missing_is_rejected(tmp_output: Path):
     """An alert with no admin-area exposure records at all is rejected."""
     submitter = DataSubmitter()
+    submitter.set_forecast_metadata(
+        issued_at=datetime.now(timezone.utc),
+        hazard_types=[HazardType.FLOODS],
+        forecast_sources=[ForecastSource.GLOFAS],
+    )
     submitter.create_alert(
         alert_name=ALERT_NAME,
-        hazard_types=[HazardType.FLOODS],
         centroid=Centroid(latitude=1.0, longitude=37.0),
-        issued_at=datetime.now(timezone.utc),
-        forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.add_severity_data(
         alert_name=ALERT_NAME,
@@ -260,19 +268,17 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
     errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("expected at least 1 record" in e for e in errors)
-    assert not (tmp_output / "alerts_object.json").exists()
+    assert not (tmp_output / "forecast.json").exists()
 
 
 def test_naive_datetime_is_rejected():
-    """A naive (no timezone) issued_at datetime is rejected at alert creation."""
+    """A naive (no timezone) issued_at datetime is rejected at forecast metadata setup."""
     submitter = DataSubmitter()
-    submitter.create_alert(
-        alert_name=ALERT_NAME,
-        hazard_types=[HazardType.FLOODS],
-        centroid=Centroid(latitude=1.0, longitude=37.0),
+    submitter.set_forecast_metadata(
         issued_at=datetime(2026, 3, 20, 12, 0, 0),
+        hazard_types=[HazardType.FLOODS],
         forecast_sources=[ForecastSource.GLOFAS],
     )
 
-    assert ALERT_NAME not in submitter._alerts
-    assert "timezone-aware" in submitter.errors[f"create_alert:{ALERT_NAME}"]
+    assert submitter._forecast_metadata is None
+    assert "timezone-aware" in submitter.errors["set_forecast_metadata"]

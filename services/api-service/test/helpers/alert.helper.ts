@@ -1,6 +1,7 @@
 import * as request from 'supertest';
 
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
+import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
@@ -10,10 +11,10 @@ import { env } from '@api-service/src/env';
 import { getServer } from '@api-service/test/helpers/utility.helper';
 
 export async function createAlerts(
-  alerts: AlertCreateDto[],
+  forecast: ForecastCreateDto,
   apiKey: string = env.PIPELINE_API_KEY!,
 ): Promise<request.Response> {
-  return getServer().post('/alerts').set('x-api-key', apiKey).send(alerts);
+  return getServer().post('/alerts').set('x-api-key', apiKey).send(forecast);
 }
 
 export async function readAlerts(
@@ -41,10 +42,7 @@ export function buildAlert(
 ): AlertCreateDto {
   return {
     alertName: 'KEN_floods_test-station',
-    issuedAt: new Date('2026-03-30T00:00:00Z'),
     centroid: { latitude: 0.35, longitude: 32.6 },
-    hazardTypes: [HazardType.floods],
-    forecastSources: [ForecastSource.glofas],
     severity: [
       {
         timeInterval: {
@@ -82,6 +80,19 @@ export function buildAlert(
         },
       ],
     },
+    ...overrides,
+  };
+}
+
+export function buildForecast(
+  alerts: AlertCreateDto[],
+  overrides: Partial<Omit<ForecastCreateDto, 'alerts'>> = {},
+): ForecastCreateDto {
+  return {
+    issuedAt: new Date('2026-03-30T00:00:00Z'),
+    hazardTypes: [HazardType.floods],
+    forecastSources: [ForecastSource.glofas],
+    alerts,
     ...overrides,
   };
 }

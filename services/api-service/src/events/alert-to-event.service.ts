@@ -2,10 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
 
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
+import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
+import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
 import { EventAlertHistoryRecord } from '@api-service/src/events/events.repository';
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
+
+export interface ForecastContext {
+  readonly hazardTypes: HazardType[];
+  readonly forecastSources: ForecastSource[];
+  readonly issuedAt: Date;
+}
 
 @Injectable()
 export class AlertToEventService {
@@ -14,20 +22,22 @@ export class AlertToEventService {
     private readonly alertClassificationService: AlertClassificationService,
   ) {}
 
-  public async matchAndStore(alert: AlertCreateDto): Promise<void> {
+  public async matchAndStore(
+    alert: AlertCreateDto,
+    forecast: ForecastContext,
+  ): Promise<void> {
     const classification = this.alertClassificationService.classifyAlert({
-      hazardType: alert.hazardTypes[0],
-      issuedAt: alert.issuedAt,
+      hazardType: forecast.hazardTypes[0],
+      issuedAt: forecast.issuedAt,
       severity: alert.severity,
     });
-    const issuedAt = new Date(alert.issuedAt);
 
     if (classification.alertClass === null) {
       // If below any threshold, then close open event (if any) and do not create new event
       // This can happen if the minimum threshold the pipeline employs is more conservative than the actual alert thresholds.
       await this.eventsRepository.closeOpenEventsByName(
         alert.alertName,
-        issuedAt,
+        forecast.issuedAt,
       );
       return;
     }
@@ -40,28 +50,28 @@ export class AlertToEventService {
       await this.updateExistingEvent(
         existingOpenEvent,
         classification,
-        issuedAt,
+        forecast.issuedAt,
       );
     } else {
-      await this.createNewEvent(alert, classification, issuedAt);
+      await this.createNewEvent(alert, forecast, classification);
     }
   }
 
   private async createNewEvent(
     alert: AlertCreateDto,
+    forecast: ForecastContext,
     classification: ClassificationResult,
-    issuedAt: Date,
   ): Promise<void> {
     await this.eventsRepository.createEvent({
       eventName: alert.alertName,
-      hazardTypes: alert.hazardTypes,
-      forecastSources: alert.forecastSources,
+      hazardTypes: forecast.hazardTypes,
+      forecastSources: forecast.forecastSources,
       alertClass: classification.alertClass!,
       trigger: classification.trigger,
       startAt: classification.startAt,
       reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
       endAt: classification.endAt,
-      firstIssuedAt: issuedAt,
+      firstIssuedAt: forecast.issuedAt,
     });
   }
 
@@ -136,15 +146,19 @@ export class AlertToEventService {
     });
   }
 
-  public async closeStaleEvents(
-    hazardType: string,
-    activeAlertNames: string[],
-    issuedAt: Date,
-  ): Promise<void> {
+  public async closeStaleEvents({
+    hazardType,
+    excludeEventNames,
+    closedAt,
+  }: {
+    hazardType: string;
+    excludeEventNames: string[];
+    closedAt: Date;
+  }): Promise<void> {
     await this.eventsRepository.closeStaleOpenEvents({
       hazardType,
-      excludeEventNames: activeAlertNames,
-      closedAt: issuedAt,
+      excludeEventNames,
+      closedAt,
     });
   }
 }

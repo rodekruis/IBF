@@ -61,13 +61,10 @@ def calculate_flood_forecasts(
 
         data_submitter.create_alert(
             alert_name=alert_name,
-            hazard_types=[HazardType.FLOODS],
             centroid=Centroid(
                 latitude=station.lat,
                 longitude=station.lon,
             ),
-            issued_at=issued_at,
-            forecast_sources=[ForecastSource.GLOFAS],
         )
 
         for _ in range(2):

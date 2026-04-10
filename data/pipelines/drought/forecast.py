@@ -71,10 +71,7 @@ def calculate_drought_forecasts(
 
             data_submitter.create_alert(
                 alert_name=alert_name,
-                hazard_types=[HazardType.DROUGHT],
                 centroid=Centroid(latitude=0.0, longitude=0.0),
-                issued_at=issued_at,
-                forecast_sources=[ForecastSource.ECMWF],
             )
 
             for _ in range(2):

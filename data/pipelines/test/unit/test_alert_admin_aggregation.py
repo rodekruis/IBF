@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 import pytest
 from pipelines.infra.data_types.admin_area_types import (
     AdminArea,
@@ -13,8 +11,6 @@ from pipelines.infra.data_types.alert_types import (
     Centroid,
     Exposure,
     ExposureAdminArea,
-    ForecastSource,
-    HazardType,
     Layer,
 )
 from pipelines.infra.utils.alert_admin_aggregation import (
@@ -55,10 +51,7 @@ MOCK_ADMIN_AREAS_LEVEL_2: AdminAreasSet = AdminAreasSet(
 def _make_alert(admin_areas: list[ExposureAdminArea]) -> Alert:
     return Alert(
         alert_name="test-alert",
-        issued_at=datetime.now(timezone.utc),
         centroid=Centroid(latitude=0.0, longitude=0.0),
-        hazard_types=[HazardType.FLOODS],
-        forecast_sources=[ForecastSource.GLOFAS],
         exposure=Exposure(admin_areas=admin_areas),
     )
 

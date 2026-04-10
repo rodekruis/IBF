@@ -18,12 +18,14 @@ def _create_valid_submitter() -> DataSubmitter:
     """Build a DataSubmitter with one fully valid alert (severity, admin areas,
     rasters) so tests can add a single defect on top and verify it is caught."""
     submitter = DataSubmitter()
+    submitter.set_forecast_metadata(
+        issued_at=datetime.now(timezone.utc),
+        hazard_types=[HazardType.FLOODS],
+        forecast_sources=[ForecastSource.GLOFAS],
+    )
     submitter.create_alert(
         alert_name=ALERT_NAME,
-        hazard_types=[HazardType.FLOODS],
         centroid=Centroid(latitude=1.0, longitude=37.0),
-        issued_at=datetime.now(timezone.utc),
-        forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.add_severity_data(
         alert_name=ALERT_NAME,

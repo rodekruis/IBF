@@ -6,16 +6,16 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseArrayPipe,
   ParseIntPipe,
   Post,
   UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
-import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { AlertReadDto } from '@api-service/src/alerts/dto/alert-read.dto';
+import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 import { ValidationPipeOptions } from '@api-service/src/validation-options/validation-pipe-options.const';
@@ -86,7 +86,7 @@ export class AlertsController {
   @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Post()
   @ApiOperation({ summary: 'Create forecast alerts' })
-  @ApiBody({ type: [AlertCreateDto] })
+  @ApiBody({ type: ForecastCreateDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Alerts persisted successfully',
@@ -97,11 +97,9 @@ export class AlertsController {
     description: 'Integrity check failed',
   })
   public async createAlerts(
-    @Body(
-      new ParseArrayPipe({ items: AlertCreateDto, ...ValidationPipeOptions }),
-    )
-    alertCreateDtos: AlertCreateDto[],
+    @Body(new ValidationPipe(ValidationPipeOptions))
+    forecastCreateDto: ForecastCreateDto,
   ): Promise<AlertReadDto[]> {
-    return this.alertsService.createAlerts(alertCreateDtos);
+    return await this.alertsService.createAlerts(forecastCreateDto);
   }
 }

@@ -9,11 +9,11 @@ class TestLocalMode:
     def test_writes_file_on_success(
         self, valid_submitter: DataSubmitter, tmp_output: Path
     ):
-        """Local mode writes alerts_object.json to the output directory."""
+        """Local mode writes forecast.json to the output directory."""
         errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
         assert errors == []
-        assert (tmp_output / "alerts_object.json").exists()
+        assert (tmp_output / "forecast.json").exists()
 
     def test_returns_error_on_unwritable_path(
         self, valid_submitter: DataSubmitter, tmp_path: Path
@@ -37,7 +37,9 @@ class TestApiMode:
         "os.environ",
         {"IBF_API_URL": "http://localhost:4000", "IBF_PIPELINE_API_KEY": "a" * 32},
     )
-    @patch("pipelines.infra.utils.api_client.ApiClient.submit_alerts", return_value=[])
+    @patch(
+        "pipelines.infra.utils.api_client.ApiClient.submit_forecast", return_value=[]
+    )
     def test_writes_file_and_cleans_up_on_success(
         self, _mock_submit, valid_submitter: DataSubmitter, tmp_output: Path
     ):
@@ -52,7 +54,7 @@ class TestApiMode:
         {"IBF_API_URL": "http://localhost:4000", "IBF_PIPELINE_API_KEY": "a" * 32},
     )
     @patch(
-        "pipelines.infra.utils.api_client.ApiClient.submit_alerts",
+        "pipelines.infra.utils.api_client.ApiClient.submit_forecast",
         return_value=["server error"],
     )
     def test_keeps_file_on_api_failure(
@@ -62,13 +64,15 @@ class TestApiMode:
         errors = valid_submitter.send_all(OutputMode.API, str(tmp_output))
 
         assert errors == ["server error"]
-        assert (tmp_output / "alerts_object.json").exists()
+        assert (tmp_output / "forecast.json").exists()
 
     @patch.dict(
         "os.environ",
         {"IBF_API_URL": "http://localhost:4000", "IBF_PIPELINE_API_KEY": "a" * 32},
     )
-    @patch("pipelines.infra.utils.api_client.ApiClient.submit_alerts", return_value=[])
+    @patch(
+        "pipelines.infra.utils.api_client.ApiClient.submit_forecast", return_value=[]
+    )
     def test_still_submits_when_file_write_fails(
         self, mock_submit, valid_submitter: DataSubmitter, tmp_path: Path
     ):

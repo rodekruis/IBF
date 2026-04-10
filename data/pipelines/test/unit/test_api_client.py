@@ -42,17 +42,23 @@ class TestSubmitAlerts:
     def test_returns_empty_list_on_success(self, mock_post: MagicMock) -> None:
         """Successful 201 response returns an empty error list."""
         mock_post.return_value = MagicMock(status_code=201)
-        result = self.client.submit_alerts([{"alertName": "test"}])
+        result = self.client.submit_forecast(
+            {"issuedAt": "2026-03-20T00:00:00Z", "alerts": []}
+        )
         assert result == []
 
     @patch.object(requests.Session, "post")
     def test_posts_to_alerts_endpoint(self, mock_post: MagicMock) -> None:
-        """Alerts are POSTed to /api/alerts in an array."""
+        """Forecast is POSTed to /api/alerts as a single object."""
         mock_post.return_value = MagicMock(status_code=201)
-        self.client.submit_alerts([{"alertName": "test"}])
+        forecast = {
+            "issuedAt": "2026-03-20T00:00:00Z",
+            "alerts": [{"alertName": "test"}],
+        }
+        self.client.submit_forecast(forecast)
         mock_post.assert_called_once_with(
             "http://localhost:4000/api/alerts",
-            json=[{"alertName": "test"}],
+            json=forecast,
             timeout=60,
         )
 
@@ -64,7 +70,7 @@ class TestSubmitAlerts:
             "errors": ["severity missing", "centroid invalid"]
         }
         mock_post.return_value = response
-        result = self.client.submit_alerts([])
+        result = self.client.submit_forecast({})
         assert result == ["severity missing", "centroid invalid"]
 
     @patch.object(requests.Session, "post")
@@ -73,7 +79,7 @@ class TestSubmitAlerts:
         response = MagicMock(status_code=500)
         response.json.return_value = {"message": "Internal Server Error"}
         mock_post.return_value = response
-        result = self.client.submit_alerts([])
+        result = self.client.submit_forecast({})
         assert result == ["Internal Server Error"]
 
     @patch.object(requests.Session, "post")
@@ -83,5 +89,5 @@ class TestSubmitAlerts:
         response.json.side_effect = ValueError("not json")
         response.text = "Bad Gateway"
         mock_post.return_value = response
-        result = self.client.submit_alerts([])
+        result = self.client.submit_forecast({})
         assert result == ["API returned 502: Bad Gateway"]

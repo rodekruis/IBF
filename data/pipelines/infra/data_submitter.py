@@ -14,6 +14,7 @@ from pipelines.infra.data_types.alert_types import (
     ExposureAdminArea,
     ExposureGeoFeature,
     ExposureRaster,
+    Forecast,
     ForecastSource,
     HazardType,
     Layer,
@@ -33,21 +34,42 @@ from pipelines.infra.utils.api_client import ApiClient
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class _ForecastMetadata:
+    issued_at: datetime
+    hazard_types: list[HazardType]
+    forecast_sources: list[ForecastSource]
+
+
 class DataSubmitter:
     def __init__(self) -> None:
         self._alerts: dict[str, Alert] = {}
+        self._forecast_metadata: _ForecastMetadata | None = None
         self.errors: dict[str, str] = {}
 
     def add_error(self, error: str) -> None:
         self.errors[f"manual:{len(self.errors)}"] = error
 
+    def set_forecast_metadata(
+        self,
+        issued_at: datetime,
+        hazard_types: list[HazardType],
+        forecast_sources: list[ForecastSource],
+    ) -> None:
+        if issued_at.tzinfo is None:
+            self.errors["set_forecast_metadata"] = "issued_at must be timezone-aware"
+            return
+
+        self._forecast_metadata = _ForecastMetadata(
+            issued_at=issued_at.astimezone(timezone.utc),
+            hazard_types=hazard_types,
+            forecast_sources=forecast_sources,
+        )
+
     def create_alert(
         self,
         alert_name: str,
-        hazard_types: list[HazardType],
         centroid: Centroid,
-        issued_at: datetime,
-        forecast_sources: list[ForecastSource],
     ) -> None:
         if alert_name in self._alerts:
             self.errors[f"create_alert:{alert_name}"] = (
@@ -55,30 +77,9 @@ class DataSubmitter:
             )
             return
 
-        if not hazard_types:
-            self.errors[f"create_alert:{alert_name}"] = (
-                f"Alert '{alert_name}' has no hazard_types"
-            )
-            return
-
-        if not forecast_sources:
-            self.errors[f"create_alert:{alert_name}"] = (
-                f"Alert '{alert_name}' has no forecast_sources"
-            )
-            return
-
-        if issued_at.tzinfo is None:
-            self.errors[f"create_alert:{alert_name}"] = (
-                f"Alert '{alert_name}' issued_at must be timezone-aware"
-            )
-            return
-
         self._alerts[alert_name] = Alert(
             alert_name=alert_name,
-            issued_at=issued_at.astimezone(timezone.utc),
             centroid=centroid,
-            hazard_types=hazard_types,
-            forecast_sources=forecast_sources,
         )
 
     def _get_alert(self, alert_name: str, caller: str) -> Alert | None:
@@ -181,14 +182,20 @@ class DataSubmitter:
                 logger.error(f"Integrity error: {err}")
             return integrity_errors
 
-        alerts_list = [alert.to_dict() for alert in self._alerts.values()]
+        forecast = Forecast(
+            issued_at=self._forecast_metadata.issued_at,
+            hazard_types=self._forecast_metadata.hazard_types,
+            forecast_sources=self._forecast_metadata.forecast_sources,
+            alerts=list(self._alerts.values()),
+        )
+        forecast_dict = forecast.to_dict()
 
-        file_errors = self._write_to_file(alerts_list, output_path)
+        file_errors = self._write_to_file(forecast_dict, output_path)
 
         if output_mode == OutputMode.API:
             if file_errors:
                 logger.warning(f"Local debug write failed: {file_errors}")
-            api_errors = self._send_to_api(alerts_list)
+            api_errors = self._send_to_api(forecast_dict)
             if not api_errors:
                 shutil.rmtree(output_path, ignore_errors=True)
                 logger.info(f"Cleaned up local output at {output_path}")
@@ -196,21 +203,19 @@ class DataSubmitter:
 
         return file_errors
 
-    def _write_to_file(
-        self, alerts_list: Sequence[Mapping[str, object]], output_dir: str
-    ) -> list[str]:
+    def _write_to_file(self, forecast_dict: dict, output_dir: str) -> list[str]:
         try:
             os.makedirs(output_dir, exist_ok=True)
-            file_path = os.path.join(output_dir, "alerts_object.json")
+            file_path = os.path.join(output_dir, "forecast.json")
             with open(file_path, "w", encoding="utf-8") as f:
-                json.dump(list(alerts_list), f, indent=2)
+                json.dump(forecast_dict, f, indent=2)
         except OSError as e:
-            return [f"Failed to write alerts to {output_dir}: {e}"]
+            return [f"Failed to write forecast to {output_dir}: {e}"]
 
-        logger.info(f"Wrote {len(alerts_list)} alerts to {file_path}")
+        logger.info(f"Wrote forecast with {len(self._alerts)} alerts to {file_path}")
         return []
 
-    def _send_to_api(self, alerts_list: Sequence[Mapping[str, object]]) -> list[str]:
+    def _send_to_api(self, forecast_dict: dict) -> list[str]:
         api_base_url = os.environ.get("IBF_API_URL", "")
         if not api_base_url:
             return ["IBF_API_URL environment variable must be set for api output mode"]
@@ -220,13 +225,15 @@ class DataSubmitter:
         except ValueError as e:
             return [str(e)]
 
-        return client.submit_alerts(alerts_list)
+        return client.submit_forecast(forecast_dict)
 
     def _check_integrity(self) -> list[str]:
         errors: list[str] = []
 
-        if not self._alerts:
-            errors.append("No alerts to submit")
+        if self._forecast_metadata is None:
+            errors.append(
+                "Forecast metadata not set: call set_forecast_metadata() before send_all()"
+            )
             return errors
 
         # NOTE 1: exact data formats (and thus these integrity checks) are subject to change based on back-and-forth between hazard-logic & pipeline-infra (and exact API/datamodel requirements)
