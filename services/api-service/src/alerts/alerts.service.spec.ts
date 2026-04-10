@@ -9,7 +9,6 @@ import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enu
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
-import { buildAlert as buildValidAlert } from '@api-service/test/helpers/alert.helper';
 
 function createMockValidAlert(
   overrides: Partial<AlertCreateDto> = {},
