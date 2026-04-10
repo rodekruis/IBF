@@ -1,11 +1,11 @@
 import * as request from 'supertest';
 
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
+import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
-import { env } from '@api-service/src/env';
 import {
   getAccessToken,
   getServer,
@@ -59,54 +59,51 @@ export function getAlertCreateDto(alertName: string): AlertCreateDto {
 }
 
 export async function createAlert(
-  alertName: string,
+  alert: AlertCreateDto,
   apiKey: string,
 ): Promise<{ adminAccessToken: string; alertId: number }> {
   const adminAccessToken = await getAccessToken();
-  const alertCreateDto = getAlertCreateDto(alertName);
 
   const response = await getServer()
     .post('/alerts')
     .set('x-api-key', apiKey)
-    .send([alertCreateDto]);
+    .send([alert]);
 
   const seededAlert = response.body[0];
 
   return { adminAccessToken, alertId: seededAlert.id };
 }
 
-export async function submitAlerts(
-  alerts: Record<string, unknown>[],
+export async function createAlerts(
+  alerts: AlertCreateDto[],
+  apiKey: string,
 ): Promise<request.Response> {
-  return getServer()
-    .post('/alerts')
-    .set('x-api-key', env.PIPELINE_API_KEY!)
-    .send({ alerts });
+  return getServer().post('/alerts').set('x-api-key', apiKey).send(alerts);
 }
 
 export function buildAlert(
-  overrides: Partial<CreateAlertDto> = {},
-): CreateAlertDto {
+  overrides: Partial<AlertCreateDto> = {},
+): AlertCreateDto {
   return {
     alertName: 'KEN_floods_test-station',
-    issuedAt: '2026-03-30T00:00:00Z',
+    issuedAt: new Date('2026-03-30T00:00:00Z'),
     centroid: { latitude: 0.35, longitude: 32.6 },
     hazardTypes: [HazardType.floods],
     forecastSources: [ForecastSource.glofas],
-    severityData: [
+    severity: [
       {
-        leadTime: {
-          start: '2026-03-30T00:00:00Z',
-          end: '2026-03-31T00:00:00Z',
+        timeInterval: {
+          start: new Date('2026-03-30T00:00:00Z'),
+          end: new Date('2026-03-31T00:00:00Z'),
         },
         ensembleMemberType: EnsembleMemberType.median,
         severityKey: 'water_discharge',
         severityValue: 120.5,
       },
       {
-        leadTime: {
-          start: '2026-03-30T00:00:00Z',
-          end: '2026-03-31T00:00:00Z',
+        timeInterval: {
+          start: new Date('2026-03-30T00:00:00Z'),
+          end: new Date('2026-03-31T00:00:00Z'),
         },
         ensembleMemberType: EnsembleMemberType.run,
         severityKey: 'water_discharge',
@@ -114,7 +111,7 @@ export function buildAlert(
       },
     ],
     exposure: {
-      adminArea: [
+      adminAreas: [
         {
           placeCode: 'KEN_01',
           adminLevel: 3,
@@ -140,20 +137,20 @@ export function buildSeverityData({
   medianValue,
   runValues,
 }: {
-  start: string;
-  end: string;
+  start: Date;
+  end: Date;
   medianValue: number;
   runValues: number[];
-}): SeverityEntryDto[] {
+}): SeverityDto[] {
   return [
     {
-      leadTime: { start, end },
+      timeInterval: { start, end },
       ensembleMemberType: EnsembleMemberType.median,
       severityKey: 'water_discharge',
       severityValue: medianValue,
     },
     ...runValues.map((value) => ({
-      leadTime: { start, end },
+      timeInterval: { start, end },
       ensembleMemberType: EnsembleMemberType.run as const,
       severityKey: 'water_discharge',
       severityValue: value,

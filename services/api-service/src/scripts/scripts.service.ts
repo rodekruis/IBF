@@ -10,11 +10,9 @@ export class ScriptsService {
 
   public async loadSeedScenario({
     seedScript,
-    isApiTests,
     resetIdentifier,
   }: {
     seedScript: string;
-    isApiTests: boolean;
     resetIdentifier?: string;
   }) {
     console.log(
@@ -22,9 +20,7 @@ export class ScriptsService {
     );
     const seedConfig = this.getSeedConfigByNameOrThrow(seedScript);
 
-    await this.seedInit.run({
-      isApiTests,
-    });
+    await this.seedInit.run();
     if (seedConfig.seedAdminOnly) {
       return;
     }

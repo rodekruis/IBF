@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { CreateAlertDto } from '@api-service/src/alerts/dto/create-alert.dto';
+import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
 import { EventAlertHistoryRecord } from '@api-service/src/events/events.repository';
 import { EventsRepository } from '@api-service/src/events/events.repository';
@@ -13,11 +13,11 @@ export class AlertToEventService {
     private readonly alertClassificationService: AlertClassificationService,
   ) {}
 
-  public async matchAndStore(alert: CreateAlertDto): Promise<void> {
+  public async matchAndStore(alert: AlertCreateDto): Promise<void> {
     const classification = this.alertClassificationService.classifyAlert({
       hazardType: alert.hazardTypes[0],
       issuedAt: alert.issuedAt,
-      severityData: alert.severityData,
+      severity: alert.severity,
     });
     const issuedAt = new Date(alert.issuedAt);
 
@@ -47,7 +47,7 @@ export class AlertToEventService {
   }
 
   private async createNewEvent(
-    alert: CreateAlertDto,
+    alert: AlertCreateDto,
     classification: ClassificationResult,
     issuedAt: Date,
   ): Promise<void> {
@@ -126,8 +126,17 @@ export class AlertToEventService {
   ): ClassificationResult {
     return this.alertClassificationService.classifyAlert({
       hazardType: historicalAlert.hazardTypes[0],
-      issuedAt: historicalAlert.issuedAt.toISOString(),
-      severityData: historicalAlert.severityData,
+      issuedAt: historicalAlert.issuedAt,
+      // ##TODO: this sounds excessive, simplify
+      severity: historicalAlert.severityData.map((severity) => ({
+        timeInterval: {
+          start: new Date(severity.timeInterval.start),
+          end: new Date(severity.timeInterval.end),
+        },
+        ensembleMemberType: severity.ensembleMemberType,
+        severityKey: severity.severityKey,
+        severityValue: severity.severityValue,
+      })),
     });
   }
 

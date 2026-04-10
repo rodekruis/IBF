@@ -5,7 +5,7 @@ import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
 interface EventAlertHistorySeverity {
-  readonly leadTime: {
+  readonly timeInterval: {
     readonly start: string;
     readonly end: string;
   };
@@ -101,7 +101,7 @@ export class EventsRepository {
         hazardTypes: true,
         severity: {
           select: {
-            leadTime: true,
+            timeInterval: true,
             ensembleMemberType: true,
             severityKey: true,
             severityValue: true,
@@ -114,7 +114,7 @@ export class EventsRepository {
       issuedAt: alert.issuedAt,
       hazardTypes: alert.hazardTypes,
       severityData: alert.severity.map((severity) => ({
-        leadTime: severity.leadTime as { start: string; end: string },
+        timeInterval: severity.timeInterval as { start: string; end: string },
         ensembleMemberType: severity.ensembleMemberType as EnsembleMemberType,
         severityKey: severity.severityKey,
         severityValue: severity.severityValue,

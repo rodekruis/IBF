@@ -14,7 +14,6 @@
     "path": "/api/instance/reset",
     "params": [
       "resetIdentifier",
-      "isApiTests",
       "script"
     ]
   },
@@ -66,6 +65,8 @@
   {
     "method": "get",
     "path": "/api/events",
-    "params": []
+    "params": [
+      "timestamp"
+    ]
   }
 ]

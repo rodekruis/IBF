@@ -14,8 +14,8 @@ function toClassificationInput(
 ): AlertClassificationInput {
   return {
     hazardType: alert.hazardTypes[0],
-    issuedAt: alert.issuedAt,
-    severityData: alert.severityData,
+    issuedAt: new Date(alert.issuedAt),
+    severity: alert.severity,
   };
 }
 
@@ -48,9 +48,9 @@ describe('AlertClassificationService', () => {
     describe('floods', () => {
       it('should return null alertClass when severity is below all thresholds', () => {
         const alert = buildAlert({
-          severityData: buildSeverityData({
-            start: '2026-04-01T00:00:00Z',
-            end: '2026-04-02T00:00:00Z',
+          severity: buildSeverityData({
+            start: new Date('2026-04-01T00:00:00Z'),
+            end: new Date('2026-04-02T00:00:00Z'),
             medianValue: 50,
             runValues: [30, 40],
           }),
@@ -64,9 +64,9 @@ describe('AlertClassificationService', () => {
         // median=120 → severity 'low' (≥100), all runs exceed 100 → prob=1.0 → 'high'
         // matrix[low][high] = 'min'
         const alert = buildAlert({
-          severityData: buildSeverityData({
-            start: '2026-04-01T00:00:00Z',
-            end: '2026-04-02T00:00:00Z',
+          severity: buildSeverityData({
+            start: new Date('2026-04-01T00:00:00Z'),
+            end: new Date('2026-04-02T00:00:00Z'),
             medianValue: 120,
             runValues: [150, 150, 150, 150, 150, 150, 150, 150, 150, 150],
           }),
@@ -80,9 +80,9 @@ describe('AlertClassificationService', () => {
         // median=500 → severity 'high' (≥400), all runs exceed 400 → prob=1.0 → 'high'
         // matrix[high][high] = 'max'
         const alert = buildAlert({
-          severityData: buildSeverityData({
-            start: '2026-04-01T00:00:00Z',
-            end: '2026-04-02T00:00:00Z',
+          severity: buildSeverityData({
+            start: new Date('2026-04-01T00:00:00Z'),
+            end: new Date('2026-04-02T00:00:00Z'),
             medianValue: 500,
             runValues: [500, 500, 500, 500, 500, 500, 500, 500, 500, 500],
           }),
@@ -96,16 +96,16 @@ describe('AlertClassificationService', () => {
         // LT1: Apr 1–2, median=120, all runs=150 → 'min'
         // LT2: Apr 3–5, median=500, all runs=500 → 'max'
         const alert = buildAlert({
-          severityData: [
+          severity: [
             ...buildSeverityData({
-              start: '2026-04-01T00:00:00Z',
-              end: '2026-04-02T00:00:00Z',
+              start: new Date('2026-04-01T00:00:00Z'),
+              end: new Date('2026-04-02T00:00:00Z'),
               medianValue: 120,
               runValues: [150, 150, 150],
             }),
             ...buildSeverityData({
-              start: '2026-04-03T00:00:00Z',
-              end: '2026-04-05T00:00:00Z',
+              start: new Date('2026-04-03T00:00:00Z'),
+              end: new Date('2026-04-05T00:00:00Z'),
               medianValue: 500,
               runValues: [500, 500, 500],
             }),
@@ -126,10 +126,10 @@ describe('AlertClassificationService', () => {
           // issuedAt = Mar 30, peak at Apr 1, deadline = Mar 30 + 7D = Apr 6
           // Apr 1 <= Apr 6 → trigger true
           const alert = buildAlert({
-            issuedAt: '2026-03-30T00:00:00Z',
-            severityData: buildSeverityData({
-              start: '2026-04-01T00:00:00Z',
-              end: '2026-04-02T00:00:00Z',
+            issuedAt: new Date('2026-03-30T00:00:00Z'),
+            severity: buildSeverityData({
+              start: new Date('2026-04-01T00:00:00Z'),
+              end: new Date('2026-04-02T00:00:00Z'),
               medianValue: 500,
               runValues: [500, 500, 500],
             }),
@@ -143,10 +143,10 @@ describe('AlertClassificationService', () => {
           // issuedAt = Mar 30, peak at Apr 10, deadline = Mar 30 + 7D = Apr 6
           // Apr 10 > Apr 6 → trigger false
           const alert = buildAlert({
-            issuedAt: '2026-03-30T00:00:00Z',
-            severityData: buildSeverityData({
-              start: '2026-04-10T00:00:00Z',
-              end: '2026-04-11T00:00:00Z',
+            issuedAt: new Date('2026-03-30T00:00:00Z'),
+            severity: buildSeverityData({
+              start: new Date('2026-04-10T00:00:00Z'),
+              end: new Date('2026-04-11T00:00:00Z'),
               medianValue: 500,
               runValues: [500, 500, 500],
             }),
@@ -160,9 +160,9 @@ describe('AlertClassificationService', () => {
         it('should be false when alertClass is below trigger threshold', () => {
           // 'min' < 'max' → trigger false regardless of timing
           const alert = buildAlert({
-            severityData: buildSeverityData({
-              start: '2026-04-01T00:00:00Z',
-              end: '2026-04-02T00:00:00Z',
+            severity: buildSeverityData({
+              start: new Date('2026-04-01T00:00:00Z'),
+              end: new Date('2026-04-02T00:00:00Z'),
               medianValue: 120,
               runValues: [150, 150, 150],
             }),
@@ -183,9 +183,9 @@ describe('AlertClassificationService', () => {
       it('should classify as severe with no trigger', () => {
         const alert = buildAlert({
           hazardTypes: [HazardType.drought],
-          severityData: buildSeverityData({
-            start: '2026-04-01T00:00:00Z',
-            end: '2026-07-01T00:00:00Z',
+          severity: buildSeverityData({
+            start: new Date('2026-04-01T00:00:00Z'),
+            end: new Date('2026-07-01T00:00:00Z'),
             medianValue: 0.3,
             runValues: [0.4],
           }),

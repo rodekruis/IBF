@@ -2,7 +2,10 @@ import { HttpStatus } from '@nestjs/common';
 
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { createAlert } from '@api-service/test/helpers/alert.helper';
+import {
+  buildAlert,
+  createAlert,
+} from '@api-service/test/helpers/alert.helper';
 import { getServer, resetDB } from '@api-service/test/helpers/utility.helper';
 
 const ALERT_NAME = 'TEST-delete-flood-2026-03-23';
@@ -15,7 +18,7 @@ describe('/ Alerts', () => {
   beforeAll(async () => {
     await resetDB(SeedScript.initialState, __filename);
     ({ adminAccessToken, alertId: seededAlertId } = await createAlert(
-      ALERT_NAME,
+      buildAlert({ alertName: ALERT_NAME }),
       apiKey!,
     ));
   });

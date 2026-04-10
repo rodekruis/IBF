@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { SeverityEntryDto } from '@api-service/src/alerts/dto/severity-entry.dto';
+import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { MOCK_ALERT_CLASSIFICATION_CONFIGS } from '@api-service/src/events/alert-classification-config.mock';
 import {
@@ -18,8 +18,8 @@ interface LeadTimeGroup {
 
 export interface AlertClassificationInput {
   readonly hazardType: string;
-  readonly issuedAt: string;
-  readonly severityData: SeverityEntryDto[];
+  readonly issuedAt: Date;
+  readonly severity: SeverityDto[];
 }
 
 @Injectable()
@@ -37,15 +37,15 @@ export class AlertClassificationService {
     }
 
     return this.classify(
-      classificationInput.severityData,
+      classificationInput.severity,
       classificationInput.issuedAt,
       config,
     );
   }
 
   private classify(
-    severityData: SeverityEntryDto[],
-    issuedAt: string,
+    severityData: SeverityDto[],
+    issuedAt: Date,
     config: AlertClassificationConfig,
   ): ClassificationResult {
     const leadTimeGroups = this.groupByLeadTime(severityData);
@@ -104,18 +104,19 @@ export class AlertClassificationService {
     };
   }
 
-  private groupByLeadTime(severityData: SeverityEntryDto[]): LeadTimeGroup[] {
+  private groupByLeadTime(severityData: SeverityDto[]): LeadTimeGroup[] {
     const groups = new Map<
       string,
-      { start: string; end: string; median?: number; runs: number[] }
+      { start: Date; end: Date; median?: number; runs: number[] }
     >();
 
     for (const entry of severityData) {
-      const key = `${entry.leadTime.start}|${entry.leadTime.end}`;
+      const key = `${entry.timeInterval.start}|${entry.timeInterval.end}`;
       const group = groups.get(key) ?? {
-        start: entry.leadTime.start,
-        end: entry.leadTime.end,
-        runs: [],
+        start: entry.timeInterval.start,
+        end: entry.timeInterval.end,
+        median: undefined,
+        runs: [] as number[],
       };
 
       if (entry.ensembleMemberType === EnsembleMemberType.median) {
@@ -128,8 +129,8 @@ export class AlertClassificationService {
     }
 
     return [...groups.values()].map((g) => ({
-      start: g.start,
-      end: g.end,
+      start: g.start.toISOString(),
+      end: g.end.toISOString(),
       medianValue: g.median!,
       runValues: g.runs,
     }));
@@ -235,7 +236,7 @@ export class AlertClassificationService {
   private computeTrigger(
     alertClass: string | null,
     reachesPeakAlertClassAt: Date,
-    issuedAt: string,
+    issuedAt: Date,
     config: AlertClassificationConfig,
   ): boolean {
     if (!config.triggerAlertClass || alertClass === null) {
@@ -252,7 +253,7 @@ export class AlertClassificationService {
 
     if (config.triggerLeadTimeDuration) {
       const deadline = this.addIsoDuration(
-        new Date(issuedAt),
+        issuedAt,
         config.triggerLeadTimeDuration,
       );
       if (reachesPeakAlertClassAt > deadline) {

@@ -198,7 +198,7 @@ describe('AlertToEventService', () => {
       ]);
 
       await service.matchAndStore(
-        buildAlert({ issuedAt: '2026-04-02T00:00:00Z' }),
+        buildAlert({ issuedAt: new Date('2026-04-02T00:00:00Z') }),
       );
 
       expect(repository.updateEvent).toHaveBeenCalledWith(
