@@ -6,11 +6,15 @@ updates:
     package-ecosystem: 'github-actions'
     schedule:
       interval: 'monthly'
+      day: 'tuesday'
 
   - directory: '/'
     package-ecosystem: 'npm'
     schedule:
       interval: 'monthly'
+      day: 'tuesday'
+    cooldown:
+      default-days: 8
     open-pull-requests-limit: 5
     versioning-strategy: increase
 
@@ -19,6 +23,8 @@ updates:
     schedule:
       interval: monthly
       day: tuesday
+    cooldown:
+      default-days: 8
     open-pull-requests-limit: 5
     versioning-strategy: increase
     groups:
@@ -49,3 +55,12 @@ updates:
       - dependency-name: '@eslint/js'
         update-types:
           - version-update:semver-major
+
+  - directory: '/data'
+    package-ecosystem: 'uv'
+    schedule:
+      interval: 'monthly'
+      day: 'tuesday'
+    cooldown:
+      default-days: 8
+    open-pull-requests-limit: 5
