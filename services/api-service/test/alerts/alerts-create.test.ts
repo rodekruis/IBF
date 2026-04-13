@@ -49,7 +49,10 @@ describe('POST /alerts', () => {
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', apiKey!)
-        .send({ alerts: [{ alertName: 'incomplete' }] });
+        .send({
+          ...VALID_FORECAST,
+          alerts: [{ alertName: 'incomplete' }],
+        });
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });

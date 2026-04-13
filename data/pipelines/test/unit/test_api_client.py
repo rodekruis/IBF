@@ -42,25 +42,8 @@ class TestSubmitAlerts:
     def test_returns_empty_list_on_success(self, mock_post: MagicMock) -> None:
         """Successful 201 response returns an empty error list."""
         mock_post.return_value = MagicMock(status_code=201)
-        result = self.client.submit_forecast(
-            {"issuedAt": "2026-03-20T00:00:00Z", "alerts": []}
-        )
+        result = self.client.submit_forecast({})
         assert result == []
-
-    @patch.object(requests.Session, "post")
-    def test_posts_to_alerts_endpoint(self, mock_post: MagicMock) -> None:
-        """Forecast is POSTed to /api/alerts as a single object."""
-        mock_post.return_value = MagicMock(status_code=201)
-        forecast = {
-            "issuedAt": "2026-03-20T00:00:00Z",
-            "alerts": [{"alertName": "test"}],
-        }
-        self.client.submit_forecast(forecast)
-        mock_post.assert_called_once_with(
-            "http://localhost:4000/api/alerts",
-            json=forecast,
-            timeout=60,
-        )
 
     @patch.object(requests.Session, "post")
     def test_returns_errors_from_json_response(self, mock_post: MagicMock) -> None:

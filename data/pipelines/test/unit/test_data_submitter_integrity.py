@@ -271,8 +271,8 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
     assert not (tmp_output / "forecast.json").exists()
 
 
-def test_naive_datetime_is_rejected():
-    """A naive (no timezone) issued_at datetime is rejected at forecast metadata setup."""
+def test_naive_datetime_is_rejected(tmp_output: Path):
+    """A naive (no timezone) issued_at datetime is rejected during integrity checks."""
     submitter = DataSubmitter()
     submitter.set_forecast_metadata(
         issued_at=datetime(2026, 3, 20, 12, 0, 0),
@@ -280,5 +280,42 @@ def test_naive_datetime_is_rejected():
         forecast_sources=[ForecastSource.GLOFAS],
     )
 
-    assert submitter._forecast_metadata is None
-    assert "timezone-aware" in submitter.errors["set_forecast_metadata"]
+    errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("timezone-aware" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_empty_hazard_types_is_rejected(tmp_output: Path):
+    """Forecast metadata with no hazard types is rejected during integrity checks."""
+    submitter = DataSubmitter()
+    submitter.set_forecast_metadata(
+        issued_at=datetime.now(timezone.utc),
+        hazard_types=[],
+        forecast_sources=[ForecastSource.GLOFAS],
+    )
+
+    errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any(
+        "hazard_types must contain at least one hazard type" in e for e in errors
+    )
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_empty_forecast_sources_is_rejected(tmp_output: Path):
+    """Forecast metadata with no forecast sources is rejected during integrity checks."""
+    submitter = DataSubmitter()
+    submitter.set_forecast_metadata(
+        issued_at=datetime.now(timezone.utc),
+        hazard_types=[HazardType.FLOODS],
+        forecast_sources=[],
+    )
+
+    errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any(
+        "forecast_sources must contain at least one forecast source" in e
+        for e in errors
+    )
+    assert not (tmp_output / "forecast.json").exists()

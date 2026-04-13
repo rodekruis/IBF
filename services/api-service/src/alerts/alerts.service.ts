@@ -61,7 +61,7 @@ export class AlertsService {
 
   private async closeStaleEvents(forecast: ForecastCreateDto): Promise<void> {
     await this.alertToEventService.closeStaleEvents({
-      hazardType: forecast.hazardTypes[0], // assuming one hazard type for now
+      hazardTypes: forecast.hazardTypes,
       excludeEventNames: forecast.alerts.map((a) => a.alertName),
       closedAt: forecast.issuedAt,
     });

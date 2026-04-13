@@ -147,16 +147,16 @@ export class AlertToEventService {
   }
 
   public async closeStaleEvents({
-    hazardType,
+    hazardTypes,
     excludeEventNames,
     closedAt,
   }: {
-    hazardType: string;
+    hazardTypes: HazardType[];
     excludeEventNames: string[];
     closedAt: Date;
   }): Promise<void> {
     await this.eventsRepository.closeStaleOpenEvents({
-      hazardType,
+      hazardTypes,
       excludeEventNames,
       closedAt,
     });

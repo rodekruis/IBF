@@ -56,12 +56,12 @@ class DataSubmitter:
         hazard_types: list[HazardType],
         forecast_sources: list[ForecastSource],
     ) -> None:
-        if issued_at.tzinfo is None:
-            self.errors["set_forecast_metadata"] = "issued_at must be timezone-aware"
-            return
-
         self._forecast_metadata = _ForecastMetadata(
-            issued_at=issued_at.astimezone(timezone.utc),
+            issued_at=(
+                issued_at.astimezone(timezone.utc)
+                if issued_at.tzinfo is not None
+                else issued_at
+            ),
             hazard_types=hazard_types,
             forecast_sources=forecast_sources,
         )
@@ -227,7 +227,7 @@ class DataSubmitter:
 
         return client.submit_forecast(forecast_dict)
 
-    def _check_integrity(self) -> list[str]:
+    def _check_forecast_metadata_integrity(self) -> list[str]:
         errors: list[str] = []
 
         if self._forecast_metadata is None:
@@ -235,6 +235,22 @@ class DataSubmitter:
                 "Forecast metadata not set: call set_forecast_metadata() before send_all()"
             )
             return errors
+
+        if self._forecast_metadata.issued_at.tzinfo is None:
+            errors.append("issued_at must be timezone-aware")
+        if len(self._forecast_metadata.hazard_types) == 0:
+            errors.append("hazard_types must contain at least one hazard type")
+        if len(self._forecast_metadata.forecast_sources) == 0:
+            errors.append("forecast_sources must contain at least one forecast source")
+
+        return errors
+
+    def _check_integrity(self) -> list[str]:
+        metadata_errors = self._check_forecast_metadata_integrity()
+        if metadata_errors:
+            return metadata_errors
+
+        errors: list[str] = []
 
         # NOTE 1: exact data formats (and thus these integrity checks) are subject to change based on back-and-forth between hazard-logic & pipeline-infra (and exact API/datamodel requirements)
         # NOTE 2: a lot more checks could be added and will be added in the future, but for now we focus on a few key ones to demonstrate the concept

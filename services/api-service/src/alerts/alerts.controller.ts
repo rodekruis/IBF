@@ -97,7 +97,7 @@ export class AlertsController {
     description: 'Integrity check failed',
   })
   public async createAlerts(
-    @Body(new ValidationPipe(ValidationPipeOptions))
+    @Body(new ValidationPipe({ ...ValidationPipeOptions, transform: true }))
     forecastCreateDto: ForecastCreateDto,
   ): Promise<AlertReadDto[]> {
     return await this.alertsService.createAlerts(forecastCreateDto);
