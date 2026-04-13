@@ -7,8 +7,6 @@ updates:
     schedule:
       interval: 'monthly'
       day: 'tuesday'
-    cooldown:
-      default-days: 8
 
   - directory: '/'
     package-ecosystem: 'npm'
