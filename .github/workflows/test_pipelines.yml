@@ -53,11 +53,7 @@ jobs:
       fail-fast: false
       matrix:
         test_node:
-          - pipelines/test/unit/
-          - pipelines/test/integration/test_flood_pipeline.py
-          - pipelines/test/integration/test_drought_pipeline.py
-          - pipelines/test/legacy/test_pipeline_integration.py::test_pipeline_riverflood_ken
-          - pipelines/test/legacy/test_pipeline_integration.py::test_pipeline_drought_eth
+          - pipelines/test/
     defaults:
       run:
         working-directory: data
@@ -91,7 +87,7 @@ jobs:
           CDSAPI_KEY: ${{ secrets.PIPELINES_CDSAPI_KEY }}
           PYTHONFAULTHANDLER: '1'
           PYTHONUNBUFFERED: '1'
-        run: uv run -m pytest "${{ matrix.test_node }}"
+        run: uv run -m pytest "${{ matrix.test_node }}" --ignore=pipelines/test/integration_api
 
   # This job is here to make the above jobs "required" in GitHub.
   # This is a workaround for this issue: https://github.com/orgs/community/discussions/44490
