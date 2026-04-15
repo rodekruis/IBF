@@ -1,8 +1,8 @@
 """
-Fetched the admin areas for indicated countries.
+Fetch the admin areas for indicated countries.
 You can select the target admin levels, and target countries by editing
-this files and the references in the shared data_helpers file.
-Use all_countries_iso_a3 to fetch all countries.
+this file and the references in the shared data_helpers file.
+Use all_countries_iso_a3 to fetch data for all countries.
 """
 
 import json
@@ -36,6 +36,10 @@ if __name__ == "__main__":
             name = f"{country}_adm{admin_level}"
             url = get_url(country, admin_level)
             data = download_json_source(url, check_count=False)
+
+            if data is None:
+                print(f"  -- Error: Failed to download {name} from {url}")
+                continue
 
             output_file = DATA_DIR / f"{name}.json"
             with open(output_file, "w", encoding="utf-8") as f:

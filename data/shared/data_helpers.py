@@ -25,38 +25,36 @@ target_countries_iso_a3 = {
     # "SSD",
 }
 
-"""
-ISO-3 codes for countries present in both the WorldPop and GADM datasets.
-This includes all generally recognized countries.
-For purposes of IBF and GO, this should contain all in-scope countries,
-as well as some that are not.
-Sources:
-- https://data.worldpop.org/GIS/Population/Global_2015_2030/R2024A/2024/
-- https://geodata.ucdavis.edu/gadm/gadm4.1/json/
-
-Differences between WorldPop and GADM country code lists:
-
-Only in WorldPop (9):
-  CPT - Clipperton Island (In other set with different code)
-  HKG - Hong Kong
-  MAC - Macau
-  XDI - Diego Garcia
-  XIB - Bajo Nuevo Bank
-  XIK - Serranilla Bank
-  XKX - Kosovo (In other set with different code)
-  XMA - Macao (alt code)
-  XSI - Scarborough Shoal
-
-Only in GADM (8):
-  ATA - Antarctica
-  XAD - Akrotiri and Dhekelia
-  XCA - Caspian Sea
-  XCL - Clipperton Island (In other set with different code)
-  XKO - Kosovo (In other set with different code)
-  XPI - Paracel Islands
-  XSP - Spratly Islands
-  ZNC - Bonin Islands (Japan)
-"""
+# ISO-3 codes for countries present in both the WorldPop and GADM datasets.
+# This includes all generally recognized countries.
+# For purposes of IBF and GO, this should contain all in-scope countries,
+# as well as some that are not.
+# Sources:
+# - https://data.worldpop.org/GIS/Population/Global_2015_2030/R2024A/2024/
+# - https://geodata.ucdavis.edu/gadm/gadm4.1/json/
+#
+# Differences between WorldPop and GADM country code lists:
+#
+# Only in WorldPop (9):
+#   CPT - Clipperton Island (In other set with different code)
+#   HKG - Hong Kong
+#   MAC - Macau
+#   XDI - Diego Garcia
+#   XIB - Bajo Nuevo Bank
+#   XIK - Serranilla Bank
+#   XKX - Kosovo (In other set with different code)
+#   XMA - Macao (alt code)
+#   XSI - Scarborough Shoal
+#
+# Only in GADM (8):
+#   ATA - Antarctica
+#   XAD - Akrotiri and Dhekelia
+#   XCA - Caspian Sea
+#   XCL - Clipperton Island (In other set with different code)
+#   XKO - Kosovo (In other set with different code)
+#   XPI - Paracel Islands
+#   XSP - Spratly Islands
+#   ZNC - Bonin Islands (Japan)
 all_countries_iso_a3 = {
     "ABW",
     "AFG",
