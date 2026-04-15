@@ -1,5 +1,8 @@
 """
 Fetched the admin areas for indicated countries.
+You can select the target admin levels, and target countries by editing
+this files and the references in the shared data_helpers file.
+Use all_countries_gadm_iso_a3 to fetch all countries.
 """
 
 import json
@@ -27,24 +30,15 @@ DATA_DIR = Path(BASE_REPO_DIR) / "admin-areas" / "admin-areas-gadm"
 if __name__ == "__main__":
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-    # make a dict of sources for each admin level for each country in target_countries_iso_a3
-    # and a dict of output data with the same key
-    sources = {}
-    output = {}
+    # Fetch and save each file immediately after download
     for country in target_countries_iso_a3:
         for admin_level in target_admin_levels:
             name = f"{country}_adm{admin_level}"
-            sources[name] = get_url(country, admin_level)
-            output[name] = None
+            url = get_url(country, admin_level)
+            data = download_json_source(url, check_count=False)
 
-    # Fetch all data
-    for name, url in sources.items():
-        output[name] = download_json_source(url, check_count=False)
-
-    # Save to file, overwriting the existing file
-    for name, data in output.items():
-        output_file = DATA_DIR / f"{name}.json"
-        with open(output_file, "w", encoding="utf-8") as f:
-            # ensure_ascii=False to preserve non-ASCII chars
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        print(f"  -- Data saved to {output_file}")
+            output_file = DATA_DIR / f"{name}.json"
+            with open(output_file, "w", encoding="utf-8") as f:
+                # ensure_ascii=False to preserve non-ASCII chars
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            print(f"  -- Data saved to {output_file}")
