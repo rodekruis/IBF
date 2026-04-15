@@ -78,7 +78,7 @@ def _match_return_period(
     return matched
 
 
-def determine_triggered_stations(
+def determine_alert_stations(
     discharges: StationDischarges,
     stations: dict[str, LocationPoint],
     thresholds: list[ReturnPeriodThresholds],
@@ -142,6 +142,6 @@ def determine_triggered_stations(
 
     logging.info(
         f"{len(triggered)} of {len(discharges)} stations exceeded "
-        f"the {minimum_return_period} threshold"
+        f"the minimum threshold {minimum_return_period}."
     )
     return triggered
