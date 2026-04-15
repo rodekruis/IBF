@@ -1,9 +1,8 @@
-import { Test } from '@nestjs/testing';
-
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { AlertClassificationInput } from '@api-service/src/events/alert-classification.service';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
-// TODO this helper is now shared across unit & integration tests. Organize better.
+import { AlertClassificationConfigsService } from '@api-service/src/events/alert-classification-configs.service';
+import { AlertClassificationConfig } from '@api-service/src/events/interfaces/alert-classification-config';
 import {
   buildAlert,
   buildSeverityData,
@@ -19,15 +18,55 @@ function toClassificationInput(
   };
 }
 
+// These unit-tests should use specific fixed test config, and not the general mock-config, which will eventually be replaced by a configurable database table.
+const testFloodConfig: AlertClassificationConfig = {
+  severityClassLevels: [
+    { label: 'low', threshold: 100 },
+    { label: 'med', threshold: 200 },
+    { label: 'high', threshold: 400 },
+  ],
+  probabilityClassLevels: [
+    { label: 'low', threshold: 0.5 },
+    { label: 'med', threshold: 0.65 },
+    { label: 'high', threshold: 0.85 },
+  ],
+  alertClassMatrix: {
+    low: { low: null, med: null, high: 'low' },
+    med: { low: null, med: 'low', high: 'med' },
+    high: { low: 'low', med: 'med', high: 'high' },
+  },
+  alertClassOrder: ['low', 'med', 'high'],
+  triggerAlertClass: 'high',
+  triggerLeadTimeDuration: 'P7D',
+};
+
+const testDroughtConfig: AlertClassificationConfig = {
+  severityClassLevels: [{ label: 'warning', threshold: 0.2 }],
+  probabilityClassLevels: [{ label: 'any', threshold: 0 }],
+  alertClassMatrix: {
+    warning: { any: 'warning' },
+  },
+  alertClassOrder: ['warning'],
+};
+
 describe('AlertClassificationService', () => {
   let service: AlertClassificationService;
+  let alertClassificationConfigsService: AlertClassificationConfigsService;
 
-  beforeEach(async () => {
-    const module = await Test.createTestingModule({
-      providers: [AlertClassificationService],
-    }).compile();
+  beforeEach(() => {
+    const configsByHazardType: Record<string, AlertClassificationConfig> = {
+      [HazardType.floods]: testFloodConfig,
+      [HazardType.drought]: testDroughtConfig,
+    };
 
-    service = module.get(AlertClassificationService);
+    alertClassificationConfigsService = new AlertClassificationConfigsService();
+    jest
+      .spyOn(alertClassificationConfigsService, 'getByHazardType')
+      .mockImplementation(
+        (hazardType: string): AlertClassificationConfig | undefined =>
+          configsByHazardType[hazardType],
+      );
+    service = new AlertClassificationService(alertClassificationConfigsService);
   });
 
   describe('classifyAlert', () => {
@@ -40,11 +79,6 @@ describe('AlertClassificationService', () => {
       );
     });
 
-    // Floods mock config:
-    //   severity: low=100, mid=200, high=400
-    //   probability: low=0.5, mid=0.65, high=0.85
-    //   matrix: low/high→min, mid/mid→min, mid/high→med, high/low→min, high/mid→med, high/high→max
-    //   triggerAlertClass: 'max', triggerLeadTimeDuration: 'P7D'
     describe('floods', () => {
       it('should return null alertClass when severity is below all thresholds', () => {
         const alert = buildAlert({
@@ -60,9 +94,7 @@ describe('AlertClassificationService', () => {
         expect(result.alertClass).toBeNull();
       });
 
-      it('should return min alertClass for low severity with high probability', () => {
-        // median=120 → severity 'low' (≥100), all runs exceed 100 → prob=1.0 → 'high'
-        // matrix[low][high] = 'min'
+      it('should return low alertClass for low severity with high probability', () => {
         const alert = buildAlert({
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
@@ -73,12 +105,12 @@ describe('AlertClassificationService', () => {
         });
 
         const result = service.classifyAlert(toClassificationInput(alert));
-        expect(result.alertClass).toBe('min');
+        expect(result.alertClass).toBe('low');
       });
 
-      it('should return max alertClass for high severity with high probability', () => {
+      it('should return high alertClass for high severity with high probability', () => {
         // median=500 → severity 'high' (≥400), all runs exceed 400 → prob=1.0 → 'high'
-        // matrix[high][high] = 'max'
+        // matrix[high][high] = 'high'
         const alert = buildAlert({
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
@@ -89,12 +121,12 @@ describe('AlertClassificationService', () => {
         });
 
         const result = service.classifyAlert(toClassificationInput(alert));
-        expect(result.alertClass).toBe('max');
+        expect(result.alertClass).toBe('high');
       });
 
       it('should pick highest alertClass across multiple lead times and compute correct dates', () => {
-        // LT1: Apr 1–2, median=120, all runs=150 → 'min'
-        // LT2: Apr 3–5, median=500, all runs=500 → 'max'
+        // LT1: Apr 1–2, median=120, all runs=150 → 'low'
+        // LT2: Apr 3–5, median=500, all runs=500 → 'high'
         const alert = buildAlert({
           severity: [
             ...buildSeverityData({
@@ -113,7 +145,7 @@ describe('AlertClassificationService', () => {
         });
 
         const result = service.classifyAlert(toClassificationInput(alert));
-        expect(result.alertClass).toBe('max');
+        expect(result.alertClass).toBe('high');
         expect(result.startAt).toEqual(new Date('2026-04-01T00:00:00Z'));
         expect(result.endAt).toEqual(new Date('2026-04-05T00:00:00Z'));
         expect(result.reachesPeakAlertClassAt).toEqual(
@@ -122,9 +154,7 @@ describe('AlertClassificationService', () => {
       });
 
       describe('trigger', () => {
-        it('should be true when max alertClass peaks within lead time duration', () => {
-          // issuedAt = Mar 30, peak at Apr 1, deadline = Mar 30 + 7D = Apr 6
-          // Apr 1 <= Apr 6 → trigger true
+        it('should be true when high alertClass peaks within lead time duration', () => {
           const alert = buildAlert({
             issuedAt: new Date('2026-03-30T00:00:00Z'),
             severity: buildSeverityData({
@@ -140,8 +170,6 @@ describe('AlertClassificationService', () => {
         });
 
         it('should be false when peak exceeds trigger lead time duration', () => {
-          // issuedAt = Mar 30, peak at Apr 10, deadline = Mar 30 + 7D = Apr 6
-          // Apr 10 > Apr 6 → trigger false
           const alert = buildAlert({
             issuedAt: new Date('2026-03-30T00:00:00Z'),
             severity: buildSeverityData({
@@ -153,12 +181,11 @@ describe('AlertClassificationService', () => {
           });
 
           const result = service.classifyAlert(toClassificationInput(alert));
-          expect(result.alertClass).toBe('max');
+          expect(result.alertClass).toBe('high');
           expect(result.trigger).toBe(false);
         });
 
         it('should be false when alertClass is below trigger threshold', () => {
-          // 'min' < 'max' → trigger false regardless of timing
           const alert = buildAlert({
             severity: buildSeverityData({
               start: new Date('2026-04-01T00:00:00Z'),
@@ -169,18 +196,14 @@ describe('AlertClassificationService', () => {
           });
 
           const result = service.classifyAlert(toClassificationInput(alert));
-          expect(result.alertClass).toBe('min');
+          expect(result.alertClass).toBe('low');
           expect(result.trigger).toBe(false);
         });
       });
     });
 
-    // Drought mock config:
-    //   severity: severe=0.2, probability: any=0
-    //   matrix: severe/any → 'severe'
-    //   no triggerAlertClass → trigger always false
     describe('drought', () => {
-      it('should classify as severe with no trigger', () => {
+      it('should classify as warning with no trigger', () => {
         const alert = buildAlert({
           hazardTypes: [HazardType.drought],
           severity: buildSeverityData({
@@ -192,9 +215,19 @@ describe('AlertClassificationService', () => {
         });
 
         const result = service.classifyAlert(toClassificationInput(alert));
-        expect(result.alertClass).toBe('severe');
+        expect(result.alertClass).toBe('warning');
         expect(result.trigger).toBe(false);
       });
+    });
+
+    it('should classify using default config lookup for known hazard type', () => {
+      const defaultService = new AlertClassificationService(
+        new AlertClassificationConfigsService(),
+      );
+      const result = defaultService.classifyAlert(
+        toClassificationInput(buildAlert()),
+      );
+      expect(result.alertClass).not.toBeNull();
     });
   });
 });

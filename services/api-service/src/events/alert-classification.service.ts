@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
-import { MOCK_ALERT_CLASSIFICATION_CONFIGS } from '@api-service/src/events/alert-classification-config.mock';
+import { AlertClassificationConfigsService } from '@api-service/src/events/alert-classification-configs.service';
 import {
   AlertClassificationConfig,
   ClassLevel,
@@ -24,12 +24,16 @@ export interface AlertClassificationInput {
 
 @Injectable()
 export class AlertClassificationService {
+  public constructor(
+    private readonly alertClassificationConfigsService: AlertClassificationConfigsService,
+  ) {}
+
   public classifyAlert(
     classificationInput: AlertClassificationInput,
   ): ClassificationResult {
-    // TODO: replace mock config lookup with alert-config DB table
-    const config =
-      MOCK_ALERT_CLASSIFICATION_CONFIGS[classificationInput.hazardType];
+    const config = this.alertClassificationConfigsService.getByHazardType(
+      classificationInput.hazardType,
+    );
     if (!config) {
       throw new Error(
         `No classification config found for hazard type '${classificationInput.hazardType}'`,
