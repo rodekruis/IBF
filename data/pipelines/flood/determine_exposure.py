@@ -116,7 +116,7 @@ def extract_population_within_flood_extent(
     return population
 
 
-def determine_admin_area_exposure(
+def determine_exposure(
     station: LocationPoint,
     basins_geojson: dict,
     admin_areas: AdminAreasSet,
@@ -152,65 +152,12 @@ def determine_admin_area_exposure(
     else:
         logging.warning(
             f"No flood extent raster for station {station.id}, "
-            f"falling back to full admin area population"
+            f"Use population of 0 per admin area"
         )
-        # TODO: population per admin_area = 0?
-        pass
-
-    logging.info(
-        f"Station {station.id}: {len(place_codes)} admin area(s) exposed, "
-        f"total population {sum(population.values()):.0f}"
-    )
+        population = {pcode: 0.0 for pcode in place_codes}
 
     return AlertExposure(
         place_codes=place_codes,
         admin_level=target_admin_level,
         population_per_place_code=population,
     )
-
-
-def _extract_population_full_admin_areas(
-    place_codes: list[str],
-    admin_areas: AdminAreasSet,
-    population_raster_path: str,
-) -> dict[str, float]:
-    """
-    Fallback: extract population for full admin area geometries (no flood extent mask).
-    """
-    population: dict[str, float] = {}
-
-    geometries = []
-    pcodes_ordered = []
-    for pcode in place_codes:
-        admin_area = admin_areas.admin_areas.get(pcode)
-        if admin_area is None:
-            continue
-        geom = {
-            "type": admin_area.geometry_type,
-            "coordinates": admin_area.coordinates,
-        }
-        geometries.append(geom)
-        pcodes_ordered.append(pcode)
-
-    if not geometries:
-        return population
-
-    with rasterio.open(population_raster_path) as src:
-        raster_array = src.read(1)
-        transform = src.transform
-        nodata = src.nodata if src.nodata is not None else -9999
-
-    stats = zonal_stats(
-        geometries,
-        raster_array,
-        affine=transform,
-        stats=["sum"],
-        all_touched=True,
-        nodata=nodata,
-    )
-
-    for pcode, stat in zip(pcodes_ordered, stats):
-        value = stat.get("sum")
-        population[pcode] = round(value, 0) if value is not None else 0.0
-
-    return population
