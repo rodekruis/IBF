@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+import glob
+import json
 
 from pipelines.flood.determine_alerts import determine_triggered_stations
-from pipelines.flood.determine_exposure import determine_admin_area_exposure
+from pipelines.flood.determine_exposure import determine_exposure
 from pipelines.flood.extract_glofas_data import extract_glofas_station_discharge
 from pipelines.flood.resolve_flood_extent import resolve_flood_extent_raster
 from pipelines.infra.data_provider import DataProvider
@@ -61,11 +63,16 @@ def calculate_flood_forecasts(
     # ).data
 
     # Placeholder data - replace with data provider calls above once data sources are wired
-    glofas_netcdf_paths: list[str] = []  # TODO: list of global ensemble NetCDF file paths
-    thresholds: dict[str, dict[str, float]] = {}  # TODO: station_code -> {return_period -> value}
+    glofas_netcdf_paths: list[str] = ["./pipelines/flood/bronze/glofas/dis_00_2026040800.nc"]
+    thresholds_path: list[str] = [f for f in glob.glob(f"./pipelines/flood/bronze/thresholds/*_{country}.json")]
+    thresholds: list[dict] = []
+    for path in thresholds_path:
+        with open(path) as f:
+            thresholds.append(json.load(f))
     basins_geojson: dict = {"type": "FeatureCollection", "features": []}  # TODO: HydroSHEDS basins
-    population_raster_path: str = ""  # TODO: path to global population raster (e.g. WorldPop)
-    flood_extent_directory: str = ""  # TODO: directory with pre-computed flood extent rasters per return period
+    population_raster_paths = glob.glob(f"./pipelines/flood/bronze/population/{country}.tif")
+    population_raster_path: str = population_raster_paths[0] if population_raster_paths else ""
+    flood_extent_directory: list[str] = [f for f in glob.glob(f"./pipelines/flood/bronze/flood_extent/flood_map_{country}_*.tif")]
 
     # Step 2 - Compute country bounding box and prepare country-level data
     country_bounds = get_bounding_box(target_admin_areas)
@@ -138,15 +145,15 @@ def calculate_flood_forecasts(
         highest_rp = max(
             triggered.lead_time_severities,
             key=lambda s: s.median_discharge,
-        ).matched_return_period
+        ).return_period
 
         flood_extent_path = resolve_flood_extent_raster(
-            matched_return_period=highest_rp,
+            flood_return_period=highest_rp,
             flood_extent_directory=flood_extent_directory,
         ) if flood_extent_directory else None
 
         # Determine spatial and population exposure via basin -> admin area mapping
-        exposure = determine_admin_area_exposure(
+        exposure = determine_exposure(
             station=triggered.station,
             basins_geojson=basins_geojson,
             admin_areas=target_admin_areas,
