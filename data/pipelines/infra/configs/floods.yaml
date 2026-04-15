@@ -3,12 +3,10 @@ hazard_type: floods
 run_targets:
   DEBUG:
     countries:
-      - iso_3_code: KEN
+      - iso_3_code: ETH
         target_admin_level: 3
         data_sources:
           - source: glofas_stations_seed_repo
           - source: admin_area_seed_repo
-          - source: population_seed_repo
-          - source: todo_glofas_discharge
         output:
-          mode: api
+          mode: local
