@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import statistics
 from dataclasses import dataclass
+from typing import TypedDict
 
 from pipelines.flood.extract_glofas_data import StationDischarges
 from pipelines.infra.data_types.location_point import LocationPoint
@@ -16,7 +17,6 @@ class LeadTimeSeverity:
     median_discharge: float
     ensemble_discharges: list[float]
     return_period: str
-    # TODO: add probability?
 
 
 @dataclass
@@ -26,8 +26,36 @@ class TriggeredStation:
     lead_time_severities: list[LeadTimeSeverity]
 
 
-# Thresholds keyed by station_code -> return_period label -> discharge value
-ReturnPeriodThresholds = dict[str, dict[str, float]]
+class ReturnPeriodThresholdValue(TypedDict):
+    return_period: float
+    threshold_value: float
+
+
+class ReturnPeriodThresholds(TypedDict):
+    station_code: str
+    thresholds: list[ReturnPeriodThresholdValue]
+
+
+def _format_return_period_label(return_period: float) -> str:
+    return f"{return_period:g}yr"
+
+
+def _get_station_thresholds(
+    thresholds: list[ReturnPeriodThresholds],
+    station_code: str,
+) -> dict[str, float] | None:
+    for station_threshold in thresholds:
+        if station_threshold["station_code"] != station_code:
+            continue
+
+        return {
+            _format_return_period_label(threshold["return_period"]): threshold[
+                "threshold_value"
+            ]
+            for threshold in station_threshold["thresholds"]
+        }
+
+    return None
 
 
 def _match_return_period(
@@ -53,7 +81,7 @@ def _match_return_period(
 def determine_triggered_stations(
     discharges: StationDischarges,
     stations: dict[str, LocationPoint],
-    thresholds: ReturnPeriodThresholds,
+    thresholds: list[ReturnPeriodThresholds],
     minimum_return_period: str = MINIMUM_RETURN_PERIOD,
 ) -> list[TriggeredStation]:
     """
@@ -64,13 +92,13 @@ def determine_triggered_stations(
     triggered: list[TriggeredStation] = []
 
     for station_code, lead_times in discharges.items():
-        if station_code not in thresholds:
+        station_thresholds = _get_station_thresholds(thresholds, station_code)
+        if station_thresholds is None:
             logging.warning(
                 f"No return period thresholds for station {station_code}, skipping"
             )
             continue
 
-        station_thresholds = thresholds[station_code]
         if minimum_return_period not in station_thresholds:
             logging.warning(
                 f"Return period '{minimum_return_period}' not found for station {station_code}, skipping"
