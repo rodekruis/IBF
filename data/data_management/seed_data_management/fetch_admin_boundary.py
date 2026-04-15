@@ -2,7 +2,7 @@
 Fetched the admin areas for indicated countries.
 You can select the target admin levels, and target countries by editing
 this files and the references in the shared data_helpers file.
-Use all_countries_gadm_iso_a3 to fetch all countries.
+Use all_countries_iso_a3 to fetch all countries.
 """
 
 import json
