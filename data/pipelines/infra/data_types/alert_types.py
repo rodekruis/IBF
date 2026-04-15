@@ -15,7 +15,7 @@ class Centroid:
 
 
 @dataclass
-class LeadTime:
+class TimeInterval:
     start: str
     end: str
 
@@ -45,15 +45,15 @@ class Layer(StrEnum):
 
 
 @dataclass
-class SeverityEntry:
-    lead_time: LeadTime
+class Severity:
+    time_interval: TimeInterval
     ensemble_member_type: EnsembleMemberType
     severity_key: str
     severity_value: float | int
 
     def to_dict(self) -> dict[str, str | float | int | dict[str, str]]:
         return {
-            "leadTime": self.lead_time.to_dict(),
+            "timeInterval": self.time_interval.to_dict(),
             "ensembleMemberType": self.ensemble_member_type,
             "severityKey": self.severity_key,
             "severityValue": self.severity_value,
@@ -61,7 +61,7 @@ class SeverityEntry:
 
 
 @dataclass
-class AdminAreaExposure:
+class ExposureAdminArea:
     place_code: str
     admin_level: int
     layer: Layer
@@ -77,7 +77,7 @@ class AdminAreaExposure:
 
 
 @dataclass
-class GeoFeatureExposure:
+class ExposureGeoFeature:
     geo_feature_id: str
     layer: str
     value: dict[str, bool | str | int | float]
@@ -107,7 +107,7 @@ class RasterExtent:
 
 
 @dataclass
-class RasterExposure:
+class ExposureRaster:
     layer: str
     value: str
     extent: RasterExtent
@@ -122,15 +122,15 @@ class RasterExposure:
 
 @dataclass
 class Exposure:
-    admin_area: list[AdminAreaExposure] = field(default_factory=list)
-    geo_features: list[GeoFeatureExposure] = field(default_factory=list)
-    rasters: list[RasterExposure] = field(default_factory=list)
+    admin_areas: list[ExposureAdminArea] = field(default_factory=list)
+    geo_features: list[ExposureGeoFeature] = field(default_factory=list)
+    rasters: list[ExposureRaster] = field(default_factory=list)
 
     def to_dict(
         self,
     ) -> dict[str, list[dict[str, str | bool | int | float | dict[str, float]]]]:
         return {
-            "adminArea": [item.to_dict() for item in self.admin_area],
+            "adminAreas": [item.to_dict() for item in self.admin_areas],
             "geoFeatures": [item.to_dict() for item in self.geo_features],
             "rasters": [item.to_dict() for item in self.rasters],
         }
@@ -143,7 +143,7 @@ class Alert:
     centroid: Centroid
     hazard_types: list[HazardType]
     forecast_sources: list[ForecastSource] = field(default_factory=list)
-    severity_data: list[SeverityEntry] = field(default_factory=list)
+    severity: list[Severity] = field(default_factory=list)
     exposure: Exposure = field(default_factory=Exposure)
 
     def to_dict(
@@ -162,6 +162,6 @@ class Alert:
             "centroid": self.centroid.to_dict(),
             "hazardTypes": list(self.hazard_types),
             "forecastSources": list(self.forecast_sources),
-            "severityData": [entry.to_dict() for entry in self.severity_data],
+            "severity": [entry.to_dict() for entry in self.severity],
             "exposure": self.exposure.to_dict(),
         }

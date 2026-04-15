@@ -3,35 +3,35 @@ import { Test } from '@nestjs/testing';
 
 import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
-import { CreateAlertDto } from '@api-service/src/alerts/dto/create-alert.dto';
+import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 
-function buildValidAlert(
-  overrides: Partial<CreateAlertDto> = {},
-): CreateAlertDto {
+function createMockValidAlert(
+  overrides: Partial<AlertCreateDto> = {},
+): AlertCreateDto {
   return {
     alertName: 'KEN-flood-2026-03-20',
-    issuedAt: '2026-03-20T12:00:00Z',
+    issuedAt: new Date('2026-03-20T12:00:00Z'),
     centroid: { latitude: 0.35, longitude: 32.6 },
     hazardTypes: [HazardType.floods],
     forecastSources: [ForecastSource.glofas],
-    severityData: [
+    severity: [
       {
-        leadTime: {
-          start: '2026-03-20T00:00:00Z',
-          end: '2026-03-20T23:59:59Z',
+        timeInterval: {
+          start: new Date('2026-03-20T00:00:00Z'),
+          end: new Date('2026-03-20T23:59:59Z'),
         },
         ensembleMemberType: EnsembleMemberType.median,
         severityKey: 'water_discharge',
         severityValue: 120.5,
       },
       {
-        leadTime: {
-          start: '2026-03-20T00:00:00Z',
-          end: '2026-03-20T23:59:59Z',
+        timeInterval: {
+          start: new Date('2026-03-20T00:00:00Z'),
+          end: new Date('2026-03-20T23:59:59Z'),
         },
         ensembleMemberType: EnsembleMemberType.run,
         severityKey: 'water_discharge',
@@ -39,7 +39,7 @@ function buildValidAlert(
       },
     ],
     exposure: {
-      adminArea: [
+      adminAreas: [
         {
           placeCode: 'KEN_01_001',
           adminLevel: 3,
@@ -69,7 +69,12 @@ describe('AlertsService', () => {
         AlertsService,
         {
           provide: AlertsRepository,
-          useValue: { createAlerts: jest.fn() },
+          useValue: {
+            createAlerts: jest.fn(),
+            getAlerts: jest.fn(),
+            getAlertOrThrow: jest.fn(),
+            deleteAlertOrThrow: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -82,46 +87,42 @@ describe('AlertsService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('submitAlerts – valid data', () => {
+  describe('createAlerts – valid data', () => {
     it('should create alerts when integrity checks pass', async () => {
-      const alerts = [buildValidAlert()];
-      await service.submitAlerts({ alerts });
+      const alerts = [createMockValidAlert()];
+      await service.createAlerts(alerts);
       expect(repository.createAlerts).toHaveBeenCalledWith(alerts);
     });
   });
 
-  describe('submitAlerts – centroid validation', () => {
+  describe('createAlerts – centroid validation', () => {
     it('should reject latitude out of range', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           centroid: { latitude: 91, longitude: 0 },
         }),
       ];
-      await expect(service.submitAlerts({ alerts })).rejects.toThrow(
-        HttpException,
-      );
+      await expect(service.createAlerts(alerts)).rejects.toThrow(HttpException);
     });
 
     it('should reject longitude out of range', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           centroid: { latitude: 0, longitude: -181 },
         }),
       ];
-      await expect(service.submitAlerts({ alerts })).rejects.toThrow(
-        HttpException,
-      );
+      await expect(service.createAlerts(alerts)).rejects.toThrow(HttpException);
     });
 
     it('should include alert name in centroid error message', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           alertName: 'BAD-centroid',
           centroid: { latitude: 100, longitude: 200 },
         }),
       ];
       try {
-        await service.submitAlerts({ alerts });
+        await service.createAlerts(alerts);
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -137,31 +138,29 @@ describe('AlertsService', () => {
     });
   });
 
-  describe('submitAlerts – severity validation', () => {
+  describe('createAlerts – severity validation', () => {
     it('should reject empty severity data', async () => {
-      const alerts = [buildValidAlert({ severityData: [] })];
-      await expect(service.submitAlerts({ alerts })).rejects.toThrow(
-        HttpException,
-      );
+      const alerts = [createMockValidAlert({ severity: [] })];
+      await expect(service.createAlerts(alerts)).rejects.toThrow(HttpException);
     });
 
-    it('should reject lead time where start >= end', async () => {
+    it('should reject time interval where start >= end', async () => {
       const alerts = [
-        buildValidAlert({
-          severityData: [
+        createMockValidAlert({
+          severity: [
             {
-              leadTime: {
-                start: '2026-03-21T00:00:00Z',
-                end: '2026-03-20T00:00:00Z',
+              timeInterval: {
+                start: new Date('2026-03-21T00:00:00Z'),
+                end: new Date('2026-03-20T00:00:00Z'),
               },
               ensembleMemberType: EnsembleMemberType.median,
               severityKey: 'k',
               severityValue: 1,
             },
             {
-              leadTime: {
-                start: '2026-03-21T00:00:00Z',
-                end: '2026-03-20T00:00:00Z',
+              timeInterval: {
+                start: new Date('2026-03-21T00:00:00Z'),
+                end: new Date('2026-03-20T00:00:00Z'),
               },
               ensembleMemberType: EnsembleMemberType.run,
               severityKey: 'k',
@@ -171,7 +170,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.submitAlerts({ alerts });
+        await service.createAlerts(alerts);
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -187,12 +186,12 @@ describe('AlertsService', () => {
 
     it('should reject when median record is missing', async () => {
       const alerts = [
-        buildValidAlert({
-          severityData: [
+        createMockValidAlert({
+          severity: [
             {
-              leadTime: {
-                start: '2026-03-20T00:00:00Z',
-                end: '2026-03-20T23:59:59Z',
+              timeInterval: {
+                start: new Date('2026-03-20T00:00:00Z'),
+                end: new Date('2026-03-20T23:59:59Z'),
               },
               ensembleMemberType: EnsembleMemberType.run,
               severityKey: 'k',
@@ -202,7 +201,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.submitAlerts({ alerts });
+        await service.createAlerts(alerts);
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -218,12 +217,12 @@ describe('AlertsService', () => {
 
     it('should reject when no ensemble-run record exists', async () => {
       const alerts = [
-        buildValidAlert({
-          severityData: [
+        createMockValidAlert({
+          severity: [
             {
-              leadTime: {
-                start: '2026-03-20T00:00:00Z',
-                end: '2026-03-20T23:59:59Z',
+              timeInterval: {
+                start: new Date('2026-03-20T00:00:00Z'),
+                end: new Date('2026-03-20T23:59:59Z'),
               },
               ensembleMemberType: EnsembleMemberType.median,
               severityKey: 'k',
@@ -233,7 +232,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.submitAlerts({ alerts });
+        await service.createAlerts(alerts);
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -248,12 +247,12 @@ describe('AlertsService', () => {
     });
   });
 
-  describe('submitAlerts – admin-area validation', () => {
+  describe('createAlerts – admin-area validation', () => {
     it('should reject empty admin-area', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           exposure: {
-            adminArea: [],
+            adminAreas: [],
             rasters: [
               {
                 layer: Layer.alertExtent,
@@ -265,7 +264,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.submitAlerts({ alerts });
+        await service.createAlerts(alerts);
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -281,9 +280,9 @@ describe('AlertsService', () => {
 
     it('should reject unequal record counts across layers', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           exposure: {
-            adminArea: [
+            adminAreas: [
               {
                 placeCode: 'A',
                 adminLevel: 3,
@@ -314,7 +313,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.submitAlerts({ alerts });
+        await service.createAlerts(alerts);
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -329,12 +328,12 @@ describe('AlertsService', () => {
     });
   });
 
-  describe('submitAlerts – raster validation', () => {
+  describe('createAlerts – raster validation', () => {
     it('should reject rasters missing alert_extent layer', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           exposure: {
-            adminArea: [
+            adminAreas: [
               {
                 placeCode: 'A',
                 adminLevel: 3,
@@ -353,7 +352,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.submitAlerts({ alerts });
+        await service.createAlerts(alerts);
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -369,9 +368,9 @@ describe('AlertsService', () => {
 
     it('should reject raster with invalid extent', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           exposure: {
-            adminArea: [
+            adminAreas: [
               {
                 placeCode: 'A',
                 adminLevel: 3,
@@ -390,7 +389,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.submitAlerts({ alerts });
+        await service.createAlerts(alerts);
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -404,9 +403,9 @@ describe('AlertsService', () => {
 
     it('should reject alert with empty rasters array', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           exposure: {
-            adminArea: [
+            adminAreas: [
               {
                 placeCode: 'A',
                 adminLevel: 3,
@@ -419,7 +418,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.submitAlerts({ alerts });
+        await service.createAlerts(alerts);
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -435,9 +434,9 @@ describe('AlertsService', () => {
 
     it('should accept rasters with valid alert_extent', async () => {
       const alerts = [
-        buildValidAlert({
+        createMockValidAlert({
           exposure: {
-            adminArea: [
+            adminAreas: [
               {
                 placeCode: 'A',
                 adminLevel: 3,
@@ -455,21 +454,21 @@ describe('AlertsService', () => {
           },
         }),
       ];
-      await service.submitAlerts({ alerts });
+      await service.createAlerts(alerts);
       expect(repository.createAlerts).toHaveBeenCalledWith(alerts);
     });
   });
 
-  describe('submitAlerts – error response format', () => {
+  describe('createAlerts – error response format', () => {
     it('should return BAD_REQUEST with message and errors array', async () => {
       const alerts = [
-        buildValidAlert({
-          severityData: [],
+        createMockValidAlert({
+          severity: [],
           centroid: { latitude: 100, longitude: 0 },
         }),
       ];
       try {
-        await service.submitAlerts({ alerts });
+        await service.createAlerts(alerts);
         fail('Expected HttpException');
       } catch (e) {
         expect((e as HttpException).getStatus()).toBe(HttpStatus.BAD_REQUEST);

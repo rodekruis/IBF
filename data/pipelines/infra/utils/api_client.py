@@ -24,7 +24,7 @@ class ApiClient:
         url = f"{self._base_url}{ALERTS_PATH}"
         response = self._session.post(
             url,
-            json={"alerts": alerts},
+            json=alerts,
             timeout=60,
         )
 

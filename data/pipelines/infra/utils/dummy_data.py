@@ -6,15 +6,19 @@ from pipelines.infra.data_types.data_config_types import DataSource
 
 DUMMY_DATA: dict[DataSource, object] = {
     DataSource.TODO_GLOFAS_DISCHARGE: {
-        # Per station, per lead time (0-7 days), per ensemble member (50):
+        # Per station, per time interval (0-7 days), per ensemble member (50):
         # water_discharge in m³/s
         "glofas-station-A": {
-            lead_time: {f"member-{m}": 80 + lead_time * 5 + m * 2 for m in range(1, 51)}
-            for lead_time in range(8)
+            time_interval: {
+                f"member-{m}": 80 + time_interval * 5 + m * 2 for m in range(1, 51)
+            }
+            for time_interval in range(8)
         },
         "glofas-station-B": {
-            lead_time: {f"member-{m}": 40 + lead_time * 3 + m for m in range(1, 51)}
-            for lead_time in range(8)
+            time_interval: {
+                f"member-{m}": 40 + time_interval * 3 + m for m in range(1, 51)
+            }
+            for time_interval in range(8)
         },
     },
     DataSource.TODO_ECMWF_FORECAST: {

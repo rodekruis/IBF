@@ -1,3 +1,9 @@
+"""Shared pytest fixtures for local integration tests.
+
+Provides helpers to run pipeline subprocesses with local file output,
+load and validate the resulting alert JSON, and clean up output directories.
+"""
+
 import json
 import os
 import shutil
@@ -15,11 +21,11 @@ EXPECTED_ALERT_KEYS = {
     "centroid",
     "hazardTypes",
     "forecastSources",
-    "severityData",
+    "severity",
     "exposure",
 }
 
-EXPECTED_EXPOSURE_KEYS = {"adminArea", "geoFeatures", "rasters"}
+EXPECTED_EXPOSURE_KEYS = {"adminAreas", "geoFeatures", "rasters"}
 
 OUTPUT_BASE = Path("pipelines/output")
 
@@ -80,14 +86,14 @@ def _assert_alert_structure(alert: dict) -> None:
     assert isinstance(alert["hazardTypes"], list)
     assert len(alert["hazardTypes"]) > 0
 
-    assert isinstance(alert["severityData"], list)
-    assert len(alert["severityData"]) > 0
+    assert isinstance(alert["severity"], list)
+    assert len(alert["severity"]) > 0
 
-    for entry in alert["severityData"]:
-        assert "leadTime" in entry
-        assert isinstance(entry["leadTime"], dict)
-        assert "start" in entry["leadTime"]
-        assert "end" in entry["leadTime"]
+    for entry in alert["severity"]:
+        assert "timeInterval" in entry
+        assert isinstance(entry["timeInterval"], dict)
+        assert "start" in entry["timeInterval"]
+        assert "end" in entry["timeInterval"]
         assert "ensembleMemberType" in entry
         assert "severityKey" in entry
         assert "severityValue" in entry
@@ -97,7 +103,7 @@ def _assert_alert_structure(alert: dict) -> None:
         exposure.keys()
     ), f"Exposure missing keys: {EXPECTED_EXPOSURE_KEYS - exposure.keys()}"
 
-    for admin_area in exposure["adminArea"]:
+    for admin_area in exposure["adminAreas"]:
         assert "placeCode" in admin_area
         assert "adminLevel" in admin_area
         assert "layer" in admin_area

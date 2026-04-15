@@ -274,7 +274,7 @@ export class ProgramsController {
 **API Service DTOs:**
 
 - Use classes with "Dto" suffix
-- Input DTOs: Start with action verb (e.g., `CreateAddressDto`)
+- Input DTOs: Start with entity name, then prefix "Dto" with action verb (e.g., `AddressCreateDto`)
 - Output DTOs: Use "Response" suffix (e.g., `UserResponseDto`)
 - All DTO attributes should be `readonly`
 - One DTO per file in `/dtos` folder

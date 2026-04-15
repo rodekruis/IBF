@@ -39,8 +39,28 @@
     "params": []
   },
   {
+    "method": "get",
+    "path": "/api/alerts",
+    "params": []
+  },
+  {
     "method": "post",
     "path": "/api/alerts",
     "params": []
+  },
+  {
+    "method": "get",
+    "path": "/api/alerts/{id}",
+    "params": [
+      "id"
+    ],
+    "returnType": "AlertReadDto"
+  },
+  {
+    "method": "delete",
+    "path": "/api/alerts/{id}",
+    "params": [
+      "id"
+    ]
   }
 ]

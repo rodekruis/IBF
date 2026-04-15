@@ -3,22 +3,24 @@ from __future__ import annotations
 import json
 import logging
 import os
+import shutil
 from datetime import datetime, timezone
 
 from pipelines.infra.data_types.alert_types import (
-    AdminAreaExposure,
+    ExposureAdminArea,
     Alert,
     Centroid,
     EnsembleMemberType,
     ForecastSource,
-    GeoFeatureExposure,
+    ExposureGeoFeature,
     HazardType,
     Layer,
-    LeadTime,
-    RasterExposure,
+    ExposureRaster,
     RasterExtent,
-    SeverityEntry,
+    Severity,
+    TimeInterval,
 )
+from pipelines.infra.data_types.data_config_types import OutputMode
 from pipelines.infra.utils.alert_integrity_checks import (
     check_admin_area_integrity,
     check_centroid,
@@ -84,8 +86,8 @@ class DataSubmitter:
     def add_severity_data(
         self,
         alert_name: str,
-        lead_time_start: str,
-        lead_time_end: str,
+        time_interval_start: str,
+        time_interval_end: str,
         ensemble_member_type: EnsembleMemberType,
         severity_key: str,
         severity_value: float | int,
@@ -94,9 +96,11 @@ class DataSubmitter:
         if alert is None:
             return
 
-        alert.severity_data.append(
-            SeverityEntry(
-                lead_time=LeadTime(start=lead_time_start, end=lead_time_end),
+        alert.severity.append(
+            Severity(
+                time_interval=TimeInterval(
+                    start=time_interval_start, end=time_interval_end
+                ),
                 ensemble_member_type=ensemble_member_type,
                 severity_key=severity_key,
                 severity_value=severity_value,
@@ -115,8 +119,8 @@ class DataSubmitter:
         if alert is None:
             return
 
-        alert.exposure.admin_area.append(
-            AdminAreaExposure(
+        alert.exposure.admin_areas.append(
+            ExposureAdminArea(
                 place_code=place_code,
                 admin_level=admin_level,
                 layer=layer,
@@ -136,7 +140,7 @@ class DataSubmitter:
             return
 
         alert.exposure.geo_features.append(
-            GeoFeatureExposure(geo_feature_id=geo_feature_id, layer=layer, value=value)
+            ExposureGeoFeature(geo_feature_id=geo_feature_id, layer=layer, value=value)
         )
 
     def add_raster_exposure(
@@ -151,7 +155,7 @@ class DataSubmitter:
             return
 
         alert.exposure.rasters.append(
-            RasterExposure(
+            ExposureRaster(
                 layer=layer,
                 value=value,
                 extent=RasterExtent(
@@ -166,7 +170,7 @@ class DataSubmitter:
     def get_alerts(self) -> list[Alert]:
         return list(self._alerts.values())
 
-    def send_all(self, output_mode: str, output_path: str = "") -> list[str]:
+    def send_all(self, output_mode: OutputMode, output_path: str) -> list[str]:
         integrity_errors = self._check_integrity()
         if integrity_errors:
             for err in integrity_errors:
@@ -175,16 +179,27 @@ class DataSubmitter:
 
         alerts_list = [alert.to_dict() for alert in self._alerts.values()]
 
-        if output_mode == "api":
-            return self._send_to_api(alerts_list)
+        file_errors = self._write_to_file(alerts_list, output_path)
 
-        return self._write_to_file(alerts_list, output_path)
+        if output_mode == OutputMode.API:
+            if file_errors:
+                logger.warning(f"Local debug write failed: {file_errors}")
+            api_errors = self._send_to_api(alerts_list)
+            if not api_errors:
+                shutil.rmtree(output_path, ignore_errors=True)
+                logger.info(f"Cleaned up local output at {output_path}")
+            return api_errors
+
+        return file_errors
 
     def _write_to_file(self, alerts_list: list[dict], output_dir: str) -> list[str]:
-        os.makedirs(output_dir, exist_ok=True)
-        file_path = os.path.join(output_dir, "alerts_object.json")
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(alerts_list, f, indent=2)
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+            file_path = os.path.join(output_dir, "alerts_object.json")
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(alerts_list, f, indent=2)
+        except OSError as e:
+            return [f"Failed to write alerts to {output_dir}: {e}"]
 
         logger.info(f"Wrote {len(alerts_list)} alerts to {file_path}")
         return []

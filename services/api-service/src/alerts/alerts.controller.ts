@@ -1,10 +1,24 @@
-import { Body, Controller, HttpStatus, Post, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseArrayPipe,
+  ParseIntPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
-import { SubmitAlertsDto } from '@api-service/src/alerts/dto/submit-alerts.dto';
+import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
+import { AlertReadDto } from '@api-service/src/alerts/dto/alert-read.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
+import { ValidationPipeOptions } from '@api-service/src/validation-options/validation-pipe-options.const';
 
 @ApiTags('alerts')
 @UseGuards(AuthenticatedUserGuard)
@@ -12,20 +26,82 @@ import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-us
 export class AlertsController {
   public constructor(private readonly alertsService: AlertsService) {}
 
-  @AuthenticatedUser({ allowPipelineApiKey: true })
+  @AuthenticatedUser()
+  @Get()
+  @ApiOperation({
+    summary:
+      'Get alerts. This endpoint is not intended for use in pipelines or frontends, only for debugging.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Alerts returned successfully',
+    type: [AlertReadDto],
+  })
+  public async getAlerts(): Promise<AlertReadDto[]> {
+    return this.alertsService.getAlerts();
+  }
+
+  @AuthenticatedUser()
+  @Get(':id')
+  @ApiOperation({
+    summary:
+      'Get alert by id. This endpoint is not intended for use in pipelines or frontends, only for debugging.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Alert returned successfully',
+    type: AlertReadDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Alert not found',
+  })
+  public async getAlert(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AlertReadDto> {
+    return this.alertsService.getAlertOrThrow(id);
+  }
+
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary:
+      'Delete alert by id. This endpoint is not intended for use in pipelines or frontends, only for debugging.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Alert deleted successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Alert not found',
+  })
+  public async deleteAlert(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<void> {
+    await this.alertsService.deleteAlertOrThrow(id);
+  }
+
+  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Post()
-  @ApiOperation({ summary: 'Submit forecast alerts' })
+  @ApiOperation({ summary: 'Create forecast alerts' })
+  @ApiBody({ type: [AlertCreateDto] })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Alerts persisted successfully',
+    type: [AlertReadDto],
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: 'Integrity check failed',
   })
-  public async submitAlerts(
-    @Body() submitAlertsDto: SubmitAlertsDto,
-  ): Promise<void> {
-    await this.alertsService.submitAlerts(submitAlertsDto);
+  public async createAlerts(
+    @Body(
+      new ParseArrayPipe({ items: AlertCreateDto, ...ValidationPipeOptions }),
+    )
+    alertCreateDtos: AlertCreateDto[],
+  ): Promise<AlertReadDto[]> {
+    return this.alertsService.createAlerts(alertCreateDtos);
   }
 }

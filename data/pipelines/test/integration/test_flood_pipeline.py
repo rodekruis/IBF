@@ -1,3 +1,6 @@
+from pipelines.infra.data_types.data_config_types import OutputMode
+
+
 def test_floods_ken(pipeline):
     """Run the flood pipeline for KEN in local file mode and verify the output
     structure: 2 alerts, correct hazard types, forecast sources, and admin levels.
@@ -10,7 +13,7 @@ def test_floods_ken(pipeline):
     result = pipeline.run_pipeline(
         "pipelines/infra/configs/floods.yaml",
         "DEBUG",
-        extra_env={"IBF_OUTPUT_MODE": "local"},
+        extra_env={"IBF_OUTPUT_MODE": OutputMode.LOCAL},
     )
     assert (
         result.returncode == 0
@@ -29,7 +32,7 @@ def test_floods_ken(pipeline):
         assert alert["hazardTypes"] == ["floods"]
         assert "glofas" in alert["forecastSources"]
 
-        admin_levels = {r["adminLevel"] for r in alert["exposure"]["adminArea"]}
+        admin_levels = {r["adminLevel"] for r in alert["exposure"]["adminAreas"]}
         assert admin_levels == {1, 2, 3}
 
     # TODO: Assert on expected alert names, once we have a controlled dataset and working hazard flow.

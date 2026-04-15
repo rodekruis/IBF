@@ -28,7 +28,7 @@ jobs:
     outputs:
       should_skip: ${{ steps.filter.outputs.should_skip }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         # Other events (from the merge-queue) can safely ignore the path-filter; Its output would default to 'NOT true'
         if: github.event_name == 'pull_request'
         with:
@@ -53,20 +53,16 @@ jobs:
       fail-fast: false
       matrix:
         test_node:
-          - pipelines/test/unit/
-          - pipelines/test/integration/test_flood_pipeline.py
-          - pipelines/test/integration/test_drought_pipeline.py
-          - pipelines/test/legacy/test_pipeline_integration.py::test_pipeline_riverflood_ken
-          - pipelines/test/legacy/test_pipeline_integration.py::test_pipeline_drought_eth
+          - pipelines/test/
     defaults:
       run:
         working-directory: data
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -76,7 +72,7 @@ jobs:
           sudo apt-get install -y gdal-bin libgdal-dev
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
 
       - name: Install dependencies
         run: ./uv-sync.sh
@@ -91,7 +87,7 @@ jobs:
           CDSAPI_KEY: ${{ secrets.PIPELINES_CDSAPI_KEY }}
           PYTHONFAULTHANDLER: '1'
           PYTHONUNBUFFERED: '1'
-        run: uv run -m pytest "${{ matrix.test_node }}"
+        run: uv run -m pytest "${{ matrix.test_node }}" --ignore=pipelines/test/integration_api
 
   # This job is here to make the above jobs "required" in GitHub.
   # This is a workaround for this issue: https://github.com/orgs/community/discussions/44490
