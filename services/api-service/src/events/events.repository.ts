@@ -24,13 +24,21 @@ export interface EventAlertHistoryRecord {
 export class EventsRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  public async getOpenEvents(viewTime: Date): Promise<Event[]> {
-    return this.prisma.event.findMany({
-      where: {
-        closedAt: null,
-        endAt: { gt: viewTime },
-      },
-    });
+  public async getEvents(viewTime: Date, active?: boolean): Promise<Event[]> {
+    if (active === undefined) {
+      return await this.prisma.event.findMany();
+    }
+
+    const where = active
+      ? {
+          closedAt: null,
+          endAt: { gt: viewTime },
+        }
+      : {
+          OR: [{ closedAt: { not: null } }, { endAt: { lte: viewTime } }],
+        };
+
+    return await this.prisma.event.findMany({ where });
   }
 
   public async getOpenEventByName(eventName: string): Promise<Event | null> {
@@ -48,29 +56,29 @@ export class EventsRepository {
     );
   }
 
-  public async createEvent(data: {
-    eventName: string;
-    hazardTypes: string[];
-    forecastSources: string[];
-    alertClass: string;
-    trigger: boolean;
-    startAt: Date;
-    reachesPeakAlertClassAt: Date;
-    endAt: Date;
-    firstIssuedAt: Date;
-  }): Promise<Event> {
+  public async createEvent(
+    data: Pick<
+      Event,
+      | 'eventName'
+      | 'hazardTypes'
+      | 'forecastSources'
+      | 'alertClass'
+      | 'trigger'
+      | 'startAt'
+      | 'reachesPeakAlertClassAt'
+      | 'endAt'
+      | 'firstIssuedAt'
+    >,
+  ): Promise<Event> {
     return this.prisma.event.create({ data });
   }
 
   public async updateEvent(
     id: number,
-    data: {
-      alertClass: string;
-      trigger: boolean;
-      startAt: Date;
-      reachesPeakAlertClassAt: Date;
-      endAt: Date;
-    },
+    data: Pick<
+      Event,
+      'alertClass' | 'trigger' | 'startAt' | 'reachesPeakAlertClassAt' | 'endAt'
+    >,
   ): Promise<Event> {
     return this.prisma.event.update({
       where: { id },

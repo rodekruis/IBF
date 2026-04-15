@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Event } from '@prisma/client';
 
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
@@ -65,11 +66,7 @@ export class AlertToEventService {
   }
 
   private async updateExistingEvent(
-    existingEvent: {
-      id: number;
-      eventName: string;
-      firstIssuedAt: Date;
-    },
+    existingEvent: Pick<Event, 'id' | 'eventName' | 'firstIssuedAt'>,
     latestAlert: ClassificationResult,
     issuedAt: Date,
   ): Promise<void> {
@@ -127,7 +124,6 @@ export class AlertToEventService {
     return this.alertClassificationService.classifyAlert({
       hazardType: historicalAlert.hazardTypes[0],
       issuedAt: historicalAlert.issuedAt,
-      // ##TODO: this sounds excessive, simplify
       severity: historicalAlert.severityData.map((severity) => ({
         timeInterval: {
           start: new Date(severity.timeInterval.start),

@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class EventResponseDto {
   @ApiProperty()
-  public readonly id: number;
+  public readonly eventId: number;
 
   @ApiProperty()
   public readonly eventName: string;
@@ -33,12 +33,6 @@ export class EventResponseDto {
 
   @ApiPropertyOptional({ type: Date, nullable: true })
   public readonly closedAt: Date | null;
-
-  @ApiProperty()
-  public readonly created: Date;
-
-  @ApiProperty()
-  public readonly updated: Date;
 
   @ApiProperty()
   public readonly isOngoing: boolean;

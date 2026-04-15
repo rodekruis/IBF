@@ -9,11 +9,11 @@ import {
 } from '@api-service/src/events/interfaces/alert-classification-config';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
 
-interface LeadTimeGroup {
+interface TimeIntervalGroup {
   readonly start: string;
   readonly end: string;
   readonly medianValue: number;
-  readonly runValues: number[];
+  readonly ensembleRunValues: number[];
 }
 
 export interface AlertClassificationInput {
@@ -48,8 +48,8 @@ export class AlertClassificationService {
     issuedAt: Date,
     config: AlertClassificationConfig,
   ): ClassificationResult {
-    const leadTimeGroups = this.groupByLeadTime(severityData);
-    const alertClassPerLeadTime = new Map<string, string | null>();
+    const timeIntervalGroups = this.groupByTimeInterval(severityData);
+    const alertClassPerTimeInterval = new Map<string, string | null>();
     const sortedSeverityLevels = this.sortByThresholdDescending(
       config.severityClassLevels,
     );
@@ -60,14 +60,14 @@ export class AlertClassificationService {
     let earliestStart: Date | undefined;
     let latestEnd: Date | undefined;
 
-    for (const group of leadTimeGroups) {
-      const alertClassForLeadTime = this.computeAlertClassPerLeadTime(
+    for (const group of timeIntervalGroups) {
+      const alertClassForTimeInterval = this.computeAlertClassForTimeInterval(
         group,
         sortedSeverityLevels,
         sortedProbabilityLevels,
         config.alertClassMatrix,
       );
-      alertClassPerLeadTime.set(group.start, alertClassForLeadTime);
+      alertClassPerTimeInterval.set(group.start, alertClassForTimeInterval);
 
       const start = new Date(group.start);
       const end = new Date(group.end);
@@ -79,10 +79,13 @@ export class AlertClassificationService {
       }
     }
 
-    const alertClass = this.computeAlertClass(alertClassPerLeadTime, config);
+    const alertClass = this.computeAlertClass(
+      alertClassPerTimeInterval,
+      config.alertClassOrder,
+    );
 
     const reachesPeakAlertClassAt = this.computeReachesPeakAlertClassAt(
-      alertClassPerLeadTime,
+      alertClassPerTimeInterval,
       alertClass,
       earliestStart!,
     );
@@ -95,7 +98,7 @@ export class AlertClassificationService {
     );
 
     return {
-      alertClassPerLeadTime,
+      alertClassPerTimeInterval,
       alertClass,
       startAt: earliestStart!,
       endAt: latestEnd!,
@@ -104,40 +107,42 @@ export class AlertClassificationService {
     };
   }
 
-  private groupByLeadTime(severityData: SeverityDto[]): LeadTimeGroup[] {
+  private groupByTimeInterval(
+    severityData: SeverityDto[],
+  ): TimeIntervalGroup[] {
     const groups = new Map<
       string,
-      { start: Date; end: Date; median?: number; runs: number[] }
+      { ensembleRunValues: number[]; medianValue?: number }
     >();
 
     for (const entry of severityData) {
-      const key = `${entry.timeInterval.start}|${entry.timeInterval.end}`;
-      const group = groups.get(key) ?? {
-        start: entry.timeInterval.start,
-        end: entry.timeInterval.end,
-        median: undefined,
-        runs: [] as number[],
-      };
+      const key = `${entry.timeInterval.start.toISOString()}|${entry.timeInterval.end.toISOString()}`;
+      const group = groups.get(key) ?? { ensembleRunValues: [] };
 
       if (entry.ensembleMemberType === EnsembleMemberType.median) {
-        group.median = entry.severityValue;
+        group.medianValue = entry.severityValue;
       } else {
-        group.runs.push(entry.severityValue);
+        group.ensembleRunValues.push(entry.severityValue);
       }
 
       groups.set(key, group);
     }
 
-    return [...groups.values()].map((g) => ({
-      start: g.start.toISOString(),
-      end: g.end.toISOString(),
-      medianValue: g.median!,
-      runValues: g.runs,
-    }));
+    return [...groups.entries()].map(
+      ([key, { medianValue, ensembleRunValues: ensembleRunValues }]) => {
+        const [start, end] = key.split('|');
+        return {
+          start,
+          end,
+          medianValue: medianValue!,
+          ensembleRunValues,
+        };
+      },
+    );
   }
 
-  private computeAlertClassPerLeadTime(
-    group: LeadTimeGroup,
+  private computeAlertClassForTimeInterval(
+    group: TimeIntervalGroup,
     sortedSeverityLevels: ClassLevel[],
     sortedProbabilityLevels: ClassLevel[],
     alertClassMatrix: Record<string, Record<string, string | null>>,
@@ -154,7 +159,7 @@ export class AlertClassificationService {
       sortedSeverityLevels.find((l) => l.label === severityClass)?.threshold ??
       0;
     const probability = this.computeProbability(
-      group.runValues,
+      group.ensembleRunValues,
       severityThreshold,
     );
     const probabilityClass = this.classifyValue(
@@ -192,18 +197,17 @@ export class AlertClassificationService {
   }
 
   private computeAlertClass(
-    alertClassPerLeadTime: Map<string, string | null>,
-    config: AlertClassificationConfig,
+    alertClassPerTimeInterval: Map<string, string | null>,
+    alertClassOrder: readonly string[],
   ): string | null {
-    const alertClassOrder = this.buildAlertClassOrder(config);
     let highest: string | null = null;
     let highestOrder = -1;
 
-    for (const alertClass of alertClassPerLeadTime.values()) {
+    for (const alertClass of alertClassPerTimeInterval.values()) {
       if (alertClass === null) {
         continue;
       }
-      const order = alertClassOrder.get(alertClass) ?? 0;
+      const order = alertClassOrder.indexOf(alertClass) + 1;
       if (order > highestOrder) {
         highest = alertClass;
         highestOrder = order;
@@ -213,7 +217,7 @@ export class AlertClassificationService {
   }
 
   private computeReachesPeakAlertClassAt(
-    alertClassPerLeadTime: Map<string, string | null>,
+    alertClassPerTimeInterval: Map<string, string | null>,
     overallAlertClass: string | null,
     fallback: Date,
   ): Date {
@@ -222,9 +226,9 @@ export class AlertClassificationService {
     }
 
     let earliest: Date | undefined;
-    for (const [leadTimeStart, alertClass] of alertClassPerLeadTime) {
+    for (const [timeIntervalStart, alertClass] of alertClassPerTimeInterval) {
       if (alertClass === overallAlertClass) {
-        const date = new Date(leadTimeStart);
+        const date = new Date(timeIntervalStart);
         if (!earliest || date < earliest) {
           earliest = date;
         }
@@ -243,9 +247,9 @@ export class AlertClassificationService {
       return false;
     }
 
-    const alertClassOrder = this.buildAlertClassOrder(config);
-    const alertClassRank = alertClassOrder.get(alertClass) ?? 0;
-    const triggerRank = alertClassOrder.get(config.triggerAlertClass) ?? 0;
+    const alertClassRank = config.alertClassOrder.indexOf(alertClass) + 1;
+    const triggerRank =
+      config.alertClassOrder.indexOf(config.triggerAlertClass) + 1;
 
     if (alertClassRank < triggerRank) {
       return false;
@@ -262,25 +266,6 @@ export class AlertClassificationService {
     }
 
     return true;
-  }
-
-  private buildAlertClassOrder(
-    config: AlertClassificationConfig,
-  ): Map<string, number> {
-    const order = new Map<string, number>();
-    let rank = 0;
-    const seen = new Set<string>();
-
-    for (const row of Object.values(config.alertClassMatrix)) {
-      for (const alertClass of Object.values(row)) {
-        if (alertClass !== null && !seen.has(alertClass)) {
-          seen.add(alertClass);
-          rank++;
-          order.set(alertClass, rank);
-        }
-      }
-    }
-    return order;
   }
 
   private addIsoDuration(base: Date, duration: string): Date {

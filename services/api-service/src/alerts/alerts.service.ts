@@ -35,13 +35,13 @@ export class AlertsService {
       );
     }
 
-    for (const alert of alerts) {
-      await this.alertToEventService.matchAndStore(alert);
-    }
+    await Promise.all(
+      alerts.map((alert) => this.alertToEventService.matchAndStore(alert)),
+    );
 
     await this.closeStaleEvents(alerts);
 
-    // This way alerts are not stored in cases of errors on event matching/storing/closing
+    // Store alerts at the end, so that they are not stored in case of errors on event matching/storing/closing
     return await this.alertsRepository.createAlerts(alerts);
   }
 

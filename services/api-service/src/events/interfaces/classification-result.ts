@@ -1,5 +1,5 @@
 export interface ClassificationResult {
-  readonly alertClassPerLeadTime: ReadonlyMap<string, string | null>;
+  readonly alertClassPerTimeInterval: ReadonlyMap<string, string | null>;
   readonly alertClass: string | null;
   readonly startAt: Date;
   readonly endAt: Date;

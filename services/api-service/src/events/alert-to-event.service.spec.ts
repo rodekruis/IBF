@@ -12,7 +12,7 @@ function buildClassificationResult(
   overrides: Partial<ClassificationResult> = {},
 ): ClassificationResult {
   return {
-    alertClassPerLeadTime: new Map([['2026-04-01T00:00:00Z', 'max']]),
+    alertClassPerTimeInterval: new Map([['2026-04-01T00:00:00Z', 'max']]),
     alertClass: 'max',
     startAt: new Date('2026-04-01T00:00:00Z'),
     endAt: new Date('2026-04-02T00:00:00Z'),

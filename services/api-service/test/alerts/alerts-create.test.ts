@@ -44,7 +44,7 @@ describe('POST /alerts', () => {
   });
 
   describe('validation', () => {
-    // ##TODO re-enable as part of AB#41583
+    // TODO re-enable as part of AB#41583
     xit('should reject empty alerts array', async () => {
       const response = await getServer()
         .post('/alerts')
@@ -88,7 +88,7 @@ describe('POST /alerts', () => {
         ],
       });
 
-      // ##TODO fix rebase
+      // TODO fix rebase
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', apiKey!)

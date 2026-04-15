@@ -7,6 +7,7 @@ export interface AlertClassificationConfig {
   readonly severityClassLevels: readonly ClassLevel[];
   readonly probabilityClassLevels: readonly ClassLevel[];
   readonly alertClassMatrix: Record<string, Record<string, string | null>>;
+  readonly alertClassOrder: readonly string[];
   readonly triggerAlertClass?: string;
   readonly triggerLeadTimeDuration?: string;
 }
