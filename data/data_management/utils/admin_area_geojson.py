@@ -8,29 +8,6 @@ from dataclasses import dataclass
 from typing import Any
 
 
-# Top level structure for the admin areas format
-@dataclass
-class AdminAreaFeatureCollection:
-    type: str  # always "FeatureCollection" for geojson
-    features: list[Feature]
-
-
-# This holds the data for a single admin area.
-# It's the second level structure in the admin area data.
-@dataclass
-class Feature:
-    type: str  # always "Feature" for geojson
-    geometry: Geometry
-    properties: AdminAreaProperties
-
-
-# Vector point data, along with the shape type
-@dataclass
-class Geometry:
-    type: str  # e.g. "MultiPolygon", "Line", "Point", etc.
-    coordinates: list[Any]
-
-
 @dataclass
 class AdminAreaProperties:
     """Properties for an admin area feature.
@@ -65,3 +42,26 @@ class AdminAreaProperties:
     ADM4_EN: str | None = None
     ADM4_PCODE: str | None = None
     ADM4_REF: str | None = None
+
+
+# Vector point data, along with the shape type
+@dataclass
+class Geometry:
+    type: str  # e.g. "MultiPolygon", "Line", "Point", etc.
+    coordinates: list[Any]
+
+
+# This holds the data for a single admin area.
+# It's the second level structure in the admin area data.
+@dataclass
+class Feature:
+    type: str  # always "Feature" for geojson
+    geometry: Geometry
+    properties: AdminAreaProperties
+
+
+# Top level structure for the admin areas format
+@dataclass
+class AdminAreaFeatureCollection:
+    type: str  # always "FeatureCollection" for geojson
+    features: list[Feature]

@@ -142,7 +142,7 @@ def process_file(filepath: Path) -> AdminAreaFeatureCollection | None:
         print(f"  ERROR: Unknown country code '{country_iso_a3}', skipping file")
         return None
 
-    with open(filepath) as f:
+    with open(filepath, encoding="utf-8") as f:
         gadm_data = json.load(f)
 
     if gadm_data is None or "features" not in gadm_data:
@@ -175,7 +175,7 @@ def save_output(
     """Save the converted feature collection to the output directory."""
     output_path = OUTPUT_DIR / filepath.name
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         # Output with pretty printing
         json.dump(asdict(feature_collection), f, indent=2, ensure_ascii=False)
     print(f"  Saved to {output_path}")
