@@ -162,7 +162,7 @@ def process_file(filepath: Path) -> AdminAreaFeatureCollection | None:
             features.append(feature)
 
     if not features:
-        print(f"  WARNING: No valid features found")
+        print(f"  WARNING: No valid features found in {filepath.name}")
         return None
 
     return AdminAreaFeatureCollection(type="FeatureCollection", features=features)
