@@ -7,6 +7,7 @@ import { AlertsModule } from '@api-service/src/alerts/alerts.module';
 import { AppController } from '@api-service/src/app.controller';
 import { AuthModule } from '@api-service/src/auth/auth.module';
 import { THROTTLING_LIMIT_GENERIC } from '@api-service/src/config';
+import { EventsModule } from '@api-service/src/events/events.module';
 import { HealthModule } from '@api-service/src/health/health.module';
 import { ScriptsModule } from '@api-service/src/scripts/scripts.module';
 
@@ -26,6 +27,7 @@ import { ScriptsModule } from '@api-service/src/scripts/scripts.module';
     ]),
     AuthModule,
     AlertsModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [

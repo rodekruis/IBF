@@ -22,7 +22,6 @@ export function resetDB(
     .post('/instance/reset')
     .query({
       script: seedScript,
-      isApiTests: true,
       resetIdentifier,
     })
     .send({

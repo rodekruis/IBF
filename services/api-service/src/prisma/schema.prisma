@@ -45,6 +45,27 @@ model Alert {
   exposureRasterData   AlertExposureRasterData[]
 }
 
+model Event {
+  @@schema("api-service")
+  @@map("event")
+
+  id                        Int       @id @default(autoincrement())
+  created                   DateTime  @default(now())
+  updated                   DateTime  @updatedAt
+  eventName                 String
+  hazardTypes               String[]
+  forecastSources           String[]
+  alertClass                String
+  trigger                   Boolean
+  startAt                   DateTime
+  reachesPeakAlertClassAt   DateTime
+  endAt                     DateTime
+  firstIssuedAt             DateTime
+  closedAt                  DateTime?
+
+  @@index([eventName])
+}
+
 model AlertSeverity {
   @@schema("api-service")
   @@map("alert-severity")

@@ -1,28 +1,35 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { createAlert } from '@api-service/test/helpers/alert.helper';
-import { getServer, resetDB } from '@api-service/test/helpers/utility.helper';
+import {
+  buildAlert,
+  createAlerts,
+  deleteAlert,
+  readAlertById,
+  readAlerts,
+} from '@api-service/test/helpers/alert.helper';
+import {
+  getAccessToken,
+  resetDB,
+} from '@api-service/test/helpers/utility.helper';
 
 const ALERT_NAME = 'TEST-delete-flood-2026-03-23';
 
 describe('/ Alerts', () => {
-  const apiKey = env.PIPELINE_API_KEY;
   let adminAccessToken: string;
   let seededAlertId: number;
 
   beforeAll(async () => {
     await resetDB(SeedScript.initialState, __filename);
-    ({ adminAccessToken, alertId: seededAlertId } = await createAlert(
-      ALERT_NAME,
-      apiKey!,
-    ));
+    const alert = buildAlert({ alertName: ALERT_NAME });
+    await createAlerts([alert]);
+    adminAccessToken = await getAccessToken();
+    seededAlertId = (await readAlerts(adminAccessToken)).body[0].id;
   });
 
   describe('DELETE /alerts/:id – authentication', () => {
     it('should reject request without authentication', async () => {
-      const response = await getServer().delete(`/alerts/${seededAlertId}`);
+      const response = await deleteAlert(seededAlertId, '');
 
       expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
     });
@@ -30,9 +37,7 @@ describe('/ Alerts', () => {
 
   describe('DELETE /alerts/:id – not found', () => {
     it('should return 404 for a non-existent alert id', async () => {
-      const response = await getServer()
-        .delete('/alerts/999999')
-        .set('Cookie', [adminAccessToken]);
+      const response = await deleteAlert(9999, adminAccessToken);
 
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
@@ -40,16 +45,12 @@ describe('/ Alerts', () => {
 
   describe('DELETE /alerts/:id – success', () => {
     it('should delete the alert and return 204', async () => {
-      const deleteResponse = await getServer()
-        .delete(`/alerts/${seededAlertId}`)
-        .set('Cookie', [adminAccessToken]);
+      const deleteResponse = await deleteAlert(seededAlertId, adminAccessToken);
 
       expect(deleteResponse.status).toBe(HttpStatus.NO_CONTENT);
 
       // alert should no longer be retrievable
-      const getResponse = await getServer()
-        .get(`/alerts/${seededAlertId}`)
-        .set('Cookie', [adminAccessToken]);
+      const getResponse = await readAlertById(seededAlertId, adminAccessToken);
 
       expect(getResponse.status).toBe(HttpStatus.NOT_FOUND);
     });
