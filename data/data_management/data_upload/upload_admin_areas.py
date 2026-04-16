@@ -110,7 +110,7 @@ def insert_admin_areas_data(connection, features: list[dict]):
 
             admin_level = feature.get("admin_level")
 
-            if not admin_level:
+            if admin_level is None:
                 print(f"Error: No admin level from file attached to {props}.")
                 continue
 
