@@ -32,11 +32,11 @@ def calculate_drought_forecasts(
     # As soon as the source is stable enough, inform software-dev to fetch it through the data provider instead.
 
     climate_regions: list[dict[str, object]] = data_provider.get_data(
-        DataSource.CLIMATE_REGIONS_IBF_API
-    ).data
-    target_admin_areas: AdminAreasSet = data_provider.get_data(
-        DataSource.ADMIN_AREA_SEED_REPO
-    ).data
+        DataSource.CLIMATE_REGIONS_IBF_API, list
+    )
+    target_admin_areas = data_provider.get_data(
+        DataSource.ADMIN_AREA_SEED_REPO, AdminAreasSet
+    )
 
     # Make sure your data loaded
     if not climate_regions or not target_admin_areas:
@@ -58,7 +58,7 @@ def calculate_drought_forecasts(
 
     for region in climate_regions:
         region_id = str(region["id"])
-        seasons: list[str] = region["seasons"]
+        seasons = list(region["seasons"])  # type: ignore[arg-type]
         # TODO: determine place codes by looking at the admin areas in a climate region
         # For now, just get the first two place codes from the admin areas for debug.
         debug_alert_place_codes: list[str] = list(

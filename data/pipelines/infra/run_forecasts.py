@@ -20,6 +20,7 @@ from pipelines.infra.data_types.alert_types import HazardType
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
+    OutputMode,
     RunTargetType,
 )
 from pipelines.infra.utils.alert_admin_aggregation import (
@@ -63,9 +64,7 @@ def _run_country(
     )
 
     # --- Post-processing: aggregate deepest-level admin area data upward ---
-    admin_areas: AdminAreasSet = data_provider.get_data(
-        DataSource.ADMIN_AREA_SEED_REPO
-    ).data
+    admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_SEED_REPO, AdminAreasSet)
     for alert in data_submitter.get_alerts():
         aggregate_to_parent_admin_levels(alert, admin_areas)
 
@@ -73,7 +72,13 @@ def _run_country(
     output_config = config_reader.get_country_config(
         country.country_code_iso_3, run_target
     )
-    output_mode = os.environ.get("IBF_OUTPUT_MODE", output_config.output_mode)
+    if output_config is None:
+        raise ValueError(
+            f"No output config found for country '{country.country_code_iso_3}' and run target '{run_target}'"
+        )
+    output_mode = OutputMode(
+        os.environ.get("IBF_OUTPUT_MODE", output_config.output_mode)
+    )
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     output_path = str(

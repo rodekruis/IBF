@@ -33,12 +33,11 @@ def calculate_flood_forecasts(
     # As soon as the source is stable enough, inform software-dev to fetch it through the data provider instead.
 
     stations: dict[str, LocationPoint] = data_provider.get_data(
-        DataSource.GLOFAS_STATIONS_SEED_REPO
-    ).data
-    target_admin_areas: AdminAreasSet = data_provider.get_data(
-        DataSource.ADMIN_AREA_SEED_REPO
-    ).data
-
+        DataSource.GLOFAS_STATIONS_SEED_REPO, dict
+    )
+    target_admin_areas = data_provider.get_data(
+        DataSource.ADMIN_AREA_SEED_REPO, AdminAreasSet
+    )
     # Make sure your data loaded
     if not stations or not target_admin_areas:
         data_submitter.add_error(

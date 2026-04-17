@@ -4,18 +4,19 @@ import json
 import logging
 import os
 import shutil
+from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 
 from pipelines.infra.data_types.alert_types import (
-    ExposureAdminArea,
     Alert,
     Centroid,
     EnsembleMemberType,
-    ForecastSource,
+    ExposureAdminArea,
     ExposureGeoFeature,
+    ExposureRaster,
+    ForecastSource,
     HazardType,
     Layer,
-    ExposureRaster,
     RasterExtent,
     Severity,
     TimeInterval,
@@ -36,6 +37,9 @@ class DataSubmitter:
     def __init__(self) -> None:
         self._alerts: dict[str, Alert] = {}
         self.errors: dict[str, str] = {}
+
+    def add_error(self, error: str) -> None:
+        self.errors[f"manual:{len(self.errors)}"] = error
 
     def create_alert(
         self,
@@ -192,19 +196,21 @@ class DataSubmitter:
 
         return file_errors
 
-    def _write_to_file(self, alerts_list: list[dict], output_dir: str) -> list[str]:
+    def _write_to_file(
+        self, alerts_list: Sequence[Mapping[str, object]], output_dir: str
+    ) -> list[str]:
         try:
             os.makedirs(output_dir, exist_ok=True)
             file_path = os.path.join(output_dir, "alerts_object.json")
             with open(file_path, "w", encoding="utf-8") as f:
-                json.dump(alerts_list, f, indent=2)
+                json.dump(list(alerts_list), f, indent=2)
         except OSError as e:
             return [f"Failed to write alerts to {output_dir}: {e}"]
 
         logger.info(f"Wrote {len(alerts_list)} alerts to {file_path}")
         return []
 
-    def _send_to_api(self, alerts_list: list[dict]) -> list[str]:
+    def _send_to_api(self, alerts_list: Sequence[Mapping[str, object]]) -> list[str]:
         api_base_url = os.environ.get("IBF_API_URL", "")
         if not api_base_url:
             return ["IBF_API_URL environment variable must be set for api output mode"]

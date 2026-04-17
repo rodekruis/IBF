@@ -71,6 +71,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "deptry",
+    "pyright",
     "ufmt>=2.9.1",
     "pytest",
     "ruff",
