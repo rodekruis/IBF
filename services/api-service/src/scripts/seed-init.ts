@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { env } from '@api-service/src/env';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
@@ -8,16 +9,8 @@ import { hashPassword } from '@api-service/src/utils/hash-password.helper';
 export class SeedInit {
   public constructor(private prisma: PrismaService) {}
 
-  public async run({
-    isApiTests = false,
-  }: {
-    isApiTests?: boolean;
-  } = {}): Promise<void> {
-    if (isApiTests) {
-      await this.truncateAll();
-    } else {
-      await this.truncateAll();
-    }
+  public async run(): Promise<void> {
+    await this.truncateAll();
     await this.createAdminUser();
   }
 
@@ -37,7 +30,26 @@ export class SeedInit {
   }
 
   public async truncateAll(): Promise<void> {
-    // Delete all users (add more models as needed)
-    await this.prisma.user.deleteMany();
+    const tables = await this.prisma.$queryRaw<{ tablename: string }[]>(
+      Prisma.sql`
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'api-service'
+      `,
+    );
+
+    if (tables.length === 0) {
+      return;
+    }
+
+    const quotedTableNames = tables
+      .map(
+        ({ tablename }) => `"api-service"."${tablename.replaceAll('"', '""')}"`,
+      )
+      .join(', ');
+
+    await this.prisma.$executeRawUnsafe(
+      `TRUNCATE TABLE ${quotedTableNames} RESTART IDENTITY CASCADE`,
+    );
   }
 }

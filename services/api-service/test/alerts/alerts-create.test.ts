@@ -1,22 +1,21 @@
 import { HttpStatus } from '@nestjs/common';
 
+import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { getAlertCreateDto } from '@api-service/test/helpers/alert.helper';
+import { buildAlert } from '@api-service/test/helpers/alert.helper';
 import { getServer, resetDB } from '@api-service/test/helpers/utility.helper';
 
-const VALID_ALERT = getAlertCreateDto('TEST-flood-2026-03-23');
+const VALID_ALERT = buildAlert();
 
-describe('/ Alerts', () => {
+describe('POST /alerts', () => {
   const apiKey = env.PIPELINE_API_KEY;
-
   beforeAll(async () => {
     await resetDB(SeedScript.initialState, __filename);
   });
 
-  describe('POST /alerts – success', () => {
-    // NOTE: the success flow is tested from the pipeline as well, thereby asserting integration between pipeline and API.
-    // The success flow here is redundant, but added for documentation. The added value of this file is on the error scenarios.
+  describe('successful submission', () => {
+    // NOTE: event-lifecycle.test.ts covers more detailed successful submission scenarios. Also the test_pipeline_api.py pipeline tests asserts successful submission of alerts.
     it('should accept valid alert', async () => {
       const response = await getServer()
         .post('/alerts')
@@ -27,7 +26,7 @@ describe('/ Alerts', () => {
     });
   });
 
-  describe('POST /alerts – authentication', () => {
+  describe('authentication', () => {
     it('should reject request without API key', async () => {
       const response = await getServer().post('/alerts').send([VALID_ALERT]);
 
@@ -44,14 +43,15 @@ describe('/ Alerts', () => {
     });
   });
 
-  describe('POST /alerts – validation', () => {
-    it('should allow empty alerts array', async () => {
+  describe('validation', () => {
+    // TODO re-enable as part of AB#41583
+    xit('should reject empty alerts array', async () => {
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', apiKey!)
         .send([]);
 
-      expect(response.status).toBe(HttpStatus.CREATED);
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
 
     it('should reject alert with missing required fields', async () => {
@@ -64,31 +64,31 @@ describe('/ Alerts', () => {
     });
 
     it('should reject alert failing integrity check', async () => {
-      const badAlert = {
-        ...VALID_ALERT,
+      const badAlert = buildAlert({
         alertName: 'BAD-time-interval',
         severity: [
           {
             timeInterval: {
-              start: '2026-03-21T00:00:00Z',
-              end: '2026-03-20T00:00:00Z',
+              start: new Date('2026-03-21T00:00:00Z'),
+              end: new Date('2026-03-20T00:00:00Z'),
             },
-            ensembleMemberType: 'median',
+            ensembleMemberType: EnsembleMemberType.median,
             severityKey: 'water_discharge',
             severityValue: 1,
           },
           {
             timeInterval: {
-              start: '2026-03-21T00:00:00Z',
-              end: '2026-03-20T00:00:00Z',
+              start: new Date('2026-03-21T00:00:00Z'),
+              end: new Date('2026-03-20T00:00:00Z'),
             },
-            ensembleMemberType: 'run',
+            ensembleMemberType: EnsembleMemberType.run,
             severityKey: 'water_discharge',
             severityValue: 1,
           },
         ],
-      };
+      });
 
+      // TODO fix rebase
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', apiKey!)

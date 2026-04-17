@@ -8,6 +8,7 @@ import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
 
 function createMockValidAlert(
   overrides: Partial<AlertCreateDto> = {},
@@ -74,6 +75,13 @@ describe('AlertsService', () => {
             getAlerts: jest.fn(),
             getAlertOrThrow: jest.fn(),
             deleteAlertOrThrow: jest.fn(),
+          },
+        },
+        {
+          provide: AlertToEventService,
+          useValue: {
+            matchAndStore: jest.fn(),
+            closeStaleEvents: jest.fn(),
           },
         },
       ],
