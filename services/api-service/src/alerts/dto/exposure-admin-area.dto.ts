@@ -10,7 +10,7 @@ export class ExposureAdminAreaDto {
 
   @ApiProperty({ example: 3 })
   @IsInt()
-  @Min(1)
+  @Min(0)
   public readonly adminLevel: number;
 
   @ApiProperty({ enum: Layer, example: Layer.populationExposed })
