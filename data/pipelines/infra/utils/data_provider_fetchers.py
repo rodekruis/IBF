@@ -26,7 +26,7 @@ from shared.download_helpers import download_json_source, download_object
 
 logger = logging.getLogger(__name__)
 
-SEED_REPO_POPULATION_PATH = "/raster-data/population/data-png/"
+SEED_REPO_POPULATION_DATA_PNG_PATH = "/raster-data/population/data-png/"
 SEED_REPO_ADMIN_AREAS_PATH = "/admin-areas/processed/"
 # Note: this is getting glofas stations now. In the future, we most likely will be fetching
 # climate areas, catchments or something like that.
@@ -131,8 +131,8 @@ def _load_seed_repo_population_data(
 
     png_filename = f"{config.country_code_iso_3}_population.png"
     json_filename = f"{config.country_code_iso_3}_population_metadata.json"
-    png_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_PATH + png_filename
-    json_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_PATH + json_filename
+    png_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_DATA_PNG_PATH + png_filename
+    json_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_DATA_PNG_PATH + json_filename
 
     container.data = download_object(png_uri)
     if container.data is None:
