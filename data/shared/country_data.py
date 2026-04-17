@@ -1,8 +1,36 @@
 from enum import StrEnum
 
 
-# ISO a3 country codes
-# Source: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
+# ISO-3 codes for countries present in both the WorldPop and GADM datasets.
+# This includes all generally recognized countries.
+# For purposes of IBF and GO, this should contain all in-scope countries,
+# as well as some that are not.
+# Sources:
+# - https://data.worldpop.org/GIS/Population/Global_2015_2030/R2024A/2024/
+# - https://geodata.ucdavis.edu/gadm/gadm4.1/json/
+#
+# Differences between WorldPop and GADM country code lists:
+#
+# Only in WorldPop (9):
+#   CPT - Clipperton Island (In other set with different code)
+#   HKG - Hong Kong
+#   MAC - Macau
+#   XDI - Diego Garcia
+#   XIB - Bajo Nuevo Bank
+#   XIK - Serranilla Bank
+#   XKX - Kosovo (In other set with different code)
+#   XMA - Macao (alt code)
+#   XSI - Scarborough Shoal
+#
+# Only in GADM (8):
+#   ATA - Antarctica
+#   XAD - Akrotiri and Dhekelia
+#   XCA - Caspian Sea
+#   XCL - Clipperton Island (In other set with different code)
+#   XKO - Kosovo (In other set with different code)
+#   XPI - Paracel Islands
+#   XSP - Spratly Islands
+#   ZNC - Bonin Islands (Japan)
 class CountryCodeIso3(StrEnum):
     ABW = "ABW"
     AFG = "AFG"
@@ -15,7 +43,6 @@ class CountryCodeIso3(StrEnum):
     ARG = "ARG"
     ARM = "ARM"
     ASM = "ASM"
-    ATA = "ATA"
     ATF = "ATF"
     ATG = "ATG"
     AUS = "AUS"
@@ -100,7 +127,6 @@ class CountryCodeIso3(StrEnum):
     GUF = "GUF"
     GUM = "GUM"
     GUY = "GUY"
-    HKG = "HKG"
     HMD = "HMD"
     HND = "HND"
     HRV = "HRV"
@@ -139,7 +165,6 @@ class CountryCodeIso3(StrEnum):
     LTU = "LTU"
     LUX = "LUX"
     LVA = "LVA"
-    MAC = "MAC"
     MAF = "MAF"
     MAR = "MAR"
     MCO = "MCO"

@@ -2,7 +2,7 @@
 Fetch the admin areas for indicated countries.
 You can select the target admin levels, and target countries by editing
 this file and the references in the shared data_helpers file.
-Use all_countries_iso_a3 to fetch data for all countries.
+You can iterate on the enum CountryCodeIso3 to fetch data for all countries.
 """
 
 import json
