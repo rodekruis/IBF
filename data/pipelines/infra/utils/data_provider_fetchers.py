@@ -15,7 +15,11 @@ from pipelines.infra.data_types.data_config_types import (
     DataSource,
     DataSourceConfig,
 )
-from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
+from pipelines.infra.data_types.loaded_data_types import (
+    ClimateRegion,
+    DataType,
+    LoadedDataSource,
+)
 from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.dummy_data import DUMMY_DATA
 from shared.download_helpers import download_json_source, download_object
@@ -172,11 +176,12 @@ def _load_glofas_discharge(config: DataSourceConfig, container: LoadedDataSource
 def _load_ibf_api_climate_regions(
     config: DataSourceConfig, container: LoadedDataSource
 ):
-    # TODO: Set the type correctly once real data is loaded
-    container.data_type = DataType.UNSPECIFIED
-    container.data = _load_dummy_data(config)
-    if container.data is None:
+    container.data_type = DataType.CLIMATE_REGION_LIST
+    raw = _load_dummy_data(config)
+    if not isinstance(raw, list):
         container.error = f"No dummy data found for source '{config.source}'"
+        return
+    container.data = [ClimateRegion.from_raw(item) for item in raw]
 
 
 def _load_dummy_data(source_config: DataSourceConfig) -> object:

@@ -4,6 +4,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 
+# Pyright cannot enforce recursive JSON types due to dict invariance.
+# This alias documents the intent: values are JSON-serializable primitives, lists, or dicts.
+JsonDict = dict[str, object]
+
 
 @dataclass
 class Centroid:
@@ -128,7 +132,7 @@ class Exposure:
 
     def to_dict(
         self,
-    ) -> dict[str, list[dict[str, str | bool | int | float | dict[str, float]]]]:
+    ) -> JsonDict:
         return {
             "adminAreas": [item.to_dict() for item in self.admin_areas],
             "geoFeatures": [item.to_dict() for item in self.geo_features],
@@ -148,14 +152,7 @@ class Alert:
 
     def to_dict(
         self,
-    ) -> dict[
-        str,
-        str
-        | list[str]
-        | dict[str, float]
-        | list[dict[str, str | float | int | list[str]]]
-        | dict[str, list[dict[str, str | bool | int | float | dict[str, float]]]],
-    ]:
+    ) -> JsonDict:
         return {
             "alertName": self.alert_name,
             "issuedAt": self.issued_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
