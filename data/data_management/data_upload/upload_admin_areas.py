@@ -129,7 +129,7 @@ def insert_admin_areas_data(connection, features: list[dict]):
                 or props.get("ADM3_PCODE")
                 or props.get("ADM2_PCODE")
                 or props.get("ADM1_PCODE")
-                or props.get("ADM0_PCODE")
+                or props.get("ADM0_ISO_A3")
                 or None
             )
 

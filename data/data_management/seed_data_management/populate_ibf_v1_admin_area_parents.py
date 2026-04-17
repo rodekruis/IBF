@@ -18,22 +18,8 @@ These also have special handling:
 
 Note: Not all countries have ADM0 data, so I couldn't get the ADM0 name for all of them.
 
-The naming of these will follow the values from the UGA data (which already had this).
-    "features": [
-        {
-        "type": "Feature",
-        "properties": {
-            "ADM4_EN": "Abako",
-            "ADM4_PCODE": "UG30670101",
-            "ADM3_EN": "Moroto",
-            "ADM3_PCODE": "UG306701",
-            "ADM2_EN": "Alebtong",
-            "ADM2_PCODE": "UG3067",
-            "ADM1_EN": "Northern",
-            "ADM1_PCODE": "UG3",
-            "ADM0_EN": "Uganda",
-            "ADM0_PCODE": "UG",
-        }
+The structure follows the UGA data, but also adds some other fields.
+See the data class definition in admin_area_geojson.py
 
 This script does the following:
 - Look at all files in the dir, make a list of the country names, and print them.
@@ -58,6 +44,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
+from shared.country_data import CountryCodeIso2
 from shared.data_helpers import get_seed_data_repo_path
 
 BASE_REPO_DIR = get_seed_data_repo_path()
@@ -98,6 +85,31 @@ def get_pcode_key(admin_level: int) -> str:
 
 def get_name_key(admin_level: int) -> str:
     return f"ADM{admin_level}_EN"
+
+
+def add_default_values(props: dict, iso2: str) -> None:
+    """Add ADM0 fields and POPULATION to a feature's properties."""
+    props[get_pcode_key(0)] = iso2
+    props["ADM0_ISO_A2"] = iso2
+    props["ADM0_ISO_A3"] = CountryCodeIso2(iso2).name
+    props["POPULATION"] = None
+
+
+def set_adm0_fields_on_adm1(
+    admin_data: dict[int, dict],
+) -> None:
+    """
+    Set ADM0_PCODE, ADM0_ISO_A2, ADM0_ISO_A3, and POPULATION on adm1 features.
+    These values are derived from the first 2 characters of the ADM1_PCODE.
+    """
+    if 1 not in admin_data:
+        return
+
+    for feature in admin_data[1].get("features", []):
+        props = feature.get("properties", {})
+        adm1_pcode = props.get(get_pcode_key(1), "")
+        if adm1_pcode and len(adm1_pcode) >= 2:
+            add_default_values(props, adm1_pcode[:2])
 
 
 def populate_parent_codes(
@@ -183,8 +195,9 @@ def populate_parent_codes(
 
                     # When setting the adm1 PCODE, also set the adm0 code (first 2 chars of adm1 PCODE)
                     # there are no adm0 JSON files, so we need to derive the adm0 code ourselves.
+                    # Also set the other default values
                     if parent_level == 1 and len(parent_pcode) >= 2:
-                        child_props[get_pcode_key(0)] = parent_pcode[:2]
+                        add_default_values(child_props, parent_pcode[:2])
 
             if not was_parent_code_applied:
                 errors.append(
@@ -234,7 +247,7 @@ def populate_parent_codes(
                         child_props[adm1_pcode_key] = adm1_pcode
                         child_props[adm1_name_key] = adm1_name
                         if len(adm1_pcode) >= 2:
-                            child_props[get_pcode_key(0)] = adm1_pcode[:2]
+                            add_default_values(child_props, adm1_pcode[:2])
                         break
 
     return errors
@@ -350,6 +363,7 @@ if __name__ == "__main__":
             filepath = INPUT_DIR / f"{country}_adm{level}.json"
             admin_data[level] = load_geojson(filepath)
 
+        set_adm0_fields_on_adm1(admin_data)
         errors = populate_parent_codes(country, admin_data, levels)
         all_errors.extend(errors)
         for error in errors:
