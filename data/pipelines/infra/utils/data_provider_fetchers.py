@@ -150,6 +150,7 @@ def _load_seed_repo_population_data(
         "scales": json_data["scales"],
         "offsets": json_data["offsets"],
         "count": json_data["count"],
+        "max_value": json_data["max_value"],
     }
 
 
