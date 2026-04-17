@@ -33,7 +33,7 @@ def test_floods_ken(pipeline):
         assert "glofas" in alert["forecastSources"]
 
         admin_levels = {r["adminLevel"] for r in alert["exposure"]["adminAreas"]}
-        assert admin_levels == {1, 2, 3}
+        assert admin_levels == {0, 1, 2, 3}
 
     # TODO: Assert on expected alert names, once we have a controlled dataset and working hazard flow.
     # alert_names = {a["alertName"] for a in alerts}

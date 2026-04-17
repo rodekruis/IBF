@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import ExposureAdminArea, Alert, Layer
+from pipelines.infra.data_types.alert_types import Alert, ExposureAdminArea, Layer
 
 
 def aggregate_to_parent_admin_levels(
@@ -34,8 +34,8 @@ def aggregate_to_parent_admin_levels(
 
     deepest_level = max(entry.admin_level for entry in deepest_entries)
 
-    # Aggregate upward, for instance level 3 → level 2 → level 1
-    parent_levels = list(reversed(range(1, deepest_level)))
+    # Aggregate upward, for instance level 3 → level 2 → level 1 → level 0
+    parent_levels = list(reversed(range(0, deepest_level)))
     for target_level in parent_levels:
         # Group deepest-level values by (ancestor_place_code, layer)
         grouped: dict[tuple[str, Layer], list[bool | int | float]] = {}

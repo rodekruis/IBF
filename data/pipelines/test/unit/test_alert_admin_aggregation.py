@@ -9,10 +9,10 @@ from pipelines.infra.data_types.admin_area_types import (
     AdminAreasSet,
 )
 from pipelines.infra.data_types.alert_types import (
-    ExposureAdminArea,
     Alert,
     Centroid,
     Exposure,
+    ExposureAdminArea,
     ForecastSource,
     HazardType,
     Layer,
@@ -37,17 +37,17 @@ def _mock_admin_area(pcode: str, parent_pcodes: dict[int, str]) -> AdminArea:
 MOCK_ADMIN_AREAS_LEVEL_3: AdminAreasSet = AdminAreasSet(
     admin_level=3,
     admin_areas={
-        "child-A": _mock_admin_area("child-A", {2: "parent-X", 1: "top"}),
-        "child-B": _mock_admin_area("child-B", {2: "parent-X", 1: "top"}),
-        "child-C": _mock_admin_area("child-C", {2: "parent-Y", 1: "top"}),
+        "child-A": _mock_admin_area("child-A", {2: "parent-X", 1: "top", 0: "country"}),
+        "child-B": _mock_admin_area("child-B", {2: "parent-X", 1: "top", 0: "country"}),
+        "child-C": _mock_admin_area("child-C", {2: "parent-Y", 1: "top", 0: "country"}),
     },
 )
 
 MOCK_ADMIN_AREAS_LEVEL_2: AdminAreasSet = AdminAreasSet(
     admin_level=2,
     admin_areas={
-        "child-A": _mock_admin_area("child-A", {1: "top"}),
-        "child-B": _mock_admin_area("child-B", {1: "top"}),
+        "child-A": _mock_admin_area("child-A", {1: "top", 0: "country"}),
+        "child-B": _mock_admin_area("child-B", {1: "top", 0: "country"}),
     },
 )
 
@@ -111,7 +111,7 @@ def test_numeric_aggregation_uses_sum():
 
 
 def test_aggregation_produces_all_levels():
-    # 3-level areas should produce entries at levels 3, 2, and 1
+    # admin-level 3 areas should produce entries at levels 3, 2, 1, 0
     alert = _make_alert(
         [
             ExposureAdminArea("child-A", 3, Layer.SPATIAL_EXTENT, True),
@@ -123,16 +123,21 @@ def test_aggregation_produces_all_levels():
     aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
 
     levels = {e.admin_level for e in alert.exposure.admin_areas}
-    assert levels == {1, 2, 3}
+    assert levels == {0, 1, 2, 3}
 
     level_1 = _entries_at_level(alert, 1)
     assert len(level_1) == 1
     assert level_1[0].place_code == "top"
     assert level_1[0].value is True
 
+    level_0 = _entries_at_level(alert, 0)
+    assert len(level_0) == 1
+    assert level_0[0].place_code == "country"
+    assert level_0[0].value is True
+
 
 def test_grandparent_sums_from_deepest_not_from_parents():
-    # Level 1 sums all deepest entries directly (100+200+50=350), not parent subtotals
+    # Each level sums all deepest entries directly (100+200+50=350), not parent subtotals
     alert = _make_alert(
         [
             ExposureAdminArea("child-A", 3, Layer.POPULATION_EXPOSED, 100),
@@ -146,9 +151,12 @@ def test_grandparent_sums_from_deepest_not_from_parents():
     level_1 = _entries_at_level(alert, 1)
     assert level_1[0].value == 350
 
+    level_0 = _entries_at_level(alert, 0)
+    assert level_0[0].value == 350
+
 
 def test_two_level_hierarchy():
-    # Works with only 2 admin levels (no grandparent pass)
+    # Works with only 2 admin levels
     alert = _make_alert(
         [
             ExposureAdminArea("child-A", 2, Layer.POPULATION_EXPOSED, 10),
@@ -162,6 +170,11 @@ def test_two_level_hierarchy():
     assert len(level_1) == 1
     assert level_1[0].place_code == "top"
     assert level_1[0].value == 30
+
+    level_0 = _entries_at_level(alert, 0)
+    assert len(level_0) == 1
+    assert level_0[0].place_code == "country"
+    assert level_0[0].value == 30
 
 
 def test_empty_alert_is_noop():

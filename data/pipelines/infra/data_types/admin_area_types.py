@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 class AdminAreaProperties:
     """
     The code and name (in English) of an admin area, along with a list of all parent codes.
-    Adm1 would have no parents, while Adm4 would have 3 parents.
+    Adm0 would have no parents, while Adm4 would have 4 parents.
     """
 
     pcode: str
@@ -48,7 +48,7 @@ class AdminAreasSet:
             adm0_pcode = props.get("ADM0_PCODE")
 
             parent_pcodes = {}
-            for level in range(1, admin_level):
+            for level in range(0, admin_level):
                 parent_pcode = props.get(f"ADM{level}_PCODE")
                 if parent_pcode:
                     parent_pcodes[level] = parent_pcode
