@@ -35,7 +35,7 @@ EPSG_PROJECTION = 4326
 
 ADMIN_TABLE_COLUMNS = {
     "id": "SERIAL PRIMARY KEY",
-    COL_COUNTRY: "VARCHAR(2)",
+    COL_COUNTRY: "VARCHAR(3)",
     COL_ADMIN_LEVEL: "SMALLINT",
     COL_NAME_EN: "VARCHAR(255)",
     COL_CODE: "VARCHAR(64)",
@@ -137,9 +137,9 @@ def insert_admin_areas_data(connection, features: list[dict]):
                 print(f"Error: could not parse: {props}.")
                 continue
 
-            # Try to get the two-letter country code (first two letters of the code)
+            # Try to get the ISO A3 code
             try:
-                country = code[:2]
+                country = props.get("ADM0_ISO_A3")
             except Exception as e:
                 print(f"Error: Invalid code for '{code}' from {props} - Error: {e}")
                 continue
