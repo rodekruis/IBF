@@ -10,18 +10,7 @@ Pipeline code used for creating forecasts. See [pipelines/README.md](pipelines/R
 
 ### Data_management
 
-A collection of scripts to upload or transform data, including populating the seed data repo, or populating the DB used for IBF. The latter is for now done only for develop/test/prototype purposes. This is reflected by this data being uploaded in the 'public' schema of the database, as opposed to Nest.js/Prisma-managed 'api-service' schema, where eventually the full datamodel will (likely) go.
-
-See the summary in each script for the purpose.
-
-To run data upload scripts, you'll need to set up a local DB. See the `<repo root>/services/docker-compose` file.
-
-**Note:** Some of work done (as of March 2026) needs refinement still, noticeably these changes:
-
-- Centralize table schema, table creation, initial table data population
-- Better structure for the data management python files (https://dev.azure.com/redcrossnl/IBF/_workitems/edit/41201)
-
-See TODOs in code, or tasks in ADO for more details.
+A collection of scripts to upload or transform data, including populating the seed data repo, and for develop/test/prototype purposes, populating the DB used for IBF. See the [data_management/README](./data_management/README.md) for more details.
 
 ### Shared
 
