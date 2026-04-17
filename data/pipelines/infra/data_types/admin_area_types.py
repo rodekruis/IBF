@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 class AdminAreaProperties:
     """
     The code and name (in English) of an admin area, along with a list of all parent codes.
-    Adm1 would have no parents, while Adm4 would have 3 parents.
+    Adm0 would have no parents, while Adm4 would have 4 parents.
     """
 
     pcode: str

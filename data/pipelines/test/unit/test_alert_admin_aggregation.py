@@ -111,7 +111,7 @@ def test_numeric_aggregation_uses_sum():
 
 
 def test_aggregation_produces_all_levels():
-    # 3-level areas should produce entries at levels 3, 2, and 1
+    # admin-level 3 areas should produce entries at levels 3, 2, 1, 0
     alert = _make_alert(
         [
             ExposureAdminArea("child-A", 3, Layer.SPATIAL_EXTENT, True),
