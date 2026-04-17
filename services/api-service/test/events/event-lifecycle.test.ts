@@ -2,7 +2,6 @@ import { HttpStatus } from '@nestjs/common';
 
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
-import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   buildAlert,
@@ -17,7 +16,6 @@ import {
 } from '@api-service/test/helpers/utility.helper';
 
 describe('GET /events - lifecycle across multiple forecasts', () => {
-  const apiKey = env.PIPELINE_API_KEY;
   let accessToken: string;
 
   beforeEach(async () => {
@@ -68,7 +66,6 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     // Step 1: Create alert → creates event
     await createAlerts(
       buildForecast([alertA], { issuedAt: new Date('2026-03-23T12:00:00Z') }),
-      apiKey!,
     );
     let response = await getActiveEvents(accessToken, viewTimestamp);
     expect(response.status).toBe(HttpStatus.OK);
@@ -91,7 +88,6 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       buildForecast([alertAUpgraded], {
         issuedAt: new Date('2026-03-24T12:00:00Z'),
       }),
-      apiKey!,
     );
     response = await getActiveEvents(accessToken, viewTimestamp);
     expect(response.body).toHaveLength(1);
@@ -108,7 +104,6 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       buildForecast([alertAUpgraded, alertB], {
         issuedAt: new Date('2026-03-24T12:00:00Z'),
       }),
-      apiKey!,
     );
     response = await getActiveEvents(accessToken, viewTimestamp);
     expect(response.body).toHaveLength(2);
@@ -120,7 +115,6 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     // Step 4: Create only alertB → stale event for alertA is closed
     await createAlerts(
       buildForecast([alertB], { issuedAt: new Date('2026-03-24T12:00:00Z') }),
-      apiKey!,
     );
     response = await getActiveEvents(accessToken, laterViewTimestamp);
     expect(response.body).toHaveLength(1);
@@ -147,7 +141,6 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         buildForecast([alertThatStartsNextDay], {
           issuedAt: new Date('2026-03-23T12:00:00Z'),
         }),
-        apiKey!,
       );
 
       const responseBeforeStart = await getActiveEvents(
@@ -195,7 +188,6 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         buildForecast([expiredAlert], {
           issuedAt: new Date('2026-03-23T12:00:00Z'),
         }),
-        apiKey!,
       );
 
       const responseBeforeExpiry = await getActiveEvents(
@@ -257,19 +249,16 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       buildForecast([firstUpcomingAlert], {
         issuedAt: new Date('2026-03-20T12:00:00Z'),
       }),
-      apiKey!,
     );
     await createAlerts(
       buildForecast([firstOngoingAlert], {
         issuedAt: new Date('2026-03-27T12:00:00Z'),
       }),
-      apiKey!,
     );
     await createAlerts(
       buildForecast([laterUpcomingAlert], {
         issuedAt: new Date('2026-03-28T12:00:00Z'),
       }),
-      apiKey!,
     );
 
     const response = await getActiveEvents(accessToken, '2026-03-29T00:00:00Z');
@@ -315,13 +304,11 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       buildForecast([firstUpcomingAlert], {
         issuedAt: new Date('2026-04-01T12:00:00Z'),
       }),
-      apiKey!,
     );
     await createAlerts(
       buildForecast([secondUpcomingAlert], {
         issuedAt: new Date('2026-04-02T12:00:00Z'),
       }),
-      apiKey!,
     );
 
     const response = await getActiveEvents(accessToken, '2026-04-03T00:00:00Z');
@@ -373,8 +360,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       issuedAt: new Date(oldForecastTimestamp),
     });
 
-    await createAlerts(oldFloodsForecast, apiKey!);
-    await createAlerts(oldDroughtForecast, apiKey!);
+    await createAlerts(oldFloodsForecast);
+    await createAlerts(oldDroughtForecast);
 
     // Act
     const currentForecastTimestamp = '2026-04-11T00:00:00Z';
@@ -383,7 +370,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       hazardTypes: [HazardType.floods],
       issuedAt: new Date(currentForecastTimestamp),
     });
-    await createAlerts(currentFloodsForecast, apiKey!);
+    await createAlerts(currentFloodsForecast);
 
     // Assert: Get events immediately after forecast
     const response = await getActiveEvents(

@@ -1,9 +1,9 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   buildAlert,
+  buildForecast,
   buildSeverityData,
   createAlerts,
 } from '@api-service/test/helpers/alert.helper';
@@ -14,7 +14,6 @@ import {
 } from '@api-service/test/helpers/utility.helper';
 
 describe('GET /events', () => {
-  const apiKey = env.PIPELINE_API_KEY;
   const viewTimestamp = '2026-03-25T12:00:00Z';
   let accessToken: string;
 
@@ -28,7 +27,6 @@ describe('GET /events', () => {
 
     const closedAlert = buildAlert({
       alertName: 'TEST-station-closed',
-      issuedAt: new Date('2026-03-23T12:00:00Z'),
       severity: buildSeverityData({
         start: new Date('2026-03-27T00:00:00Z'),
         end: new Date('2026-03-28T00:00:00Z'),
@@ -39,7 +37,6 @@ describe('GET /events', () => {
 
     const ongoingAlert = buildAlert({
       alertName: 'TEST-station-ongoing',
-      issuedAt: new Date('2026-03-24T12:00:00Z'),
       severity: buildSeverityData({
         start: new Date('2026-03-25T00:00:00Z'),
         end: new Date('2026-03-26T00:00:00Z'),
@@ -50,7 +47,6 @@ describe('GET /events', () => {
 
     const expiredAlert = buildAlert({
       alertName: 'TEST-station-expired',
-      issuedAt: new Date('2026-03-24T12:00:00Z'),
       severity: buildSeverityData({
         start: new Date('2026-03-24T00:00:00Z'),
         end: new Date('2026-03-25T00:00:00Z'),
@@ -59,8 +55,16 @@ describe('GET /events', () => {
       }),
     });
 
-    await createAlerts([closedAlert], apiKey!);
-    await createAlerts([ongoingAlert, expiredAlert], apiKey!);
+    await createAlerts(
+      buildForecast([closedAlert], {
+        issuedAt: new Date('2026-03-23T12:00:00Z'),
+      }),
+    );
+    await createAlerts(
+      buildForecast([ongoingAlert, expiredAlert], {
+        issuedAt: new Date('2026-03-24T12:00:00Z'),
+      }),
+    );
   }
 
   describe('authentication', () => {
