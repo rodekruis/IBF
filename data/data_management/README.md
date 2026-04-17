@@ -6,6 +6,8 @@ To run data upload scripts, you'll need to set up a local DB. See the `<repo roo
 
 Also see the [data/README](../README.md) for setup.
 
+For specific notes on the data being used, see the [seed data repo readme](https://github.com/rodekruis/IBF-seed-data/blob/main/README.md).
+
 **Note:** Some of work done (as of March 2026) needs refinement still, notably these changes:
 
 - Centralize table schema, table creation, initial table data population
@@ -17,7 +19,7 @@ Also see the [data/README](../README.md) for setup.
 
 The scripts here are used for development/prototyping purposes for uploading data to the IBF DB, to the 'debug' table schema. See the summary in each script for the purpose.
 
-The full model and final upload/data management code will be handled by Nest.js/Prisma.
+TODO: The full model and final upload/data management code will be handled by Nest.js/Prisma.
 
 ### seed_data_management
 
@@ -33,7 +35,7 @@ Shared util files
 
 ### Updating admin areas
 
-(April 2026) This process is still under development. The current flow is this:
+(April 2026) This process is still under development. The scripts here are used for development/prototyping purposes. See the data_upload section above for more info. The current flow is this:
 
 1. Admin files from many sources are preprocessed, and placed into `admin-areas/processed` in the seed repo.
 2. The data is uploaded from `admin-areas/processed` to the DB by `upload_admin_areas.py`
