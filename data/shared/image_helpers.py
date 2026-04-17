@@ -74,6 +74,11 @@ def geotiff_to_array(tif_data: bytes):
     # Open the GeoTIFF from binary data
     with MemoryFile(tif_data) as memfile:
         with memfile.open() as src:
+            if src.count != 1:
+                raise ValueError(
+                    f"Expected a single-band GeoTIFF, but got {src.count} bands."
+                )
+
             # Reproject to EPSG:3857
             target_crs = CRS.from_epsg(3857)
             transform, width, height = calculate_default_transform(
@@ -99,7 +104,6 @@ def geotiff_to_array(tif_data: bytes):
             geo_data = {
                 "width": width,
                 "height": height,
-                "count": src.count,
                 "crs": str(target_crs),
                 "transform": list(transform),
                 "bounds": {
@@ -115,13 +119,17 @@ def geotiff_to_array(tif_data: bytes):
 
             # If NoData values are above 0, set it to a large negative number (-999)
             # This way it can be set to 0 later, and actual data values of 0 are preserved
-            if src.nodata is not None and src.nodata > 0:
-                print(
-                    f"Warning: This file has a NoData value greater than 0. "
-                    f"This should be handled fine, but verify results. NoData value: {src.nodata}."
-                )
+            if src.nodata is not None and (np.isnan(src.nodata) or src.nodata > 0):
+                if not np.isnan(src.nodata):
+                    print(
+                        f"Warning: This file has a NoData value greater than 0. "
+                        f"This should be handled fine, but verify results. NoData value: {src.nodata}."
+                    )
                 # replace all noData values with a large negative number (-999)
-                reproj_data = np.where(reproj_data == src.nodata, -999, reproj_data)
+                if np.isnan(src.nodata):
+                    reproj_data = np.where(np.isnan(reproj_data), -999, reproj_data)
+                else:
+                    reproj_data = np.where(reproj_data == src.nodata, -999, reproj_data)
                 src.nodata = -999
 
             # Normalize data to 0-254 (if it has values above 0)
@@ -135,6 +143,89 @@ def geotiff_to_array(tif_data: bytes):
             # Set 0 as the new nodata value, and make other data start at 1
             norm_data = np.where(norm_data < 0, 0, norm_data + 1)
 
-            # cast to uint8 for PNG output
-            img_array_bw = norm_data.astype(np.uint8)
+            # round and cast to uint8 for PNG output
+            img_array_bw = np.round(norm_data).astype(np.uint8)
             return geo_data, img_array_bw
+
+
+def geotiff_to_rgb_data_array(tif_data: bytes):
+    """
+    Convert a GeoTIFF to an RGB int array, without changing the projection.
+    This is used to convert GeoTIFFs to PNG while preserving the data range as best as possible.
+
+    Population values are encoded across the R, G, B channels,
+    allowing for a per pixel range of 256^3 (over 16 million per pixel)
+    The value can be decoded with: value = R * 65536 + G * 256 + B
+    Also returns metadata from the original GeoTIFF.
+
+    Note: This conversion also does this to the data (due to PNG limitations):
+      - NoData values are set to 0
+      - Values are clamped between 0 and about 16.8 million (max encoding value)
+      - All decimal values are rounded to integers
+
+      If higher numbers are needed, change this to use RGBA for the value encoding.
+    """
+    with MemoryFile(tif_data) as memfile:
+        with memfile.open() as src:
+            if src.count != 1:
+                raise ValueError(
+                    f"Expected a single-band GeoTIFF, but got {src.count} bands."
+                )
+
+            raw_data = src.read(1)
+
+            geo_data = {
+                "width": src.width,
+                "height": src.height,
+                "count": 3,  # this will be 3 since this converts to RGB
+                "crs": str(src.crs),
+                "transform": list(src.transform),
+                "bounds": {
+                    "left": src.bounds.left,
+                    "bottom": src.bounds.bottom,
+                    "right": src.bounds.right,
+                    "top": src.bounds.top,
+                },
+                "res": src.res,
+                "scales": src.scales,
+                "offsets": src.offsets,
+                "nodata": 0,  # NoData values are set to 0 with the conversion
+                "dtype": "uint32",  # The data type of the output array (after conversion)
+            }
+
+            # Replace nodata with 0
+            if src.nodata is not None:
+                if np.isnan(src.nodata):
+                    raw_data = np.where(np.isnan(raw_data), 0, raw_data)
+                else:
+                    raw_data = np.where(raw_data == src.nodata, 0, raw_data)
+
+            # Clamp negatives to 0 and round to integer
+            values = np.round(np.clip(raw_data, 0, None)).astype(np.uint32)
+
+            # Get max value and warn if any values go beyond the encoding max
+            max_value = int(values.max())
+            uint32_max = 256**3 - 1
+            if max_value > uint32_max:
+                print(
+                    f"Warning: max value {max_value} exceeds RGB encoding capacity "
+                    f"({uint32_max}). Values will be clipped."
+                )
+                max_value = uint32_max
+                values = np.clip(values, 0, uint32_max)
+
+            # Update the max value in the meta data
+            geo_data["max_value"] = max_value
+
+            # Encode value into R, G, B channels
+            # This works by shifting bits by 2, 1, or 0 bytes,
+            # and then grabbing the last byte.
+            # It's like taking EF9A2F and splitting it into EF 9A 2F
+            # The value can be decoded with: R*65536 + G*256 + B
+            r = ((values >> 16) & 0xFF).astype(np.uint8)
+            g = ((values >> 8) & 0xFF).astype(np.uint8)
+            b = (values & 0xFF).astype(np.uint8)
+
+            # Place into an RGB array
+            rgb_array = np.dstack([r, g, b])
+            return geo_data, rgb_array
