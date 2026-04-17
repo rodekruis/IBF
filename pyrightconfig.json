@@ -10,7 +10,7 @@
     "data/pipelines/output"
   ],
   "pythonVersion": "3.12",
-  "venvPath": ".",
+  "venvPath": "data",
   "venv": ".venv",
   "typeCheckingMode": "standard",
   "reportUnsupportedDunderAll": "none",

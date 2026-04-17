@@ -13,6 +13,7 @@ from pipelines.infra.data_types.alert_types import (
     Layer,
 )
 from pipelines.infra.data_types.data_config_types import DataSource
+from pipelines.infra.data_types.loaded_data_types import ClimateRegion
 
 
 def calculate_drought_forecasts(
@@ -31,7 +32,7 @@ def calculate_drought_forecasts(
     # For early prototyping, just fetch a new data source here directly.
     # As soon as the source is stable enough, inform software-dev to fetch it through the data provider instead.
 
-    climate_regions: list[dict[str, object]] = data_provider.get_data(
+    climate_regions: list[ClimateRegion] = data_provider.get_data(
         DataSource.CLIMATE_REGIONS_IBF_API, list
     )
     target_admin_areas = data_provider.get_data(
@@ -57,8 +58,8 @@ def calculate_drought_forecasts(
     issued_at = datetime.now(timezone.utc)
 
     for region in climate_regions:
-        region_id = str(region["id"])
-        seasons = list(region["seasons"])  # type: ignore[arg-type]
+        region_id = region.id
+        seasons = region.seasons
         # TODO: determine place codes by looking at the admin areas in a climate region
         # For now, just get the first two place codes from the admin areas for debug.
         debug_alert_place_codes: list[str] = list(
