@@ -48,7 +48,7 @@ class AdminAreasSet:
             adm0_pcode = props.get("ADM0_PCODE")
 
             parent_pcodes = {}
-            for level in range(1, admin_level):
+            for level in range(0, admin_level):
                 parent_pcode = props.get(f"ADM{level}_PCODE")
                 if parent_pcode:
                     parent_pcodes[level] = parent_pcode

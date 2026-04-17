@@ -37,4 +37,4 @@ def test_drought_eth(pipeline):
         assert entry["severityKey"] == "percentile"
 
     admin_levels = {r["adminLevel"] for r in alert["exposure"]["adminAreas"]}
-    assert admin_levels == {1, 2}
+    assert admin_levels == {0, 1, 2}
