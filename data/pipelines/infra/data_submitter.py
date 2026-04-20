@@ -174,6 +174,9 @@ class DataSubmitter:
                 logger.error(f"Integrity error: {err}")
             return integrity_errors
 
+        if self._forecast is None:
+            return ["Forecast metadata not set"]
+
         self._forecast.alerts = list(self._alerts.values())
         forecast_dict = self._forecast.to_dict()
 
