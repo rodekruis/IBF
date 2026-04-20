@@ -18,3 +18,7 @@ ALTER TABLE "api-service"."alert"
 -- AlterTable: add centroid to event
 ALTER TABLE "api-service"."event"
   ADD COLUMN "centroid" JSONB NOT NULL DEFAULT '{"latitude": 0, "longitude": 0}';
+
+-- Drop the migration-only default so the column matches the schema (no default)
+ALTER TABLE "api-service"."event"
+  ALTER COLUMN "centroid" DROP DEFAULT;
