@@ -3,7 +3,10 @@ import { Test } from '@nestjs/testing';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
-import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
+import {
+  AlertToEventService,
+  ForecastMetadata,
+} from '@api-service/src/events/alert-to-event.service';
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
 import { buildAlert } from '@api-service/test/helpers/alert.helper';
@@ -18,6 +21,17 @@ function buildClassificationResult(
     endAt: new Date('2026-04-02T00:00:00Z'),
     reachesPeakAlertClassAt: new Date('2026-04-01T00:00:00Z'),
     trigger: true,
+    ...overrides,
+  };
+}
+
+function buildForecastMetadata(
+  overrides: Partial<ForecastMetadata> = {},
+): ForecastMetadata {
+  return {
+    hazardTypes: [HazardType.floods],
+    forecastSources: [ForecastSource.glofas],
+    issuedAt: new Date('2026-03-30T00:00:00Z'),
     ...overrides,
   };
 }
@@ -60,9 +74,9 @@ describe('AlertToEventService', () => {
         throw new Error('No classification config found');
       });
 
-      await expect(service.matchAndStore(buildAlert())).rejects.toThrow(
-        'No classification config found',
-      );
+      await expect(
+        service.matchAndStore(buildAlert(), buildForecastMetadata()),
+      ).rejects.toThrow('No classification config found');
       expect(repository.createEvent).not.toHaveBeenCalled();
     });
 
@@ -72,11 +86,12 @@ describe('AlertToEventService', () => {
       );
 
       const alert = buildAlert();
-      await service.matchAndStore(alert);
+      const forecast = buildForecastMetadata();
+      await service.matchAndStore(alert, forecast);
 
       expect(repository.closeOpenEventsByName).toHaveBeenCalledWith(
         alert.alertName,
-        new Date(alert.issuedAt),
+        forecast.issuedAt,
       );
       expect(repository.createEvent).not.toHaveBeenCalled();
       expect(repository.updateEvent).not.toHaveBeenCalled();
@@ -88,18 +103,19 @@ describe('AlertToEventService', () => {
       repository.getOpenEventByName.mockResolvedValue(null);
 
       const alert = buildAlert();
-      await service.matchAndStore(alert);
+      const forecast = buildForecastMetadata();
+      await service.matchAndStore(alert, forecast);
 
       expect(repository.createEvent).toHaveBeenCalledWith({
         eventName: alert.alertName,
-        hazardTypes: alert.hazardTypes,
-        forecastSources: alert.forecastSources,
+        hazardTypes: forecast.hazardTypes,
+        forecastSources: forecast.forecastSources,
         alertClass: 'max',
         trigger: true,
         startAt: classification.startAt,
         reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
         endAt: classification.endAt,
-        firstIssuedAt: new Date(alert.issuedAt),
+        firstIssuedAt: forecast.issuedAt,
       });
     });
 
@@ -140,7 +156,7 @@ describe('AlertToEventService', () => {
         },
       ]);
 
-      await service.matchAndStore(buildAlert());
+      await service.matchAndStore(buildAlert(), buildForecastMetadata());
 
       expect(repository.updateEvent).toHaveBeenCalledWith(42, {
         alertClass: 'max',
@@ -198,7 +214,8 @@ describe('AlertToEventService', () => {
       ]);
 
       await service.matchAndStore(
-        buildAlert({ issuedAt: new Date('2026-04-02T00:00:00Z') }),
+        buildAlert(),
+        buildForecastMetadata({ issuedAt: new Date('2026-04-02T00:00:00Z') }),
       );
 
       expect(repository.updateEvent).toHaveBeenCalledWith(

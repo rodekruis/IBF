@@ -10,6 +10,7 @@ import { ExposureRasterReadDto } from '@api-service/src/alerts/dto/exposure-rast
 import { SeverityReadDto } from '@api-service/src/alerts/dto/severity-read.dto';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
+import { ForecastMetadata } from '@api-service/src/events/alert-to-event.service';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
 const alertInclude: Prisma.AlertInclude = {
@@ -74,6 +75,7 @@ export class AlertsRepository {
 
   public async createAlerts(
     alertCreateDtos: AlertCreateDto[],
+    forecastMetadata: ForecastMetadata,
   ): Promise<AlertReadDto[]> {
     return this.prisma.$transaction(async (tx) => {
       const created: AlertReadDto[] = [];
@@ -82,10 +84,10 @@ export class AlertsRepository {
         const record = await tx.alert.create({
           data: {
             alertName: alertCreateDto.alertName,
-            issuedAt: new Date(alertCreateDto.issuedAt),
+            issuedAt: new Date(forecastMetadata.issuedAt),
             centroid: { ...alertCreateDto.centroid },
-            hazardTypes: alertCreateDto.hazardTypes,
-            forecastSources: alertCreateDto.forecastSources,
+            hazardTypes: forecastMetadata.hazardTypes,
+            forecastSources: forecastMetadata.forecastSources,
             severity: {
               create: alertCreateDto.severity.map((entry) => ({
                 timeInterval: { ...entry.timeInterval },

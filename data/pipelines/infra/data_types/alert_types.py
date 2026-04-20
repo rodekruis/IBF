@@ -143,10 +143,7 @@ class Exposure:
 @dataclass
 class Alert:
     alert_name: str
-    issued_at: datetime
     centroid: Centroid
-    hazard_types: list[HazardType]
-    forecast_sources: list[ForecastSource] = field(default_factory=list)
     severity: list[Severity] = field(default_factory=list)
     exposure: Exposure = field(default_factory=Exposure)
 
@@ -155,10 +152,23 @@ class Alert:
     ) -> JsonDict:
         return {
             "alertName": self.alert_name,
-            "issuedAt": self.issued_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "centroid": self.centroid.to_dict(),
-            "hazardTypes": list(self.hazard_types),
-            "forecastSources": list(self.forecast_sources),
             "severity": [entry.to_dict() for entry in self.severity],
             "exposure": self.exposure.to_dict(),
+        }
+
+
+@dataclass
+class Forecast:
+    issued_at: datetime
+    hazard_types: list[HazardType]
+    forecast_sources: list[ForecastSource]
+    alerts: list[Alert] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, str | list[str] | list[dict]]:
+        return {
+            "issuedAt": self.issued_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "hazardTypes": list(self.hazard_types),
+            "forecastSources": list(self.forecast_sources),
+            "alerts": [alert.to_dict() for alert in self.alerts],
         }

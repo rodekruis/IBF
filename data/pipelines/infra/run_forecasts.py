@@ -16,7 +16,7 @@ from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import HazardType
+from pipelines.infra.data_types.alert_types import ForecastSource, HazardType
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
@@ -28,6 +28,11 @@ from pipelines.infra.utils.alert_admin_aggregation import (
 )
 
 logger = logging.getLogger(__name__)
+
+FORECAST_SOURCES: dict[str, list[ForecastSource]] = {
+    "floods": [ForecastSource.GLOFAS],
+    "drought": [ForecastSource.ECMWF],
+}
 
 HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
 
@@ -54,6 +59,15 @@ def _run_country(
         return [f"Failed to load data for {country.country_code_iso_3}"]
 
     data_submitter = DataSubmitter()
+
+    # --- Set forecast metadata based on hazard type ---
+    issued_at = datetime.now(timezone.utc)
+    forecast_sources = FORECAST_SOURCES[hazard_type]
+    data_submitter.set_forecast_metadata(
+        issued_at=issued_at,
+        hazard_types=[hazard_type],
+        forecast_sources=forecast_sources,
+    )
 
     # --- Hazard-specific forecast logic (implemented by data scientists) ---
     hazard_fn(

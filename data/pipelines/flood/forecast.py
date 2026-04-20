@@ -1,17 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import (
-    Centroid,
-    EnsembleMemberType,
-    ForecastSource,
-    HazardType,
-    Layer,
-)
+from pipelines.infra.data_types.alert_types import Centroid, EnsembleMemberType, Layer
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.location_point import LocationPoint
 
@@ -54,20 +46,15 @@ def calculate_flood_forecasts(
     # - Compute real population exposure from population raster + flood extent
     # - Compute geo-feature exposure (hospitals, roads, etc.)
 
-    issued_at = datetime.now(timezone.utc)
-
     for station_code, station in stations.items():
         alert_name = f"{country}_floods_{station_code}"
 
         data_submitter.create_alert(
             alert_name=alert_name,
-            hazard_types=[HazardType.FLOODS],
             centroid=Centroid(
                 latitude=station.lat,
                 longitude=station.lon,
             ),
-            issued_at=issued_at,
-            forecast_sources=[ForecastSource.GLOFAS],
         )
 
         for _ in range(2):

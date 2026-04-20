@@ -4,21 +4,32 @@ import { Test } from '@nestjs/testing';
 import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
+import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
 
+function createMockValidForecast(
+  alerts: AlertCreateDto[],
+  overrides: Partial<ForecastCreateDto> = {},
+): ForecastCreateDto {
+  return {
+    issuedAt: new Date('2026-03-20T12:00:00Z'),
+    hazardTypes: [HazardType.floods],
+    forecastSources: [ForecastSource.glofas],
+    alerts,
+    ...overrides,
+  };
+}
+
 function createMockValidAlert(
   overrides: Partial<AlertCreateDto> = {},
 ): AlertCreateDto {
   return {
     alertName: 'KEN-flood-2026-03-20',
-    issuedAt: new Date('2026-03-20T12:00:00Z'),
     centroid: { latitude: 0.35, longitude: 32.6 },
-    hazardTypes: [HazardType.floods],
-    forecastSources: [ForecastSource.glofas],
     severity: [
       {
         timeInterval: {
@@ -98,8 +109,11 @@ describe('AlertsService', () => {
   describe('createAlerts – valid data', () => {
     it('should create alerts when integrity checks pass', async () => {
       const alerts = [createMockValidAlert()];
-      await service.createAlerts(alerts);
-      expect(repository.createAlerts).toHaveBeenCalledWith(alerts);
+      await service.createAlerts(createMockValidForecast(alerts));
+      expect(repository.createAlerts).toHaveBeenCalledWith(
+        alerts,
+        expect.objectContaining({ hazardTypes: [HazardType.floods] }),
+      );
     });
   });
 
@@ -110,7 +124,9 @@ describe('AlertsService', () => {
           centroid: { latitude: 91, longitude: 0 },
         }),
       ];
-      await expect(service.createAlerts(alerts)).rejects.toThrow(HttpException);
+      await expect(
+        service.createAlerts(createMockValidForecast(alerts)),
+      ).rejects.toThrow(HttpException);
     });
 
     it('should reject longitude out of range', async () => {
@@ -119,7 +135,9 @@ describe('AlertsService', () => {
           centroid: { latitude: 0, longitude: -181 },
         }),
       ];
-      await expect(service.createAlerts(alerts)).rejects.toThrow(HttpException);
+      await expect(
+        service.createAlerts(createMockValidForecast(alerts)),
+      ).rejects.toThrow(HttpException);
     });
 
     it('should include alert name in centroid error message', async () => {
@@ -130,7 +148,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.createAlerts(alerts);
+        await service.createAlerts(createMockValidForecast(alerts));
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -149,7 +167,9 @@ describe('AlertsService', () => {
   describe('createAlerts – severity validation', () => {
     it('should reject empty severity data', async () => {
       const alerts = [createMockValidAlert({ severity: [] })];
-      await expect(service.createAlerts(alerts)).rejects.toThrow(HttpException);
+      await expect(
+        service.createAlerts(createMockValidForecast(alerts)),
+      ).rejects.toThrow(HttpException);
     });
 
     it('should reject time interval where start >= end', async () => {
@@ -178,7 +198,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.createAlerts(alerts);
+        await service.createAlerts(createMockValidForecast(alerts));
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -209,7 +229,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.createAlerts(alerts);
+        await service.createAlerts(createMockValidForecast(alerts));
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -240,7 +260,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.createAlerts(alerts);
+        await service.createAlerts(createMockValidForecast(alerts));
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -272,7 +292,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.createAlerts(alerts);
+        await service.createAlerts(createMockValidForecast(alerts));
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -321,7 +341,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.createAlerts(alerts);
+        await service.createAlerts(createMockValidForecast(alerts));
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -360,7 +380,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.createAlerts(alerts);
+        await service.createAlerts(createMockValidForecast(alerts));
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -397,7 +417,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.createAlerts(alerts);
+        await service.createAlerts(createMockValidForecast(alerts));
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -426,7 +446,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.createAlerts(alerts);
+        await service.createAlerts(createMockValidForecast(alerts));
         fail('Expected HttpException');
       } catch (e) {
         const response = (e as HttpException).getResponse() as {
@@ -462,8 +482,11 @@ describe('AlertsService', () => {
           },
         }),
       ];
-      await service.createAlerts(alerts);
-      expect(repository.createAlerts).toHaveBeenCalledWith(alerts);
+      await service.createAlerts(createMockValidForecast(alerts));
+      expect(repository.createAlerts).toHaveBeenCalledWith(
+        alerts,
+        expect.objectContaining({ hazardTypes: [HazardType.floods] }),
+      );
     });
   });
 
@@ -476,7 +499,7 @@ describe('AlertsService', () => {
         }),
       ];
       try {
-        await service.createAlerts(alerts);
+        await service.createAlerts(createMockValidForecast(alerts));
         fail('Expected HttpException');
       } catch (e) {
         expect((e as HttpException).getStatus()).toBe(HttpStatus.BAD_REQUEST);

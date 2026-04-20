@@ -3,10 +3,14 @@ import { HttpStatus } from '@nestjs/common';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { buildAlert } from '@api-service/test/helpers/alert.helper';
+import {
+  buildAlert,
+  buildForecast,
+  createAlerts,
+} from '@api-service/test/helpers/alert.helper';
 import { getServer, resetDB } from '@api-service/test/helpers/utility.helper';
 
-const VALID_ALERT = buildAlert();
+const VALID_FORECAST = buildForecast([buildAlert()]);
 
 describe('POST /alerts', () => {
   const apiKey = env.PIPELINE_API_KEY;
@@ -17,10 +21,7 @@ describe('POST /alerts', () => {
   describe('successful submission', () => {
     // NOTE: event-lifecycle.test.ts covers more detailed successful submission scenarios. Also the test_pipeline_api.py pipeline tests asserts successful submission of alerts.
     it('should accept valid alert', async () => {
-      const response = await getServer()
-        .post('/alerts')
-        .set('x-api-key', apiKey!)
-        .send([VALID_ALERT]);
+      const response = await createAlerts(VALID_FORECAST, apiKey!);
 
       expect(response.status).toBe(HttpStatus.CREATED);
     });
@@ -28,7 +29,7 @@ describe('POST /alerts', () => {
 
   describe('authentication', () => {
     it('should reject request without API key', async () => {
-      const response = await getServer().post('/alerts').send([VALID_ALERT]);
+      const response = await getServer().post('/alerts').send(VALID_FORECAST);
 
       expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
     });
@@ -37,28 +38,21 @@ describe('POST /alerts', () => {
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', 'wrong-key-that-is-at-least-32-chars!!')
-        .send([VALID_ALERT]);
+        .send(VALID_FORECAST);
 
       expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
     });
   });
 
   describe('validation', () => {
-    // TODO re-enable as part of AB#41583
-    xit('should reject empty alerts array', async () => {
-      const response = await getServer()
-        .post('/alerts')
-        .set('x-api-key', apiKey!)
-        .send([]);
-
-      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
-    });
-
     it('should reject alert with missing required fields', async () => {
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', apiKey!)
-        .send([{ alertName: 'incomplete' }]);
+        .send({
+          ...VALID_FORECAST,
+          alerts: [{ alertName: 'incomplete' }],
+        });
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
@@ -88,11 +82,7 @@ describe('POST /alerts', () => {
         ],
       });
 
-      // TODO fix rebase
-      const response = await getServer()
-        .post('/alerts')
-        .set('x-api-key', apiKey!)
-        .send([badAlert]);
+      const response = await createAlerts(buildForecast([badAlert]), apiKey!);
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
       expect(response.body.errors).toBeDefined();

@@ -20,7 +20,10 @@ def test_floods_ken(pipeline):
     ), f"Pipeline failed.\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
 
     latest = pipeline.find_latest_output("floods", "KEN")
-    alerts = pipeline.load_alerts(latest)
+    forecast = pipeline.load_forecast(latest)
+    alerts = forecast["alerts"]
+    assert forecast["hazardTypes"] == ["floods"]
+    assert "glofas" in forecast["forecastSources"]
 
     # TODO: Assert on the expected number of alerts,
     # once we have a controlled dataset and working hazard flow.
@@ -29,8 +32,6 @@ def test_floods_ken(pipeline):
     for alert in alerts:
         print(alert["alertName"])
         pipeline.assert_alert_structure(alert)
-        assert alert["hazardTypes"] == ["floods"]
-        assert "glofas" in alert["forecastSources"]
 
         admin_levels = {r["adminLevel"] for r in alert["exposure"]["adminAreas"]}
         assert admin_levels == {0, 1, 2, 3}

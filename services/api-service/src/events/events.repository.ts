@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
 
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
+import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
 interface EventAlertHistorySeverity {
@@ -141,18 +142,18 @@ export class EventsRepository {
   }
 
   public async closeStaleOpenEvents({
-    hazardType,
+    hazardTypes,
     excludeEventNames,
     closedAt,
   }: {
-    hazardType: string;
+    hazardTypes: HazardType[];
     excludeEventNames: string[];
     closedAt: Date;
   }): Promise<number> {
     const result = await this.prisma.event.updateMany({
       where: {
         closedAt: null,
-        hazardTypes: { has: hazardType },
+        hazardTypes: { equals: hazardTypes }, // NOTE: this assumes equal ordering and exact match, which is the case for now as we only support one hazard type per event, but might need to be revisited if we support multiple hazard types per event in the future
         eventName: { notIn: excludeEventNames },
       },
       data: { closedAt },
