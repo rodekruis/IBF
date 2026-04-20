@@ -151,20 +151,19 @@ describe('AlertsService', () => {
           centroid: { latitude: 100, longitude: 200 },
         }),
       ];
-      try {
-        await service.createAlerts(createMockValidForecast(alerts));
-        fail('Expected HttpException');
-      } catch (e) {
-        const response = (e as HttpException).getResponse() as {
-          errors: string[];
-        };
-        expect(response.errors).toEqual(
-          expect.arrayContaining([
-            expect.stringContaining('KEN_floods_bad-centroid'),
-            expect.stringContaining('latitude'),
-          ]),
-        );
-      }
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('KEN_floods_bad-centroid'),
+          expect.stringContaining('latitude'),
+        ]),
+      );
     });
   });
 
@@ -201,19 +200,18 @@ describe('AlertsService', () => {
           ],
         }),
       ];
-      try {
-        await service.createAlerts(createMockValidForecast(alerts));
-        fail('Expected HttpException');
-      } catch (e) {
-        const response = (e as HttpException).getResponse() as {
-          errors: string[];
-        };
-        expect(response.errors).toEqual(
-          expect.arrayContaining([
-            expect.stringContaining('start must be before end'),
-          ]),
-        );
-      }
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('start must be before end'),
+        ]),
+      );
     });
 
     it('should reject when median record is missing', async () => {
@@ -232,19 +230,18 @@ describe('AlertsService', () => {
           ],
         }),
       ];
-      try {
-        await service.createAlerts(createMockValidForecast(alerts));
-        fail('Expected HttpException');
-      } catch (e) {
-        const response = (e as HttpException).getResponse() as {
-          errors: string[];
-        };
-        expect(response.errors).toEqual(
-          expect.arrayContaining([
-            expect.stringContaining('expected 1 median record, found 0'),
-          ]),
-        );
-      }
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('expected 1 median record, found 0'),
+        ]),
+      );
     });
 
     it('should reject when no ensemble-run record exists', async () => {
@@ -263,19 +260,18 @@ describe('AlertsService', () => {
           ],
         }),
       ];
-      try {
-        await service.createAlerts(createMockValidForecast(alerts));
-        fail('Expected HttpException');
-      } catch (e) {
-        const response = (e as HttpException).getResponse() as {
-          errors: string[];
-        };
-        expect(response.errors).toEqual(
-          expect.arrayContaining([
-            expect.stringContaining('ensemble-run record, found 0'),
-          ]),
-        );
-      }
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('ensemble-run record, found 0'),
+        ]),
+      );
     });
   });
 
@@ -295,19 +291,18 @@ describe('AlertsService', () => {
           },
         }),
       ];
-      try {
-        await service.createAlerts(createMockValidForecast(alerts));
-        fail('Expected HttpException');
-      } catch (e) {
-        const response = (e as HttpException).getResponse() as {
-          errors: string[];
-        };
-        expect(response.errors).toEqual(
-          expect.arrayContaining([
-            expect.stringContaining('expected at least 1 record'),
-          ]),
-        );
-      }
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('expected at least 1 record'),
+        ]),
+      );
     });
 
     it('should reject unequal record counts across layers', async () => {
@@ -344,19 +339,18 @@ describe('AlertsService', () => {
           },
         }),
       ];
-      try {
-        await service.createAlerts(createMockValidForecast(alerts));
-        fail('Expected HttpException');
-      } catch (e) {
-        const response = (e as HttpException).getResponse() as {
-          errors: string[];
-        };
-        expect(response.errors).toEqual(
-          expect.arrayContaining([
-            expect.stringContaining('record count differs across layers'),
-          ]),
-        );
-      }
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('record count differs across layers'),
+        ]),
+      );
     });
   });
 
@@ -383,19 +377,18 @@ describe('AlertsService', () => {
           },
         }),
       ];
-      try {
-        await service.createAlerts(createMockValidForecast(alerts));
-        fail('Expected HttpException');
-      } catch (e) {
-        const response = (e as HttpException).getResponse() as {
-          errors: string[];
-        };
-        expect(response.errors).toEqual(
-          expect.arrayContaining([
-            expect.stringContaining("missing required 'alert_extent' layer"),
-          ]),
-        );
-      }
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("missing required 'alert_extent' layer"),
+        ]),
+      );
     });
 
     it('should reject raster with invalid extent', async () => {
@@ -420,17 +413,16 @@ describe('AlertsService', () => {
           },
         }),
       ];
-      try {
-        await service.createAlerts(createMockValidForecast(alerts));
-        fail('Expected HttpException');
-      } catch (e) {
-        const response = (e as HttpException).getResponse() as {
-          errors: string[];
-        };
-        expect(response.errors).toEqual(
-          expect.arrayContaining([expect.stringContaining('invalid extent')]),
-        );
-      }
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([expect.stringContaining('invalid extent')]),
+      );
     });
 
     it('should reject alert with empty rasters array', async () => {
@@ -449,19 +441,18 @@ describe('AlertsService', () => {
           },
         }),
       ];
-      try {
-        await service.createAlerts(createMockValidForecast(alerts));
-        fail('Expected HttpException');
-      } catch (e) {
-        const response = (e as HttpException).getResponse() as {
-          errors: string[];
-        };
-        expect(response.errors).toEqual(
-          expect.arrayContaining([
-            expect.stringContaining("missing required 'alert_extent' layer"),
-          ]),
-        );
-      }
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("missing required 'alert_extent' layer"),
+        ]),
+      );
     });
 
     it('should accept rasters with valid alert_extent', async () => {
@@ -506,18 +497,17 @@ describe('AlertsService', () => {
           centroid: { latitude: 100, longitude: 0 },
         }),
       ];
-      try {
-        await service.createAlerts(createMockValidForecast(alerts));
-        fail('Expected HttpException');
-      } catch (e) {
-        expect((e as HttpException).getStatus()).toBe(HttpStatus.BAD_REQUEST);
-        const response = (e as HttpException).getResponse() as {
-          message: string;
-          errors: string[];
-        };
-        expect(response.message).toBe('Alert integrity check failed');
-        expect(response.errors.length).toBeGreaterThanOrEqual(2);
-      }
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      expect((error as HttpException).getStatus()).toBe(HttpStatus.BAD_REQUEST);
+      const response = (error as HttpException).getResponse() as {
+        message: string;
+        errors: string[];
+      };
+      expect(response.message).toBe('Alert integrity check failed');
+      expect(response.errors.length).toBeGreaterThanOrEqual(2);
     });
   });
 });
