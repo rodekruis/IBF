@@ -1,7 +1,7 @@
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { AlertClassificationConfig } from '@api-service/src/events/interfaces/alert-classification-config';
 
-// TODO: replace with alert-config DB table lookup per alertName/hazardType/country
+// TODO: replace with alert-config DB table lookup per hazardType/country
 export const MOCK_ALERT_CLASSIFICATION_CONFIGS: Record<
   string,
   AlertClassificationConfig

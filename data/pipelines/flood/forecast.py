@@ -47,10 +47,10 @@ def calculate_flood_forecasts(
     # - Compute geo-feature exposure (hospitals, roads, etc.)
 
     for station_code, station in stations.items():
-        alert_name = f"{country}_floods_{station_code}"
+        event_name = f"{country}_floods_{station.name}"
 
         data_submitter.create_alert(
-            alert_name=alert_name,
+            event_name=event_name,
             centroid=Centroid(
                 latitude=station.lat,
                 longitude=station.lon,
@@ -59,7 +59,7 @@ def calculate_flood_forecasts(
 
         for _ in range(2):
             data_submitter.add_severity_data(
-                alert_name=alert_name,
+                event_name=event_name,
                 time_interval_start="2026-03-20T00:00:00Z",
                 time_interval_end="2026-03-20T23:59:59Z",
                 ensemble_member_type=EnsembleMemberType.RUN,
@@ -67,7 +67,7 @@ def calculate_flood_forecasts(
                 severity_value=0,
             )
         data_submitter.add_severity_data(
-            alert_name=alert_name,
+            event_name=event_name,
             time_interval_start="2026-03-20T00:00:00Z",
             time_interval_end="2026-03-20T23:59:59Z",
             ensemble_member_type=EnsembleMemberType.MEDIAN,
@@ -84,14 +84,14 @@ def calculate_flood_forecasts(
         # TODO: actually, do not call add_admin_area_exposure per place_code, but just once (per layer)
         for place_code in debug_alert_place_codes:
             data_submitter.add_admin_area_exposure(
-                alert_name=alert_name,
+                event_name=event_name,
                 place_code=place_code,
                 admin_level=target_admin_level,
                 layer=Layer.SPATIAL_EXTENT,
                 value=True,
             )
             data_submitter.add_admin_area_exposure(
-                alert_name=alert_name,
+                event_name=event_name,
                 place_code=place_code,
                 admin_level=target_admin_level,
                 layer=Layer.POPULATION_EXPOSED,
@@ -99,14 +99,14 @@ def calculate_flood_forecasts(
             )
 
         data_submitter.add_geo_feature_exposure(
-            alert_name=alert_name,
+            event_name=event_name,
             geo_feature_id=station_code,
             layer="glofas_stations",
             value={"water_discharge": 0},
         )
 
         data_submitter.add_raster_exposure(
-            alert_name=alert_name,
+            event_name=event_name,
             layer="alert_extent",
             value=f"alert_extent_{station_code}.tif",
             extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},

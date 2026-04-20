@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Event } from '@prisma/client';
+import { Event, Prisma } from '@prisma/client';
 
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
@@ -58,18 +58,9 @@ export class EventsRepository {
   }
 
   public async createEvent(
-    data: Pick<
-      Event,
-      | 'eventName'
-      | 'hazardType'
-      | 'forecastSources'
-      | 'alertClass'
-      | 'trigger'
-      | 'startAt'
-      | 'reachesPeakAlertClassAt'
-      | 'endAt'
-      | 'firstIssuedAt'
-    >,
+    data: Omit<Event, 'id' | 'created' | 'updated' | 'closedAt'> & {
+      centroid: Prisma.InputJsonValue;
+    },
   ): Promise<Event> {
     return this.prisma.event.create({ data });
   }
@@ -88,17 +79,17 @@ export class EventsRepository {
   }
 
   public async getAlertHistoryForEvent({
-    eventName,
+    eventId,
     firstIssuedAt,
     latestIssuedAt,
   }: {
-    eventName: string;
+    eventId: number;
     firstIssuedAt: Date;
     latestIssuedAt: Date;
   }): Promise<EventAlertHistoryRecord[]> {
     const alerts = await this.prisma.alert.findMany({
       where: {
-        alertName: eventName,
+        eventId,
         issuedAt: {
           gte: firstIssuedAt,
           lte: latestIssuedAt,

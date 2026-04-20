@@ -41,7 +41,7 @@ export function buildAlert(
   overrides: Partial<AlertCreateDto> = {},
 ): AlertCreateDto {
   return {
-    alertName: 'KEN_floods_test-station',
+    eventName: 'KEN_floods_test-station',
     centroid: { latitude: 0.35, longitude: 32.6 },
     severity: [
       {

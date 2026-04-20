@@ -50,7 +50,7 @@ MOCK_ADMIN_AREAS_LEVEL_2: AdminAreasSet = AdminAreasSet(
 
 def _make_alert(admin_areas: list[ExposureAdminArea]) -> Alert:
     return Alert(
-        alert_name="test-alert",
+        event_name="test-alert",
         centroid=Centroid(latitude=0.0, longitude=0.0),
         exposure=Exposure(admin_areas=admin_areas),
     )

@@ -33,7 +33,7 @@ export class AlertsRepository {
       id: alert.id,
       created: alert.created,
       updated: alert.updated,
-      alertName: alert.alertName,
+      eventName: alert.eventName,
       issuedAt: alert.issuedAt,
       centroid: alert.centroid as unknown as CentroidDto,
       hazardType: alert.hazardType as HazardType,
@@ -73,21 +73,28 @@ export class AlertsRepository {
     await this.prisma.alert.delete({ where: { id } });
   }
 
-  public async createAlerts(
-    alertCreateDtos: AlertCreateDto[],
-    forecastMetadata: ForecastMetadata,
-  ): Promise<AlertReadDto[]> {
+  public async createAlerts({
+    alertCreateDtos,
+    forecastMetadata,
+    eventIds,
+  }: {
+    alertCreateDtos: AlertCreateDto[];
+    forecastMetadata: ForecastMetadata;
+    eventIds: Map<string, number | null>;
+  }): Promise<AlertReadDto[]> {
     return this.prisma.$transaction(async (tx) => {
       const created: AlertReadDto[] = [];
 
       for (const alertCreateDto of alertCreateDtos) {
+        const eventId = eventIds.get(alertCreateDto.eventName) ?? null;
         const record = await tx.alert.create({
           data: {
-            alertName: alertCreateDto.alertName,
+            eventName: alertCreateDto.eventName,
             issuedAt: new Date(forecastMetadata.issuedAt),
             centroid: { ...alertCreateDto.centroid },
             hazardType: forecastMetadata.hazardType,
             forecastSources: forecastMetadata.forecastSources,
+            eventId,
             severity: {
               create: alertCreateDto.severity.map((entry) => ({
                 timeInterval: { ...entry.timeInterval },

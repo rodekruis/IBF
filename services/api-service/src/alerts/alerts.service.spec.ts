@@ -28,7 +28,7 @@ function createMockValidAlert(
   overrides: Partial<AlertCreateDto> = {},
 ): AlertCreateDto {
   return {
-    alertName: 'KEN-flood-2026-03-20',
+    eventName: 'KEN_floods_station-A',
     centroid: { latitude: 0.35, longitude: 32.6 },
     severity: [
       {
@@ -111,8 +111,12 @@ describe('AlertsService', () => {
       const alerts = [createMockValidAlert()];
       await service.createAlerts(createMockValidForecast(alerts));
       expect(repository.createAlerts).toHaveBeenCalledWith(
-        alerts,
-        expect.objectContaining({ hazardType: HazardType.floods }),
+        expect.objectContaining({
+          alertCreateDtos: alerts,
+          forecastMetadata: expect.objectContaining({
+            hazardType: HazardType.floods,
+          }),
+        }),
       );
     });
   });
@@ -143,7 +147,7 @@ describe('AlertsService', () => {
     it('should include alert name in centroid error message', async () => {
       const alerts = [
         createMockValidAlert({
-          alertName: 'BAD-centroid',
+          eventName: 'KEN_floods_bad-centroid',
           centroid: { latitude: 100, longitude: 200 },
         }),
       ];
@@ -156,7 +160,7 @@ describe('AlertsService', () => {
         };
         expect(response.errors).toEqual(
           expect.arrayContaining([
-            expect.stringContaining('BAD-centroid'),
+            expect.stringContaining('KEN_floods_bad-centroid'),
             expect.stringContaining('latitude'),
           ]),
         );
@@ -484,8 +488,12 @@ describe('AlertsService', () => {
       ];
       await service.createAlerts(createMockValidForecast(alerts));
       expect(repository.createAlerts).toHaveBeenCalledWith(
-        alerts,
-        expect.objectContaining({ hazardType: HazardType.floods }),
+        expect.objectContaining({
+          alertCreateDtos: alerts,
+          forecastMetadata: expect.objectContaining({
+            hazardType: HazardType.floods,
+          }),
+        }),
       );
     });
   });

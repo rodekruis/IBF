@@ -30,13 +30,13 @@ def test_floods_ken(pipeline):
     # assert len(alerts) == 2
 
     for alert in alerts:
-        print(alert["alertName"])
+        print(alert["eventName"])
         pipeline.assert_alert_structure(alert)
 
         admin_levels = {r["adminLevel"] for r in alert["exposure"]["adminAreas"]}
         assert admin_levels == {0, 1, 2, 3}
 
-    # TODO: Assert on expected alert names, once we have a controlled dataset and working hazard flow.
-    # alert_names = {a["alertName"] for a in alerts}
-    # assert "KEN_floods_G5142" in alert_names
-    # assert "KEN_floods_G5195" in alert_names
+    # TODO: Assert on expected event names, once we have a controlled dataset and working hazard flow.
+    # event_names = {a["eventName"] for a in alerts}
+    # assert "KEN_floods_G5142" in event_names
+    # assert "KEN_floods_G5195" in event_names

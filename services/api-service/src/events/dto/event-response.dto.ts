@@ -8,6 +8,9 @@ export class EventResponseDto {
   public readonly eventName: string;
 
   @ApiProperty()
+  public readonly eventLabel: string;
+
+  @ApiProperty()
   public readonly hazardType: string;
 
   @ApiProperty({ type: [String] })
@@ -18,6 +21,9 @@ export class EventResponseDto {
 
   @ApiProperty()
   public readonly trigger: boolean;
+
+  @ApiProperty({ type: Object, example: { latitude: 0.35, longitude: 32.6 } })
+  public readonly centroid: { latitude: number; longitude: number };
 
   @ApiProperty()
   public readonly startAt: Date;

@@ -25,7 +25,7 @@ export class AlertToEventService {
   public async matchAndStore(
     alert: AlertCreateDto,
     forecast: ForecastMetadata,
-  ): Promise<void> {
+  ): Promise<number | null> {
     const classification = this.alertClassificationService.classifyAlert({
       hazardType: forecast.hazardType,
       issuedAt: forecast.issuedAt,
@@ -36,14 +36,14 @@ export class AlertToEventService {
       // If below any threshold, then close open event (if any) and do not create new event
       // This can happen if the minimum threshold the pipeline employs is more conservative than the actual alert thresholds.
       await this.eventsRepository.closeOpenEventsByName(
-        alert.alertName,
+        alert.eventName,
         forecast.issuedAt,
       );
-      return;
+      return null;
     }
 
     const existingOpenEvent = await this.eventsRepository.getOpenEventByName(
-      alert.alertName,
+      alert.eventName,
     );
 
     if (existingOpenEvent) {
@@ -52,8 +52,10 @@ export class AlertToEventService {
         classification,
         forecast.issuedAt,
       );
+      return existingOpenEvent.id;
     } else {
-      await this.createNewEvent(alert, forecast, classification);
+      const event = await this.createNewEvent(alert, forecast, classification);
+      return event.id;
     }
   }
 
@@ -61,13 +63,17 @@ export class AlertToEventService {
     alert: AlertCreateDto,
     forecast: ForecastMetadata,
     classification: ClassificationResult,
-  ): Promise<void> {
-    await this.eventsRepository.createEvent({
-      eventName: alert.alertName,
+  ): Promise<Event> {
+    return this.eventsRepository.createEvent({
+      eventName: alert.eventName,
       hazardType: forecast.hazardType,
       forecastSources: forecast.forecastSources,
       alertClass: classification.alertClass!,
       trigger: classification.trigger,
+      centroid: {
+        latitude: alert.centroid.latitude,
+        longitude: alert.centroid.longitude,
+      },
       startAt: classification.startAt,
       reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
       endAt: classification.endAt,
@@ -76,7 +82,7 @@ export class AlertToEventService {
   }
 
   private async updateExistingEvent(
-    existingEvent: Pick<Event, 'id' | 'eventName' | 'firstIssuedAt'>,
+    existingEvent: Pick<Event, 'id' | 'firstIssuedAt'>,
     latestAlert: ClassificationResult,
     issuedAt: Date,
   ): Promise<void> {
@@ -97,7 +103,7 @@ export class AlertToEventService {
 
   private async resolveStartAtFromAlertHistory(
     existingEvent: {
-      eventName: string;
+      id: number;
       firstIssuedAt: Date;
     },
     latestAlert: ClassificationResult,
@@ -105,7 +111,7 @@ export class AlertToEventService {
   ): Promise<Date> {
     const historicalAlertsForEvent =
       await this.eventsRepository.getAlertHistoryForEvent({
-        eventName: existingEvent.eventName,
+        eventId: existingEvent.id,
         firstIssuedAt: existingEvent.firstIssuedAt,
         latestIssuedAt,
       });

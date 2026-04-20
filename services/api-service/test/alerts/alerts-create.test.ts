@@ -51,7 +51,7 @@ describe('POST /alerts', () => {
         .set('x-api-key', apiKey!)
         .send({
           ...VALID_FORECAST,
-          alerts: [{ alertName: 'incomplete' }],
+          alerts: [{ eventName: 'incomplete' }],
         });
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
@@ -59,7 +59,7 @@ describe('POST /alerts', () => {
 
     it('should reject alert failing integrity check', async () => {
       const badAlert = buildAlert({
-        alertName: 'BAD-time-interval',
+        eventName: 'BAD-time-interval',
         severity: [
           {
             timeInterval: {

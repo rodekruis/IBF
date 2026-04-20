@@ -16,7 +16,7 @@ from typing import Callable
 import pytest
 
 EXPECTED_ALERT_KEYS = {
-    "alertName",
+    "eventName",
     "centroid",
     "severity",
     "exposure",

@@ -25,6 +25,7 @@ from pipelines.infra.data_types.data_config_types import OutputMode
 from pipelines.infra.utils.alert_integrity_checks import (
     check_admin_area_integrity,
     check_centroid,
+    check_event_name_format,
     check_raster_integrity,
     check_severity_integrity,
 )
@@ -60,36 +61,36 @@ class DataSubmitter:
 
     def create_alert(
         self,
-        alert_name: str,
+        event_name: str,
         centroid: Centroid,
     ) -> None:
-        if alert_name in self._alerts:
-            self.errors[f"create_alert:{alert_name}"] = (
-                f"Alert '{alert_name}' already exists"
+        if event_name in self._alerts:
+            self.errors[f"create_alert:{event_name}"] = (
+                f"Alert '{event_name}' already exists"
             )
             return
 
-        self._alerts[alert_name] = Alert(
-            alert_name=alert_name,
+        self._alerts[event_name] = Alert(
+            event_name=event_name,
             centroid=centroid,
         )
 
-    def _get_alert(self, alert_name: str, caller: str) -> Alert | None:
-        if alert_name not in self._alerts:
-            self.errors[f"{caller}:{alert_name}"] = f"Alert '{alert_name}' not found"
+    def _get_alert(self, event_name: str, caller: str) -> Alert | None:
+        if event_name not in self._alerts:
+            self.errors[f"{caller}:{event_name}"] = f"Alert '{event_name}' not found"
             return None
-        return self._alerts[alert_name]
+        return self._alerts[event_name]
 
     def add_severity_data(
         self,
-        alert_name: str,
+        event_name: str,
         time_interval_start: str,
         time_interval_end: str,
         ensemble_member_type: EnsembleMemberType,
         severity_key: str,
         severity_value: float | int,
     ) -> None:
-        alert = self._get_alert(alert_name, "add_severity_data")
+        alert = self._get_alert(event_name, "add_severity_data")
         if alert is None:
             return
 
@@ -106,13 +107,13 @@ class DataSubmitter:
 
     def add_admin_area_exposure(
         self,
-        alert_name: str,
+        event_name: str,
         place_code: str,
         admin_level: int,
         layer: Layer,
         value: bool | int | float,
     ) -> None:
-        alert = self._get_alert(alert_name, "add_admin_area_exposure")
+        alert = self._get_alert(event_name, "add_admin_area_exposure")
         if alert is None:
             return
 
@@ -127,12 +128,12 @@ class DataSubmitter:
 
     def add_geo_feature_exposure(
         self,
-        alert_name: str,
+        event_name: str,
         geo_feature_id: str,
         layer: str,
         value: dict[str, bool | str | int | float],
     ) -> None:
-        alert = self._get_alert(alert_name, "add_geo_feature_exposure")
+        alert = self._get_alert(event_name, "add_geo_feature_exposure")
         if alert is None:
             return
 
@@ -142,12 +143,12 @@ class DataSubmitter:
 
     def add_raster_exposure(
         self,
-        alert_name: str,
+        event_name: str,
         layer: str,
         value: str,
         extent: dict[str, float],
     ) -> None:
-        alert = self._get_alert(alert_name, "add_raster_exposure")
+        alert = self._get_alert(event_name, "add_raster_exposure")
         if alert is None:
             return
 
@@ -244,11 +245,12 @@ class DataSubmitter:
 
         # NOTE 1: exact data formats (and thus these integrity checks) are subject to change based on back-and-forth between hazard-logic & pipeline-infra (and exact API/datamodel requirements)
         # NOTE 2: a lot more checks could be added and will be added in the future, but for now we focus on a few key ones to demonstrate the concept
-        for alert_name, alert in self._alerts.items():
+        for event_name, alert in self._alerts.items():
             # NOTE: this validation mimics the validation on the API-side. Make sure to keep this in sync.
-            errors.extend(check_centroid(alert_name, alert.centroid))
-            errors.extend(check_severity_integrity(alert_name, alert))
-            errors.extend(check_admin_area_integrity(alert_name, alert))
-            errors.extend(check_raster_integrity(alert_name, alert))
+            errors.extend(check_event_name_format(event_name))
+            errors.extend(check_centroid(event_name, alert.centroid))
+            errors.extend(check_severity_integrity(event_name, alert))
+            errors.extend(check_admin_area_integrity(event_name, alert))
+            errors.extend(check_raster_integrity(event_name, alert))
 
         return errors
