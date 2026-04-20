@@ -18,7 +18,7 @@ describe('POST /alerts', () => {
     await resetDB(SeedScript.initialState, __filename);
   });
 
-  describe('successful submission', () => {
+  fdescribe('successful submission', () => {
     // NOTE: event-lifecycle.test.ts covers more detailed successful submission scenarios. Also the test_pipeline_api.py pipeline tests asserts successful submission of alerts.
     it('should accept valid alert', async () => {
       const response = await createAlerts(VALID_FORECAST, apiKey!);

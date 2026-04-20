@@ -11,7 +11,7 @@ import {
 function toClassificationInput(
   alert: ReturnType<typeof buildAlert>,
   hazardType: HazardType = HazardType.floods,
-  issuedAt: Date = new Date('2026-03-30T00:00:00Z'),
+  issuedAt: Date = new Date(),
 ): AlertClassificationInput {
   return {
     hazardType,

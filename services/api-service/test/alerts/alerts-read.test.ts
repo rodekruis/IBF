@@ -13,7 +13,7 @@ import {
   resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
-const ALERT_NAME = 'TEST-get-flood-2026-03-23';
+const ALERT_NAME = 'KEN_floods_get-test';
 
 describe('/ Alerts', () => {
   let adminAccessToken: string;

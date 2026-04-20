@@ -12,7 +12,7 @@ import { AlertToEventService } from '@api-service/src/events/alert-to-event.serv
 // This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
 // Keep in line with definition in alert_types.py
 const EVENT_NAME_PATTERN = new RegExp(
-  `^[A-Z]{3}_(${Object.values(HazardType).join('|')})_\\S+$`,
+  `^[A-Z]{3}_(${Object.values(HazardType).join('|')})_.+$`,
 );
 
 @Injectable()

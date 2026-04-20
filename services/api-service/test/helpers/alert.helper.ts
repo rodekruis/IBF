@@ -40,14 +40,16 @@ export async function deleteAlert(
 export function buildAlert(
   overrides: Partial<AlertCreateDto> = {},
 ): AlertCreateDto {
+  const now = new Date();
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   return {
     eventName: 'KEN_floods_test-station',
     centroid: { latitude: 0.35, longitude: 32.6 },
     severity: [
       {
         timeInterval: {
-          start: new Date('2026-03-30T00:00:00Z'),
-          end: new Date('2026-03-31T00:00:00Z'),
+          start: now,
+          end: tomorrow,
         },
         ensembleMemberType: EnsembleMemberType.median,
         severityKey: 'water_discharge',
@@ -55,8 +57,8 @@ export function buildAlert(
       },
       {
         timeInterval: {
-          start: new Date('2026-03-30T00:00:00Z'),
-          end: new Date('2026-03-31T00:00:00Z'),
+          start: now,
+          end: tomorrow,
         },
         ensembleMemberType: EnsembleMemberType.run,
         severityKey: 'water_discharge',
@@ -89,7 +91,7 @@ export function buildForecast(
   overrides: Partial<Omit<ForecastCreateDto, 'alerts'>> = {},
 ): ForecastCreateDto {
   return {
-    issuedAt: new Date('2026-03-30T00:00:00Z'),
+    issuedAt: new Date(),
     hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofas],
     alerts,

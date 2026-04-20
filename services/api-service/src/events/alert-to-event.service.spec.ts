@@ -32,7 +32,7 @@ function buildForecastMetadata(
   return {
     hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofas],
-    issuedAt: new Date('2026-03-30T00:00:00Z'),
+    issuedAt: new Date(),
     ...overrides,
   };
 }
