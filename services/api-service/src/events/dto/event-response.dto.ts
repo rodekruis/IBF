@@ -7,8 +7,8 @@ export class EventResponseDto {
   @ApiProperty()
   public readonly eventName: string;
 
-  @ApiProperty({ type: [String] })
-  public readonly hazardTypes: string[];
+  @ApiProperty()
+  public readonly hazardType: string;
 
   @ApiProperty({ type: [String] })
   public readonly forecastSources: string[];

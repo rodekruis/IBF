@@ -29,7 +29,7 @@ function buildForecastMetadata(
   overrides: Partial<ForecastMetadata> = {},
 ): ForecastMetadata {
   return {
-    hazardTypes: [HazardType.floods],
+    hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofas],
     issuedAt: new Date('2026-03-30T00:00:00Z'),
     ...overrides,
@@ -108,7 +108,7 @@ describe('AlertToEventService', () => {
 
       expect(repository.createEvent).toHaveBeenCalledWith({
         eventName: alert.alertName,
-        hazardTypes: forecast.hazardTypes,
+        hazardType: forecast.hazardType,
         forecastSources: forecast.forecastSources,
         alertClass: 'max',
         trigger: true,
@@ -137,7 +137,7 @@ describe('AlertToEventService', () => {
         created: new Date(),
         updated: new Date(),
         eventName: 'KEN_floods_station-A',
-        hazardTypes: [HazardType.floods],
+        hazardType: HazardType.floods,
         forecastSources: [ForecastSource.glofas],
         alertClass: 'med',
         trigger: false,
@@ -151,7 +151,7 @@ describe('AlertToEventService', () => {
       repository.getAlertHistoryForEvent.mockResolvedValue([
         {
           issuedAt: new Date('2026-04-01T00:00:00Z'),
-          hazardTypes: [HazardType.floods],
+          hazardType: HazardType.floods,
           severityData: [],
         },
       ]);
@@ -189,7 +189,7 @@ describe('AlertToEventService', () => {
         created: new Date(),
         updated: new Date(),
         eventName: 'KEN_floods_station-A',
-        hazardTypes: [HazardType.floods],
+        hazardType: HazardType.floods,
         forecastSources: [ForecastSource.glofas],
         alertClass: 'med',
         trigger: false,
@@ -203,12 +203,12 @@ describe('AlertToEventService', () => {
       repository.getAlertHistoryForEvent.mockResolvedValue([
         {
           issuedAt: new Date('2026-03-30T00:00:00Z'),
-          hazardTypes: [HazardType.floods],
+          hazardType: HazardType.floods,
           severityData: [],
         },
         {
           issuedAt: new Date('2026-04-01T00:00:00Z'),
-          hazardTypes: [HazardType.floods],
+          hazardType: HazardType.floods,
           severityData: [],
         },
       ]);

@@ -36,7 +36,7 @@ model Alert {
   alertName       String
   issuedAt        DateTime
   centroid        Json
-  hazardTypes     String[]
+  hazardType      String
   forecastSources String[]
 
   severity             AlertSeverity[]
@@ -53,7 +53,7 @@ model Event {
   created                   DateTime  @default(now())
   updated                   DateTime  @updatedAt
   eventName                 String
-  hazardTypes               String[]
+  hazardType                String
   forecastSources           String[]
   alertClass                String
   trigger                   Boolean

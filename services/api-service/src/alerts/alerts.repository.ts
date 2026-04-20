@@ -36,7 +36,7 @@ export class AlertsRepository {
       alertName: alert.alertName,
       issuedAt: alert.issuedAt,
       centroid: alert.centroid as unknown as CentroidDto,
-      hazardTypes: alert.hazardTypes as HazardType[],
+      hazardType: alert.hazardType as HazardType,
       forecastSources: alert.forecastSources as ForecastSource[],
       severity: alert.severity as unknown as SeverityReadDto[],
       exposure: {
@@ -86,7 +86,7 @@ export class AlertsRepository {
             alertName: alertCreateDto.alertName,
             issuedAt: new Date(forecastMetadata.issuedAt),
             centroid: { ...alertCreateDto.centroid },
-            hazardTypes: forecastMetadata.hazardTypes,
+            hazardType: forecastMetadata.hazardType,
             forecastSources: forecastMetadata.forecastSources,
             severity: {
               create: alertCreateDto.severity.map((entry) => ({

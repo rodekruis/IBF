@@ -65,7 +65,7 @@ def _run_country(
     forecast_sources = FORECAST_SOURCES[hazard_type]
     data_submitter.set_forecast_metadata(
         issued_at=issued_at,
-        hazard_types=[hazard_type],
+        hazard_type=hazard_type,
         forecast_sources=forecast_sources,
     )
 

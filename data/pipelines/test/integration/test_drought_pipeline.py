@@ -25,7 +25,7 @@ def test_drought_eth(pipeline):
     latest = pipeline.find_latest_output("drought", "ETH")
     forecast = pipeline.load_forecast(latest)
     alerts = forecast["alerts"]
-    assert forecast["hazardTypes"] == ["drought"]
+    assert forecast["hazardType"] == "drought"
     assert "ECMWF" in forecast["forecastSources"]
 
     assert len(alerts) == 1

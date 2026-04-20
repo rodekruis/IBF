@@ -72,7 +72,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
       eventName: 'TEST-station-A',
-      hazardTypes: [HazardType.floods],
+      hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
       alertClass: 'med',
       trigger: false,
@@ -341,7 +341,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       }),
     });
     const oldFloodsForecast = buildForecast([oldFloodsAlert], {
-      hazardTypes: [HazardType.floods],
+      hazardType: HazardType.floods,
       issuedAt: new Date(oldForecastTimestamp),
     });
 
@@ -356,7 +356,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       }),
     });
     const oldDroughtForecast = buildForecast([oldDroughtAlert], {
-      hazardTypes: [HazardType.drought],
+      hazardType: HazardType.drought,
       issuedAt: new Date(oldForecastTimestamp),
     });
 
@@ -367,7 +367,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     const currentForecastTimestamp = '2026-04-11T00:00:00Z';
     const currentFloodsAlerts = [];
     const currentFloodsForecast = buildForecast(currentFloodsAlerts, {
-      hazardTypes: [HazardType.floods],
+      hazardType: HazardType.floods,
       issuedAt: new Date(currentForecastTimestamp),
     });
     await createAlerts(currentFloodsForecast);

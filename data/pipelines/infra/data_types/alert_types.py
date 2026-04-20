@@ -161,14 +161,14 @@ class Alert:
 @dataclass
 class Forecast:
     issued_at: datetime
-    hazard_types: list[HazardType]
+    hazard_type: HazardType
     forecast_sources: list[ForecastSource]
     alerts: list[Alert] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, str | list[str] | list[dict]]:
         return {
             "issuedAt": self.issued_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "hazardTypes": list(self.hazard_types),
+            "hazardType": str(self.hazard_type),
             "forecastSources": list(self.forecast_sources),
             "alerts": [alert.to_dict() for alert in self.alerts],
         }

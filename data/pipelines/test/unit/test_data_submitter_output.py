@@ -41,7 +41,7 @@ class TestLocalMode:
         submitter = DataSubmitter()
         submitter.set_forecast_metadata(
             issued_at=datetime.now(timezone.utc),
-            hazard_types=[HazardType.FLOODS],
+            hazard_type=HazardType.FLOODS,
             forecast_sources=[ForecastSource.GLOFAS],
         )
 
@@ -53,7 +53,7 @@ class TestLocalMode:
         with file_path.open("r", encoding="utf-8") as f:
             forecast = json.load(f)
 
-        assert forecast["hazardTypes"] == ["floods"]
+        assert forecast["hazardType"] == "floods"
         assert forecast["forecastSources"] == ["glofas"]
         assert forecast["alerts"] == []
 
@@ -129,7 +129,7 @@ class TestApiMode:
         submitter = DataSubmitter()
         submitter.set_forecast_metadata(
             issued_at=datetime.now(timezone.utc),
-            hazard_types=[HazardType.FLOODS],
+            hazard_type=HazardType.FLOODS,
             forecast_sources=[ForecastSource.GLOFAS],
         )
 
@@ -138,6 +138,6 @@ class TestApiMode:
         assert errors == []
         mock_submit.assert_called_once()
         submitted_forecast = mock_submit.call_args.args[0]
-        assert submitted_forecast["hazardTypes"] == ["floods"]
+        assert submitted_forecast["hazardType"] == "floods"
         assert submitted_forecast["forecastSources"] == ["glofas"]
         assert submitted_forecast["alerts"] == []

@@ -20,7 +20,7 @@ export class EventsService {
     return {
       eventId: event.id,
       eventName: event.eventName,
-      hazardTypes: event.hazardTypes,
+      hazardType: event.hazardType,
       forecastSources: event.forecastSources,
       alertClass: event.alertClass,
       trigger: event.trigger,

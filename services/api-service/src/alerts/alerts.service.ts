@@ -39,7 +39,7 @@ export class AlertsService {
     }
 
     const forecastMetadata = {
-      hazardTypes: forecast.hazardTypes,
+      hazardType: forecast.hazardType,
       forecastSources: forecast.forecastSources,
       issuedAt: forecast.issuedAt,
     };
@@ -61,7 +61,7 @@ export class AlertsService {
 
   private async closeStaleEvents(forecast: ForecastCreateDto): Promise<void> {
     await this.alertToEventService.closeStaleEvents({
-      hazardTypes: forecast.hazardTypes,
+      hazardType: forecast.hazardType,
       excludeEventNames: forecast.alerts.map((a) => a.alertName),
       closedAt: forecast.issuedAt,
     });

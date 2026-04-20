@@ -12,8 +12,8 @@ export class AlertReadDto extends IntersectionType(BaseDto, AlertCreateDto) {
   @ApiProperty()
   public readonly issuedAt: Date;
 
-  @ApiProperty({ enum: HazardType, isArray: true })
-  public readonly hazardTypes: HazardType[];
+  @ApiProperty({ enum: HazardType })
+  public readonly hazardType: HazardType;
 
   @ApiProperty({ enum: ForecastSource, isArray: true })
   public readonly forecastSources: ForecastSource[];

@@ -24,7 +24,7 @@ EXPECTED_ALERT_KEYS = {
 
 EXPECTED_FORECAST_KEYS = {
     "issuedAt",
-    "hazardTypes",
+    "hazardType",
     "forecastSources",
     "alerts",
 }
