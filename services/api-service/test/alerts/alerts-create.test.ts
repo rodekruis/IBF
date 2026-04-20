@@ -8,22 +8,65 @@ import {
   buildForecast,
   createAlerts,
 } from '@api-service/test/helpers/alert.helper';
-import { getServer, resetDB } from '@api-service/test/helpers/utility.helper';
+import { getActiveEvents } from '@api-service/test/helpers/event.helper';
+import {
+  getAccessToken,
+  getServer,
+  resetDB,
+} from '@api-service/test/helpers/utility.helper';
 
 const VALID_FORECAST = buildForecast([buildAlert()]);
 
 describe('POST /alerts', () => {
   const apiKey = env.PIPELINE_API_KEY;
+  let accessToken: string;
   beforeAll(async () => {
     await resetDB(SeedScript.initialState, __filename);
+
+    accessToken = await getAccessToken();
   });
 
-  fdescribe('successful submission', () => {
+  describe('successful submission', () => {
     // NOTE: event-lifecycle.test.ts covers more detailed successful submission scenarios. Also the test_pipeline_api.py pipeline tests asserts successful submission of alerts.
     it('should accept valid alert', async () => {
       const response = await createAlerts(VALID_FORECAST, apiKey!);
 
       expect(response.status).toBe(HttpStatus.CREATED);
+    });
+
+    it('should not create event on too low alert severity', async () => {
+      const lowSeverityAlert = buildAlert({
+        eventName: 'KEN_floods_low-severity',
+        severity: [
+          {
+            timeInterval: {
+              start: new Date('2026-03-21T00:00:00Z'),
+              end: new Date('2026-03-22T00:00:00Z'),
+            },
+            ensembleMemberType: EnsembleMemberType.median,
+            severityKey: 'water_discharge',
+            severityValue: 1, // too low to trigger event
+          },
+          {
+            timeInterval: {
+              start: new Date('2026-03-21T00:00:00Z'),
+              end: new Date('2026-03-22T00:00:00Z'),
+            },
+            ensembleMemberType: EnsembleMemberType.run,
+            severityKey: 'water_discharge',
+            severityValue: 1, // too low to trigger event
+          },
+        ],
+      });
+
+      await createAlerts(buildForecast([lowSeverityAlert]), apiKey!);
+
+      const eventResponse = await getActiveEvents(accessToken);
+      expect(eventResponse.status).toBe(HttpStatus.OK);
+      const event = eventResponse.body.find(
+        (e: { name: string }) => e.name === lowSeverityAlert.eventName,
+      );
+      expect(event).toBeUndefined();
     });
   });
 

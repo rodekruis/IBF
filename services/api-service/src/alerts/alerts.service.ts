@@ -52,13 +52,15 @@ export class AlertsService {
     };
 
     const eventIds = new Map<string, number | null>();
-    for (const alert of forecast.alerts) {
-      const eventId = await this.alertToEventService.matchAndStore(
-        alert,
-        forecastMetadata,
-      );
-      eventIds.set(alert.eventName, eventId);
-    }
+    await Promise.all(
+      forecast.alerts.map(async (alert) => {
+        const eventId = await this.alertToEventService.matchAndStore(
+          alert,
+          forecastMetadata,
+        );
+        eventIds.set(alert.eventName, eventId);
+      }),
+    );
 
     await this.closeStaleEvents(forecast);
 
