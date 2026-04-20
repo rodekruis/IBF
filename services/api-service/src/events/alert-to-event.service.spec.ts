@@ -5,7 +5,7 @@ import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
 import {
   AlertToEventService,
-  ForecastContext,
+  ForecastMetadata,
 } from '@api-service/src/events/alert-to-event.service';
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
@@ -25,9 +25,9 @@ function buildClassificationResult(
   };
 }
 
-function buildForecastContext(
-  overrides: Partial<ForecastContext> = {},
-): ForecastContext {
+function buildForecastMetadata(
+  overrides: Partial<ForecastMetadata> = {},
+): ForecastMetadata {
   return {
     hazardTypes: [HazardType.floods],
     forecastSources: [ForecastSource.glofas],
@@ -75,7 +75,7 @@ describe('AlertToEventService', () => {
       });
 
       await expect(
-        service.matchAndStore(buildAlert(), buildForecastContext()),
+        service.matchAndStore(buildAlert(), buildForecastMetadata()),
       ).rejects.toThrow('No classification config found');
       expect(repository.createEvent).not.toHaveBeenCalled();
     });
@@ -86,7 +86,7 @@ describe('AlertToEventService', () => {
       );
 
       const alert = buildAlert();
-      const forecast = buildForecastContext();
+      const forecast = buildForecastMetadata();
       await service.matchAndStore(alert, forecast);
 
       expect(repository.closeOpenEventsByName).toHaveBeenCalledWith(
@@ -103,7 +103,7 @@ describe('AlertToEventService', () => {
       repository.getOpenEventByName.mockResolvedValue(null);
 
       const alert = buildAlert();
-      const forecast = buildForecastContext();
+      const forecast = buildForecastMetadata();
       await service.matchAndStore(alert, forecast);
 
       expect(repository.createEvent).toHaveBeenCalledWith({
@@ -156,7 +156,7 @@ describe('AlertToEventService', () => {
         },
       ]);
 
-      await service.matchAndStore(buildAlert(), buildForecastContext());
+      await service.matchAndStore(buildAlert(), buildForecastMetadata());
 
       expect(repository.updateEvent).toHaveBeenCalledWith(42, {
         alertClass: 'max',
@@ -215,7 +215,7 @@ describe('AlertToEventService', () => {
 
       await service.matchAndStore(
         buildAlert(),
-        buildForecastContext({ issuedAt: new Date('2026-04-02T00:00:00Z') }),
+        buildForecastMetadata({ issuedAt: new Date('2026-04-02T00:00:00Z') }),
       );
 
       expect(repository.updateEvent).toHaveBeenCalledWith(

@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import shutil
-from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 
 from pipelines.infra.data_types.alert_types import (
@@ -34,17 +33,10 @@ from pipelines.infra.utils.api_client import ApiClient
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class _ForecastMetadata:
-    issued_at: datetime
-    hazard_types: list[HazardType]
-    forecast_sources: list[ForecastSource]
-
-
 class DataSubmitter:
     def __init__(self) -> None:
         self._alerts: dict[str, Alert] = {}
-        self._forecast_metadata: _ForecastMetadata | None = None
+        self._forecast: Forecast | None = None
         self.errors: dict[str, str] = {}
 
     def add_error(self, error: str) -> None:
@@ -56,7 +48,7 @@ class DataSubmitter:
         hazard_types: list[HazardType],
         forecast_sources: list[ForecastSource],
     ) -> None:
-        self._forecast_metadata = _ForecastMetadata(
+        self._forecast = Forecast(
             issued_at=(
                 issued_at.astimezone(timezone.utc)
                 if issued_at.tzinfo is not None
@@ -182,13 +174,8 @@ class DataSubmitter:
                 logger.error(f"Integrity error: {err}")
             return integrity_errors
 
-        forecast = Forecast(
-            issued_at=self._forecast_metadata.issued_at,
-            hazard_types=self._forecast_metadata.hazard_types,
-            forecast_sources=self._forecast_metadata.forecast_sources,
-            alerts=list(self._alerts.values()),
-        )
-        forecast_dict = forecast.to_dict()
+        self._forecast.alerts = list(self._alerts.values())
+        forecast_dict = self._forecast.to_dict()
 
         file_errors = self._write_to_file(forecast_dict, output_path)
 
@@ -230,17 +217,17 @@ class DataSubmitter:
     def _check_forecast_metadata_integrity(self) -> list[str]:
         errors: list[str] = []
 
-        if self._forecast_metadata is None:
+        if self._forecast is None:
             errors.append(
                 "Forecast metadata not set: call set_forecast_metadata() before send_all()"
             )
             return errors
 
-        if self._forecast_metadata.issued_at.tzinfo is None:
+        if self._forecast.issued_at.tzinfo is None:
             errors.append("issued_at must be timezone-aware")
-        if len(self._forecast_metadata.hazard_types) == 0:
+        if len(self._forecast.hazard_types) == 0:
             errors.append("hazard_types must contain at least one hazard type")
-        if len(self._forecast_metadata.forecast_sources) == 0:
+        if len(self._forecast.forecast_sources) == 0:
             errors.append("forecast_sources must contain at least one forecast source")
 
         return errors

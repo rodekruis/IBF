@@ -9,7 +9,7 @@ import { EventAlertHistoryRecord } from '@api-service/src/events/events.reposito
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
 
-export interface ForecastContext {
+export interface ForecastMetadata {
   readonly hazardTypes: HazardType[];
   readonly forecastSources: ForecastSource[];
   readonly issuedAt: Date;
@@ -24,7 +24,7 @@ export class AlertToEventService {
 
   public async matchAndStore(
     alert: AlertCreateDto,
-    forecast: ForecastContext,
+    forecast: ForecastMetadata,
   ): Promise<void> {
     const classification = this.alertClassificationService.classifyAlert({
       hazardType: forecast.hazardTypes[0],
@@ -59,7 +59,7 @@ export class AlertToEventService {
 
   private async createNewEvent(
     alert: AlertCreateDto,
-    forecast: ForecastContext,
+    forecast: ForecastMetadata,
     classification: ClassificationResult,
   ): Promise<void> {
     await this.eventsRepository.createEvent({

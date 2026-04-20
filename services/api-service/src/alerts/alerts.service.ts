@@ -38,7 +38,7 @@ export class AlertsService {
       );
     }
 
-    const forecastContext = {
+    const forecastMetadata = {
       hazardTypes: forecast.hazardTypes,
       forecastSources: forecast.forecastSources,
       issuedAt: forecast.issuedAt,
@@ -46,7 +46,7 @@ export class AlertsService {
 
     await Promise.all(
       forecast.alerts.map((alert) =>
-        this.alertToEventService.matchAndStore(alert, forecastContext),
+        this.alertToEventService.matchAndStore(alert, forecastMetadata),
       ),
     );
 
@@ -55,7 +55,7 @@ export class AlertsService {
     // Store alerts at the end, so that they are not stored in case of errors on event matching/storing/closing
     return await this.alertsRepository.createAlerts(
       forecast.alerts,
-      forecastContext,
+      forecastMetadata,
     );
   }
 

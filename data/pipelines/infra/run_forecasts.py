@@ -29,7 +29,7 @@ from pipelines.infra.utils.alert_admin_aggregation import (
 
 logger = logging.getLogger(__name__)
 
-HAZARD_METADATA: dict[str, list[ForecastSource]] = {
+FORECAST_SOURCES: dict[str, list[ForecastSource]] = {
     "floods": [ForecastSource.GLOFAS],
     "drought": [ForecastSource.ECMWF],
 }
@@ -62,7 +62,7 @@ def _run_country(
 
     # --- Set forecast metadata based on hazard type ---
     issued_at = datetime.now(timezone.utc)
-    forecast_sources = HAZARD_METADATA[hazard_type]
+    forecast_sources = FORECAST_SOURCES[hazard_type]
     data_submitter.set_forecast_metadata(
         issued_at=issued_at,
         hazard_types=[hazard_type],
