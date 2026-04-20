@@ -45,7 +45,7 @@ class DataSubmitter:
     def set_forecast_metadata(
         self,
         issued_at: datetime,
-        hazard_types: list[HazardType],
+        hazard_type: HazardType,
         forecast_sources: list[ForecastSource],
     ) -> None:
         self._forecast = Forecast(
@@ -54,7 +54,7 @@ class DataSubmitter:
                 if issued_at.tzinfo is not None
                 else issued_at
             ),
-            hazard_types=hazard_types,
+            hazard_type=hazard_type,
             forecast_sources=forecast_sources,
         )
 
@@ -228,8 +228,8 @@ class DataSubmitter:
 
         if self._forecast.issued_at.tzinfo is None:
             errors.append("issued_at must be timezone-aware")
-        if len(self._forecast.hazard_types) == 0:
-            errors.append("hazard_types must contain at least one hazard type")
+        if not self._forecast.hazard_type:
+            errors.append("hazard_type must be set")
         if len(self._forecast.forecast_sources) == 0:
             errors.append("forecast_sources must contain at least one forecast source")
 

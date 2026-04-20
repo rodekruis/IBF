@@ -19,7 +19,7 @@ def test_incomplete_alert_is_rejected(tmp_output: Path):
     submitter = DataSubmitter()
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
-        hazard_types=[HazardType.FLOODS],
+        hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.create_alert(
@@ -102,7 +102,7 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
     submitter = DataSubmitter()
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
-        hazard_types=[HazardType.FLOODS],
+        hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.create_alert(
@@ -150,7 +150,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     submitter = DataSubmitter()
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
-        hazard_types=[HazardType.FLOODS],
+        hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.create_alert(
@@ -235,7 +235,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
     submitter = DataSubmitter()
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
-        hazard_types=[HazardType.FLOODS],
+        hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.create_alert(
@@ -276,7 +276,7 @@ def test_naive_datetime_is_rejected(tmp_output: Path):
     submitter = DataSubmitter()
     submitter.set_forecast_metadata(
         issued_at=datetime(2026, 3, 20, 12, 0, 0),
-        hazard_types=[HazardType.FLOODS],
+        hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
     )
 
@@ -286,20 +286,18 @@ def test_naive_datetime_is_rejected(tmp_output: Path):
     assert not (tmp_output / "forecast.json").exists()
 
 
-def test_empty_hazard_types_is_rejected(tmp_output: Path):
-    """Forecast metadata with no hazard types is rejected during integrity checks."""
+def test_hazard_type_missing_is_rejected(tmp_output: Path):
+    """Forecast metadata with no hazard type is rejected during integrity checks."""
     submitter = DataSubmitter()
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
-        hazard_types=[],
+        hazard_type=None,  # type: ignore
         forecast_sources=[ForecastSource.GLOFAS],
     )
 
     errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
-    assert any(
-        "hazard_types must contain at least one hazard type" in e for e in errors
-    )
+    assert any("hazard_type must be set" in e for e in errors)
     assert not (tmp_output / "forecast.json").exists()
 
 
@@ -308,7 +306,7 @@ def test_empty_forecast_sources_is_rejected(tmp_output: Path):
     submitter = DataSubmitter()
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
-        hazard_types=[HazardType.FLOODS],
+        hazard_type=HazardType.FLOODS,
         forecast_sources=[],
     )
 

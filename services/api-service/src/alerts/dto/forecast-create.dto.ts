@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  ArrayMaxSize,
   ArrayMinSize,
   IsArray,
   IsDate,
@@ -21,14 +20,10 @@ export class ForecastCreateDto {
 
   @ApiProperty({
     enum: HazardType,
-    isArray: true,
-    example: [HazardType.floods],
+    example: HazardType.floods,
   })
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(1) // the classification logic needs to know which hazard type to use, so in practice for now we only support one hazard type per forecast
-  @IsEnum(HazardType, { each: true })
-  public readonly hazardTypes: HazardType[];
+  @IsEnum(HazardType)
+  public readonly hazardType: HazardType;
 
   @ApiProperty({
     enum: ForecastSource,

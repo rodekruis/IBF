@@ -10,7 +10,7 @@ import { EventsRepository } from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
 
 export interface ForecastMetadata {
-  readonly hazardTypes: HazardType[];
+  readonly hazardType: HazardType;
   readonly forecastSources: ForecastSource[];
   readonly issuedAt: Date;
 }
@@ -27,7 +27,7 @@ export class AlertToEventService {
     forecast: ForecastMetadata,
   ): Promise<void> {
     const classification = this.alertClassificationService.classifyAlert({
-      hazardType: forecast.hazardTypes[0],
+      hazardType: forecast.hazardType,
       issuedAt: forecast.issuedAt,
       severity: alert.severity,
     });
@@ -64,7 +64,7 @@ export class AlertToEventService {
   ): Promise<void> {
     await this.eventsRepository.createEvent({
       eventName: alert.alertName,
-      hazardTypes: forecast.hazardTypes,
+      hazardType: forecast.hazardType,
       forecastSources: forecast.forecastSources,
       alertClass: classification.alertClass!,
       trigger: classification.trigger,
@@ -132,7 +132,7 @@ export class AlertToEventService {
     historicalAlert: EventAlertHistoryRecord,
   ): ClassificationResult {
     return this.alertClassificationService.classifyAlert({
-      hazardType: historicalAlert.hazardTypes[0],
+      hazardType: historicalAlert.hazardType,
       issuedAt: historicalAlert.issuedAt,
       severity: historicalAlert.severityData.map((severity) => ({
         timeInterval: {
@@ -147,16 +147,16 @@ export class AlertToEventService {
   }
 
   public async closeStaleEvents({
-    hazardTypes,
+    hazardType,
     excludeEventNames,
     closedAt,
   }: {
-    hazardTypes: HazardType[];
+    hazardType: HazardType;
     excludeEventNames: string[];
     closedAt: Date;
   }): Promise<void> {
     await this.eventsRepository.closeStaleOpenEvents({
-      hazardTypes,
+      hazardType,
       excludeEventNames,
       closedAt,
     });

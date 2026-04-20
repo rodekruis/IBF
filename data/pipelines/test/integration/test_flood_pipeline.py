@@ -22,7 +22,7 @@ def test_floods_ken(pipeline):
     latest = pipeline.find_latest_output("floods", "KEN")
     forecast = pipeline.load_forecast(latest)
     alerts = forecast["alerts"]
-    assert forecast["hazardTypes"] == ["floods"]
+    assert forecast["hazardType"] == "floods"
     assert "glofas" in forecast["forecastSources"]
 
     # TODO: Assert on the expected number of alerts,

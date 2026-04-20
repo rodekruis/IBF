@@ -20,7 +20,7 @@ def _create_valid_submitter() -> DataSubmitter:
     submitter = DataSubmitter()
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
-        hazard_types=[HazardType.FLOODS],
+        hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.create_alert(

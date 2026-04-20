@@ -17,7 +17,7 @@ interface EventAlertHistorySeverity {
 
 export interface EventAlertHistoryRecord {
   readonly issuedAt: Date;
-  readonly hazardTypes: string[];
+  readonly hazardType: string;
   readonly severityData: EventAlertHistorySeverity[];
 }
 
@@ -61,7 +61,7 @@ export class EventsRepository {
     data: Pick<
       Event,
       | 'eventName'
-      | 'hazardTypes'
+      | 'hazardType'
       | 'forecastSources'
       | 'alertClass'
       | 'trigger'
@@ -107,7 +107,7 @@ export class EventsRepository {
       orderBy: { issuedAt: 'asc' },
       select: {
         issuedAt: true,
-        hazardTypes: true,
+        hazardType: true,
         severity: {
           select: {
             timeInterval: true,
@@ -121,7 +121,7 @@ export class EventsRepository {
 
     return alerts.map((alert) => ({
       issuedAt: alert.issuedAt,
-      hazardTypes: alert.hazardTypes,
+      hazardType: alert.hazardType,
       severityData: alert.severity.map((severity) => ({
         timeInterval: severity.timeInterval as { start: string; end: string },
         ensembleMemberType: severity.ensembleMemberType as EnsembleMemberType,
@@ -142,18 +142,18 @@ export class EventsRepository {
   }
 
   public async closeStaleOpenEvents({
-    hazardTypes,
+    hazardType,
     excludeEventNames,
     closedAt,
   }: {
-    hazardTypes: HazardType[];
+    hazardType: HazardType;
     excludeEventNames: string[];
     closedAt: Date;
   }): Promise<number> {
     const result = await this.prisma.event.updateMany({
       where: {
         closedAt: null,
-        hazardTypes: { equals: hazardTypes }, // NOTE: this assumes equal ordering and exact match, which is the case for now as we only support one hazard type per event, but might need to be revisited if we support multiple hazard types per event in the future
+        hazardType,
         eventName: { notIn: excludeEventNames },
       },
       data: { closedAt },

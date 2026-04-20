@@ -90,7 +90,7 @@ export function buildForecast(
 ): ForecastCreateDto {
   return {
     issuedAt: new Date('2026-03-30T00:00:00Z'),
-    hazardTypes: [HazardType.floods],
+    hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofas],
     alerts,
     ...overrides,

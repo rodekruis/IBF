@@ -17,7 +17,7 @@ function createMockValidForecast(
 ): ForecastCreateDto {
   return {
     issuedAt: new Date('2026-03-20T12:00:00Z'),
-    hazardTypes: [HazardType.floods],
+    hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofas],
     alerts,
     ...overrides,
@@ -112,7 +112,7 @@ describe('AlertsService', () => {
       await service.createAlerts(createMockValidForecast(alerts));
       expect(repository.createAlerts).toHaveBeenCalledWith(
         alerts,
-        expect.objectContaining({ hazardTypes: [HazardType.floods] }),
+        expect.objectContaining({ hazardType: HazardType.floods }),
       );
     });
   });
@@ -485,7 +485,7 @@ describe('AlertsService', () => {
       await service.createAlerts(createMockValidForecast(alerts));
       expect(repository.createAlerts).toHaveBeenCalledWith(
         alerts,
-        expect.objectContaining({ hazardTypes: [HazardType.floods] }),
+        expect.objectContaining({ hazardType: HazardType.floods }),
       );
     });
   });
