@@ -95,6 +95,7 @@ export class AlertsService {
   }
 
   private checkEventNameFormat(alert: AlertCreateDto): string[] {
+    // TODO: this and more integrity checks could be moved to class-validators. Make sure that clear alignment with pipeline-side integrity checks remains.
     if (!EVENT_NAME_PATTERN.test(alert.eventName)) {
       return [
         `Alert '${alert.eventName}' does not match expected format '{COUNTRY}_{hazardType}_{identifier}'`,

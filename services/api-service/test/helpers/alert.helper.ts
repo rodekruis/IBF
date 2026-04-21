@@ -1,3 +1,4 @@
+import { addDays } from 'date-fns';
 import * as request from 'supertest';
 
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
@@ -41,7 +42,7 @@ export function buildAlert(
   overrides: Partial<AlertCreateDto> = {},
 ): AlertCreateDto {
   const now = new Date();
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const tomorrow = addDays(now, 1);
   return {
     eventName: 'KEN_floods_test-station',
     centroid: { latitude: 0.35, longitude: 32.6 },
