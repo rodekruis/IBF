@@ -8,9 +8,9 @@ import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 
 export class AlertCreateDto {
-  @ApiProperty({ example: 'KEN-flood-2026-03-20' })
+  @ApiProperty({ example: 'KEN_floods_station-A' })
   @IsString()
-  public readonly alertName: string;
+  public readonly eventName: string;
 
   @ApiProperty({ type: CentroidDto })
   @ValidateNested()

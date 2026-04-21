@@ -32,7 +32,7 @@ def test_drought_eth(pipeline):
 
     alert = alerts[0]
     pipeline.assert_alert_structure(alert)
-    assert alert["alertName"] == "ETH_drought_climate-region-B_season-MAM"
+    assert alert["eventName"] == "ETH_drought_Region B_MAM"
 
     for entry in alert["severity"]:
         assert entry["severityKey"] == "percentile"

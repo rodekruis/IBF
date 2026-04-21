@@ -423,14 +423,21 @@ export class UserProfileComponent implements OnInit {
 # Check formatting for the whole repository
 npm run test:prettier
 
-# Backend
+# Backend (api-service)
 cd services/api-service
-docker exec api-service  npm run test:unit:all         # unit tests
-docker exec api-service  npm run test:integration:all         # integration tests
-docker exec api-service npm run test:integration:all -t login.test.ts # specific test file
-npm run typecheck # type checking
-npm run lint # linting
+docker exec api-service npm run test:unit:all                          # all unit tests
+docker exec api-service npm run test:unit:all alerts.service           # specific unit test file
+docker exec api-service npm run test:integration:all                   # all integration tests
+docker exec api-service npm run test:integration:all login.test        # specific integration test file
+npm run typecheck                                                      # type checking
+npm run lint                                                           # linting
 
+# Pipelines (Python)
+cd data
+uv run pytest pipelines/test/unit/                                     # all unit tests
+uv run pytest pipelines/test/unit/ -k test_integrity                   # specific unit test
+uv run pytest pipelines/test/integration/                              # all integration tests
+uv run python python-knip.py                                           # linting (ruff, deptry, vulture)
 ```
 
 ## Common Patterns & Utilities

@@ -13,7 +13,7 @@ import {
   resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
-const ALERT_NAME = 'TEST-get-flood-2026-03-23';
+const ALERT_NAME = 'KEN_floods_get-test';
 
 describe('/ Alerts', () => {
   let adminAccessToken: string;
@@ -21,7 +21,7 @@ describe('/ Alerts', () => {
 
   beforeAll(async () => {
     await resetDB(SeedScript.initialState, __filename);
-    const alert = buildAlert({ alertName: ALERT_NAME });
+    const alert = buildAlert({ eventName: ALERT_NAME });
     await createAlerts(buildForecast([alert]));
     adminAccessToken = await getAccessToken();
     seededAlertId = (await readAlerts(adminAccessToken)).body[0].id;
@@ -47,7 +47,7 @@ describe('/ Alerts', () => {
       const response = await readAlerts(adminAccessToken);
 
       const alert = response.body.find(
-        ({ alertName }: { alertName: string }) => alertName === ALERT_NAME,
+        ({ eventName }: { eventName: string }) => eventName === ALERT_NAME,
       );
       expect(alert).toBeDefined();
       expect(alert.id).toBe(seededAlertId);
@@ -68,7 +68,7 @@ describe('/ Alerts', () => {
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.id).toBe(seededAlertId);
-      expect(response.body.alertName).toBe(ALERT_NAME);
+      expect(response.body.eventName).toBe(ALERT_NAME);
     });
 
     it('should return full nested data', async () => {

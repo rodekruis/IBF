@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { Event } from '@prisma/client';
 
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
@@ -31,7 +32,7 @@ function buildForecastMetadata(
   return {
     hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofas],
-    issuedAt: new Date('2026-03-30T00:00:00Z'),
+    issuedAt: new Date(),
     ...overrides,
   };
 }
@@ -87,10 +88,11 @@ describe('AlertToEventService', () => {
 
       const alert = buildAlert();
       const forecast = buildForecastMetadata();
-      await service.matchAndStore(alert, forecast);
+      const result = await service.matchAndStore(alert, forecast);
 
+      expect(result).toBeNull();
       expect(repository.closeOpenEventsByName).toHaveBeenCalledWith(
-        alert.alertName,
+        alert.eventName,
         forecast.issuedAt,
       );
       expect(repository.createEvent).not.toHaveBeenCalled();
@@ -101,17 +103,23 @@ describe('AlertToEventService', () => {
       const classification = buildClassificationResult();
       classificationService.classifyAlert.mockReturnValue(classification);
       repository.getOpenEventByName.mockResolvedValue(null);
+      repository.createEvent.mockResolvedValue({ id: 99 } as Event);
 
       const alert = buildAlert();
       const forecast = buildForecastMetadata();
-      await service.matchAndStore(alert, forecast);
+      const result = await service.matchAndStore(alert, forecast);
 
+      expect(result).toBe(99);
       expect(repository.createEvent).toHaveBeenCalledWith({
-        eventName: alert.alertName,
+        eventName: alert.eventName,
         hazardType: forecast.hazardType,
         forecastSources: forecast.forecastSources,
         alertClass: 'max',
         trigger: true,
+        centroid: {
+          latitude: alert.centroid.latitude,
+          longitude: alert.centroid.longitude,
+        },
         startAt: classification.startAt,
         reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
         endAt: classification.endAt,
@@ -141,6 +149,7 @@ describe('AlertToEventService', () => {
         forecastSources: [ForecastSource.glofas],
         alertClass: 'med',
         trigger: false,
+        centroid: { latitude: 0.35, longitude: 32.6 },
         startAt: new Date('2026-04-03T00:00:00Z'),
         reachesPeakAlertClassAt: new Date('2026-04-03T00:00:00Z'),
         endAt: new Date('2026-04-04T00:00:00Z'),
@@ -156,8 +165,12 @@ describe('AlertToEventService', () => {
         },
       ]);
 
-      await service.matchAndStore(buildAlert(), buildForecastMetadata());
+      const result = await service.matchAndStore(
+        buildAlert(),
+        buildForecastMetadata(),
+      );
 
+      expect(result).toBe(42);
       expect(repository.updateEvent).toHaveBeenCalledWith(42, {
         alertClass: 'max',
         trigger: true,
@@ -193,6 +206,7 @@ describe('AlertToEventService', () => {
         forecastSources: [ForecastSource.glofas],
         alertClass: 'med',
         trigger: false,
+        centroid: { latitude: 0.35, longitude: 32.6 },
         startAt: new Date('2026-04-01T00:00:00Z'),
         reachesPeakAlertClassAt: new Date('2026-04-01T00:00:00Z'),
         endAt: new Date('2026-04-04T00:00:00Z'),

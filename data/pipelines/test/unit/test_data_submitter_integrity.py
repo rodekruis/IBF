@@ -11,7 +11,7 @@ from pipelines.infra.data_types.alert_types import (
 )
 from pipelines.infra.data_types.data_config_types import OutputMode
 
-ALERT_NAME = "TST_floods_station-test"
+EVENT_NAME = "KEN_floods_station-test"
 
 
 def test_incomplete_alert_is_rejected(tmp_output: Path):
@@ -23,7 +23,7 @@ def test_incomplete_alert_is_rejected(tmp_output: Path):
         forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.create_alert(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         centroid=Centroid(latitude=1.0, longitude=37.0),
     )
 
@@ -39,7 +39,7 @@ def test_severity_missing_median_is_rejected(
 ):
     """A time interval with ensemble runs but no median record is rejected."""
     valid_submitter.add_severity_data(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         time_interval_start="2026-03-21T00:00:00Z",
         time_interval_end="2026-03-21T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
@@ -58,7 +58,7 @@ def test_severity_missing_ensemble_is_rejected(
 ):
     """A time interval with a median but no ensemble runs is rejected."""
     valid_submitter.add_severity_data(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         time_interval_start="2026-03-21T00:00:00Z",
         time_interval_end="2026-03-21T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.MEDIAN,
@@ -77,14 +77,14 @@ def test_admin_area_unequal_layer_counts_is_rejected(
 ):
     """Admin-area data with different numbers of place codes per layer are rejected."""
     valid_submitter.add_admin_area_exposure(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         place_code="PC001",
         admin_level=3,
         layer=Layer.SPATIAL_EXTENT,
         value=True,
     )
     valid_submitter.add_admin_area_exposure(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         place_code="PC002",
         admin_level=3,
         layer=Layer.SPATIAL_EXTENT,
@@ -106,11 +106,11 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
         forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.create_alert(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         centroid=Centroid(latitude=1.0, longitude=37.0),
     )
     submitter.add_severity_data(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
@@ -118,7 +118,7 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
         severity_value=0,
     )
     submitter.add_severity_data(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.MEDIAN,
@@ -126,14 +126,14 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
         severity_value=0,
     )
     submitter.add_admin_area_exposure(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         place_code="PC001",
         admin_level=3,
         layer=Layer.POPULATION_EXPOSED,
         value=0,
     )
     submitter.add_raster_exposure(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         layer="some_other_layer",
         value="other.tif",
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
@@ -154,11 +154,11 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
         forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.create_alert(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         centroid=Centroid(latitude=91.0, longitude=200.0),
     )
     submitter.add_severity_data(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
@@ -166,7 +166,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
         severity_value=0,
     )
     submitter.add_severity_data(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.MEDIAN,
@@ -174,14 +174,14 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
         severity_value=0,
     )
     submitter.add_admin_area_exposure(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         place_code="PC001",
         admin_level=3,
         layer=Layer.POPULATION_EXPOSED,
         value=0,
     )
     submitter.add_raster_exposure(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         layer="alert_extent",
         value="alert_extent.tif",
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
@@ -199,7 +199,7 @@ def test_raster_invalid_extent_is_rejected(
 ):
     """A raster whose xmin >= xmax or ymin >= ymax is rejected."""
     valid_submitter.add_raster_exposure(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         layer="flood_depth",
         value="flood_depth.tif",
         extent={"xmin": 38.0, "ymin": 2.0, "xmax": 36.0, "ymax": 0.0},
@@ -216,7 +216,7 @@ def test_time_interval_start_after_end_is_rejected(
 ):
     """A time interval whose start timestamp is after its end timestamp is rejected."""
     valid_submitter.add_severity_data(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         time_interval_start="2026-03-22T00:00:00Z",
         time_interval_end="2026-03-21T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
@@ -239,11 +239,11 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
         forecast_sources=[ForecastSource.GLOFAS],
     )
     submitter.create_alert(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         centroid=Centroid(latitude=1.0, longitude=37.0),
     )
     submitter.add_severity_data(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
@@ -251,7 +251,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
         severity_value=0,
     )
     submitter.add_severity_data(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.MEDIAN,
@@ -259,7 +259,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
         severity_value=0,
     )
     submitter.add_raster_exposure(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         layer="alert_extent",
         value="alert_extent.tif",
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},

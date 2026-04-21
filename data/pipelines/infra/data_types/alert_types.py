@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
@@ -35,6 +36,13 @@ class EnsembleMemberType(StrEnum):
 class HazardType(StrEnum):
     FLOODS = "floods"
     DROUGHT = "drought"
+
+
+# This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
+# Keep in line with definition in alerts.service.ts
+EVENT_NAME_PATTERN = re.compile(
+    r"^[A-Z]{3}_(" + "|".join(re.escape(h.value) for h in HazardType) + r")_.+$"
+)
 
 
 class ForecastSource(StrEnum):
@@ -142,7 +150,7 @@ class Exposure:
 
 @dataclass
 class Alert:
-    alert_name: str
+    event_name: str
     centroid: Centroid
     severity: list[Severity] = field(default_factory=list)
     exposure: Exposure = field(default_factory=Exposure)
@@ -151,7 +159,7 @@ class Alert:
         self,
     ) -> JsonDict:
         return {
-            "alertName": self.alert_name,
+            "eventName": self.event_name,
             "centroid": self.centroid.to_dict(),
             "severity": [entry.to_dict() for entry in self.severity],
             "exposure": self.exposure.to_dict(),

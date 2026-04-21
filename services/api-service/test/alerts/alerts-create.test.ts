@@ -8,14 +8,22 @@ import {
   buildForecast,
   createAlerts,
 } from '@api-service/test/helpers/alert.helper';
-import { getServer, resetDB } from '@api-service/test/helpers/utility.helper';
+import { getActiveEvents } from '@api-service/test/helpers/event.helper';
+import {
+  getAccessToken,
+  getServer,
+  resetDB,
+} from '@api-service/test/helpers/utility.helper';
 
 const VALID_FORECAST = buildForecast([buildAlert()]);
 
 describe('POST /alerts', () => {
   const apiKey = env.PIPELINE_API_KEY;
+  let accessToken: string;
   beforeAll(async () => {
     await resetDB(SeedScript.initialState, __filename);
+
+    accessToken = await getAccessToken();
   });
 
   describe('successful submission', () => {
@@ -24,6 +32,41 @@ describe('POST /alerts', () => {
       const response = await createAlerts(VALID_FORECAST, apiKey!);
 
       expect(response.status).toBe(HttpStatus.CREATED);
+    });
+
+    it('should not create event on too low alert severity', async () => {
+      const lowSeverityAlert = buildAlert({
+        eventName: 'KEN_floods_low-severity',
+        severity: [
+          {
+            timeInterval: {
+              start: new Date('2026-03-21T00:00:00Z'),
+              end: new Date('2026-03-22T00:00:00Z'),
+            },
+            ensembleMemberType: EnsembleMemberType.median,
+            severityKey: 'water_discharge',
+            severityValue: 1, // too low to trigger event
+          },
+          {
+            timeInterval: {
+              start: new Date('2026-03-21T00:00:00Z'),
+              end: new Date('2026-03-22T00:00:00Z'),
+            },
+            ensembleMemberType: EnsembleMemberType.run,
+            severityKey: 'water_discharge',
+            severityValue: 1, // too low to trigger event
+          },
+        ],
+      });
+
+      await createAlerts(buildForecast([lowSeverityAlert]), apiKey!);
+
+      const eventResponse = await getActiveEvents(accessToken);
+      expect(eventResponse.status).toBe(HttpStatus.OK);
+      const event = eventResponse.body.find(
+        (e: { name: string }) => e.name === lowSeverityAlert.eventName,
+      );
+      expect(event).toBeUndefined();
     });
   });
 
@@ -51,7 +94,7 @@ describe('POST /alerts', () => {
         .set('x-api-key', apiKey!)
         .send({
           ...VALID_FORECAST,
-          alerts: [{ alertName: 'incomplete' }],
+          alerts: [{ eventName: 'incomplete' }],
         });
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
@@ -59,7 +102,7 @@ describe('POST /alerts', () => {
 
     it('should reject alert failing integrity check', async () => {
       const badAlert = buildAlert({
-        alertName: 'BAD-time-interval',
+        eventName: 'BAD-time-interval',
         severity: [
           {
             timeInterval: {

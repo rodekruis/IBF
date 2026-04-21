@@ -20,10 +20,12 @@ export class EventsService {
     return {
       eventId: event.id,
       eventName: event.eventName,
+      eventLabel: this.deriveEventLabel(event.eventName),
       hazardType: event.hazardType,
       forecastSources: event.forecastSources,
       alertClass: event.alertClass,
       trigger: event.trigger,
+      centroid: event.centroid as { latitude: number; longitude: number },
       startAt: event.startAt,
       reachesPeakAlertClassAt: event.reachesPeakAlertClassAt,
       endAt: event.endAt,
@@ -34,5 +36,10 @@ export class EventsService {
         event.endAt > viewTime &&
         event.closedAt === null,
     };
+  }
+
+  private deriveEventLabel(eventName: string): string {
+    const parts = eventName.split('_');
+    return parts.slice(2).join(' ') || eventName;
   }
 }
