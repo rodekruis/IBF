@@ -1,3 +1,5 @@
+import { addDays } from 'date-fns';
+
 import { AssertDatePipe } from '@api-service/src/pipes/assert-date.pipe';
 
 describe('AssertDatePipe', () => {
@@ -51,10 +53,10 @@ describe('AssertDatePipe', () => {
 
   describe('dates in the future are disallowed', () => {
     const pipe = new AssertDatePipe({ optional: false, allowFuture: false });
-    const millisecondsInOneDay = 24 * 60 * 60 * 1000;
+
     it('should throw for date in future', () => {
       // Arrange
-      const input = new Date(Date.now() + 2 * millisecondsInOneDay);
+      const input = addDays(new Date(), 2);
       // Act & Assert
       expect(() => pipe.transform(input)).toThrow(
         'Validation failed (future dates are not allowed)',
@@ -73,7 +75,7 @@ describe('AssertDatePipe', () => {
 
     it('should not throw on past date', () => {
       // Arrange
-      const input = new Date(Date.now() - 2 * millisecondsInOneDay);
+      const input = addDays(new Date(), -2);
       // Act & Assert
       expect(() => {
         pipe.transform(input);
