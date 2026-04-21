@@ -91,10 +91,10 @@ describe('AlertToEventService', () => {
       const result = await service.matchAndStore(alert, forecast);
 
       expect(result).toBeNull();
-      expect(repository.closeOpenEventsByName).toHaveBeenCalledWith(
-        alert.eventName,
-        forecast.issuedAt,
-      );
+      expect(repository.closeOpenEventsByName).toHaveBeenCalledWith({
+        eventName: alert.eventName,
+        issuedAt: forecast.issuedAt,
+      });
       expect(repository.createEvent).not.toHaveBeenCalled();
       expect(repository.updateEvent).not.toHaveBeenCalled();
     });

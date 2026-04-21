@@ -177,24 +177,27 @@ export class EventsRepository {
     return result;
   }
 
-  public async closeOpenEventsByName(
-    eventName: string,
-    closedAt: Date,
-  ): Promise<void> {
+  public async closeOpenEventsByName({
+    eventName,
+    issuedAt,
+  }: {
+    eventName: string;
+    issuedAt: Date;
+  }): Promise<void> {
     await this.prisma.event.updateMany({
       where: { eventName, closedAt: null },
-      data: { closedAt },
+      data: { closedAt: issuedAt, lastUpdatedAt: issuedAt },
     });
   }
 
   public async closeStaleOpenEvents({
     hazardType,
     excludeEventNames,
-    closedAt,
+    issuedAt,
   }: {
     hazardType: HazardType;
     excludeEventNames: string[];
-    closedAt: Date;
+    issuedAt: Date;
   }): Promise<number> {
     const result = await this.prisma.event.updateMany({
       where: {
@@ -202,7 +205,7 @@ export class EventsRepository {
         hazardType,
         eventName: { notIn: excludeEventNames },
       },
-      data: { closedAt },
+      data: { closedAt: issuedAt, lastUpdatedAt: issuedAt },
     });
     return result.count;
   }

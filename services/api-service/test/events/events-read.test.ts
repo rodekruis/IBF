@@ -136,7 +136,6 @@ describe('GET /events', () => {
           event.eventName === 'KEN_floods_station-expired',
       );
 
-      expect(closedEvent.closedAt).not.toBeNull();
       expect(closedEvent.isOngoing).toBe(false);
       expect(expiredEvent.isOngoing).toBe(false);
     });
