@@ -124,6 +124,7 @@ describe('AlertToEventService', () => {
         reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
         endAt: classification.endAt,
         firstIssuedAt: forecast.issuedAt,
+        lastUpdatedAt: forecast.issuedAt,
       });
     });
 
@@ -154,6 +155,7 @@ describe('AlertToEventService', () => {
         reachesPeakAlertClassAt: new Date('2026-04-03T00:00:00Z'),
         endAt: new Date('2026-04-04T00:00:00Z'),
         firstIssuedAt: new Date('2026-03-28T00:00:00Z'),
+        lastUpdatedAt: new Date('2026-03-28T00:00:00Z'),
         closedAt: null,
       };
       repository.getOpenEventByName.mockResolvedValue(existingEvent);
@@ -177,6 +179,7 @@ describe('AlertToEventService', () => {
         startAt: new Date('2026-04-08T00:00:00Z'),
         reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
         endAt: classification.endAt,
+        lastUpdatedAt: expect.any(Date),
       });
     });
 
@@ -211,6 +214,7 @@ describe('AlertToEventService', () => {
         reachesPeakAlertClassAt: new Date('2026-04-01T00:00:00Z'),
         endAt: new Date('2026-04-04T00:00:00Z'),
         firstIssuedAt: new Date('2026-03-28T00:00:00Z'),
+        lastUpdatedAt: new Date('2026-04-01T00:00:00Z'),
         closedAt: null,
       };
       repository.getOpenEventByName.mockResolvedValue(existingEvent);

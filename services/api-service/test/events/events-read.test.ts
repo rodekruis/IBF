@@ -109,7 +109,6 @@ describe('GET /events', () => {
       expect(response.body[0]).toMatchObject({
         eventName: 'KEN_floods_station-ongoing',
         eventLabel: 'station-ongoing',
-        closedAt: null,
         isOngoing: true,
       });
     });
@@ -139,7 +138,6 @@ describe('GET /events', () => {
 
       expect(closedEvent.closedAt).not.toBeNull();
       expect(closedEvent.isOngoing).toBe(false);
-      expect(expiredEvent.closedAt).toBeNull();
       expect(expiredEvent.isOngoing).toBe(false);
     });
   });

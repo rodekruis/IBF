@@ -78,6 +78,7 @@ export class AlertToEventService {
       reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
       endAt: classification.endAt,
       firstIssuedAt: forecast.issuedAt,
+      lastUpdatedAt: forecast.issuedAt,
     });
   }
 
@@ -98,6 +99,7 @@ export class AlertToEventService {
       startAt,
       reachesPeakAlertClassAt: latestAlert.reachesPeakAlertClassAt,
       endAt: latestAlert.endAt,
+      lastUpdatedAt: issuedAt,
     });
   }
 

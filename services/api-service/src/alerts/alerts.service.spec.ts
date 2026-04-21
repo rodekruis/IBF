@@ -55,7 +55,7 @@ function createMockValidAlert(
         {
           placeCode: 'KEN_01_001',
           adminLevel: 3,
-          layer: Layer.spatialExtent,
+          layer: Layer.populationExposed,
           value: 1,
         },
       ],
@@ -313,7 +313,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.spatialExtent,
+                layer: Layer.glofasStations, // not actually admin-area layer, but works to test the record count validation
                 value: 1,
               },
               {
@@ -363,7 +363,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.spatialExtent,
+                layer: Layer.populationExposed,
                 value: 1,
               },
             ],
@@ -399,7 +399,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.spatialExtent,
+                layer: Layer.populationExposed,
                 value: 1,
               },
             ],
@@ -433,7 +433,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.spatialExtent,
+                layer: Layer.populationExposed,
                 value: 1,
               },
             ],
@@ -463,7 +463,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.spatialExtent,
+                layer: Layer.populationExposed,
                 value: 1,
               },
             ],

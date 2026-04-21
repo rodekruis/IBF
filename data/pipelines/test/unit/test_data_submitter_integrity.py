@@ -76,19 +76,20 @@ def test_admin_area_unequal_layer_counts_is_rejected(
     valid_submitter: DataSubmitter, tmp_output: Path
 ):
     """Admin-area data with different numbers of place codes per layer are rejected."""
+    # Add 2 records of another layer, while valid_submitter only has 1 population_exposed record
     valid_submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
         place_code="PC001",
         admin_level=3,
-        layer=Layer.SPATIAL_EXTENT,
-        value=True,
+        layer=Layer.ALERT_EXTENT,  # not actually an admin-area layer, but works to test the record count validation
+        value=1,
     )
     valid_submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
         place_code="PC002",
         admin_level=3,
-        layer=Layer.SPATIAL_EXTENT,
-        value=True,
+        layer=Layer.ALERT_EXTENT,
+        value=1,
     )
 
     errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))

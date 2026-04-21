@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
 
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
-import { EventsRepository } from '@api-service/src/events/events.repository';
+import {
+  EventsRepository,
+  ExposedAdminAreaRecord,
+} from '@api-service/src/events/events.repository';
 
 @Injectable()
 export class EventsService {
@@ -13,10 +16,24 @@ export class EventsService {
     active?: boolean,
   ): Promise<EventResponseDto[]> {
     const events = await this.eventsRepository.getEvents(viewTime, active);
-    return events.map((event) => this.mapEventToResponse(event, viewTime));
+    const exposedAdminAreasByEventId =
+      await this.eventsRepository.getExposedAdminAreasForLatestAlerts(
+        events.map((event) => event.id),
+      );
+    return events.map((event) =>
+      this.mapEventToResponse(
+        event,
+        viewTime,
+        exposedAdminAreasByEventId.get(event.id) ?? [],
+      ),
+    );
   }
 
-  private mapEventToResponse(event: Event, viewTime: Date): EventResponseDto {
+  private mapEventToResponse(
+    event: Event,
+    viewTime: Date,
+    exposedAdminAreas: ExposedAdminAreaRecord[],
+  ): EventResponseDto {
     return {
       eventId: event.id,
       eventName: event.eventName,
@@ -30,11 +47,12 @@ export class EventsService {
       reachesPeakAlertClassAt: event.reachesPeakAlertClassAt,
       endAt: event.endAt,
       firstIssuedAt: event.firstIssuedAt,
-      closedAt: event.closedAt,
+      lastUpdatedAt: event.lastUpdatedAt,
       isOngoing:
         event.startAt <= viewTime &&
         event.endAt > viewTime &&
         event.closedAt === null,
+      exposedAdminAreas,
     };
   }
 
