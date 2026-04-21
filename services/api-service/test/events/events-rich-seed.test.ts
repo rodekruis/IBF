@@ -1,4 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
+import { addDays } from 'date-fns';
 
 import { ExposureAdminAreaDto } from '@api-service/src/alerts/dto/exposure-admin-area.dto';
 import { Layer } from '@api-service/src/alerts/enum/layer.enum';
@@ -140,8 +141,7 @@ describe('GET /events - rich seed data for demo/debugging', () => {
 
   it('should seed two realistic flood events with multi-level admin areas', async () => {
     const now = new Date();
-    const daysFromNow = (days: number): Date =>
-      new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+    const daysFromNow = (days: number): Date => addDays(now, days);
 
     // Event 1: Tana River — high severity, triggered
     const tanaRiverAlert = buildAlert({
