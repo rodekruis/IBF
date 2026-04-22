@@ -79,18 +79,18 @@ def _match_return_period(
     return matched
 
 
-def determine_alert_stations(
+def determine_lead_time_severities(
     discharges: StationDischarges,
-    stations: dict[str, LocationPoint],
     thresholds: list[ReturnPeriodThresholds],
     minimum_return_period: str = MINIMUM_RETURN_PERIOD,
-) -> list[AlertStation]:
+) -> dict[str, list[LeadTimeSeverity]]:
     """
-    Compare median ensemble discharge against the minimum return period threshold.
-    A station triggers an alert if the median discharge for any lead time
-    exceeds the threshold for the given return period.
+    For each station, compute the lead time severities by comparing the median
+    ensemble discharge against return period thresholds.
+    Returns a mapping of station_code to lead time severities, only for stations
+    with at least one lead time exceeding the minimum return period threshold.
     """
-    alert: list[AlertStation] = []
+    result: dict[str, list[LeadTimeSeverity]] = {}
 
     for station_code, lead_times in discharges.items():
         station_thresholds = _get_station_thresholds(thresholds, station_code)
@@ -106,7 +106,7 @@ def determine_alert_stations(
             )
             continue
 
-        alert_lead_times: list[LeadTimeSeverity] = []
+        lead_time_severities: list[LeadTimeSeverity] = []
         for lead_time_discharge in lead_times:
             if not lead_time_discharge.ensemble_discharges:
                 continue
@@ -115,7 +115,7 @@ def determine_alert_stations(
             )
             matched_rp = _match_return_period(median_discharge, station_thresholds)
             if matched_rp is not None:
-                alert_lead_times.append(
+                lead_time_severities.append(
                     LeadTimeSeverity(
                         time_interval_start=lead_time_discharge.time_interval_start,
                         time_interval_end=lead_time_discharge.time_interval_end,
@@ -125,27 +125,40 @@ def determine_alert_stations(
                     )
                 )
 
-        if alert_lead_times:
-            station = stations.get(station_code)
-            if station is None:
-                logging.warning(
-                    f"Station {station_code} not found in stations dict, skipping"
-                )
-                continue
-            alert.append(
-                AlertStation(
-                    station_code=station_code,
-                    station=station,
-                    lead_time_severities=alert_lead_times,
-                )
+        if lead_time_severities:
+            result[station_code] = lead_time_severities
+
+    return result
+
+
+def determine_alert_stations(
+    station_lead_time_severities: dict[str, list[LeadTimeSeverity]],
+    stations: dict[str, LocationPoint],
+) -> list[AlertStation]:
+    """
+    Create alert stations from pre-computed lead time severities.
+    """
+    alert: list[AlertStation] = []
+    for station_code, lead_time_severities in station_lead_time_severities.items():
+        station = stations.get(station_code)
+        if station is None:
+            logging.warning(
+                f"Station {station_code} not found in stations dict, skipping"
             )
-            logging.info(
-                f"Station {station_code} alert for "
-                f"{len(alert_lead_times)} lead time(s)"
+            continue
+        alert.append(
+            AlertStation(
+                station_code=station_code,
+                station=station,
+                lead_time_severities=lead_time_severities,
             )
+        )
+        logging.info(
+            f"Station {station_code} alert for "
+            f"{len(lead_time_severities)} lead time(s)"
+        )
 
     logging.info(
-        f"{len(alert)} of {len(discharges)} stations exceeded "
-        f"the minimum threshold {minimum_return_period}."
+        f"{len(alert)} of {len(station_lead_time_severities)} stations created alert stations."
     )
     return alert
