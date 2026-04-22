@@ -8,10 +8,11 @@ import os
 from pipelines.flood.determine_alerts import (
     ReturnPeriodThresholds,
     determine_alert_stations,
+    determine_lead_time_severities,
 )
-from pipelines.flood.determine_exposure import determine_exposure
-from pipelines.flood.extract_forecast_data import extract_glofas_station_discharge
-from pipelines.flood.resolve_flood_extent import resolve_flood_extent_raster
+from pipelines.flood.determine_exposure import determine_population_exposed
+from pipelines.flood.extract_forecast import extract_discharge_glofas_station
+from pipelines.flood.compute_alert_extent import resolve_flood_extent_raster
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
@@ -19,7 +20,7 @@ from pipelines.infra.data_types.alert_types import Centroid, EnsembleMemberType,
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.flood.utils_raster import ( # TODO-infra: move utils to infra and import in flood pipeline
-    clip_raster_to_bounds,
+    slice_netcdf_to_bounds,
     get_bounding_box,
     get_raster_extent,
 )
@@ -80,40 +81,47 @@ def calculate_flood_forecasts(
     # Step 2 - Compute country bounding box and prepare country-level data
     country_bounds = get_bounding_box(target_admin_areas)
 
-    if population_raster_path:
-        population_raster_path = clip_raster_to_bounds(
-            population_raster_path, country_bounds
+    # Step 2.5 - Slice NetCDF files to country bounds once before processing stations
+    sliced_netcdf_paths: list[str] = []
+    for netcdf_path in glofas_netcdf_paths:
+        sliced_path = slice_netcdf_to_bounds(netcdf_path, country_bounds)
+        sliced_netcdf_paths.append(sliced_path)
+
+    # Step 3 - Extract discharge per station from GloFAS data (uses pre-sliced NetCDFs)
+    for station_code, station in list(stations.items())[:2]: # convert to list to debug with 2 first stations
+        discharges = extract_discharge_glofas_station(
+            station_code=station_code,
+            station=station,
+            netcdf_paths=sliced_netcdf_paths,
         )
 
-    # Step 3 - Extract discharge per station from GloFAS data (slices NetCDFs to country)
-    discharges = extract_glofas_station_discharge(
-        stations=stations,
-        netcdf_paths=glofas_netcdf_paths,
-        country_bounds=country_bounds,
-    )
+        # Step 4a - Determine which lead times exceed the minimum return period threshold
+        lead_time_severities = determine_lead_time_severities(
+            station_code=station_code,
+            lead_times=discharges.get(station_code, []),
+            thresholds=thresholds,
+        )
 
-    # Step 4 - Determine which stations exceed the minimum return period threshold
-    alert_stations = determine_alert_stations(
-        discharges=discharges,
-        stations=stations,
-        thresholds=thresholds,
-    )
+        # No lead times exceeded the minimum return period threshold, skip to the next station
+        if not lead_time_severities:
+            logging.info(f"No alerts for station {station_code}")
+            continue
 
-    if not alert_stations:
-        logging.info("No stations alerted. No alerts to create")
-        return
+        # Step 4b - Create alert stations from the lead time severities
+        alert_station = determine_alert_stations(
+            station_lead_time_severities=lead_time_severities,
+            station_code=station_code,
+            station=station,
+        )
 
-    # Step 5 - Create alerts and determine exposure for alert stations
-    for alert_station in alert_stations:
-        station_code = alert_station.station_code
-        station = alert_station.station
+        # Step 5 - Create alerts and determine exposure for alert stations
         event_name = f"{country}_floods_{station_code}"
 
         data_submitter.create_alert(
             event_name=event_name,
             centroid=Centroid(
-                latitude=station.lat,
-                longitude=station.lon,
+                latitude=alert_station.station.lat,
+                longitude=alert_station.station.lon,
             ),
         )
 
@@ -148,9 +156,9 @@ def calculate_flood_forecasts(
             flood_extent_paths=flood_extent_paths,
         )
 
-        # Determine spatial and population exposure via basin -> admin area mapping
-        exposure = determine_exposure(
-            station=station, # TODO: correct method input argument to str
+        # Determine spatial and population exposure
+        exposure = determine_population_exposed(
+            station=alert_station.station,
             station_district_mapping=station_district_mapping,
             admin_areas=target_admin_areas,
             population_raster_path=population_raster_path,
