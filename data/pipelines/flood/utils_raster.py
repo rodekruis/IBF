@@ -102,3 +102,16 @@ def clip_raster_to_bounds(
 
     logging.info(f"Clipped raster {input_path} to bounds {bounds} -> {output_path}")
     return output_path
+
+
+def get_raster_extent(raster_path: str) -> dict[str, float]:
+    """Return raster bounds as an extent dict expected by the API layer."""
+    with rasterio.open(raster_path) as src:
+        bounds = src.bounds
+
+    return {
+        "xmin": bounds.left,
+        "ymin": bounds.bottom,
+        "xmax": bounds.right,
+        "ymax": bounds.top,
+    }
