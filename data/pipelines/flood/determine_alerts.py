@@ -5,7 +5,7 @@ import statistics
 from dataclasses import dataclass
 from typing import TypedDict
 
-from pipelines.flood.extract_glofas_data import StationDischarges
+from pipelines.flood.extract_forecast_data import StationDischarges
 from pipelines.infra.data_types.location_point import LocationPoint
 
 MINIMUM_RETURN_PERIOD = "1.5yr"
@@ -13,14 +13,15 @@ MINIMUM_RETURN_PERIOD = "1.5yr"
 
 @dataclass
 class LeadTimeSeverity:
-    lead_time: int
+    time_interval_start: str
+    time_interval_end: str
     median_discharge: float
     ensemble_discharges: list[float]
     return_period: str
 
 
 @dataclass
-class TriggeredStation:
+class AlertStation:
     station_code: str
     station: LocationPoint
     lead_time_severities: list[LeadTimeSeverity]
@@ -83,13 +84,13 @@ def determine_alert_stations(
     stations: dict[str, LocationPoint],
     thresholds: list[ReturnPeriodThresholds],
     minimum_return_period: str = MINIMUM_RETURN_PERIOD,
-) -> list[TriggeredStation]:
+) -> list[AlertStation]:
     """
     Compare median ensemble discharge against the minimum return period threshold.
     A station triggers an alert if the median discharge for any lead time
     exceeds the threshold for the given return period.
     """
-    triggered: list[TriggeredStation] = []
+    triggered: list[AlertStation] = []
 
     for station_code, lead_times in discharges.items():
         station_thresholds = _get_station_thresholds(thresholds, station_code)
@@ -105,23 +106,26 @@ def determine_alert_stations(
             )
             continue
 
-        triggered_lead_times: list[LeadTimeSeverity] = []
-        for lead_time, ensemble_values in lead_times.items():
-            if not ensemble_values:
+        alert_lead_times: list[LeadTimeSeverity] = []
+        for lead_time_discharge in lead_times:
+            if not lead_time_discharge.ensemble_discharges:
                 continue
-            median_discharge = statistics.median(ensemble_values)
+            median_discharge = statistics.median(
+                lead_time_discharge.ensemble_discharges
+            )
             matched_rp = _match_return_period(median_discharge, station_thresholds)
             if matched_rp is not None:
-                triggered_lead_times.append(
+                alert_lead_times.append(
                     LeadTimeSeverity(
-                        lead_time=lead_time,
+                        time_interval_start=lead_time_discharge.time_interval_start,
+                        time_interval_end=lead_time_discharge.time_interval_end,
                         median_discharge=median_discharge,
-                        ensemble_discharges=ensemble_values,
+                        ensemble_discharges=lead_time_discharge.ensemble_discharges,
                         return_period=matched_rp,
                     )
                 )
 
-        if triggered_lead_times:
+        if alert_lead_times:
             station = stations.get(station_code)
             if station is None:
                 logging.warning(
@@ -129,15 +133,15 @@ def determine_alert_stations(
                 )
                 continue
             triggered.append(
-                TriggeredStation(
+                AlertStation(
                     station_code=station_code,
                     station=station,
-                    lead_time_severities=triggered_lead_times,
+                    lead_time_severities=alert_lead_times,
                 )
             )
             logging.info(
                 f"Station {station_code} triggered for "
-                f"{len(triggered_lead_times)} lead time(s)"
+                f"{len(alert_lead_times)} lead time(s)"
             )
 
     logging.info(
