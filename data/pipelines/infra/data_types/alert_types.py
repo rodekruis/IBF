@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
+
+# Pyright cannot enforce recursive JSON types due to dict invariance.
+# This alias documents the intent: values are JSON-serializable primitives, lists, or dicts.
+JsonDict = dict[str, object]
 
 
 @dataclass
@@ -33,6 +38,13 @@ class HazardType(StrEnum):
     DROUGHT = "drought"
 
 
+# This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
+# Keep in line with definition in alerts.service.ts
+EVENT_NAME_PATTERN = re.compile(
+    r"^[A-Z]{3}_(" + "|".join(re.escape(h.value) for h in HazardType) + r")_.+$"
+)
+
+
 class ForecastSource(StrEnum):
     GLOFAS = "glofas"
     ECMWF = "ECMWF"
@@ -40,7 +52,6 @@ class ForecastSource(StrEnum):
 
 class Layer(StrEnum):
     ALERT_EXTENT = "alert_extent"
-    SPATIAL_EXTENT = "spatial_extent"
     POPULATION_EXPOSED = "population_exposed"
 
 
@@ -128,7 +139,7 @@ class Exposure:
 
     def to_dict(
         self,
-    ) -> dict[str, list[dict[str, str | bool | int | float | dict[str, float]]]]:
+    ) -> JsonDict:
         return {
             "adminAreas": [item.to_dict() for item in self.admin_areas],
             "geoFeatures": [item.to_dict() for item in self.geo_features],
@@ -138,30 +149,33 @@ class Exposure:
 
 @dataclass
 class Alert:
-    alert_name: str
-    issued_at: datetime
+    event_name: str
     centroid: Centroid
-    hazard_types: list[HazardType]
-    forecast_sources: list[ForecastSource] = field(default_factory=list)
     severity: list[Severity] = field(default_factory=list)
     exposure: Exposure = field(default_factory=Exposure)
 
     def to_dict(
         self,
-    ) -> dict[
-        str,
-        str
-        | list[str]
-        | dict[str, float]
-        | list[dict[str, str | float | int | list[str]]]
-        | dict[str, list[dict[str, str | bool | int | float | dict[str, float]]]],
-    ]:
+    ) -> JsonDict:
         return {
-            "alertName": self.alert_name,
-            "issuedAt": self.issued_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "eventName": self.event_name,
             "centroid": self.centroid.to_dict(),
-            "hazardTypes": list(self.hazard_types),
-            "forecastSources": list(self.forecast_sources),
             "severity": [entry.to_dict() for entry in self.severity],
             "exposure": self.exposure.to_dict(),
+        }
+
+
+@dataclass
+class Forecast:
+    issued_at: datetime
+    hazard_type: HazardType
+    forecast_sources: list[ForecastSource]
+    alerts: list[Alert] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, str | list[str] | list[dict]]:
+        return {
+            "issuedAt": self.issued_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "hazardType": str(self.hazard_type),
+            "forecastSources": list(self.forecast_sources),
+            "alerts": [alert.to_dict() for alert in self.alerts],
         }

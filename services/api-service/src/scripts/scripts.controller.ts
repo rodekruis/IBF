@@ -25,12 +25,6 @@ export class ScriptsController {
     isArray: true,
   })
   @ApiQuery({
-    name: 'isApiTests',
-    required: false,
-    example: 'false',
-    description: `Only for API tests`,
-  })
-  @ApiQuery({
     name: 'resetIdentifier',
     required: false,
     description:
@@ -44,19 +38,15 @@ export class ScriptsController {
     @Body() body: SecretDto,
     @Query('script') script: WrapperType<SeedScript>,
     @Query('resetIdentifier') resetIdentifier: string,
-    @Query('isApiTests') isApiTests: boolean,
     @Res() res,
   ): Promise<string> {
     if (body.secret !== env.RESET_SECRET) {
       return res.status(HttpStatus.FORBIDDEN).send('Not allowed');
     }
 
-    isApiTests = isApiTests !== undefined && isApiTests.toString() === 'true';
-
     await this.scriptsService.loadSeedScenario({
       resetIdentifier,
       seedScript: script,
-      isApiTests,
     });
 
     return res

@@ -15,14 +15,18 @@ from pipelines.infra.data_types.data_config_types import (
     DataSource,
     DataSourceConfig,
 )
-from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
+from pipelines.infra.data_types.loaded_data_types import (
+    ClimateRegion,
+    DataType,
+    LoadedDataSource,
+)
 from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.dummy_data import DUMMY_DATA
 from shared.download_helpers import download_json_source, download_object
 
 logger = logging.getLogger(__name__)
 
-SEED_REPO_POPULATION_GREYSCALE_PATH = "/raster-data/population/greyscale/"
+SEED_REPO_POPULATION_DATA_PNG_PATH = "/raster-data/population/data-png/"
 SEED_REPO_ADMIN_AREAS_PATH = "/admin-areas/processed/"
 # Note: this is getting glofas stations now. In the future, we most likely will be fetching
 # climate areas, catchments or something like that.
@@ -127,10 +131,8 @@ def _load_seed_repo_population_data(
 
     png_filename = f"{config.country_code_iso_3}_population.png"
     json_filename = f"{config.country_code_iso_3}_population_metadata.json"
-    png_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_GREYSCALE_PATH + png_filename
-    json_uri = (
-        _get_seed_repo_uri() + SEED_REPO_POPULATION_GREYSCALE_PATH + json_filename
-    )
+    png_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_DATA_PNG_PATH + png_filename
+    json_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_DATA_PNG_PATH + json_filename
 
     container.data = download_object(png_uri)
     if container.data is None:
@@ -152,6 +154,9 @@ def _load_seed_repo_population_data(
         "scales": json_data["scales"],
         "offsets": json_data["offsets"],
         "count": json_data["count"],
+        "max_value": json_data["max_value"],
+        "nodata": json_data["nodata"],
+        "dtype": json_data["dtype"],
     }
 
 
@@ -174,11 +179,12 @@ def _load_glofas_discharge(config: DataSourceConfig, container: LoadedDataSource
 def _load_ibf_api_climate_regions(
     config: DataSourceConfig, container: LoadedDataSource
 ):
-    # TODO: Set the type correctly once real data is loaded
-    container.data_type = DataType.UNSPECIFIED
-    container.data = _load_dummy_data(config)
-    if container.data is None:
+    container.data_type = DataType.CLIMATE_REGION_LIST
+    raw = _load_dummy_data(config)
+    if not isinstance(raw, list):
         container.error = f"No dummy data found for source '{config.source}'"
+        return
+    container.data = [ClimateRegion.from_raw(item) for item in raw]
 
 
 def _load_dummy_data(source_config: DataSourceConfig) -> object:

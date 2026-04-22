@@ -12,13 +12,7 @@ from pipelines.flood.resolve_flood_extent import resolve_flood_extent_raster
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import (
-    Centroid,
-    EnsembleMemberType,
-    ForecastSource,
-    HazardType,
-    Layer,
-)
+from pipelines.infra.data_types.alert_types import Centroid, EnsembleMemberType, Layer
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.raster_utils import ( # TODO-infra: move utils to infra and import in flood pipeline
@@ -37,12 +31,11 @@ def calculate_flood_forecasts(
 ) -> None:
     # Step 1 - Load data from the data provider
     stations: dict[str, LocationPoint] = data_provider.get_data(
-        DataSource.GLOFAS_STATIONS_SEED_REPO
-    ).data
-    target_admin_areas: AdminAreasSet = data_provider.get_data(
-        DataSource.ADMIN_AREA_SEED_REPO
-    ).data
-    # TODO:  load population using data_provider once data source is registered
+        DataSource.GLOFAS_STATIONS_SEED_REPO, dict
+    )
+    target_admin_areas = data_provider.get_data(
+        DataSource.ADMIN_AREA_SEED_REPO, AdminAreasSet
+    )    # TODO:  load population using data_provider once data source is registered
 
     if not stations or not target_admin_areas:
         data_submitter.add_error(
@@ -108,36 +101,20 @@ def calculate_flood_forecasts(
     # Step 5 - Create alerts and determine exposure for alert stations
     issued_at = datetime.now(timezone.utc)
 
-    for alert in alert_stations:
-        alert_name = f"{country}_floods_{alert.station_code}"
+    for station_code, station in stations.items():
+        event_name = f"{country}_floods_{station.name}"
 
         data_submitter.create_alert(
-            alert_name=alert_name,
-            hazard_types=[HazardType.FLOODS],
+            event_name=event_name,
             centroid=Centroid(
                 latitude=alert.station.lat,
                 longitude=alert.station.lon,
             ),
-            issued_at=issued_at,
-            forecast_sources=[ForecastSource.GLOFAS],
         )
 
-        # Add severity data per alert lead time
-        for severity in alert.lead_time_severities:
-            lead_time_start, lead_time_end = _lead_time_to_iso_range(
-                issued_at, severity.lead_time
-            )
-            for discharge in severity.ensemble_discharges:
-                data_submitter.add_severity_data(
-                    alert_name=alert_name,
-                    time_interval_start=lead_time_start,
-                    time_interval_end=lead_time_end,
-                    ensemble_member_type=EnsembleMemberType.RUN,
-                    severity_key="river_discharge",
-                    severity_value=discharge,
-                )
+        for _ in range(2):
             data_submitter.add_severity_data(
-                alert_name=alert_name,
+                event_name=event_name,
                 time_interval_start=lead_time_start,
                 time_interval_end=lead_time_end,
                 ensemble_member_type=EnsembleMemberType.MEDIAN,

@@ -3,12 +3,9 @@
   "compilerOptions": {
     "allowJs": false,
     "checkJs": false,
-    "types": ["node", "jest", "supertest", "Multer"]
+    "types": ["node", "jest", "supertest", "Multer"],
+    "rootDir": ".."
   },
-  "exclude": ["../node_modules", "../dist", "../src/**/*"],
-  "include": ["**/*.ts"],
-  "baseUrl": "./",
-  "paths": {
-    "@api-service/*": ["../*"]
-  }
+  "exclude": ["../node_modules", "../dist"],
+  "include": ["../src/**/*.ts", "./**/*.ts"]
 }

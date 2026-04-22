@@ -16,10 +16,11 @@ from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import HazardType
+from pipelines.infra.data_types.alert_types import ForecastSource, HazardType
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
+    OutputMode,
     RunTargetType,
 )
 from pipelines.infra.utils.alert_admin_aggregation import (
@@ -27,6 +28,11 @@ from pipelines.infra.utils.alert_admin_aggregation import (
 )
 
 logger = logging.getLogger(__name__)
+
+FORECAST_SOURCES: dict[str, list[ForecastSource]] = {
+    "floods": [ForecastSource.GLOFAS],
+    "drought": [ForecastSource.ECMWF],
+}
 
 HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
 
@@ -54,6 +60,15 @@ def _run_country(
 
     data_submitter = DataSubmitter()
 
+    # --- Set forecast metadata based on hazard type ---
+    issued_at = datetime.now(timezone.utc)
+    forecast_sources = FORECAST_SOURCES[hazard_type]
+    data_submitter.set_forecast_metadata(
+        issued_at=issued_at,
+        hazard_type=hazard_type,
+        forecast_sources=forecast_sources,
+    )
+
     # --- Hazard-specific forecast logic (implemented by data scientists) ---
     hazard_fn(
         data_provider,
@@ -63,9 +78,7 @@ def _run_country(
     )
 
     # --- Post-processing: aggregate deepest-level admin area data upward ---
-    admin_areas: AdminAreasSet = data_provider.get_data(
-        DataSource.ADMIN_AREA_SEED_REPO
-    ).data
+    admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_SEED_REPO, AdminAreasSet)
     for alert in data_submitter.get_alerts():
         aggregate_to_parent_admin_levels(alert, admin_areas)
 
@@ -73,7 +86,13 @@ def _run_country(
     output_config = config_reader.get_country_config(
         country.country_code_iso_3, run_target
     )
-    output_mode = os.environ.get("IBF_OUTPUT_MODE", output_config.output_mode)
+    if output_config is None:
+        raise ValueError(
+            f"No output config found for country '{country.country_code_iso_3}' and run target '{run_target}'"
+        )
+    output_mode = OutputMode(
+        os.environ.get("IBF_OUTPUT_MODE", output_config.output_mode)
+    )
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     output_path = str(

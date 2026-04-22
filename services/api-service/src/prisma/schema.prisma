@@ -33,16 +33,45 @@ model Alert {
   id              Int      @id @default(autoincrement())
   created         DateTime @default(now())
   updated         DateTime @updatedAt
-  alertName       String
+  eventName       String
   issuedAt        DateTime
   centroid        Json
-  hazardTypes     String[]
+  hazardType      String
   forecastSources String[]
+  eventId         Int?
+  event           Event?   @relation(fields: [eventId], references: [id])
 
   severity             AlertSeverity[]
   exposureAdminArea    AlertExposureAdminArea[]
   exposureGeoFeature   AlertExposureGeoFeature[]
   exposureRasterData   AlertExposureRasterData[]
+
+  @@index([eventId])
+}
+
+model Event {
+  @@schema("api-service")
+  @@map("event")
+
+  id                        Int       @id @default(autoincrement())
+  created                   DateTime  @default(now())
+  updated                   DateTime  @updatedAt
+  eventName                 String
+  hazardType                String
+  forecastSources           String[]
+  alertClass                String
+  trigger                   Boolean
+  centroid                  Json
+  startAt                   DateTime
+  reachesPeakAlertClassAt   DateTime
+  endAt                     DateTime
+  firstIssuedAt             DateTime
+  lastUpdatedAt             DateTime
+  closedAt                  DateTime?
+
+  alerts                    Alert[]
+
+  @@index([eventName])
 }
 
 model AlertSeverity {

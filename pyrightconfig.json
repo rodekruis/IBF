@@ -1,0 +1,26 @@
+{
+  "include": ["data/pipelines"],
+  "exclude": [
+    "**/__pycache__",
+    "**/.venv",
+    "**/node_modules",
+    "**/dist",
+    "**/.*",
+    "data/pipelines/legacy",
+    "data/pipelines/output"
+  ],
+  "pythonVersion": "3.12",
+  "venvPath": "data",
+  "venv": ".venv",
+  "typeCheckingMode": "standard",
+  "reportUnsupportedDunderAll": "none",
+  "reportMissingModuleSource": "none",
+  "reportMissingImports": "warning",
+  "reportAssignmentType": "error",
+  "reportArgumentType": "error",
+  "reportReturnType": "error",
+  "reportOptionalMemberAccess": "error",
+  "reportOperatorIssue": "error",
+  "reportIndexIssue": "error",
+  "extraPaths": ["data"]
+}

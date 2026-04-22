@@ -26,6 +26,7 @@ def build_checks(fix: bool) -> list[list[str]]:
         ["deptry", "."],
         ruff_command,
         ["vulture", *PYTHON_SOURCES, "--min-confidence", "80"],
+        ["pyright", "--project", "../pyrightconfig.json"],
     ]
 
 

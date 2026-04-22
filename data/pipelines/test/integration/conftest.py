@@ -16,13 +16,17 @@ from typing import Callable
 import pytest
 
 EXPECTED_ALERT_KEYS = {
-    "alertName",
-    "issuedAt",
+    "eventName",
     "centroid",
-    "hazardTypes",
-    "forecastSources",
     "severity",
     "exposure",
+}
+
+EXPECTED_FORECAST_KEYS = {
+    "issuedAt",
+    "hazardType",
+    "forecastSources",
+    "alerts",
 }
 
 EXPECTED_EXPOSURE_KEYS = {"adminAreas", "geoFeatures", "rasters"}
@@ -63,15 +67,27 @@ def _find_latest_output(hazard: str, country: str) -> Path:
 
 
 def _load_alerts(output_dir: Path) -> list[dict]:
-    alerts_json = output_dir / "alerts_object.json"
-    assert alerts_json.exists(), f"'alerts_object.json' not found in {output_dir}"
+    forecast = _load_forecast(output_dir)
+    alerts = forecast["alerts"]
+    assert isinstance(
+        alerts, list
+    ), "'forecast.json' field 'alerts' should be a JSON array"
+    assert len(alerts) > 0, "'forecast.json' field 'alerts' should not be empty"
+    return alerts
+
+
+def _load_forecast(output_dir: Path) -> dict:
+    alerts_json = output_dir / "forecast.json"
+    assert alerts_json.exists(), f"'forecast.json' not found in {output_dir}"
 
     with alerts_json.open("r", encoding="utf-8") as f:
-        alerts = json.load(f)
+        forecast = json.load(f)
 
-    assert isinstance(alerts, list), "'alerts_object.json' should contain a JSON array"
-    assert len(alerts) > 0, "'alerts_object.json' should not be empty"
-    return alerts
+    assert isinstance(forecast, dict), "'forecast.json' should contain a JSON object"
+    assert EXPECTED_FORECAST_KEYS.issubset(
+        forecast.keys()
+    ), f"Forecast missing keys: {EXPECTED_FORECAST_KEYS - forecast.keys()}"
+    return forecast
 
 
 def _assert_alert_structure(alert: dict) -> None:
@@ -82,9 +98,6 @@ def _assert_alert_structure(alert: dict) -> None:
     assert isinstance(alert["centroid"], dict)
     assert "latitude" in alert["centroid"]
     assert "longitude" in alert["centroid"]
-
-    assert isinstance(alert["hazardTypes"], list)
-    assert len(alert["hazardTypes"]) > 0
 
     assert isinstance(alert["severity"], list)
     assert len(alert["severity"]) > 0
@@ -133,6 +146,7 @@ def _clean_output(hazard: str, country: str) -> None:
 class PipelineHelpers:
     run_pipeline: Callable[..., subprocess.CompletedProcess[str]]
     find_latest_output: Callable[..., Path]
+    load_forecast: Callable[..., dict]
     load_alerts: Callable[..., list[dict]]
     assert_alert_structure: Callable[..., None]
     clean_output: Callable[..., None]
@@ -143,6 +157,7 @@ def pipeline() -> PipelineHelpers:
     return PipelineHelpers(
         run_pipeline=_run_pipeline,
         find_latest_output=_find_latest_output,
+        load_forecast=_load_forecast,
         load_alerts=_load_alerts,
         assert_alert_structure=_assert_alert_structure,
         clean_output=_clean_output,

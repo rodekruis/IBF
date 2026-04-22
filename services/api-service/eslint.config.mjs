@@ -146,7 +146,7 @@ export default [
     },
   },
   {
-    files: ['*.spec.ts', '*.test.ts'],
+    files: ['**/*.spec.ts', '**/*.test.ts'],
     plugins: {
       jest,
     },

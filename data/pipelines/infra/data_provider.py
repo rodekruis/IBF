@@ -8,9 +8,12 @@ This file can be run directly to help debug data loading issues.
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
+from typing import TypeVar
 
 from dotenv import load_dotenv
+from shared.country_data import CountryCodeIso3
 
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
@@ -20,13 +23,18 @@ from pipelines.infra.utils.data_provider_fetchers import load_data_container
 
 logger = logging.getLogger(__name__)
 
+_T = TypeVar("_T")
+
 
 class DataProvider:
     def __init__(self) -> None:
         self.loaded_data: dict[DataSource, LoadedDataSource] = {}
 
     def try_load_data(
-        self, config_reader: ConfigReader, country_name: str, run_target: RunTargetType
+        self,
+        config_reader: ConfigReader,
+        country_name: CountryCodeIso3,
+        run_target: RunTargetType,
     ) -> bool:
         country_config = config_reader.get_country_config(country_name, run_target)
         if not country_config:
@@ -63,10 +71,16 @@ class DataProvider:
 
         return success
 
-    def get_data(self, source: DataSource) -> LoadedDataSource:
+    def get_data(self, source: DataSource, expected_type: type[_T]) -> _T:
         if source not in self.loaded_data:
             raise KeyError(f"Data source '{source}' not loaded")
-        return self.loaded_data[source]
+        container = self.loaded_data[source]
+        if not isinstance(container.data, expected_type):
+            raise TypeError(
+                f"Data source '{source}' expected type {expected_type.__name__}, "
+                f"got {type(container.data).__name__}"
+            )
+        return container.data
 
 
 # If the file is run as main, load one of the default config files and load listed data sources
@@ -84,6 +98,9 @@ if __name__ == "__main__":
         print(f"Failed to load config from path {config_path}")
     else:
         data = config_reader.run_targets.get(RunTargetType.DEBUG)
+        if data is None:
+            print("No DEBUG run target found in config")
+            sys.exit(1)
         print(
             f"Data sources for DEBUG run target: {data.hazard_type} - {data.country_configs}"
         )
@@ -125,7 +142,7 @@ if __name__ == "__main__":
             elif container.data_type == DataType.PNG:
                 crs = container.metadata.get("crs", "N/A")
                 bounds = container.metadata.get("bounds", "N/A")
-                size = len(container.data) if container.data else 0
+                size = len(container.data) if isinstance(container.data, bytes) else 0
                 print(
                     f"  [{container.data_source}] ({container.data_type}): {size} bytes, crs={crs}, bounds={bounds}"
                 )
