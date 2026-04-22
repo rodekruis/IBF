@@ -65,7 +65,7 @@ def extract_population_within_flood_extent(
 ) -> dict[str, float]:
     """
     Extract population only within the intersection of admin areas and flood extent.
-    For each admin area, masks the population raster with the flood extent raster
+    For each admin area, masks the population raster with the (binary) flood extent raster
     so only flooded pixels count toward the population sum.
     Returns a dict of pcode -> exposed population.
     """
@@ -183,7 +183,7 @@ def clip_flood_extent_to_admin_areas(
     return output_path
 
 
-def determine_exposure(
+def determine_population_exposed(
     station: LocationPoint,
     station_district_mapping: dict,
     admin_areas: AdminAreasSet,
@@ -192,7 +192,7 @@ def determine_exposure(
     target_admin_level: int,
 ) -> AlertExposure:
     """
-    Determine which admin areas are exposed for a triggered station.
+    Determine which admin areas are exposed for a alert station.
     1. Read mapped place codes for the station from station_district_mapping
     2. Filter mapped place codes to available target admin areas
     3. Extract population within the flood extent per mapped admin area
