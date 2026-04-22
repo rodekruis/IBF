@@ -71,8 +71,8 @@ export function buildAlert(
         {
           placeCode: 'KEN_01',
           adminLevel: 3,
-          layer: Layer.spatialExtent,
-          value: 1,
+          layer: Layer.populationExposed,
+          value: 1000,
         },
       ],
       rasters: [

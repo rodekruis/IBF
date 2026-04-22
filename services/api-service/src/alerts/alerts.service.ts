@@ -76,7 +76,7 @@ export class AlertsService {
     await this.alertToEventService.closeStaleEvents({
       hazardType: forecast.hazardType,
       excludeEventNames: forecast.alerts.map((a) => a.eventName),
-      closedAt: forecast.issuedAt,
+      issuedAt: forecast.issuedAt,
     });
   }
 

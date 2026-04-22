@@ -12,8 +12,7 @@ def aggregate_to_parent_admin_levels(
 
     Each pass groups the deepest-level entries by a parent at the target level
     and aggregates per layer:
-    - Boolean layers (e.g. spatial_extent): aggregated via ``any()`` — a
-      parent is True if any of its children is True.
+    - Boolean layers: aggregated via ``any()`` (True if any child is True).
     - Numeric layers (e.g. population_exposed): aggregated via ``sum()``,
       which is correct for absolute counts.
 
@@ -54,13 +53,10 @@ def aggregate_to_parent_admin_levels(
 
         for (place_code, layer), values in grouped.items():
             if all(isinstance(v, bool) for v in values):
-                # Boolean: parent is True if any child is True
                 aggregated_value: bool | int | float = any(values)
             elif all(
                 isinstance(v, (int, float)) and not isinstance(v, bool) for v in values
             ):
-                # Numeric (absolute counts): sum children
-                # TODO: add weighted average for percentage/rate layers
                 aggregated_value = sum(values)
             else:
                 raise ValueError(

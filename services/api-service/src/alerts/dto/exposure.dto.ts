@@ -14,12 +14,6 @@ export class ExposureDto {
       {
         placeCode: 'KEN_01_001',
         adminLevel: 3,
-        layer: Layer.spatialExtent,
-        value: 1,
-      },
-      {
-        placeCode: 'KEN_01_001',
-        adminLevel: 3,
         layer: Layer.populationExposed,
         value: 4500,
       },

@@ -52,7 +52,6 @@ class ForecastSource(StrEnum):
 
 class Layer(StrEnum):
     ALERT_EXTENT = "alert_extent"
-    SPATIAL_EXTENT = "spatial_extent"
     POPULATION_EXPOSED = "population_exposed"
 
 

@@ -47,13 +47,6 @@ def _create_valid_submitter() -> DataSubmitter:
         event_name=EVENT_NAME,
         place_code="PC001",
         admin_level=3,
-        layer=Layer.SPATIAL_EXTENT,
-        value=True,
-    )
-    submitter.add_admin_area_exposure(
-        event_name=EVENT_NAME,
-        place_code="PC001",
-        admin_level=3,
         layer=Layer.POPULATION_EXPOSED,
         value=0,
     )

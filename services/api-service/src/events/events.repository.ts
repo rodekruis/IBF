@@ -3,6 +3,7 @@ import { Event, Prisma } from '@prisma/client';
 
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
+import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
 interface EventAlertHistorySeverity {
@@ -19,6 +20,12 @@ export interface EventAlertHistoryRecord {
   readonly issuedAt: Date;
   readonly hazardType: string;
   readonly severityData: EventAlertHistorySeverity[];
+}
+
+export interface ExposedAdminAreaRecord {
+  readonly placeCode: string;
+  readonly adminLevel: number;
+  readonly exposure: { readonly type: Layer; readonly exposed: number }[];
 }
 
 @Injectable()
@@ -69,7 +76,12 @@ export class EventsRepository {
     id: number,
     data: Pick<
       Event,
-      'alertClass' | 'trigger' | 'startAt' | 'reachesPeakAlertClassAt' | 'endAt'
+      | 'alertClass'
+      | 'trigger'
+      | 'startAt'
+      | 'reachesPeakAlertClassAt'
+      | 'endAt'
+      | 'lastUpdatedAt'
     >,
   ): Promise<Event> {
     return this.prisma.event.update({
@@ -122,24 +134,70 @@ export class EventsRepository {
     }));
   }
 
-  public async closeOpenEventsByName(
-    eventName: string,
-    closedAt: Date,
-  ): Promise<void> {
+  public async getExposedAdminAreasForLatestAlerts(
+    eventIds: number[],
+  ): Promise<Map<number, ExposedAdminAreaRecord[]>> {
+    const result = new Map<number, ExposedAdminAreaRecord[]>();
+    if (eventIds.length === 0) {
+      return result;
+    }
+
+    const latestAlerts = await this.prisma.alert.findMany({
+      where: { eventId: { in: eventIds } },
+      orderBy: [{ eventId: 'asc' }, { issuedAt: 'desc' }],
+      distinct: ['eventId'],
+      select: {
+        eventId: true,
+        exposureAdminArea: {
+          where: { layer: Layer.populationExposed },
+          select: {
+            placeCode: true,
+            adminLevel: true,
+            layer: true,
+            value: true,
+          },
+        },
+      },
+    });
+
+    for (const alert of latestAlerts) {
+      if (alert.eventId === null) {
+        continue;
+      }
+      const entries: ExposedAdminAreaRecord[] = alert.exposureAdminArea.map(
+        (row) => ({
+          placeCode: row.placeCode,
+          adminLevel: row.adminLevel,
+          exposure: [{ type: row.layer as Layer, exposed: row.value }],
+        }),
+      );
+      result.set(alert.eventId, entries);
+    }
+
+    return result;
+  }
+
+  public async closeOpenEventsByName({
+    eventName,
+    issuedAt,
+  }: {
+    eventName: string;
+    issuedAt: Date;
+  }): Promise<void> {
     await this.prisma.event.updateMany({
       where: { eventName, closedAt: null },
-      data: { closedAt },
+      data: { closedAt: issuedAt, lastUpdatedAt: issuedAt },
     });
   }
 
   public async closeStaleOpenEvents({
     hazardType,
     excludeEventNames,
-    closedAt,
+    issuedAt,
   }: {
     hazardType: HazardType;
     excludeEventNames: string[];
-    closedAt: Date;
+    issuedAt: Date;
   }): Promise<number> {
     const result = await this.prisma.event.updateMany({
       where: {
@@ -147,7 +205,7 @@ export class EventsRepository {
         hazardType,
         eventName: { notIn: excludeEventNames },
       },
-      data: { closedAt },
+      data: { closedAt: issuedAt, lastUpdatedAt: issuedAt },
     });
     return result.count;
   }

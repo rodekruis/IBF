@@ -1,4 +1,6 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
+
+import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
 
 export class EventResponseDto {
   @ApiProperty()
@@ -37,9 +39,12 @@ export class EventResponseDto {
   @ApiProperty()
   public readonly firstIssuedAt: Date;
 
-  @ApiPropertyOptional({ type: Date, nullable: true })
-  public readonly closedAt: Date | null;
+  @ApiProperty()
+  public readonly lastUpdatedAt: Date;
 
   @ApiProperty()
   public readonly isOngoing: boolean;
+
+  @ApiProperty({ type: [ExposedAdminAreaDto] })
+  public readonly exposedAdminAreas: ExposedAdminAreaDto[];
 }

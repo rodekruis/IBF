@@ -35,10 +35,10 @@ export class AlertToEventService {
     if (classification.alertClass === null) {
       // If below any threshold, then close open event (if any) and do not create new event
       // This can happen if the minimum threshold the pipeline employs is more conservative than the actual alert thresholds.
-      await this.eventsRepository.closeOpenEventsByName(
-        alert.eventName,
-        forecast.issuedAt,
-      );
+      await this.eventsRepository.closeOpenEventsByName({
+        eventName: alert.eventName,
+        issuedAt: forecast.issuedAt,
+      });
       return null;
     }
 
@@ -78,6 +78,7 @@ export class AlertToEventService {
       reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
       endAt: classification.endAt,
       firstIssuedAt: forecast.issuedAt,
+      lastUpdatedAt: forecast.issuedAt,
     });
   }
 
@@ -98,6 +99,7 @@ export class AlertToEventService {
       startAt,
       reachesPeakAlertClassAt: latestAlert.reachesPeakAlertClassAt,
       endAt: latestAlert.endAt,
+      lastUpdatedAt: issuedAt,
     });
   }
 
@@ -155,16 +157,16 @@ export class AlertToEventService {
   public async closeStaleEvents({
     hazardType,
     excludeEventNames,
-    closedAt,
+    issuedAt,
   }: {
     hazardType: HazardType;
     excludeEventNames: string[];
-    closedAt: Date;
+    issuedAt: Date;
   }): Promise<void> {
     await this.eventsRepository.closeStaleOpenEvents({
       hazardType,
       excludeEventNames,
-      closedAt,
+      issuedAt,
     });
   }
 }

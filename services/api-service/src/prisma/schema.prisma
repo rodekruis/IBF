@@ -66,6 +66,7 @@ model Event {
   reachesPeakAlertClassAt   DateTime
   endAt                     DateTime
   firstIssuedAt             DateTime
+  lastUpdatedAt             DateTime
   closedAt                  DateTime?
 
   alerts                    Alert[]

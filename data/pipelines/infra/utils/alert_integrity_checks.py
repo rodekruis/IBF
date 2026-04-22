@@ -80,7 +80,7 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
         level_layers = levels.setdefault(entry.admin_level, {})
         level_layers[entry.layer] = level_layers.get(entry.layer, 0) + 1
 
-    admin_area_required = (Layer.SPATIAL_EXTENT, Layer.POPULATION_EXPOSED)
+    admin_area_required = (Layer.POPULATION_EXPOSED,)
     for level, layer_counts in sorted(levels.items()):
         for required in admin_area_required:
             if required not in layer_counts:

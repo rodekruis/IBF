@@ -77,10 +77,17 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       alertClass: 'med',
       trigger: false,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
+      lastUpdatedAt: '2026-03-23T12:00:00.000Z',
       startAt: '2026-03-25T00:00:00.000Z',
       endAt: '2026-03-26T00:00:00.000Z',
-      closedAt: null,
       isOngoing: true,
+      exposedAdminAreas: [
+        {
+          placeCode: 'KEN_01',
+          adminLevel: 3,
+          exposure: [{ type: 'population_exposed', exposed: 1000 }],
+        },
+      ],
     });
 
     // Step 2: Create an alert with higher severity → updates event
@@ -96,7 +103,15 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       alertClass: 'high',
       trigger: true,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
+      lastUpdatedAt: '2026-03-24T12:00:00.000Z',
       isOngoing: true,
+      exposedAdminAreas: [
+        {
+          placeCode: 'KEN_01',
+          adminLevel: 3,
+          exposure: [{ type: 'population_exposed', exposed: 1000 }],
+        },
+      ],
     });
 
     // Step 3: Create two alerts → both events open
