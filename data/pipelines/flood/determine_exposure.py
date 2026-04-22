@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass, field
 
 import numpy as np
 import rasterio
 from rasterio.enums import Resampling
+from rasterio.mask import mask
 from rasterio.warp import reproject
 from rasterstats import zonal_stats
 
@@ -17,7 +19,9 @@ from pipelines.infra.data_types.location_point import LocationPoint
 class AlertExposure:
     place_codes: list[str]
     admin_level: int
+    clipped_flood_extent_raster_path: str
     population_per_place_code: dict[str, float] = field(default_factory=dict)
+
 
 
 def get_station_place_codes(
@@ -120,6 +124,65 @@ def extract_population_within_flood_extent(
     return population
 
 
+def clip_flood_extent_to_admin_areas(
+    place_codes: list[str],
+    admin_areas: AdminAreasSet,
+    flood_extent_raster_path: str,
+    station_code: str,
+) -> str:
+    output_path = os.path.join(
+        os.path.dirname(flood_extent_raster_path),
+        f"alert_extent_{station_code}.tif",
+    )
+
+    geometries: list[dict] = []
+    for place_code in place_codes:
+        admin_area = admin_areas.admin_areas.get(place_code)
+        if admin_area is None:
+            continue
+        geometries.append(
+            {
+                "type": admin_area.geometry_type,
+                "coordinates": admin_area.coordinates,
+            }
+        )
+
+    with rasterio.open(flood_extent_raster_path) as src:
+        profile = src.profile.copy()
+        nodata_value = src.nodata
+
+        # Source rasters may carry block size options without tiled output.
+        # Drop these creation options to avoid GDAL warnings on write.
+        profile.pop("blockxsize", None)
+        profile.pop("blockysize", None)
+        if profile.get("tiled") is False:
+            profile.pop("tiled", None)
+
+        if geometries:
+            clipped_data, clipped_transform = mask(
+                src,
+                geometries,
+                crop=True,
+                nodata=nodata_value,
+                filled=True,
+            )
+            profile.update(
+                height=clipped_data.shape[1],
+                width=clipped_data.shape[2],
+                transform=clipped_transform,
+            )
+        else:
+            logging.warning(
+                f"No admin area geometries to clip for station {station_code}; using full flood extent"
+            )
+            clipped_data = src.read()
+
+    with rasterio.open(output_path, "w", **profile) as dst:
+        dst.write(clipped_data)
+
+    return output_path
+
+
 def determine_exposure(
     station: LocationPoint,
     station_district_mapping: dict,
@@ -127,7 +190,7 @@ def determine_exposure(
     population_raster_path: str,
     flood_extent_raster_path: str,
     target_admin_level: int,
-) -> AlertExposure | None:
+) -> AlertExposure:
     """
     Determine which admin areas are exposed for a triggered station.
     1. Read mapped place codes for the station from station_district_mapping
@@ -139,15 +202,21 @@ def determine_exposure(
         station_district_mapping=station_district_mapping,
         admin_areas=admin_areas,
     )
-    if not place_codes:
-        return None
 
     population = extract_population_within_flood_extent(
         place_codes, admin_areas, population_raster_path, flood_extent_raster_path
     )
-    
+
+    clipped_flood_extent_raster_path = clip_flood_extent_to_admin_areas(
+        place_codes=place_codes,
+        admin_areas=admin_areas,
+        flood_extent_raster_path=flood_extent_raster_path,
+        station_code=station.id,
+    )
+
     return AlertExposure(
         place_codes=place_codes,
         admin_level=target_admin_level,
+        clipped_flood_extent_raster_path=clipped_flood_extent_raster_path,
         population_per_place_code=population,
     )
