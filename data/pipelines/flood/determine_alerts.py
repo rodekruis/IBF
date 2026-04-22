@@ -90,7 +90,7 @@ def determine_alert_stations(
     A station triggers an alert if the median discharge for any lead time
     exceeds the threshold for the given return period.
     """
-    triggered: list[AlertStation] = []
+    alert: list[AlertStation] = []
 
     for station_code, lead_times in discharges.items():
         station_thresholds = _get_station_thresholds(thresholds, station_code)
@@ -132,7 +132,7 @@ def determine_alert_stations(
                     f"Station {station_code} not found in stations dict, skipping"
                 )
                 continue
-            triggered.append(
+            alert.append(
                 AlertStation(
                     station_code=station_code,
                     station=station,
@@ -140,12 +140,12 @@ def determine_alert_stations(
                 )
             )
             logging.info(
-                f"Station {station_code} triggered for "
+                f"Station {station_code} alert for "
                 f"{len(alert_lead_times)} lead time(s)"
             )
 
     logging.info(
-        f"{len(triggered)} of {len(discharges)} stations exceeded "
+        f"{len(alert)} of {len(discharges)} stations exceeded "
         f"the minimum threshold {minimum_return_period}."
     )
-    return triggered
+    return alert
