@@ -6,7 +6,7 @@ import numpy as np
 import rasterio
 from rasterio.transform import from_origin
 
-from pipelines.flood.determine_population_exposed import (
+from pipelines.flood.determine_exposure import (
     clip_flood_extent_to_admin_areas,
     extract_population_within_flood_extent,
 )
