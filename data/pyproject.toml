@@ -13,37 +13,21 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "azure-identity",
-    "azure-cosmos",
-    "azure-keyvault-secrets",
-    "azure-storage-blob",
-    "cdsapi",
     "cfgrib",
     "click",
-    "geopandas",
     "netCDF4",
     "numpy",
-    "pandas",
     "pillow",
     "psycopg[binary]",
     "pydantic",
     "PyYAML",
     "python-dotenv",
-    "python-dateutil",
     "rasterio",
     "rasterstats>=0.20.0",
     "requests",
-    "rioxarray",
     "scipy",
     "shapely",
-    "urllib3",
     "xarray",
-    #    "beautifulsoup4", # not currently used, but leaving in due to lack of understanding
-    #    "certifi",
-    #    "fiona>=1.10b2",
-    #    "GeoAlchemy2",
-    #    "SQLAlchemy",
-    #    "tqdm",
 ]
 
 [project.scripts]
@@ -80,4 +64,4 @@ dev = [
 
 [tool.deptry]
 known_first_party = ["pipelines", "data_management", "shared"]
-per_rule_ignores = { DEP002 = ["cfgrib", "netCDF4", "scipy"], DEP004 = ["pytest"] }
+per_rule_ignores = { DEP002 = ["cfgrib", "netCDF4", "scipy", "rasterstats", "shapely", "xarray"], DEP004 = ["pytest"] }
