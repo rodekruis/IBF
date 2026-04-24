@@ -26,7 +26,7 @@ export class AlertToEventService {
     alert: AlertCreateDto,
     forecast: ForecastMetadata,
   ): Promise<number | null> {
-    const classification = this.alertClassificationService.classifyAlert({
+    const classification = await this.alertClassificationService.classifyAlert({
       hazardType: forecast.hazardType,
       issuedAt: forecast.issuedAt,
       severity: alert.severity,
@@ -118,11 +118,11 @@ export class AlertToEventService {
         latestIssuedAt,
       });
 
-    const historicalIssuedAndStart = historicalAlertsForEvent.map(
-      (historicalAlert) => ({
+    const historicalIssuedAndStart = await Promise.all(
+      historicalAlertsForEvent.map(async (historicalAlert) => ({
         issuedAt: historicalAlert.issuedAt,
-        startAt: this.classifyHistoricalAlert(historicalAlert).startAt, // NOTE: this basically reclassifies all alerts again, just to get the startAt, but is "cleaner" than writing new code to just get startAt
-      }),
+        startAt: (await this.classifyHistoricalAlert(historicalAlert)).startAt, // NOTE: this basically reclassifies all alerts again, just to get the startAt, but is "cleaner" than writing new code to just get startAt
+      })),
     );
 
     const firstOngoingHistoricalAlert = historicalIssuedAndStart.find(
@@ -136,9 +136,9 @@ export class AlertToEventService {
     return latestAlert.startAt;
   }
 
-  private classifyHistoricalAlert(
+  private async classifyHistoricalAlert(
     historicalAlert: EventAlertHistoryRecord,
-  ): ClassificationResult {
+  ): Promise<ClassificationResult> {
     return this.alertClassificationService.classifyAlert({
       hazardType: historicalAlert.hazardType,
       issuedAt: historicalAlert.issuedAt,

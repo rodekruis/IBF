@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { MulterModule } from '@nestjs/platform-express';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
+import { AlertConfigsModule } from '@api-service/src/alert-configs/alert-configs.module';
 import { AlertsModule } from '@api-service/src/alerts/alerts.module';
 import { AppController } from '@api-service/src/app.controller';
 import { AuthModule } from '@api-service/src/auth/auth.module';
@@ -26,6 +27,7 @@ import { ScriptsModule } from '@api-service/src/scripts/scripts.module';
       },
     ]),
     AuthModule,
+    AlertConfigsModule,
     AlertsModule,
     EventsModule,
   ],

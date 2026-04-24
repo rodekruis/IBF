@@ -21,7 +21,7 @@ describe('/ Alerts', () => {
   let seededAlertId: number;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.initialState, __filename);
+    await resetDB(SeedScript.test, __filename);
     const alert = buildAlert({ eventName: ALERT_NAME });
     const forecast = buildForecast([alert]);
     await createAlerts(forecast);

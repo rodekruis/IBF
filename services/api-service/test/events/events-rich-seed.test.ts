@@ -135,7 +135,7 @@ describe('GET /events - rich seed data for demo/debugging', () => {
   let accessToken: string;
 
   beforeEach(async () => {
-    await resetDB(SeedScript.initialState, __filename);
+    await resetDB(SeedScript.test, __filename);
     accessToken = await getAccessToken();
   });
 

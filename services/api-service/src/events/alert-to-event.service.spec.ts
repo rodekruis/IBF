@@ -71,9 +71,9 @@ describe('AlertToEventService', () => {
 
   describe('matchAndStore', () => {
     it('should propagate error when classification throws', async () => {
-      classificationService.classifyAlert.mockImplementation(() => {
-        throw new Error('No classification config found');
-      });
+      classificationService.classifyAlert.mockRejectedValue(
+        new Error('No classification config found'),
+      );
 
       await expect(
         service.matchAndStore(buildAlert(), buildForecastMetadata()),
@@ -82,7 +82,7 @@ describe('AlertToEventService', () => {
     });
 
     it('should close existing event and skip creation when alertClass is null', async () => {
-      classificationService.classifyAlert.mockReturnValue(
+      classificationService.classifyAlert.mockResolvedValue(
         buildClassificationResult({ alertClass: null }),
       );
 
@@ -101,7 +101,7 @@ describe('AlertToEventService', () => {
 
     it('should create a new event when no open event exists', async () => {
       const classification = buildClassificationResult();
-      classificationService.classifyAlert.mockReturnValue(classification);
+      classificationService.classifyAlert.mockResolvedValue(classification);
       repository.getOpenEventByName.mockResolvedValue(null);
       repository.createEvent.mockResolvedValue({ id: 99 } as Event);
 
@@ -134,8 +134,8 @@ describe('AlertToEventService', () => {
         endAt: new Date('2026-04-06T00:00:00Z'),
       });
       classificationService.classifyAlert
-        .mockReturnValueOnce(classification)
-        .mockReturnValueOnce(
+        .mockResolvedValueOnce(classification)
+        .mockResolvedValueOnce(
           buildClassificationResult({
             startAt: new Date('2026-04-10T00:00:00Z'),
           }),
@@ -188,13 +188,13 @@ describe('AlertToEventService', () => {
         startAt: new Date('2026-04-08T00:00:00Z'),
       });
       classificationService.classifyAlert
-        .mockReturnValueOnce(classification)
-        .mockReturnValueOnce(
+        .mockResolvedValueOnce(classification)
+        .mockResolvedValueOnce(
           buildClassificationResult({
             startAt: new Date('2026-04-03T00:00:00Z'),
           }),
         )
-        .mockReturnValueOnce(
+        .mockResolvedValueOnce(
           buildClassificationResult({
             startAt: new Date('2026-03-27T00:00:00Z'),
           }),

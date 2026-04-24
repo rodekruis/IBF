@@ -140,3 +140,64 @@ model AlertExposureRasterData {
 
   @@index([alertId])
 }
+
+model Country {
+  @@schema("api-service")
+  @@map("country")
+
+  id               Int      @id @default(autoincrement())
+  created          DateTime @default(now())
+  updated          DateTime @updatedAt
+  countryCodeIso3  String   @unique
+  countryCodeIso2  String
+  countryName      String
+
+  adminAreas       AdminArea[]
+  alertConfigs     AlertConfig[]
+}
+
+model AdminArea {
+  @@schema("api-service")
+  @@map("admin-area")
+
+  id                Int      @id @default(autoincrement())
+  created           DateTime @default(now())
+  updated           DateTime @updatedAt
+  placeCode         String   @unique
+  adminLevel        Int
+  nameEn            String
+  countryCodeIso3   String
+  country           Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
+  parentPlaceCode   String? // soft FK to admin-area.placeCode
+  // TODO: pg_featureserv cannot discover this table yet because it stores geometry as JSONB and/or because it cannot read the 'api-service' schema it seems.
+  // To fix, either change to a real PostGIS geometry column or create a SQL view that casts JSONB to geometry.
+  geometry          Json
+
+  @@index([countryCodeIso3])
+  @@index([countryCodeIso3, adminLevel])
+}
+
+model AlertConfig {
+  @@schema("api-service")
+  @@map("alert-config")
+
+  id                        Int      @id @default(autoincrement())
+  created                   DateTime @default(now())
+  updated                   DateTime @updatedAt
+  countryCodeIso3           String
+  country                   Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
+  hazardType                String
+  spatialExtentName         String
+  spatialExtentPlaceCodes   String[] // soft FK to admin-area.placeCode
+  temporalExtents           Json
+  severityClassLevels       Json
+  // TODO: the classification fields below are currently duplicated per row (they are hazard-type-level, not per-station). Handle differently later.
+  probabilityClassLevels    Json
+  alertClassMatrix          Json
+  alertClassOrder           String[]
+  triggerAlertClass         String?
+  triggerLeadTimeDuration   String?
+
+  @@index([countryCodeIso3])
+  @@index([countryCodeIso3, hazardType])
+}

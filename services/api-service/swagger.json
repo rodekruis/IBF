@@ -39,6 +39,14 @@
   },
   {
     "method": "get",
+    "path": "/api/alert-configs",
+    "params": [
+      "countryCodeIso3",
+      "hazardType"
+    ]
+  },
+  {
+    "method": "get",
     "path": "/api/alerts",
     "params": []
   },
