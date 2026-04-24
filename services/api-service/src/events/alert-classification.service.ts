@@ -28,10 +28,10 @@ export class AlertClassificationService {
     private readonly alertClassificationConfigsService: AlertClassificationConfigsService,
   ) {}
 
-  public classifyAlert(
+  public async classifyAlert(
     classificationInput: AlertClassificationInput,
-  ): ClassificationResult {
-    const config = this.alertClassificationConfigsService.getByHazardType(
+  ): Promise<ClassificationResult> {
+    const config = await this.alertClassificationConfigsService.getByHazardType(
       classificationInput.hazardType,
     );
     if (!config) {

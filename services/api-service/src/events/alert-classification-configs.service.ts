@@ -1,13 +1,29 @@
 import { Injectable } from '@nestjs/common';
 
-import { MOCK_ALERT_CLASSIFICATION_CONFIGS } from '@api-service/src/events/alert-classification-config.mock';
 import { AlertClassificationConfig } from '@api-service/src/events/interfaces/alert-classification-config';
+import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
 @Injectable()
 export class AlertClassificationConfigsService {
-  public getByHazardType(
+  public constructor(private readonly prisma: PrismaService) {}
+
+  public async getByHazardType(
     hazardType: string,
-  ): AlertClassificationConfig | undefined {
-    return MOCK_ALERT_CLASSIFICATION_CONFIGS[hazardType];
+  ): Promise<AlertClassificationConfig | undefined> {
+    const row = await this.prisma.alertConfig.findFirst({
+      where: { hazardType },
+      select: {
+        severityClassLevels: true,
+        probabilityClassLevels: true,
+        alertClassMatrix: true,
+        alertClassOrder: true,
+        triggerAlertClass: true,
+        triggerLeadTimeDuration: true,
+      },
+    });
+    if (!row) {
+      return undefined;
+    }
+    return row as unknown as AlertClassificationConfig;
   }
 }
