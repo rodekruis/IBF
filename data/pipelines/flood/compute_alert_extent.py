@@ -54,6 +54,9 @@ def _resolve_empty_flood_extent_path(flood_extent_paths: list[str]) -> str | Non
     for path in flood_extent_paths:
         filename = os.path.basename(path).lower()
 
+        if filename.endswith("_empty.tif"):
+            return path
+
         filename_stem, _ = os.path.splitext(filename)
         rp_index = filename_stem.rfind("_rp")
         if rp_index == -1:
@@ -111,6 +114,11 @@ def resolve_flood_extent_raster(
 
     # Return empty flood extent
     empty_path = _resolve_empty_flood_extent_path(flood_extent_paths)
-    assert empty_path is not None, "Empty flood extent fallback raster must exist"
+    if empty_path is None:
+        raise FileNotFoundError(
+            "Could not resolve flood extent raster: no suitable return period raster "
+            "or no empty fallback raster was found among existing files."
+        )
+
     return empty_path
 
