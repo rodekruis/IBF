@@ -189,7 +189,6 @@ Before requesting review, ensure:
 - `data/pipelines/` — main pipeline code organized by version and type
 - `data/pipelines/infra/` — shared pipeline infrastructure (data submission, integrity checks, configuration)
 - `data/pipelines/<hazard-type>/` — current hazard pipeline implementations (flood, drought)
-- `data/pipelines/legacy/` — previous-generation pipeline code
 - `data/pipelines/test/unit/`, `data/pipelines/test/integration/` — test directories
 
 ### Python Style

@@ -46,11 +46,9 @@ pipelines/
 │   └── forecast.py            # calculate_flood_forecasts(data_provider, data_submitter, country)
 ├── drought/
 │   └── forecast.py            # calculate_drought_forecasts(data_provider, data_submitter, country)
-├── test/                      # Unit, integration, and legacy tests
+├── test/                      # Unit and integration tests
 │   ├── unit/
 │   ├── integration/
-│   └── legacy/
-└── legacy/                    # Old pipeline code (see Legacy section)
 ```
 
 ## YAML config files
@@ -97,19 +95,6 @@ From the `<repo root>/data/` directory:
 ```bash
 uv run pytest pipelines/test/unit/             # unit tests
 uv run pytest pipelines/test/integration/      # integration tests
-uv run pytest pipelines/test/legacy/           # legacy tests
 ```
 
 Unit tests cover alert validation and data submitter logic. Integration tests run end-to-end forecasts for each hazard type.
-
-## Legacy
-
-Old pipeline code lives in `legacy/`. It contains previous-generation implementations for drought and river flood, with its own infrastructure in `legacy/core/`.
-
-To run a legacy pipeline from the `<repo root>/data/` directory:
-
-```bash
-uv run pipelines/legacy/pipeline.py --hazard riverflood --country KEN --prepare --forecast --send --debug
-```
-
-There are also still integration tests on legacy code in `test/legacy`.
