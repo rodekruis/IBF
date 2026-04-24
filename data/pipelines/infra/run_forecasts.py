@@ -224,9 +224,10 @@ def main(
     if scenario_str:
         issued_at = None
         if issued_at_str:
-            issued_at = datetime.fromisoformat(issued_at_str).replace(
-                tzinfo=timezone.utc
-            )
+            parsed = datetime.fromisoformat(issued_at_str)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            issued_at = parsed.astimezone(timezone.utc)
         scenario = Scenario(type=ScenarioType(scenario_str), issued_at=issued_at)
 
     errors = run_forecasts(config_path, run_target, scenario=scenario)
