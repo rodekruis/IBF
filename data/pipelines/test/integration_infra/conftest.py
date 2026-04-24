@@ -1,7 +1,11 @@
-"""Shared pytest fixtures for local integration tests.
+"""Shared pytest fixtures for pipeline-infra integration tests.
 
-Provides helpers to run pipeline subprocesses with local file output,
-load and validate the resulting alert JSON, and clean up output directories.
+These tests use the --scenario flag to bypass forecast.py, exercising only
+the pipeline infrastructure (config parsing, data loading, data submission,
+output writing).
+
+Future full-pipeline integration tests (with controlled mock input data
+flowing through forecast.py) will live in a separate test folder.
 """
 
 import json
@@ -38,21 +42,29 @@ def _run_pipeline(
     config: str,
     run_target: str,
     extra_env: dict[str, str] | None = None,
+    scenario: str | None = None,
+    issued_at: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     if extra_env:
         env.update(extra_env)
 
+    cmd = [
+        sys.executable,
+        "-m",
+        "pipelines.infra.run_forecasts",
+        "--config",
+        config,
+        "--run-target",
+        run_target,
+    ]
+    if scenario:
+        cmd.extend(["--scenario", scenario])
+    if issued_at:
+        cmd.extend(["--issued-at", issued_at])
+
     return subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pipelines.infra.run_forecasts",
-            "--config",
-            config,
-            "--run-target",
-            run_target,
-        ],
+        cmd,
         env=env,
         capture_output=True,
         text=True,
@@ -73,6 +85,15 @@ def _load_alerts(output_dir: Path) -> list[dict]:
         alerts, list
     ), "'forecast.json' field 'alerts' should be a JSON array"
     assert len(alerts) > 0, "'forecast.json' field 'alerts' should not be empty"
+    return alerts
+
+
+def _load_alerts_allow_empty(output_dir: Path) -> list[dict]:
+    forecast = _load_forecast(output_dir)
+    alerts = forecast["alerts"]
+    assert isinstance(
+        alerts, list
+    ), "'forecast.json' field 'alerts' should be a JSON array"
     return alerts
 
 
@@ -148,6 +169,7 @@ class PipelineHelpers:
     find_latest_output: Callable[..., Path]
     load_forecast: Callable[..., dict]
     load_alerts: Callable[..., list[dict]]
+    load_alerts_allow_empty: Callable[..., list[dict]]
     assert_alert_structure: Callable[..., None]
     clean_output: Callable[..., None]
 
@@ -159,6 +181,7 @@ def pipeline() -> PipelineHelpers:
         find_latest_output=_find_latest_output,
         load_forecast=_load_forecast,
         load_alerts=_load_alerts,
+        load_alerts_allow_empty=_load_alerts_allow_empty,
         assert_alert_structure=_assert_alert_structure,
         clean_output=_clean_output,
     )
