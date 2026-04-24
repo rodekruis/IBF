@@ -50,19 +50,21 @@ def slice_netcdf_to_bounds(
     """
     min_lon, min_lat, max_lon, max_lat = bounds
 
-    nc_file = xr.open_dataset(input_path)
-    sliced = nc_file.sel(
-        lon=slice(min_lon, max_lon),
-        lat=slice(max_lat, min_lat),
-    )
+    with xr.open_dataset(input_path) as nc_file:
+        sliced = nc_file.sel(
+            lon=slice(min_lon, max_lon),
+            lat=slice(max_lat, min_lat),
+        )
 
-    if output_path is None:
-        directory = os.path.dirname(input_path)
-        basename = os.path.splitext(os.path.basename(input_path))[0]
-        output_path = os.path.join(directory, f"{basename}_sliced.nc")
+        try:
+            if output_path is None:
+                directory = os.path.dirname(input_path)
+                basename = os.path.splitext(os.path.basename(input_path))[0]
+                output_path = os.path.join(directory, f"{basename}_sliced.nc")
 
-    sliced.to_netcdf(output_path)
-    nc_file.close()
+            sliced.to_netcdf(output_path)
+        finally:
+            sliced.close()
 
     logging.info(f"Sliced NetCDF {input_path} to bounds {bounds} -> {output_path}")
     return output_path
