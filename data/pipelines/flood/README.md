@@ -6,7 +6,7 @@ This folder contains the flood-specific forecast logic used by the pipeline fram
 
 - `flood/forecast.py`
   - Entry point for flood hazard logic via `calculate_flood_forecasts(...)`:
-  - Builds (and validate) alerts, exposure payloads through `DataSubmitter`.
+  - Builds (and validates) alerts and exposure payloads through `DataSubmitter`.
 
 ## Accompanying scripts in this folder
 
