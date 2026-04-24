@@ -91,8 +91,3 @@ This folder contains the flood-specific forecast logic used by the pipeline fram
    - Default local base path is `pipelines/output`, resulting in paths like:
      - `pipelines/output/floods/{ISO3}/{timestamp}/forecast.json`
    - In this repository this appears under `data/pipelines/output/floods/...`.
-
-## Notes
-
-- This logic is currently marked as temporary in places (`TODO` comments), especially around reading flood inputs directly from local `bronze/` instead of fully through `DataProvider`.
-- The import `pipelines.flood.determine_alerts` is referenced by `forecast.py` but the module file is not present in this folder in the current workspace state.
