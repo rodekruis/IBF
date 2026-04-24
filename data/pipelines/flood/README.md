@@ -55,37 +55,33 @@ This folder contains the flood-specific forecast logic used by the pipeline fram
 
 ## `forecast.py` flow (read -> output)
 
-1. Load core inputs with `DataProvider`
-   - GloFAS stations (`glofas_stations_seed_repo`)
-   - Target admin areas (`admin_area_seed_repo`)
-
-2. Load temporary local flood inputs from `bronze/`
+1. Load core inputs:
    - GloFAS NetCDF paths
    - Threshold JSON
    - Station-district mapping JSON
    - Population raster path
    - Flood extent raster paths
 
-3. Build country processing extent
+2. Build country spatial extent
    - Compute country bounding box from target admin areas.
    - Slice NetCDF files once to this bounding box.
 
-4. Process stations
+3. Process discharge per station
    - Extract discharge ensemble values per lead time.
    - Derive lead-time severities from thresholds.
    - Skip stations with no threshold exceedance.
 
-5. Build alert payload
+4. Build alert payload
    - Create one alert event per alerting station.
    - Add severity time-series data (run members + median).
 
-6. Compute exposure
+5. Compute exposure
    - Select flood extent raster by highest matched return period.
    - Compute exposed population per place code.
    - Clip flood extent to impacted admin geometries.
    - Add admin area exposure and raster exposure to the event.
 
-7. Write final output to local forecast folder
+6. Write final output to local forecast folder
    - `forecast.py` fills `DataSubmitter`.
    - `pipelines/infra/run_forecasts.py` finalizes and writes `forecast.json`.
    - Default local base path is `pipelines/output`, resulting in paths like:
