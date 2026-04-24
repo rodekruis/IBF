@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import glob
 import json
-import os
 
 from pipelines.flood.determine_alerts import (
     ReturnPeriodThresholds,
@@ -114,9 +113,41 @@ def calculate_flood_forecasts(
             station=station,
         )
 
-        # Step 5 - Create alerts and determine exposure for alert stations
+        # Step 5 - Determine exposure for alert stations
         event_name = f"{country}_floods_{station_code}"
 
+        # TODO: consider compacting this resolve method
+        # Resolve flood extent raster for the highest matched return period
+        highest_rp = max(
+            alert_station.lead_time_severities,
+            key=lambda s: s.median_discharge,
+        ).return_period
+
+        flood_extent_path = resolve_flood_extent_raster(
+            flood_return_period=highest_rp,
+            flood_extent_paths=flood_extent_paths,
+        )
+
+        # Determine spatial and population exposure
+        exposure = determine_population_exposed(
+            station=alert_station.station,
+            station_district_mapping=station_district_mapping,
+            admin_areas=target_admin_areas,
+            population_raster_path=population_raster_path,
+            flood_extent_raster_path=flood_extent_path,
+            target_admin_level=target_admin_level,
+        )
+
+        # Skip creating alerts that cannot provide required admin-area exposure.
+        if not exposure.place_codes:
+            logging.warning(
+                "Skipping alert %s: no mapped admin-area place codes for station %s",
+                event_name,
+                station_code,
+            )
+            continue
+
+        # Step 6 - Create alert and submit severity/exposure payloads
         data_submitter.create_alert(
             event_name=event_name,
             centroid=Centroid(
@@ -143,28 +174,6 @@ def calculate_flood_forecasts(
                 severity_key="water_discharge",
                 severity_value=severity.median_discharge,
             )
-
-        # TODO: consider compacting this resolve method
-        # Resolve flood extent raster for the highest matched return period
-        highest_rp = max(
-            alert_station.lead_time_severities,
-            key=lambda s: s.median_discharge,
-        ).return_period
-
-        flood_extent_path = resolve_flood_extent_raster(
-            flood_return_period=highest_rp,
-            flood_extent_paths=flood_extent_paths,
-        )
-
-        # Determine spatial and population exposure
-        exposure = determine_population_exposed(
-            station=alert_station.station,
-            station_district_mapping=station_district_mapping,
-            admin_areas=target_admin_areas,
-            population_raster_path=population_raster_path,
-            flood_extent_raster_path=flood_extent_path,
-            target_admin_level=target_admin_level,
-        )
 
         # TODO-infra: all pcode at once instead of looping
         for place_code in exposure.place_codes:
