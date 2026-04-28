@@ -80,18 +80,18 @@ def calculate_flood_forecasts(
     # Step 2 - Compute country bounding box and prepare country-level data
     country_bounds = get_bounding_box(target_admin_areas)
 
-    # Step 2.5 - Slice NetCDF files to country bounds once before processing stations
-    sliced_netcdf_paths: list[str] = []
+    # Slice NetCDF files to country bounds once before processing stations
+    country_sliced_netcdf_paths: list[str] = []
     for netcdf_path in glofas_netcdf_paths:
-        sliced_path = slice_netcdf_to_bounds(netcdf_path, country_bounds)
-        sliced_netcdf_paths.append(sliced_path)
+        country_sliced_path = slice_netcdf_to_bounds(netcdf_path, country_bounds)
+        country_sliced_netcdf_paths.append(country_sliced_path)
 
     # Step 3 - Extract discharge per station from GloFAS data (uses pre-sliced NetCDFs)
     for station_code, station in list(stations.items())[:2]: # convert to list to debug with 2 first stations
         discharges = extract_discharge_glofas_station(
             station_code=station_code,
             station=station,
-            netcdf_paths=sliced_netcdf_paths,
+            netcdf_paths=country_sliced_netcdf_paths,
         )
 
         # Step 4a - Determine which lead times exceed the minimum return period threshold
