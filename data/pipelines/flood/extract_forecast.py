@@ -85,13 +85,13 @@ def extract_discharge_glofas_station(
 
         logging.info(f"Extracting station discharge from {sliced_path}")
         with rasterio.open(sliced_path) as src:
-            coords = [(float(station.lon), float(station.lat))]
+            station_coords = [(float(station.lon), float(station.lat))]
             for lead_time in range(lead_time_min, lead_time_max+1):
-                sampled = list(src.sample(coords, indexes=lead_time + 1))
-                value = float(sampled[0][0]) * 100 #TODO: *100 for mocking alert. To remove in op code 
-                if np.isnan(value):
-                    value = 0.0
-                discharges[station_code][lead_time].ensemble_discharges.append(value)
+                discharge_sampled = list(src.sample(station_coords, indexes=lead_time + 1))
+                discharge_value = float(discharge_sampled[0][0]) * 100 #TODO: *100 for mocking alert. To remove in op code 
+                if np.isnan(discharge_value):
+                    discharge_value = 0.0
+                discharges[station_code][lead_time].ensemble_discharges.append(discharge_value)
 
     return discharges
 
