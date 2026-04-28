@@ -79,7 +79,7 @@ def _match_return_period(
     return matched
 
 
-def determine_lead_time_severities(
+def determine_temporal_extent(
     station_code: str,
     lead_times: list[TimeIntervalDischarge],
     thresholds: list[ReturnPeriodThresholds],

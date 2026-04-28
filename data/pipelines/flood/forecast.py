@@ -7,7 +7,7 @@ import json
 from pipelines.flood.determine_alerts import (
     ReturnPeriodThresholds,
     determine_alert_stations,
-    determine_lead_time_severities,
+    determine_temporal_extent,
 )
 from pipelines.flood.determine_exposure import determine_population_exposed
 from pipelines.flood.extract_forecast import extract_discharge_glofas_station
@@ -95,7 +95,7 @@ def calculate_flood_forecasts(
         )
 
         # Step 4a - Determine which lead times exceed the minimum return period threshold
-        lead_time_severities = determine_lead_time_severities(
+        lead_time_severities = determine_temporal_extent(
             station_code=station_code,
             lead_times=discharges.get(station_code, []),
             thresholds=thresholds,
