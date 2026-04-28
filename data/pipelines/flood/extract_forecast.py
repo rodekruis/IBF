@@ -26,22 +26,6 @@ LEAD_TIME_MIN = 0
 LEAD_TIME_MAX = 7
 
 
-def _extract_forecast_base_datetime(netcdf_path: str) -> datetime:
-    """Extract forecast run datetime from a file name like dis_00_2026040800_sliced.nc.""" #TODO: extract date 0 from nc dims instead
-    basename = os.path.basename(netcdf_path)
-    match = re.search(r"_(\d{10})_sliced\.nc$", basename)
-    if match is None:
-        raise ValueError(f"Unable to extract forecast date from NetCDF path: {netcdf_path}")
-    return datetime.strptime(match.group(1), "%Y%m%d%H")
-
-
-def _lead_time_to_time_interval(base_datetime: datetime, lead_time_days: int) -> tuple[str, str]:
-    target_date = base_datetime + timedelta(days=lead_time_days)
-    time_interval_start = target_date.strftime("%Y-%m-%dT00:00:00Z")
-    time_interval_end = target_date.strftime("%Y-%m-%dT23:59:59Z")
-    return time_interval_start, time_interval_end
-
-
 def extract_discharge_glofas_station(
     station_code: str,
     station: LocationPoint,
@@ -94,4 +78,20 @@ def extract_discharge_glofas_station(
                 discharges[station_code][lead_time].ensemble_discharges.append(discharge_value)
 
     return discharges
+
+
+def _extract_forecast_base_datetime(netcdf_path: str) -> datetime:
+    """Extract forecast run datetime from a file name like dis_00_2026040800_sliced.nc.""" #TODO: extract date 0 from nc dims instead
+    basename = os.path.basename(netcdf_path)
+    match = re.search(r"_(\d{10})_sliced\.nc$", basename)
+    if match is None:
+        raise ValueError(f"Unable to extract forecast date from NetCDF path: {netcdf_path}")
+    return datetime.strptime(match.group(1), "%Y%m%d%H")
+
+
+def _lead_time_to_time_interval(base_datetime: datetime, lead_time_days: int) -> tuple[str, str]:
+    target_date = base_datetime + timedelta(days=lead_time_days)
+    time_interval_start = target_date.strftime("%Y-%m-%dT00:00:00Z")
+    time_interval_end = target_date.strftime("%Y-%m-%dT23:59:59Z")
+    return time_interval_start, time_interval_end
 
