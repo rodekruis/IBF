@@ -21,7 +21,9 @@ class TimeIntervalDischarge:
 
 StationDischarges = dict[str, list[TimeIntervalDischarge]]
 
-LEAD_TIME_MAX = 8
+# TODO-infra: where to put this?
+LEAD_TIME_MIN = 0
+LEAD_TIME_MAX = 7
 
 
 def _extract_forecast_base_datetime(netcdf_path: str) -> datetime:
@@ -44,6 +46,7 @@ def extract_discharge_glofas_station(
     station_code: str,
     station: LocationPoint,
     netcdf_paths: list[str],
+    lead_time_min: int = LEAD_TIME_MIN,
     lead_time_max: int = LEAD_TIME_MAX,
 ) -> StationDischarges:
     """
@@ -67,7 +70,7 @@ def extract_discharge_glofas_station(
 
         if forecast_base_datetime is None:
             forecast_base_datetime = _extract_forecast_base_datetime(sliced_path)
-            for lead_time in range(lead_time_max):
+            for lead_time in range(lead_time_min, lead_time_max+1):
                 time_interval_start, time_interval_end = _lead_time_to_time_interval(
                     forecast_base_datetime,
                     lead_time,
@@ -83,7 +86,7 @@ def extract_discharge_glofas_station(
         logging.info(f"Extracting station discharge from {sliced_path}")
         with rasterio.open(sliced_path) as src:
             coords = [(float(station.lon), float(station.lat))]
-            for lead_time in range(lead_time_max):
+            for lead_time in range(lead_time_min, lead_time_max+1):
                 sampled = list(src.sample(coords, indexes=lead_time + 1))
                 value = float(sampled[0][0]) * 100 #TODO: *100 for mocking alert. To remove in op code 
                 if np.isnan(value):
