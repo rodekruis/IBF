@@ -39,7 +39,7 @@ def calculate_flood_forecasts(
     )
     target_admin_areas = data_provider.get_data(
         DataSource.ADMIN_AREA_SEED_REPO, AdminAreasSet
-    )    # TODO:  load population using data_provider once data source is registered
+    )    # TODO AB#41454:  load population using data_provider. This is already available, but as png. For now a tiff is used, which is loaded directly below. 
 
     if not stations or not target_admin_areas:
         data_submitter.add_error(
@@ -47,7 +47,7 @@ def calculate_flood_forecasts(
         )
         return
 
-    # TODO: load these through the data provider once the data sources are registered
+    # TODO AB#454: load these through the data provider once the data sources are registered
     # thresholds: dict[str, dict[str, float]] = data_provider.get_data(
     #     DataSource.GLOFAS_MIN_RP_THRESHOLDS
     # ).data
@@ -87,7 +87,7 @@ def calculate_flood_forecasts(
         country_sliced_netcdf_paths.append(country_sliced_path)
 
     # Step 3 - Extract discharge per station from GloFAS data (uses pre-sliced NetCDFs)
-    for station_code, station in list(stations.items())[:2]: # convert to list to debug with 2 first stations
+    for station_code, station in stations.items():
         discharges = extract_discharge_glofas_station(
             station_code=station_code,
             station=station,
@@ -184,7 +184,7 @@ def calculate_flood_forecasts(
                 layer=Layer.POPULATION_EXPOSED,
                 value=exposure.population_per_place_code.get(place_code, 0),
             )
-        # # TODO: add return period in add_geo_feature_exposure
+        # TODO: use this in the future to (A) add water-discharege/return-period for glofas-station-popup and (B) add exposure status of points/roads/buildings. 
         # data_submitter.add_geo_feature_exposure(
         #     event_name=event_name,
         #     geo_feature_id=station_code,
