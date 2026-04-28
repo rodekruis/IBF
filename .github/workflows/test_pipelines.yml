@@ -87,7 +87,7 @@ jobs:
           CDSAPI_KEY: ${{ secrets.PIPELINES_CDSAPI_KEY }}
           PYTHONFAULTHANDLER: '1'
           PYTHONUNBUFFERED: '1'
-        run: uv run -m pytest "${{ matrix.test_node }}" --ignore=pipelines/test/integration_api
+        run: uv run -m pytest "${{ matrix.test_node }}" --ignore=pipelines/test/integration_infra_api
 
   # This job is here to make the above jobs "required" in GitHub.
   # This is a workaround for this issue: https://github.com/orgs/community/discussions/44490

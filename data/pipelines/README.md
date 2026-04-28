@@ -20,6 +20,8 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG
 | -------------- | -------------------------------------------------------------------------------- |
 | `--config`     | Path to the hazard YAML config file (e.g. `pipelines/infra/configs/floods.yaml`) |
 | `--run-target` | Run target defined in the config (e.g. `DEBUG`, `TEST`)                          |
+| `--scenario`   | _(optional)_ Infra-level override: `no-alert` or `alert`. Bypasses forecast.py   |
+| `--issued-at`  | _(optional)_ Override the issued-at timestamp (ISO 8601). Requires `--scenario`  |
 
 ## Structure
 
@@ -29,6 +31,15 @@ The pipeline is split into two concerns:
 - **`<hazardType>/`** — Hazard-specific forecast logic. Each subfolder implements a single hazard type. Maintained by data scientists.
 
 This separation means data scientists only need to implement one function per hazard type. That function receives a `DataProvider` (to read input data) and a `DataSubmitter` (to build alert output), and does not need to know about config files, file I/O, or API calls.
+
+### run_target vs scenario
+
+These two concepts are orthogonal:
+
+- **`--run-target`** selects an environment configuration from the YAML config: which countries to run, which data sources to load, and where to write output. It flows through the entire pipeline including `forecast.py`.
+- **`--scenario`** is an infra-level override that _replaces_ the hazard logic in `forecast.py` with a predetermined outcome (`no-alert` = empty alerts, `alert` = one synthetic alert). The real `forecast.py` never runs.
+
+This means any run target can be combined with any scenario (`--run-target DEBUG --scenario alert`), and adding new scenarios does not require new run targets or vice versa.
 
 Here are the main files used by the hazard logic flow.
 
@@ -46,9 +57,11 @@ pipelines/
 │   └── forecast.py            # calculate_flood_forecasts(data_provider, data_submitter, country)
 ├── drought/
 │   └── forecast.py            # calculate_drought_forecasts(data_provider, data_submitter, country)
-├── test/                      # Unit and integration tests
-│   ├── unit/
-│   ├── integration/
+├── test/
+│   ├── unit/                  # Unit tests on individual functions
+│   ├── integration_infra/     # Infra integration tests (scenarios, bypasses forecast.py)
+│   ├── integration_infra_api/ # Infra + API integration tests (scenarios submitted to live API)
+│   └── integration_pipeline/  # FUTURE: full pipeline tests with mock input data through forecast.py
 ```
 
 ## YAML config files
@@ -93,8 +106,9 @@ run_targets:
 From the `<repo root>/data/` directory:
 
 ```bash
-uv run pytest pipelines/test/unit/             # unit tests
-uv run pytest pipelines/test/integration/      # integration tests
+uv run pytest pipelines/test/unit/                  # unit tests
+uv run pytest pipelines/test/integration_infra/     # infra integration tests (scenarios, bypasses forecast.py)
+uv run pytest pipelines/test/integration_infra_api/ # infra + API integration tests (scenarios submitted to live API)
 ```
 
-Unit tests cover alert validation and data submitter logic. Integration tests run end-to-end forecasts for each hazard type.
+Unit tests cover alert validation and data submitter logic. Infra integration tests use the `--scenario` flag to bypass `forecast.py`, exercising only the pipeline infrastructure (config parsing, data loading, data submission, output writing). Future `integration_pipeline/` tests will run the full pipeline with controlled mock input data flowing through `forecast.py`.

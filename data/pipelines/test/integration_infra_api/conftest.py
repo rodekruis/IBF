@@ -1,7 +1,8 @@
-"""Shared pytest fixtures for integration API tests.
+"""Shared pytest fixtures for pipeline-infra API integration tests.
 
-Provides helpers to run pipeline subprocesses against a live API,
-so individual test modules don't have to duplicate the boilerplate.
+These tests use the --scenario flag to bypass forecast.py and submit the
+resulting forecast to a live API, exercising the pipeline infrastructure
+end-to-end including API submission.
 """
 
 import os
@@ -18,6 +19,8 @@ def _run_pipeline(
     config: str,
     run_target: str,
     extra_env: dict[str, str] | None = None,
+    scenario: str | None = None,
+    issued_at: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     # For integration API tests, we want to ensure the pipeline submits to the API
@@ -25,16 +28,22 @@ def _run_pipeline(
     if extra_env:
         env.update(extra_env)
 
+    cmd = [
+        sys.executable,
+        "-m",
+        "pipelines.infra.run_forecasts",
+        "--config",
+        config,
+        "--run-target",
+        run_target,
+    ]
+    if scenario:
+        cmd.extend(["--scenario", scenario])
+    if issued_at:
+        cmd.extend(["--issued-at", issued_at])
+
     return subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "pipelines.infra.run_forecasts",
-            "--config",
-            config,
-            "--run-target",
-            run_target,
-        ],
+        cmd,
         env=env,
         capture_output=True,
         text=True,

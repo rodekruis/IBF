@@ -189,7 +189,7 @@ Before requesting review, ensure:
 - `data/pipelines/` — main pipeline code organized by version and type
 - `data/pipelines/infra/` — shared pipeline infrastructure (data submission, integrity checks, configuration)
 - `data/pipelines/<hazard-type>/` — current hazard pipeline implementations (flood, drought)
-- `data/pipelines/test/unit/`, `data/pipelines/test/integration/` — test directories
+- `data/pipelines/test/` — tests: unit, infra-integration and infra-api-integration
 
 ### Python Style
 
@@ -201,9 +201,11 @@ Before requesting review, ensure:
 
 ```bash
 cd data
-uv run pytest pipelines/test/unit/             # unit tests
-uv run pytest pipelines/test/integration/      # integration tests
-uv run python python-knip.py         # linting (ruff, deptry, vulture)
+uv run pytest pipelines/test/unit/                  # unit tests on individual functions
+uv run pytest pipelines/test/integration_infra/     # infra integration tests (scenarios, bypasses hazard-logic in forecast.py)
+uv run pytest pipelines/test/integration_infra_api/ # tests integration between pipeline (infra) and API
+uv run pytest pipelines/test/integration_pipeline/  # FUTURE: tests full pipeline, including hazard-logic based on mock-input-forecast-data
+uv run python python-knip.py                        # linting (ruff, deptry, vulture)
 ```
 
 ---
@@ -435,7 +437,7 @@ npm run lint                                                           # linting
 cd data
 uv run pytest pipelines/test/unit/                                     # all unit tests
 uv run pytest pipelines/test/unit/ -k test_integrity                   # specific unit test
-uv run pytest pipelines/test/integration/                              # all integration tests
+uv run pytest pipelines/test/integration_infra/                        # infra integration tests
 uv run python python-knip.py                                           # linting (ruff, deptry, vulture)
 ```
 
