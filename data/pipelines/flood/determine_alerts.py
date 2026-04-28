@@ -5,14 +5,14 @@ import statistics
 from dataclasses import dataclass
 from typing import TypedDict
 
-from pipelines.flood.extract_forecast import LeadTimeDischarge
+from pipelines.flood.extract_forecast import TimeIntervalDischarge
 from pipelines.infra.data_types.location_point import LocationPoint
 
 MINIMUM_RETURN_PERIOD = "1.5yr"
 
 
 @dataclass
-class LeadTimeSeverity:
+class TimeIntervalSeverity:
     time_interval_start: str
     time_interval_end: str
     median_discharge: float
@@ -24,7 +24,7 @@ class LeadTimeSeverity:
 class AlertStation:
     station_code: str
     station: LocationPoint
-    lead_time_severities: list[LeadTimeSeverity]
+    lead_time_severities: list[TimeIntervalSeverity]
 
 
 class ReturnPeriodThresholdValue(TypedDict):
@@ -41,7 +41,7 @@ def _format_return_period_label(return_period: float) -> str:
     return f"{return_period:g}yr"
 
 
-def _get_station_thresholds(
+def _get_station_return_period_thresholds(
     thresholds: list[ReturnPeriodThresholds],
     station_code: str,
 ) -> dict[str, float] | None:
@@ -81,16 +81,16 @@ def _match_return_period(
 
 def determine_lead_time_severities(
     station_code: str,
-    lead_times: list[LeadTimeDischarge],
+    lead_times: list[TimeIntervalDischarge],
     thresholds: list[ReturnPeriodThresholds],
     minimum_return_period: str = MINIMUM_RETURN_PERIOD,
-) -> list[LeadTimeSeverity]:
+) -> list[TimeIntervalSeverity]:
     """
     Compute lead time severities for one station by comparing the median
     ensemble discharge against return period thresholds.
     Returns a list of lead time severities for the station.
     """
-    station_thresholds = _get_station_thresholds(thresholds, station_code)
+    station_thresholds = _get_station_return_period_thresholds(thresholds, station_code)
     if station_thresholds is None:
         logging.warning(
             f"No return period thresholds for station {station_code}, skipping"
@@ -103,7 +103,7 @@ def determine_lead_time_severities(
         )
         return []
 
-    lead_time_severities: list[LeadTimeSeverity] = []
+    lead_time_severities: list[TimeIntervalSeverity] = []
     for lead_time_discharge in lead_times:
         if not lead_time_discharge.ensemble_discharges:
             continue
@@ -113,7 +113,7 @@ def determine_lead_time_severities(
         matched_rp = _match_return_period(median_discharge, station_thresholds)
         if matched_rp is not None:
             lead_time_severities.append(
-                LeadTimeSeverity(
+                TimeIntervalSeverity(
                     time_interval_start=lead_time_discharge.time_interval_start,
                     time_interval_end=lead_time_discharge.time_interval_end,
                     median_discharge=median_discharge,
@@ -126,7 +126,7 @@ def determine_lead_time_severities(
 
 
 def determine_alert_stations(
-    station_lead_time_severities: list[LeadTimeSeverity],
+    station_lead_time_severities: list[TimeIntervalSeverity],
     station_code: str,
     station: LocationPoint,
 ) -> AlertStation:
