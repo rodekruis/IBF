@@ -1,12 +1,31 @@
 from __future__ import annotations
 
+import logging
+import glob
+import json
+
+from pipelines.flood.determine_alerts import (
+    ReturnPeriodThresholds,
+    determine_alert_stations,
+    determine_temporal_extent,
+)
+from pipelines.flood.determine_exposure import determine_population_exposed
+from pipelines.flood.extract_forecast import extract_discharge_glofas_station
+from pipelines.flood.compute_alert_extent import resolve_flood_extent_raster
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.alert_types import Centroid, EnsembleMemberType, Layer
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.location_point import LocationPoint
+from pipelines.flood.utils_raster import ( # TODO-infra: move utils to infra and import in flood pipeline
+    slice_netcdf_to_bounds,
+    get_bounding_box,
+    get_raster_extent,
+)
 
+
+GLOFAS_MIN_RP_THRESHOLDS = 1.5  # GloFAS minimum return period thresholds # TODO-infra: where to put this?
 
 def calculate_flood_forecasts(
     data_provider: DataProvider,
@@ -14,93 +33,170 @@ def calculate_flood_forecasts(
     country: str,
     target_admin_level: int,
 ) -> None:
-    ##################################################################################################################################
-    # TEMPLATE IMPLEMENTATION
-    # — Replace anything in this method/file as wished, but be sure to follow the correct loading and export of the data as outlined here.
-    # - To make the code easier to read/maintain, split it into multiple files/methods as needed.
-    ##################################################################################################################################
-
-    # Step 1 - Get data supplied by the data provider
-    # For early prototyping, just fetch a new data source here directly.
-    # As soon as the source is stable enough, inform software-dev to fetch it through the data provider instead.
-
+    # Step 1 - Load data from the data provider
     stations: dict[str, LocationPoint] = data_provider.get_data(
         DataSource.GLOFAS_STATIONS_SEED_REPO, dict
     )
     target_admin_areas = data_provider.get_data(
         DataSource.ADMIN_AREA_SEED_REPO, AdminAreasSet
-    )
-    # Make sure your data loaded
+    )    # TODO AB#41454:  load population using data_provider. This is already available, but as png. For now a tiff is used, which is loaded directly below. 
+
     if not stations or not target_admin_areas:
         data_submitter.add_error(
             f"Missing input data: stations={bool(stations)}, admin_areas={bool(target_admin_areas)}"
         )
         return
 
-    # Step 2 - Calculate the forecast
-    # NOTE: the code in here is purely for demonstration purposes and should be replaced with actual logic, which should include:
-    # - Loop over potential spatial extents (glofas stations)
-    # - Compute aggregate severity per time interval and overall
-    # - If minimum severity threshold is passed, create an alert
-    # - Generate actual flood extent rasters instead of placeholders
-    # - Compute real population exposure from population raster + flood extent
-    # - Compute geo-feature exposure (hospitals, roads, etc.)
+    # TODO AB#454: load these through the data provider once the data sources are registered
+    # thresholds: dict[str, dict[str, float]] = data_provider.get_data(
+    #     DataSource.GLOFAS_MIN_RP_THRESHOLDS
+    # ).data
+    # basins_geojson: dict = data_provider.get_data(
+    #     DataSource.HYDROSHEDS_BASINS
+    # ).data
+    # population_data = data_provider.get_data(DataSource.POPULATION_SEED_REPO)
+    # population_raster_path: str = population_data.metadata.get("file_path", "")
+    # glofas_netcdf_paths: list[str] = data_provider.get_data(
+    #     DataSource.TODO_GLOFAS_DISCHARGE
+    # ).data
 
+    # Placeholder data - replace with data provider calls above once data sources are wired
+    # put data in zip and share in PR
+    glofas_netcdf_paths: list[str] = ["./pipelines/flood/bronze/glofas/dis_00_2026040800.nc"]
+    thresholds_path: list[str] = [f for f in glob.glob(f"./pipelines/flood/bronze/thresholds/*_{country}.json")]
+    thresholds: list[ReturnPeriodThresholds] = []
+    for path in thresholds_path:
+        with open(path) as f:
+            loaded_thresholds = json.load(f)
+        thresholds.append(loaded_thresholds)
+    station_district_mapping_path: str = f"./pipelines/flood/bronze/station-district/{country}_station_district_mapping.json"
+    station_district_mapping: dict = {}
+    with open(station_district_mapping_path) as f:
+        station_district_mapping = json.load(f)
+    population_raster_paths = glob.glob(f"./pipelines/flood/bronze/population/{country}.tif")
+    population_raster_path: str = population_raster_paths[0] if population_raster_paths else ""
+    flood_extent_paths: list[str] = [f for f in glob.glob(f"./pipelines/flood/bronze/flood_extents/flood_map_{country}_*.tif")]
+
+    # Step 2 - Compute country bounding box and prepare country-level data
+    country_bounds = get_bounding_box(target_admin_areas)
+
+    # Slice NetCDF files to country bounds once before processing stations
+    country_sliced_netcdf_paths: list[str] = []
+    for netcdf_path in glofas_netcdf_paths:
+        country_sliced_path = slice_netcdf_to_bounds(netcdf_path, country_bounds)
+        country_sliced_netcdf_paths.append(country_sliced_path)
+
+    # Step 3 - Extract discharge per station from GloFAS data (uses pre-sliced NetCDFs)
     for station_code, station in stations.items():
-        event_name = f"{country}_floods_{station.name}"
+        discharges = extract_discharge_glofas_station(
+            station_code=station_code,
+            station=station,
+            netcdf_paths=country_sliced_netcdf_paths,
+        )
 
+        # Step 4a - Determine which lead times exceed the minimum return period threshold
+        lead_time_severities = determine_temporal_extent(
+            station_code=station_code,
+            lead_times=discharges.get(station_code, []),
+            thresholds=thresholds,
+        )
+
+        # No lead times exceeded the minimum return period threshold, skip to the next station
+        if not lead_time_severities:
+            logging.info(f"No alerts for station {station_code}")
+            continue
+
+        # Step 4b - Create alert stations from the lead time severities
+        alert_station = determine_alert_stations(
+            station_lead_time_severities=lead_time_severities,
+            station_code=station_code,
+            station=station,
+        )
+
+        # Step 5 - Determine exposure for alert stations
+        event_name = f"{country}_floods_{station_code}"
+
+        # TODO: consider compacting this resolve method
+        # Resolve flood extent raster for the highest matched return period
+        highest_rp = max(
+            alert_station.lead_time_severities,
+            key=lambda s: s.median_discharge,
+        ).return_period
+
+        flood_extent_path = resolve_flood_extent_raster(
+            flood_return_period=highest_rp,
+            flood_extent_paths=flood_extent_paths,
+        )
+
+        # Determine spatial and population exposure
+        exposure = determine_population_exposed(
+            station=alert_station.station,
+            station_district_mapping=station_district_mapping,
+            admin_areas=target_admin_areas,
+            population_raster_path=population_raster_path,
+            flood_extent_raster_path=flood_extent_path,
+            target_admin_level=target_admin_level,
+        )
+
+        # Skip creating alerts that cannot provide required admin-area exposure.
+        if not exposure.place_codes:
+            logging.warning(
+                "Skipping alert %s: no mapped admin-area place codes for station %s",
+                event_name,
+                station_code,
+            )
+            continue
+
+        # Step 6 - Create alert and submit severity/exposure payloads
         data_submitter.create_alert(
             event_name=event_name,
             centroid=Centroid(
-                latitude=station.lat,
-                longitude=station.lon,
+                latitude=alert_station.station.lat,
+                longitude=alert_station.station.lon,
             ),
         )
 
-        for _ in range(2):
+        for severity in alert_station.lead_time_severities:
+            for i in range(len(severity.ensemble_discharges)):
+                data_submitter.add_severity_data(
+                    event_name=event_name,
+                    time_interval_start=severity.time_interval_start,
+                    time_interval_end=severity.time_interval_end,
+                    ensemble_member_type=EnsembleMemberType.RUN,
+                    severity_key="water_discharge",
+                    severity_value=severity.ensemble_discharges[i],
+                )
             data_submitter.add_severity_data(
                 event_name=event_name,
-                time_interval_start="2026-03-20T00:00:00Z",
-                time_interval_end="2026-03-20T23:59:59Z",
-                ensemble_member_type=EnsembleMemberType.RUN,
+                time_interval_start=severity.time_interval_start,
+                time_interval_end=severity.time_interval_end,
+                ensemble_member_type=EnsembleMemberType.MEDIAN,
                 severity_key="water_discharge",
-                severity_value=0,
+                severity_value=severity.median_discharge,
             )
-        data_submitter.add_severity_data(
-            event_name=event_name,
-            time_interval_start="2026-03-20T00:00:00Z",
-            time_interval_end="2026-03-20T23:59:59Z",
-            ensemble_member_type=EnsembleMemberType.MEDIAN,
-            severity_key="water_discharge",
-            severity_value=0,
-        )
 
-        # TODO: determine place codes by looking at the admin areas in a catchment area.
-        # For now, just get the first two place codes from the admin areas for debug.
-        debug_alert_place_codes: list[str] = list(
-            target_admin_areas.admin_areas.keys()
-        )[:2]
-
-        # TODO: actually, do not call add_admin_area_exposure per place_code, but just once (per layer)
-        for place_code in debug_alert_place_codes:
+        # TODO-infra: all pcode at once instead of looping
+        for place_code in exposure.place_codes:
             data_submitter.add_admin_area_exposure(
                 event_name=event_name,
                 place_code=place_code,
                 admin_level=target_admin_level,
                 layer=Layer.POPULATION_EXPOSED,
-                value=0,
+                value=exposure.population_per_place_code.get(place_code, 0),
             )
-
-        data_submitter.add_geo_feature_exposure(
-            event_name=event_name,
-            geo_feature_id=station_code,
-            layer="glofas_stations",
-            value={"water_discharge": 0},
-        )
+        # TODO: use this in the future to (A) add water-discharege/return-period for glofas-station-popup and (B) add exposure status of points/roads/buildings. 
+        # data_submitter.add_geo_feature_exposure(
+        #     event_name=event_name,
+        #     geo_feature_id=station_code,
+        #     layer="glofas_stations",
+        #     value={"river_discharge": 0},
+        # )
 
         data_submitter.add_raster_exposure(
             event_name=event_name,
             layer="alert_extent",
-            value=f"alert_extent_{station_code}.tif",
-            extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
+            value=(
+                exposure.clipped_flood_extent_raster_path
+            ),
+            extent=get_raster_extent(exposure.clipped_flood_extent_raster_path),
         )
