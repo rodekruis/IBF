@@ -1,4 +1,6 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
+
+import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
 
 export class EventResponseDto {
   @ApiProperty()
@@ -7,8 +9,11 @@ export class EventResponseDto {
   @ApiProperty()
   public readonly eventName: string;
 
-  @ApiProperty({ type: [String] })
-  public readonly hazardTypes: string[];
+  @ApiProperty()
+  public readonly eventLabel: string;
+
+  @ApiProperty()
+  public readonly hazardType: string;
 
   @ApiProperty({ type: [String] })
   public readonly forecastSources: string[];
@@ -18,6 +23,9 @@ export class EventResponseDto {
 
   @ApiProperty()
   public readonly trigger: boolean;
+
+  @ApiProperty({ type: Object, example: { latitude: 0.35, longitude: 32.6 } })
+  public readonly centroid: { latitude: number; longitude: number };
 
   @ApiProperty()
   public readonly startAt: Date;
@@ -31,9 +39,12 @@ export class EventResponseDto {
   @ApiProperty()
   public readonly firstIssuedAt: Date;
 
-  @ApiPropertyOptional({ type: Date, nullable: true })
-  public readonly closedAt: Date | null;
+  @ApiProperty()
+  public readonly lastUpdatedAt: Date;
 
   @ApiProperty()
   public readonly isOngoing: boolean;
+
+  @ApiProperty({ type: [ExposedAdminAreaDto] })
+  public readonly exposedAdminAreas: ExposedAdminAreaDto[];
 }

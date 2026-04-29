@@ -11,22 +11,24 @@ from pipelines.infra.data_types.alert_types import (
     Layer,
 )
 
-ALERT_NAME = "TST_floods_station-test"
+EVENT_NAME = "KEN_floods_station-test"
 
 
 def _create_valid_submitter() -> DataSubmitter:
     """Build a DataSubmitter with one fully valid alert (severity, admin areas,
     rasters) so tests can add a single defect on top and verify it is caught."""
     submitter = DataSubmitter()
-    submitter.create_alert(
-        alert_name=ALERT_NAME,
-        hazard_types=[HazardType.FLOODS],
-        centroid=Centroid(latitude=1.0, longitude=37.0),
+    submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
+        hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
     )
+    submitter.create_alert(
+        event_name=EVENT_NAME,
+        centroid=Centroid(latitude=1.0, longitude=37.0),
+    )
     submitter.add_severity_data(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
@@ -34,7 +36,7 @@ def _create_valid_submitter() -> DataSubmitter:
         severity_value=0,
     )
     submitter.add_severity_data(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.MEDIAN,
@@ -42,22 +44,15 @@ def _create_valid_submitter() -> DataSubmitter:
         severity_value=0,
     )
     submitter.add_admin_area_exposure(
-        alert_name=ALERT_NAME,
-        place_code="PC001",
-        admin_level=3,
-        layer=Layer.SPATIAL_EXTENT,
-        value=True,
-    )
-    submitter.add_admin_area_exposure(
-        alert_name=ALERT_NAME,
+        event_name=EVENT_NAME,
         place_code="PC001",
         admin_level=3,
         layer=Layer.POPULATION_EXPOSED,
         value=0,
     )
     submitter.add_raster_exposure(
-        alert_name=ALERT_NAME,
-        layer="alert_extent",
+        event_name=EVENT_NAME,
+        layer=Layer.ALERT_EXTENT,
         value="alert_extent.tif",
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )

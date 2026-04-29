@@ -1,9 +1,9 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   buildAlert,
+  buildForecast,
   buildSeverityData,
   createAlerts,
 } from '@api-service/test/helpers/alert.helper';
@@ -14,7 +14,6 @@ import {
 } from '@api-service/test/helpers/utility.helper';
 
 describe('GET /events', () => {
-  const apiKey = env.PIPELINE_API_KEY;
   const viewTimestamp = '2026-03-25T12:00:00Z';
   let accessToken: string;
 
@@ -27,8 +26,7 @@ describe('GET /events', () => {
     await resetDB(SeedScript.initialState, __filename);
 
     const closedAlert = buildAlert({
-      alertName: 'TEST-station-closed',
-      issuedAt: new Date('2026-03-23T12:00:00Z'),
+      eventName: 'KEN_floods_station-closed',
       severity: buildSeverityData({
         start: new Date('2026-03-27T00:00:00Z'),
         end: new Date('2026-03-28T00:00:00Z'),
@@ -38,8 +36,7 @@ describe('GET /events', () => {
     });
 
     const ongoingAlert = buildAlert({
-      alertName: 'TEST-station-ongoing',
-      issuedAt: new Date('2026-03-24T12:00:00Z'),
+      eventName: 'KEN_floods_station-ongoing',
       severity: buildSeverityData({
         start: new Date('2026-03-25T00:00:00Z'),
         end: new Date('2026-03-26T00:00:00Z'),
@@ -49,8 +46,7 @@ describe('GET /events', () => {
     });
 
     const expiredAlert = buildAlert({
-      alertName: 'TEST-station-expired',
-      issuedAt: new Date('2026-03-24T12:00:00Z'),
+      eventName: 'KEN_floods_station-expired',
       severity: buildSeverityData({
         start: new Date('2026-03-24T00:00:00Z'),
         end: new Date('2026-03-25T00:00:00Z'),
@@ -59,8 +55,16 @@ describe('GET /events', () => {
       }),
     });
 
-    await createAlerts([closedAlert], apiKey!);
-    await createAlerts([ongoingAlert, expiredAlert], apiKey!);
+    await createAlerts(
+      buildForecast([closedAlert], {
+        issuedAt: new Date('2026-03-23T12:00:00Z'),
+      }),
+    );
+    await createAlerts(
+      buildForecast([ongoingAlert, expiredAlert], {
+        issuedAt: new Date('2026-03-24T12:00:00Z'),
+      }),
+    );
   }
 
   describe('authentication', () => {
@@ -88,9 +92,9 @@ describe('GET /events', () => {
           .map((event: { eventName: string }) => event.eventName)
           .sort(),
       ).toEqual([
-        'TEST-station-closed',
-        'TEST-station-expired',
-        'TEST-station-ongoing',
+        'KEN_floods_station-closed',
+        'KEN_floods_station-expired',
+        'KEN_floods_station-ongoing',
       ]);
     });
 
@@ -103,8 +107,8 @@ describe('GET /events', () => {
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body).toHaveLength(1);
       expect(response.body[0]).toMatchObject({
-        eventName: 'TEST-station-ongoing',
-        closedAt: null,
+        eventName: 'KEN_floods_station-ongoing',
+        eventLabel: 'station-ongoing',
         isOngoing: true,
       });
     });
@@ -121,21 +125,40 @@ describe('GET /events', () => {
         response.body
           .map((event: { eventName: string }) => event.eventName)
           .sort(),
-      ).toEqual(['TEST-station-closed', 'TEST-station-expired']);
+      ).toEqual(['KEN_floods_station-closed', 'KEN_floods_station-expired']);
 
       const closedEvent = response.body.find(
         (event: { eventName: string }) =>
-          event.eventName === 'TEST-station-closed',
+          event.eventName === 'KEN_floods_station-closed',
       );
       const expiredEvent = response.body.find(
         (event: { eventName: string }) =>
-          event.eventName === 'TEST-station-expired',
+          event.eventName === 'KEN_floods_station-expired',
       );
 
-      expect(closedEvent.closedAt).not.toBeNull();
       expect(closedEvent.isOngoing).toBe(false);
-      expect(expiredEvent.closedAt).toBeNull();
       expect(expiredEvent.isOngoing).toBe(false);
+    });
+  });
+
+  describe('event label derivation', () => {
+    it('should derive event label from event name', async () => {
+      // Seed an event with a name that has multiple parts
+      const droughtEventName = 'ETH_drought_Meher_MAM';
+      await createAlerts(
+        buildForecast([
+          buildAlert({
+            eventName: droughtEventName,
+          }),
+        ]),
+      );
+
+      const response = await readEvents(accessToken);
+      const event = response.body.find(
+        (event: { eventName: string }) => event.eventName === droughtEventName,
+      );
+
+      expect(event.eventLabel).toBe('Meher MAM');
     });
   });
 });

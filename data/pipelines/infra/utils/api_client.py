@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import Mapping, Sequence
 
 import requests
 
@@ -21,16 +20,16 @@ class ApiClient:
             raise ValueError("IBF_PIPELINE_API_KEY environment variable must be set")
         self._session.headers["x-api-key"] = api_key
 
-    def submit_alerts(self, alerts: Sequence[Mapping[str, object]]) -> list[str]:
+    def submit_forecast(self, forecast: dict) -> list[str]:
         url = f"{self._base_url}{ALERTS_PATH}"
         response = self._session.post(
             url,
-            json=list(alerts),
+            json=forecast,
             timeout=60,
         )
 
         if response.status_code == 201:
-            logger.info(f"Submitted {len(alerts)} alerts successfully")
+            logger.info("Submitted forecast successfully")
             return []
 
         try:

@@ -16,18 +16,26 @@ from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import HazardType
+from pipelines.infra.data_types.alert_types import ForecastSource, HazardType
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
     OutputMode,
     RunTargetType,
+    Scenario,
+    ScenarioType,
 )
 from pipelines.infra.utils.alert_admin_aggregation import (
     aggregate_to_parent_admin_levels,
 )
+from pipelines.infra.utils.scenario_alert_generator import make_scenario_hazard_function
 
 logger = logging.getLogger(__name__)
+
+FORECAST_SOURCES: dict[str, list[ForecastSource]] = {
+    "floods": [ForecastSource.GLOFAS],
+    "drought": [ForecastSource.ECMWF],
+}
 
 HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
 
@@ -54,6 +62,18 @@ def _run_country(
         return [f"Failed to load data for {country.country_code_iso_3}"]
 
     data_submitter = DataSubmitter()
+
+    # --- Set forecast metadata based on hazard type ---
+    if country.scenario and country.scenario.issued_at:
+        issued_at = country.scenario.issued_at
+    else:
+        issued_at = datetime.now(timezone.utc)
+    forecast_sources = FORECAST_SOURCES[hazard_type]
+    data_submitter.set_forecast_metadata(
+        issued_at=issued_at,
+        hazard_type=hazard_type,
+        forecast_sources=forecast_sources,
+    )
 
     # --- Hazard-specific forecast logic (implemented by data scientists) ---
     hazard_fn(
@@ -91,7 +111,11 @@ def _run_country(
     return data_submitter.send_all(output_mode, output_path)
 
 
-def run_forecasts(config_path: str, run_target_str: str) -> list[str]:
+def run_forecasts(
+    config_path: str,
+    run_target_str: str,
+    scenario: Scenario | None = None,
+) -> list[str]:
     _register_hazard_functions()
 
     config_reader = ConfigReader()
@@ -118,6 +142,10 @@ def run_forecasts(config_path: str, run_target_str: str) -> list[str]:
         logger.error(msg)
         return [msg]
 
+    if scenario:
+        for country_config in run_target_config.country_configs.values():
+            country_config.scenario = scenario
+
     countries = list(run_target_config.country_configs.values())
     if not countries:
         msg = f"No countries configured for run_target '{run_target}'"
@@ -129,8 +157,17 @@ def run_forecasts(config_path: str, run_target_str: str) -> list[str]:
     for country in countries:
         logger.info(f"Processing {hazard_type} for {country.country_code_iso_3}")
 
+        active_fn = hazard_fn
+        if country.scenario:
+            # Scenario overrides only the hazard function (forecast.py), so all
+            # surrounding infra (data loading, metadata, aggregation, output) still runs.
+            active_fn = make_scenario_hazard_function(country.scenario, hazard_type)
+            logger.info(
+                f"Using scenario '{country.scenario.type}' for {country.country_code_iso_3}"
+            )
+
         errors = _run_country(
-            hazard_fn, country, config_reader, run_target, hazard_type
+            active_fn, country, config_reader, run_target, hazard_type
         )
         if errors:
             logger.error(f"Errors for {country.country_code_iso_3}: {errors}")
@@ -154,14 +191,46 @@ def run_forecasts(config_path: str, run_target_str: str) -> list[str]:
     required=True,
     help="Run target defined in the config (e.g. DEBUG, LIVE).",
 )
-def main(config_path: str, run_target: str) -> None:
+@click.option(
+    "--scenario",
+    "scenario_str",
+    type=click.Choice([e.value for e in ScenarioType], case_sensitive=False),
+    default=None,
+    help="Override the scenario for all countries (no-alert or alert).",
+)
+@click.option(
+    "--issued-at",
+    "issued_at_str",
+    default=None,
+    help="Override the issued_at timestamp (ISO 8601). Only valid with --scenario.",
+)
+def main(
+    config_path: str,
+    run_target: str,
+    scenario_str: str | None,
+    issued_at_str: str | None,
+) -> None:
     load_dotenv()
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
 
-    errors = run_forecasts(config_path, run_target)
+    if issued_at_str and not scenario_str:
+        logger.error("--issued-at requires --scenario")
+        sys.exit(1)
+
+    scenario: Scenario | None = None
+    if scenario_str:
+        issued_at = None
+        if issued_at_str:
+            parsed = datetime.fromisoformat(issued_at_str)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            issued_at = parsed.astimezone(timezone.utc)
+        scenario = Scenario(type=ScenarioType(scenario_str), issued_at=issued_at)
+
+    errors = run_forecasts(config_path, run_target, scenario=scenario)
     if errors:
         logger.error(f"Pipeline finished with {len(errors)} error(s)")
         sys.exit(1)

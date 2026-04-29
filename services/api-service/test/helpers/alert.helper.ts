@@ -1,6 +1,8 @@
+import { addDays } from 'date-fns';
 import * as request from 'supertest';
 
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
+import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
 import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
@@ -10,10 +12,10 @@ import { env } from '@api-service/src/env';
 import { getServer } from '@api-service/test/helpers/utility.helper';
 
 export async function createAlerts(
-  alerts: AlertCreateDto[],
+  forecast: ForecastCreateDto,
   apiKey: string = env.PIPELINE_API_KEY!,
 ): Promise<request.Response> {
-  return getServer().post('/alerts').set('x-api-key', apiKey).send(alerts);
+  return getServer().post('/alerts').set('x-api-key', apiKey).send(forecast);
 }
 
 export async function readAlerts(
@@ -39,17 +41,16 @@ export async function deleteAlert(
 export function buildAlert(
   overrides: Partial<AlertCreateDto> = {},
 ): AlertCreateDto {
+  const now = new Date();
+  const tomorrow = addDays(now, 1);
   return {
-    alertName: 'KEN_floods_test-station',
-    issuedAt: new Date('2026-03-30T00:00:00Z'),
+    eventName: 'KEN_floods_test-station',
     centroid: { latitude: 0.35, longitude: 32.6 },
-    hazardTypes: [HazardType.floods],
-    forecastSources: [ForecastSource.glofas],
     severity: [
       {
         timeInterval: {
-          start: new Date('2026-03-30T00:00:00Z'),
-          end: new Date('2026-03-31T00:00:00Z'),
+          start: now,
+          end: tomorrow,
         },
         ensembleMemberType: EnsembleMemberType.median,
         severityKey: 'water_discharge',
@@ -57,8 +58,8 @@ export function buildAlert(
       },
       {
         timeInterval: {
-          start: new Date('2026-03-30T00:00:00Z'),
-          end: new Date('2026-03-31T00:00:00Z'),
+          start: now,
+          end: tomorrow,
         },
         ensembleMemberType: EnsembleMemberType.run,
         severityKey: 'water_discharge',
@@ -70,8 +71,8 @@ export function buildAlert(
         {
           placeCode: 'KEN_01',
           adminLevel: 3,
-          layer: Layer.spatialExtent,
-          value: 1,
+          layer: Layer.populationExposed,
+          value: 1000,
         },
       ],
       rasters: [
@@ -82,6 +83,19 @@ export function buildAlert(
         },
       ],
     },
+    ...overrides,
+  };
+}
+
+export function buildForecast(
+  alerts: AlertCreateDto[],
+  overrides: Partial<Omit<ForecastCreateDto, 'alerts'>> = {},
+): ForecastCreateDto {
+  return {
+    issuedAt: new Date(),
+    hazardType: HazardType.floods,
+    forecastSources: [ForecastSource.glofas],
+    alerts,
     ...overrides,
   };
 }

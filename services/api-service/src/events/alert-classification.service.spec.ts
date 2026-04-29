@@ -10,10 +10,12 @@ import {
 
 function toClassificationInput(
   alert: ReturnType<typeof buildAlert>,
+  hazardType: HazardType = HazardType.floods,
+  issuedAt: Date = new Date(),
 ): AlertClassificationInput {
   return {
-    hazardType: alert.hazardTypes[0],
-    issuedAt: new Date(alert.issuedAt),
+    hazardType,
+    issuedAt,
     severity: alert.severity,
   };
 }
@@ -71,12 +73,12 @@ describe('AlertClassificationService', () => {
 
   describe('classifyAlert', () => {
     it('should throw when no config exists for hazard type', () => {
-      const alert = buildAlert({
-        hazardTypes: ['unknown' as HazardType],
-      });
-      expect(() => service.classifyAlert(toClassificationInput(alert))).toThrow(
-        "No classification config found for hazard type 'unknown'",
-      );
+      const alert = buildAlert();
+      expect(() =>
+        service.classifyAlert(
+          toClassificationInput(alert, 'unknown' as HazardType),
+        ),
+      ).toThrow("No classification config found for hazard type 'unknown'");
     });
 
     describe('floods', () => {
@@ -156,7 +158,6 @@ describe('AlertClassificationService', () => {
       describe('trigger', () => {
         it('should be true when high alertClass peaks within lead time duration', () => {
           const alert = buildAlert({
-            issuedAt: new Date('2026-03-30T00:00:00Z'),
             severity: buildSeverityData({
               start: new Date('2026-04-01T00:00:00Z'),
               end: new Date('2026-04-02T00:00:00Z'),
@@ -165,13 +166,18 @@ describe('AlertClassificationService', () => {
             }),
           });
 
-          const result = service.classifyAlert(toClassificationInput(alert));
+          const result = service.classifyAlert(
+            toClassificationInput(
+              alert,
+              HazardType.floods,
+              new Date('2026-03-30T00:00:00Z'),
+            ),
+          );
           expect(result.trigger).toBe(true);
         });
 
         it('should be false when peak exceeds trigger lead time duration', () => {
           const alert = buildAlert({
-            issuedAt: new Date('2026-03-30T00:00:00Z'),
             severity: buildSeverityData({
               start: new Date('2026-04-10T00:00:00Z'),
               end: new Date('2026-04-11T00:00:00Z'),
@@ -180,7 +186,13 @@ describe('AlertClassificationService', () => {
             }),
           });
 
-          const result = service.classifyAlert(toClassificationInput(alert));
+          const result = service.classifyAlert(
+            toClassificationInput(
+              alert,
+              HazardType.floods,
+              new Date('2026-03-30T00:00:00Z'),
+            ),
+          );
           expect(result.alertClass).toBe('high');
           expect(result.trigger).toBe(false);
         });
@@ -205,7 +217,6 @@ describe('AlertClassificationService', () => {
     describe('drought', () => {
       it('should classify as warning with no trigger', () => {
         const alert = buildAlert({
-          hazardTypes: [HazardType.drought],
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
             end: new Date('2026-07-01T00:00:00Z'),
@@ -214,7 +225,9 @@ describe('AlertClassificationService', () => {
           }),
         });
 
-        const result = service.classifyAlert(toClassificationInput(alert));
+        const result = service.classifyAlert(
+          toClassificationInput(alert, HazardType.drought),
+        );
         expect(result.alertClass).toBe('warning');
         expect(result.trigger).toBe(false);
       });

@@ -1,17 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import (
-    Centroid,
-    EnsembleMemberType,
-    ForecastSource,
-    HazardType,
-    Layer,
-)
+from pipelines.infra.data_types.alert_types import Centroid, EnsembleMemberType, Layer
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.loaded_data_types import ClimateRegion
 
@@ -55,8 +47,6 @@ def calculate_drought_forecasts(
     # - Compute population exposure from population raster + drought extent
     # - Compute geo-feature exposure (hospitals, roads, etc.)
 
-    issued_at = datetime.now(timezone.utc)
-
     for region in climate_regions:
         region_id = region.id
         seasons = region.seasons
@@ -67,19 +57,16 @@ def calculate_drought_forecasts(
         )[:2]
 
         for season in seasons:
-            alert_name = f"{country}_drought_{region_id}_season-{season}"
+            event_name = f"{country}_drought_{region.name}_{season}"
 
             data_submitter.create_alert(
-                alert_name=alert_name,
-                hazard_types=[HazardType.DROUGHT],
+                event_name=event_name,
                 centroid=Centroid(latitude=0.0, longitude=0.0),
-                issued_at=issued_at,
-                forecast_sources=[ForecastSource.ECMWF],
             )
 
             for _ in range(2):
                 data_submitter.add_severity_data(
-                    alert_name=alert_name,
+                    event_name=event_name,
                     time_interval_start="2026-03-01T00:00:00Z",
                     time_interval_end="2026-05-31T23:59:59Z",
                     ensemble_member_type=EnsembleMemberType.RUN,
@@ -87,7 +74,7 @@ def calculate_drought_forecasts(
                     severity_value=0,
                 )
             data_submitter.add_severity_data(
-                alert_name=alert_name,
+                event_name=event_name,
                 time_interval_start="2026-03-01T00:00:00Z",
                 time_interval_end="2026-05-31T23:59:59Z",
                 ensemble_member_type=EnsembleMemberType.MEDIAN,
@@ -97,14 +84,7 @@ def calculate_drought_forecasts(
 
             for place_code in debug_alert_place_codes:
                 data_submitter.add_admin_area_exposure(
-                    alert_name=alert_name,
-                    place_code=place_code,
-                    admin_level=target_admin_level,
-                    layer=Layer.SPATIAL_EXTENT,
-                    value=True,
-                )
-                data_submitter.add_admin_area_exposure(
-                    alert_name=alert_name,
+                    event_name=event_name,
                     place_code=place_code,
                     admin_level=target_admin_level,
                     layer=Layer.POPULATION_EXPOSED,
@@ -112,8 +92,8 @@ def calculate_drought_forecasts(
                 )
 
             data_submitter.add_raster_exposure(
-                alert_name=alert_name,
-                layer="alert_extent",
+                event_name=event_name,
+                layer=Layer.ALERT_EXTENT,
                 value=f"alert_extent_{region_id}.tif",
                 extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
             )
