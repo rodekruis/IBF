@@ -18,22 +18,8 @@ These also have special handling:
 
 Note: Not all countries have ADM0 data, so I couldn't get the ADM0 name for all of them.
 
-The naming of these will follow the values from the UGA data (which already had this).
-    "features": [
-        {
-        "type": "Feature",
-        "properties": {
-            "ADM4_EN": "Abako",
-            "ADM4_PCODE": "UG30670101",
-            "ADM3_EN": "Moroto",
-            "ADM3_PCODE": "UG306701",
-            "ADM2_EN": "Alebtong",
-            "ADM2_PCODE": "UG3067",
-            "ADM1_EN": "Northern",
-            "ADM1_PCODE": "UG3",
-            "ADM0_EN": "Uganda",
-            "ADM0_PCODE": "UG",
-        }
+The structure follows the UGA data, but also adds some other fields.
+See the data class definition in admin_area_geojson.py
 
 This script does the following:
 - Look at all files in the dir, make a list of the country names, and print them.
@@ -56,13 +42,27 @@ Once all are done, go back and open all admin files for a country from the outpu
 import json
 import re
 from collections import defaultdict
+from dataclasses import asdict, fields
 from pathlib import Path
 
+from data_management.utils.admin_area_geojson import (
+    AdminAreaFeatureCollection,
+    AdminAreaProperties,
+    Feature,
+    Geometry,
+)
+from shared.country_data import CountryCodeIso2
 from shared.data_helpers import get_seed_data_repo_path
 
 BASE_REPO_DIR = get_seed_data_repo_path()
 INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas" / "admin-areas-v1"
 OUTPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas" / "processed"
+
+# Known field names from AdminAreaProperties dataclass
+ADMIN_AREA_PROPERTY_NAMES = {f.name for f in fields(AdminAreaProperties)}
+
+# Track unknown fields we've already warned about (to avoid duplicate warnings)
+_warned_unknown_fields: set[str] = set()
 
 
 def discover_countries(input_dir: Path) -> dict[str, list[int]]:
@@ -81,15 +81,63 @@ def discover_countries(input_dir: Path) -> dict[str, list[int]]:
     return dict(countries)
 
 
-def load_geojson(filepath: Path) -> dict:
+def dict_to_feature_collection(data: dict) -> AdminAreaFeatureCollection:
+    """Convert a dict (from JSON) to AdminAreaFeatureCollection."""
+    features = []
+    for feat_dict in data.get("features", []):
+        props_dict = feat_dict.get("properties", {})
+        # Filter to only known fields, print warning for unknown fields
+        filtered_props = {}
+        for key, value in props_dict.items():
+            if key in ADMIN_AREA_PROPERTY_NAMES:
+                filtered_props[key] = value
+            elif key not in _warned_unknown_fields:
+                print(f"  -- Unknown property '{key}' will be ignored")
+                _warned_unknown_fields.add(key)
+        props = AdminAreaProperties(**filtered_props)
+        geom_dict = feat_dict.get("geometry", {})
+        geometry = Geometry(
+            type=geom_dict.get("type", ""),
+            coordinates=geom_dict.get("coordinates", []),
+        )
+        features.append(
+            Feature(
+                type=feat_dict.get("type", "Feature"),
+                geometry=geometry,
+                properties=props,
+            )
+        )
+    return AdminAreaFeatureCollection(
+        type=data.get("type", "FeatureCollection"), features=features
+    )
+
+
+def feature_collection_to_dict(fc: AdminAreaFeatureCollection) -> dict:
+    """Convert AdminAreaFeatureCollection to a dict for JSON export."""
+    return {
+        "type": fc.type,
+        "features": [
+            {
+                "type": f.type,
+                "geometry": asdict(f.geometry),
+                "properties": {
+                    k: v for k, v in asdict(f.properties).items() if v is not None
+                },
+            }
+            for f in fc.features
+        ],
+    }
+
+
+def load_geojson(filepath: Path) -> AdminAreaFeatureCollection:
     with open(filepath, "r", encoding="utf-8") as f:
-        return json.load(f)
+        return dict_to_feature_collection(json.load(f))
 
 
-def save_geojson(filepath: Path, data: dict):
+def save_geojson(filepath: Path, data: AdminAreaFeatureCollection) -> None:
     filepath.parent.mkdir(parents=True, exist_ok=True)
     with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+        json.dump(feature_collection_to_dict(data), f, indent=2, ensure_ascii=False)
 
 
 def get_pcode_key(admin_level: int) -> str:
@@ -100,9 +148,54 @@ def get_name_key(admin_level: int) -> str:
     return f"ADM{admin_level}_EN"
 
 
+def get_pcode(props: AdminAreaProperties, admin_level: int) -> str | None:
+    """Get the PCODE for a given admin level from properties."""
+    return getattr(props, get_pcode_key(admin_level), None)
+
+
+def set_pcode(props: AdminAreaProperties, admin_level: int, value: str) -> None:
+    """Set the PCODE for a given admin level on properties."""
+    setattr(props, get_pcode_key(admin_level), value)
+
+
+def get_name(props: AdminAreaProperties, admin_level: int) -> str | None:
+    """Get the name for a given admin level from properties."""
+    return getattr(props, get_name_key(admin_level), None)
+
+
+def set_name(props: AdminAreaProperties, admin_level: int, value: str) -> None:
+    """Set the name for a given admin level on properties."""
+    setattr(props, get_name_key(admin_level), value)
+
+
+def add_default_values(props: AdminAreaProperties, iso2: str) -> None:
+    """Add ADM0 fields and POPULATION to a feature's properties."""
+    props.ADM0_PCODE = iso2
+    props.ADM0_ISO_A2 = iso2
+    props.ADM0_ISO_A3 = CountryCodeIso2(iso2).name
+    props.POPULATION = None
+
+
+def set_adm0_fields_on_adm1(
+    admin_data: dict[int, AdminAreaFeatureCollection],
+) -> None:
+    """
+    Set ADM0_PCODE, ADM0_ISO_A2, ADM0_ISO_A3, and POPULATION on adm1 features.
+    These values are derived from the first 2 characters of the ADM1_PCODE.
+    """
+    if 1 not in admin_data:
+        return
+
+    for feature in admin_data[1].features:
+        props = feature.properties
+        adm1_pcode = props.ADM1_PCODE or ""
+        if adm1_pcode and len(adm1_pcode) >= 2:
+            add_default_values(props, adm1_pcode[:2])
+
+
 def populate_parent_codes(
     country: str,
-    admin_data: dict[int, dict],
+    admin_data: dict[int, AdminAreaFeatureCollection],
     admin_levels: list[int],
 ) -> list[str]:
     """
@@ -113,13 +206,11 @@ def populate_parent_codes(
 
     for parent_level in admin_levels:
         parent_geojson = admin_data[parent_level]
-        parent_pcode_key = get_pcode_key(parent_level)
-        parent_name_key = get_name_key(parent_level)
 
-        for parent_feature in parent_geojson.get("features", []):
-            parent_props = parent_feature.get("properties", {})
-            parent_pcode = parent_props.get(parent_pcode_key, "")
-            parent_name = parent_props.get(parent_name_key, "")
+        for parent_feature in parent_geojson.features:
+            parent_props = parent_feature.properties
+            parent_pcode = get_pcode(parent_props, parent_level) or ""
+            parent_name = get_name(parent_props, parent_level) or ""
 
             if not parent_pcode:
                 errors.append(
@@ -143,11 +234,10 @@ def populate_parent_codes(
                     continue
 
                 child_geojson = admin_data[child_level]
-                child_pcode_key = get_pcode_key(child_level)
 
-                for child_feature in child_geojson.get("features", []):
-                    child_props = child_feature.get("properties", {})
-                    child_pcode = child_props.get(child_pcode_key, "")
+                for child_feature in child_geojson.features:
+                    child_props = child_feature.properties
+                    child_pcode = get_pcode(child_props, child_level) or ""
 
                     if not child_pcode:
                         continue
@@ -167,24 +257,25 @@ def populate_parent_codes(
 
                     # If the child already has a parent code,
                     # check if it matches the one we're trying to set now.
-                    existing_parent_pcode = child_props.get(parent_pcode_key, "")
+                    existing_parent_pcode = get_pcode(child_props, parent_level) or ""
                     if existing_parent_pcode and existing_parent_pcode != parent_pcode:
                         errors.append(
                             f"ERROR [{country}]: Child adm{child_level} PCODE={child_pcode} "
-                            f"already has {parent_pcode_key}={existing_parent_pcode}, "
+                            f"already has {get_pcode_key(parent_level)}={existing_parent_pcode}, "
                             f"expected {parent_pcode}"
                         )
                         continue
 
                     # At this point in the function, we have a matching code, so apply it.
-                    child_props[parent_pcode_key] = parent_pcode
-                    child_props[parent_name_key] = parent_name
+                    set_pcode(child_props, parent_level, parent_pcode)
+                    set_name(child_props, parent_level, parent_name)
                     was_parent_code_applied = True
 
                     # When setting the adm1 PCODE, also set the adm0 code (first 2 chars of adm1 PCODE)
                     # there are no adm0 JSON files, so we need to derive the adm0 code ourselves.
+                    # Also set the other default values
                     if parent_level == 1 and len(parent_pcode) >= 2:
-                        child_props[get_pcode_key(0)] = parent_pcode[:2]
+                        add_default_values(child_props, parent_pcode[:2])
 
             if not was_parent_code_applied:
                 errors.append(
@@ -196,45 +287,39 @@ def populate_parent_codes(
     # link parents to adm3. Instead, use the ADM2_PCODE already on each adm3
     # feature to look up the adm2 name and the adm1 parent via adm2's PCODE.
     if country == "ZMB" and 3 in admin_data:
-        adm2_pcode_key = get_pcode_key(2)
-        adm2_name_key = get_name_key(2)
-
         # Build a lookup from adm2 PCODE -> adm2 name
         adm2_lookup: dict[str, str] = {}
         if 2 in admin_data:
-            for adm2_feature in admin_data[2].get("features", []):
-                adm2_props = adm2_feature.get("properties", {})
-                pcode = adm2_props.get(adm2_pcode_key, "")
-                name = adm2_props.get(adm2_name_key, "")
+            for adm2_feature in admin_data[2].features:
+                adm2_props = adm2_feature.properties
+                pcode = adm2_props.ADM2_PCODE or ""
+                name = adm2_props.ADM2_EN or ""
                 if pcode:
                     adm2_lookup[pcode] = name
 
-        adm1_pcode_key = get_pcode_key(1)
-        adm1_name_key = get_name_key(1)
-
-        for child_feature in admin_data[3].get("features", []):
-            child_props = child_feature.get("properties", {})
-            child_adm2_pcode = child_props.get(adm2_pcode_key, "")
+        for child_feature in admin_data[3].features:
+            child_props = child_feature.properties
+            child_adm2_pcode = child_props.ADM2_PCODE or ""
 
             if not child_adm2_pcode:
                 continue
 
             # Copy adm2 name from the lookup
             if child_adm2_pcode in adm2_lookup:
-                child_props[adm2_name_key] = adm2_lookup[child_adm2_pcode]
+                child_props.ADM2_EN = adm2_lookup[child_adm2_pcode]
 
             # Find adm1 whose PCODE is a prefix of the adm2 PCODE
             if 1 in admin_data:
-                for adm1_feature in admin_data[1].get("features", []):
-                    adm1_props = adm1_feature.get("properties", {})
-                    adm1_pcode = adm1_props.get(adm1_pcode_key, "")
-                    adm1_name = adm1_props.get(adm1_name_key, "")
+                for adm1_feature in admin_data[1].features:
+                    adm1_props = adm1_feature.properties
+                    adm1_pcode = adm1_props.ADM1_PCODE or ""
+                    adm1_name = adm1_props.ADM1_EN or ""
 
                     if adm1_pcode and child_adm2_pcode.startswith(adm1_pcode):
-                        child_props[adm1_pcode_key] = adm1_pcode
-                        child_props[adm1_name_key] = adm1_name
+                        child_props.ADM1_PCODE = adm1_pcode
+                        child_props.ADM1_EN = adm1_name
                         if len(adm1_pcode) >= 2:
-                            child_props[get_pcode_key(0)] = adm1_pcode[:2]
+                            add_default_values(child_props, adm1_pcode[:2])
                         break
 
     return errors
@@ -242,7 +327,7 @@ def populate_parent_codes(
 
 def validate_country_data(
     country: str,
-    admin_data: dict[int, dict],
+    admin_data: dict[int, AdminAreaFeatureCollection],
     admin_levels: list[int],
 ) -> list[str]:
     """
@@ -256,34 +341,32 @@ def validate_country_data(
 
     for level in check_levels:
         geojson = admin_data[level]
-        pcode_key = get_pcode_key(level)
-        name_key = get_name_key(level)
 
-        for feature in geojson.get("features", []):
-            props = feature.get("properties", {})
-            feature_pcode = props.get(pcode_key, "")
-            feature_name = props.get(name_key, "")
+        for feature in geojson.features:
+            props = feature.properties
+            feature_pcode = get_pcode(props, level) or ""
+            feature_name = get_name(props, level) or ""
 
             if not feature_pcode:
-                errors.append(f"VALIDATION [{country}] adm{level}: Missing {pcode_key}")
+                errors.append(
+                    f"VALIDATION [{country}] adm{level}: Missing {get_pcode_key(level)}"
+                )
                 continue
 
             if not feature_name:
                 errors.append(
-                    f"VALIDATION [{country}] adm{level}: {pcode_key}={feature_pcode} missing {name_key}"
+                    f"VALIDATION [{country}] adm{level}: {get_pcode_key(level)}={feature_pcode} missing {get_name_key(level)}"
                 )
 
             # Check all parent levels (except adm0) have PCODE and name, and PCODE is a prefix
             for parent_level in range(1, level):
-                parent_pcode_key = get_pcode_key(parent_level)
-                parent_name_key = get_name_key(parent_level)
-                parent_pcode = props.get(parent_pcode_key, "")
-                parent_name = props.get(parent_name_key, "")
+                parent_pcode = get_pcode(props, parent_level) or ""
+                parent_name = get_name(props, parent_level) or ""
 
                 if not parent_pcode:
                     errors.append(
-                        f"VALIDATION [{country}] adm{level}: {pcode_key}={feature_pcode} "
-                        f"missing parent {parent_pcode_key}"
+                        f"VALIDATION [{country}] adm{level}: {get_pcode_key(level)}={feature_pcode} "
+                        f"missing parent {get_pcode_key(parent_level)}"
                     )
                 else:
                     # ZMB: adm3 PCODEs are numeric and don't share a prefix with any parent, skip
@@ -304,28 +387,28 @@ def validate_country_data(
                         compare_pcode
                     ):
                         errors.append(
-                            f"VALIDATION [{country}] adm{level}: {pcode_key}={feature_pcode} "
-                            f"does not start with parent {parent_pcode_key}={parent_pcode}"
+                            f"VALIDATION [{country}] adm{level}: {get_pcode_key(level)}={feature_pcode} "
+                            f"does not start with parent {get_pcode_key(parent_level)}={parent_pcode}"
                         )
 
                 if not parent_name:
                     errors.append(
-                        f"VALIDATION [{country}] adm{level}: {pcode_key}={feature_pcode} "
-                        f"missing parent {parent_name_key}"
+                        f"VALIDATION [{country}] adm{level}: {get_pcode_key(level)}={feature_pcode} "
+                        f"missing parent {get_name_key(parent_level)}"
                     )
 
         # Check for duplicate PCODEs at the current admin level
         seen_pcodes: dict[str, int] = {}
-        for feature in geojson.get("features", []):
-            props = feature.get("properties", {})
-            feature_pcode = props.get(pcode_key, "")
+        for feature in geojson.features:
+            props = feature.properties
+            feature_pcode = get_pcode(props, level) or ""
             if not feature_pcode:
                 continue
             seen_pcodes[feature_pcode] = seen_pcodes.get(feature_pcode, 0) + 1
         for pcode, count in seen_pcodes.items():
             if count > 1:
                 errors.append(
-                    f"VALIDATION [{country}] adm{level}: Duplicate {pcode_key}={pcode} "
+                    f"VALIDATION [{country}] adm{level}: Duplicate {get_pcode_key(level)}={pcode} "
                     f"appears {count} times"
                 )
 
@@ -345,11 +428,12 @@ if __name__ == "__main__":
     for country, levels in countries.items():
         print(f"\nProcessing {country}...")
 
-        admin_data: dict[int, dict] = {}
+        admin_data: dict[int, AdminAreaFeatureCollection] = {}
         for level in levels:
             filepath = INPUT_DIR / f"{country}_adm{level}.json"
             admin_data[level] = load_geojson(filepath)
 
+        set_adm0_fields_on_adm1(admin_data)
         errors = populate_parent_codes(country, admin_data, levels)
         all_errors.extend(errors)
         for error in errors:
@@ -363,7 +447,7 @@ if __name__ == "__main__":
     # Validation pass — re-read saved files and check for errors
     print("\n--- Validation Pass ---")
     for country, levels in countries.items():
-        admin_data_check: dict[int, dict] = {}
+        admin_data_check: dict[int, AdminAreaFeatureCollection] = {}
         for level in levels:
             filepath = OUTPUT_DIR / f"{country}_adm{level}.json"
             admin_data_check[level] = load_geojson(filepath)
