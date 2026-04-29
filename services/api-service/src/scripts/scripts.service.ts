@@ -20,7 +20,7 @@ export class ScriptsService {
     );
     const seedConfig = this.getSeedConfigByNameOrThrow(seedScript);
 
-    await this.seedInit.run();
+    await this.seedInit.run({ countryCodes: seedConfig.countryCodes });
     if (seedConfig.seedAdminOnly) {
       return;
     }

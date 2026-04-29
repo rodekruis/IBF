@@ -6,4 +6,9 @@ export const SEED_CONFIGURATION_SETTINGS: SeedConfigurationDto[] = [
     name: SeedScript.initialState,
     seedAdminOnly: true,
   },
+  {
+    name: SeedScript.test,
+    seedAdminOnly: true,
+    countryCodes: ['KEN'],
+  },
 ];
