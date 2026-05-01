@@ -60,21 +60,26 @@ def calculate_flood_forecasts(
     #     DataSource.TODO_GLOFAS_DISCHARGE
     # ).data
 
-    # Placeholder data - replace with data provider calls above once data sources are wired
-    # put data in zip and share in PR
+    # TODO: (placeholder data) replace with data provider calls above once data sources are wired
+    # all below data in zip and share in PR
+    # glofas netcdf files
     glofas_netcdf_paths: list[str] = ["./pipelines/flood/bronze/glofas/dis_00_2026040800.nc"]
+    # thresholds for stations json files
     thresholds_path: list[str] = [f for f in glob.glob(f"./pipelines/flood/bronze/thresholds/*_{country}.json")]
     thresholds: list[ReturnPeriodThresholds] = []
     for path in thresholds_path:
         with open(path) as f:
             loaded_thresholds = json.load(f)
         thresholds.append(loaded_thresholds)
+    # station-district mapping json file (or basins_geojson if mapping with basin instead)
     station_district_mapping_path: str = f"./pipelines/flood/bronze/station-district/{country}_station_district_mapping.json"
     station_district_mapping: dict = {}
     with open(station_district_mapping_path) as f:
         station_district_mapping = json.load(f)
+    # population raster tiff file
     population_raster_paths = glob.glob(f"./pipelines/flood/bronze/population/{country}.tif")
     population_raster_path: str = population_raster_paths[0] if population_raster_paths else ""
+    # flood extent rasters
     flood_extent_paths: list[str] = [f for f in glob.glob(f"./pipelines/flood/bronze/flood_extents/flood_map_{country}_*.tif")]
 
     # Step 2 - Extract discharge per station from GloFAS data
