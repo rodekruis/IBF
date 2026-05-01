@@ -122,6 +122,8 @@ def resolve_flood_extent(
 
     available_paths_by_value: dict[int, str] = {}
     for path in flood_extent_paths:
+        if not os.path.exists(path):
+            continue
         value = _extract_return_period_value(path)
         if value is not None:
             available_paths_by_value[value] = path
