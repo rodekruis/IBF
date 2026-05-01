@@ -24,7 +24,7 @@ class TimeIntervalSeverity:
 class AlertStation:
     station_code: str
     station: LocationPoint
-    lead_time_severities: list[TimeIntervalSeverity]
+    time_interval_severities: list[TimeIntervalSeverity]
 
 
 class ReturnPeriodThresholdValue(TypedDict):
@@ -81,7 +81,7 @@ def _match_return_period(
 
 def determine_temporal_extent(
     station_code: str,
-    lead_times: list[TimeIntervalDischarge],
+    time_intervals: list[TimeIntervalDischarge],
     thresholds: list[ReturnPeriodThresholds],
     minimum_return_period: str = MINIMUM_RETURN_PERIOD,
 ) -> list[TimeIntervalSeverity]:
@@ -103,30 +103,30 @@ def determine_temporal_extent(
         )
         return []
 
-    lead_time_severities: list[TimeIntervalSeverity] = []
-    for lead_time_discharge in lead_times:
-        if not lead_time_discharge.ensemble_discharges:
+    time_interval_severities: list[TimeIntervalSeverity] = []
+    for time_interval_discharge in time_intervals:
+        if not time_interval_discharge.ensemble_discharges:
             continue
         median_discharge = statistics.median(
-            lead_time_discharge.ensemble_discharges
+            time_interval_discharge.ensemble_discharges
         )
         matched_rp = _match_return_period(median_discharge, station_thresholds)
         if matched_rp is not None:
-            lead_time_severities.append(
+            time_interval_severities.append(
                 TimeIntervalSeverity(
-                    time_interval_start=lead_time_discharge.time_interval_start,
-                    time_interval_end=lead_time_discharge.time_interval_end,
+                    time_interval_start=time_interval_discharge.time_interval_start,
+                    time_interval_end=time_interval_discharge.time_interval_end,
                     median_discharge=median_discharge,
-                    ensemble_discharges=lead_time_discharge.ensemble_discharges,
+                    ensemble_discharges=time_interval_discharge.ensemble_discharges,
                     return_period=matched_rp,
                 )
             )
 
-    return lead_time_severities
+    return time_interval_severities
 
 
 def determine_alert_stations(
-    station_lead_time_severities: list[TimeIntervalSeverity],
+    station_time_interval_severities: list[TimeIntervalSeverity],
     station_code: str,
     station: LocationPoint,
 ) -> AlertStation:
@@ -137,10 +137,10 @@ def determine_alert_stations(
     alert_station = AlertStation(
         station_code=station_code,
         station=station,
-        lead_time_severities=station_lead_time_severities,
+        time_interval_severities=station_time_interval_severities,
     )
     logging.info(
         f"Station {station_code} alert for "
-        f"{len(station_lead_time_severities)} lead time(s)"
+        f"{len(station_time_interval_severities)} lead time(s)"
     )
     return alert_station

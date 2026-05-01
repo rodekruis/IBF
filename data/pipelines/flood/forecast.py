@@ -77,7 +77,7 @@ def calculate_flood_forecasts(
     population_raster_path: str = population_raster_paths[0] if population_raster_paths else ""
     flood_extent_paths: list[str] = [f for f in glob.glob(f"./pipelines/flood/bronze/flood_extents/flood_map_{country}_*.tif")]
 
-    # Step 2 - Compute country bounding box and prepare country-level data
+    # Step 2 - Extract discharge per station from GloFAS data
     country_bounds = get_bounding_box(target_admin_areas)
 
     # Slice NetCDF files to country bounds once before processing stations
@@ -86,7 +86,7 @@ def calculate_flood_forecasts(
         country_sliced_path = slice_netcdf_to_bounds(netcdf_path, country_bounds)
         country_sliced_netcdf_paths.append(country_sliced_path)
 
-    # Step 3 - Extract discharge per station from GloFAS data (uses pre-sliced NetCDFs)
+    # Loop through stations and extract discharge
     for station_code, station in stations.items():
         discharges = extract_discharge_glofas_station(
             station_code=station_code,
@@ -95,20 +95,20 @@ def calculate_flood_forecasts(
         )
 
         # Step 4a - Determine which lead times exceed the minimum return period threshold
-        lead_time_severities = determine_temporal_extent(
+        time_interval_severities = determine_temporal_extent(
             station_code=station_code,
-            lead_times=discharges.get(station_code, []),
+            time_intervals=discharges.get(station_code, []),
             thresholds=thresholds,
         )
 
         # No lead times exceeded the minimum return period threshold, skip to the next station
-        if not lead_time_severities:
+        if not time_interval_severities:
             logging.info(f"No alerts for station {station_code}")
             continue
 
         # Step 4b - Create alert stations from the lead time severities
         alert_station = determine_alert_stations(
-            station_lead_time_severities=lead_time_severities,
+            station_time_interval_severities=time_interval_severities,
             station_code=station_code,
             station=station,
         )
@@ -119,7 +119,7 @@ def calculate_flood_forecasts(
         # TODO: consider compacting this resolve method
         # Resolve flood extent raster for the highest matched return period
         highest_rp = max(
-            alert_station.lead_time_severities,
+            alert_station.time_interval_severities,
             key=lambda s: s.median_discharge,
         ).return_period
 
@@ -156,7 +156,7 @@ def calculate_flood_forecasts(
             ),
         )
 
-        for severity in alert_station.lead_time_severities:
+        for severity in alert_station.time_interval_severities:
             for i in range(len(severity.ensemble_discharges)):
                 data_submitter.add_severity_data(
                     event_name=event_name,
