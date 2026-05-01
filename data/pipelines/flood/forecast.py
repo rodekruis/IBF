@@ -99,19 +99,19 @@ def calculate_flood_forecasts(
             netcdf_paths=country_sliced_netcdf_paths,
         )
 
-        # Step 4a - Determine which lead times exceed the minimum return period threshold
+        # Step 4a - Determine which time intervals exceed the minimum return period threshold
         time_interval_severities = determine_temporal_extent(
             station_code=station_code,
             time_intervals=discharges.get(station_code, []),
             thresholds=thresholds,
         )
 
-        # No lead times exceeded the minimum return period threshold, skip to the next station
+        # No time intervals exceeded the minimum return period threshold, skip to the next station
         if not time_interval_severities:
             logging.info(f"No alerts for station {station_code}")
             continue
 
-        # Step 4b - Create alert stations from the lead time severities
+        # Step 4b - Create alert stations from the time interval severities
         alert_station = determine_alert_stations(
             station_time_interval_severities=time_interval_severities,
             station_code=station_code,
