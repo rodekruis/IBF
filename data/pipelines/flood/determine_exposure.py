@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import dataclass, field
 
 import numpy as np
 import rasterio
@@ -15,83 +14,57 @@ from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.location_point import LocationPoint
 
 
-@dataclass
-class AlertExposure:
-    place_codes: list[str]
-    admin_level: int
-    clipped_flood_extent_raster_path: str
-    population_per_place_code: dict[str, float] = field(default_factory=dict)
-
-
-
-def get_station_place_codes(
+def determine_spatial_extent(
     station: LocationPoint,
     station_district_mapping: dict,
     admin_areas: AdminAreasSet,
-) -> list[str]:
+    flood_extent_raster_path: str,
+) -> tuple[str, list[str]]:
     """
-    Return mapped place codes for a station, filtered to available target admin areas.
+    Determine spatial extent by finding mapped place codes for a station, clipping the flood extent raster to admin areas.
+    Return a tuple of (clipped_raster_path, place_codes).
     """
-    mapped_place_codes = station_district_mapping.get(station.id)
-    if mapped_place_codes is None:
-        logging.warning(f"No station mapping found for station {station.id}")
-        return []
-
-    if not isinstance(mapped_place_codes, list):
-        logging.warning(
-            f"Invalid station mapping for station {station.id}: expected list"
-        )
-        return []
+    mapped_place_codes = station_district_mapping.get(station.id, [])
 
     place_codes = [
         place_code
         for place_code in mapped_place_codes
         if place_code in admin_areas.admin_areas
     ]
+    
+    clipped_flood_extent_raster_path = clip_flood_extent_to_admin_areas(
+        place_codes=place_codes,
+        admin_areas=admin_areas,
+        flood_extent_raster_path=flood_extent_raster_path,
+        station_code=station.id,
+    )
 
-    if not place_codes:
-        logging.warning(
-            f"No mapped admin areas available in target set for station {station.id}"
-        )
+    return clipped_flood_extent_raster_path, place_codes
 
-    return place_codes
-
-
-def extract_population_within_flood_extent(
-    place_codes: list[str],
-    admin_areas: AdminAreasSet,
+def compute_population_exposed(
     population_raster_path: str,
     flood_extent_raster_path: str,
-) -> dict[str, float]:
+) -> str | None:
     """
     Extract population only within the intersection of admin areas and flood extent.
     For each admin area, masks the population raster with the (binary) flood extent raster
     so only flooded pixels count toward the population sum.
-    Returns a dict of pcode -> exposed population.
+    Returns the path to the output population raster.
+
     """
-    population: dict[str, float] = {}
-
-    geometries = []
-    pcodes_ordered = []
-    for pcode in place_codes:
-        admin_area = admin_areas.admin_areas.get(pcode)
-        if admin_area is None:
-            continue
-        geom = {
-            "type": admin_area.geometry_type,
-            "coordinates": admin_area.coordinates,
-        }
-        geometries.append(geom)
-        pcodes_ordered.append(pcode)
-
-    if not geometries:
-        return population
+    population_raster_stem, _ = os.path.splitext(
+        os.path.basename(population_raster_path)
+    )
+    population_exposed_raster_output_path = os.path.join(
+        os.path.dirname(population_raster_path),
+        f"{population_raster_stem}_exposed.tif",
+    )
 
     with rasterio.open(population_raster_path) as pop_src:
         pop_array = pop_src.read(1)
+        pop_profile = pop_src.profile.copy()
         pop_transform = pop_src.transform
         pop_crs = pop_src.crs
-        pop_nodata = pop_src.nodata if pop_src.nodata is not None else -9999
 
     with rasterio.open(flood_extent_raster_path) as flood_src:
         flood_array_resampled = np.zeros(pop_array.shape, dtype=np.float32)
@@ -108,10 +81,51 @@ def extract_population_within_flood_extent(
     binary_flood_extent = (flood_array_resampled > 0).astype(np.uint8)
     population_in_flood_extent = np.where(binary_flood_extent == 1, pop_array, 0.0)
 
+    output_profile = pop_profile.copy()
+    output_profile.update(
+        dtype=rasterio.float32,
+        count=1,
+        nodata=0.0,
+    )
+    with rasterio.open(population_exposed_raster_output_path, "w", **output_profile) as dst:
+        dst.write(population_in_flood_extent.astype(np.float32), 1)
+
+    return population_exposed_raster_output_path
+
+
+def aggregate_population_exposed(
+    population_raster_path: str,
+    place_codes_exposed: list[str],
+    admin_areas: AdminAreasSet,
+) -> dict[str, float]:
+    """
+    Aggregate population exposed within the flood extent per place code.
+    """
+
+    population: dict[str, float] = {}
+
+    geometries = []
+    pcodes_ordered = []
+    for pcode in place_codes_exposed:
+        admin_area = admin_areas.admin_areas.get(pcode)
+        if admin_area is None:
+            continue
+        geom = {
+            "type": admin_area.geometry_type,
+            "coordinates": admin_area.coordinates,
+        }
+        geometries.append(geom)
+        pcodes_ordered.append(pcode)
+
+    if not geometries:
+        return population
+    
+    with rasterio.open(population_raster_path) as pop_src:\
+        pop_nodata = pop_src.nodata if pop_src.nodata is not None else -9999
+
     stats = zonal_stats(
         geometries,
-        population_in_flood_extent,
-        affine=pop_transform,
+        population_raster_path,
         stats=["sum"],
         all_touched=True,
         nodata=pop_nodata,
@@ -181,42 +195,3 @@ def clip_flood_extent_to_admin_areas(
         dst.write(clipped_data)
 
     return output_path
-
-
-def determine_population_exposed(
-    station: LocationPoint,
-    station_district_mapping: dict,
-    admin_areas: AdminAreasSet,
-    population_raster_path: str,
-    flood_extent_raster_path: str,
-    target_admin_level: int,
-) -> AlertExposure:
-    """
-    Determine which admin areas are exposed for a alert station.
-    1. Read mapped place codes for the station from station_district_mapping
-    2. Filter mapped place codes to available target admin areas
-    3. Extract population within the flood extent per mapped admin area
-    """
-    place_codes = get_station_place_codes(
-        station=station,
-        station_district_mapping=station_district_mapping,
-        admin_areas=admin_areas,
-    )
-
-    population = extract_population_within_flood_extent(
-        place_codes, admin_areas, population_raster_path, flood_extent_raster_path
-    )
-
-    clipped_flood_extent_raster_path = clip_flood_extent_to_admin_areas(
-        place_codes=place_codes,
-        admin_areas=admin_areas,
-        flood_extent_raster_path=flood_extent_raster_path,
-        station_code=station.id,
-    )
-
-    return AlertExposure(
-        place_codes=place_codes,
-        admin_level=target_admin_level,
-        clipped_flood_extent_raster_path=clipped_flood_extent_raster_path,
-        population_per_place_code=population,
-    )

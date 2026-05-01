@@ -70,21 +70,45 @@ def _resolve_empty_flood_extent_path(flood_extent_paths: list[str]) -> str | Non
 
     return None
 
-def _resolve_requested_return_period_value(flood_return_period: str) -> int | None:
-    matched_value = RETURN_PERIODS.get(flood_return_period)
+def _resolve_requested_return_period_value(time_interval_severities: list) -> int | None:
+    """
+    Resolve flood extent raster for the highest matched return period
+    """
+    highest_return_period = max(
+        time_interval_severities,
+        key=lambda s: s.median_discharge,
+    ).return_period
+
+    matched_value = RETURN_PERIODS.get(highest_return_period)
     if matched_value is not None:
         return matched_value
 
-    parsed_return_period = _extract_return_period_label_value(flood_return_period)
+    parsed_return_period = _extract_return_period_label_value(highest_return_period)
     if parsed_return_period is None:
         logging.warning(
-            f"Unknown return period '{flood_return_period}', using empty fallback"
+            f"Unknown return period '{highest_return_period}', using empty fallback"
         )
 
     return parsed_return_period
 
-def resolve_flood_extent_raster(
-    flood_return_period: str,
+
+def compute_alert_extent(
+    time_interval_severities: list,
+    flood_extent_paths: list[str],
+) -> str:
+    """
+    Compute the flood extent raster for the alert station by resolving the appropriate return period raster.
+    Returns the path to the computed flood extent raster for the station.
+    """
+    flood_extent_path = resolve_flood_extent(
+        time_interval_severities=time_interval_severities,
+        flood_extent_paths=flood_extent_paths,
+    )
+    return flood_extent_path
+
+
+def resolve_flood_extent(
+    time_interval_severities: list,
     flood_extent_paths: list[str],
 ) -> str:
     """
@@ -93,7 +117,8 @@ def resolve_flood_extent_raster(
     2. Closest lower-or-equal available return period raster.
     3. flood_map_{country}_empty.tif fallback raster (guaranteed to exist).
     """
-    matched_value = _resolve_requested_return_period_value(flood_return_period)
+
+    matched_value = _resolve_requested_return_period_value(time_interval_severities)
 
     available_paths_by_value: dict[int, str] = {}
     for path in flood_extent_paths:
