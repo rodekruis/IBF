@@ -201,14 +201,6 @@ def calculate_flood_forecasts(
         data_submitter.add_raster_exposure(
             event_name=event_name,
             layer="alert_extent",
-            value=os.path.join(
-                os.path.dirname(flood_extent_path),
-                f"alert_extent_{station_code}.tif",
-            ),
-            extent=get_raster_extent(
-                os.path.join(
-                    os.path.dirname(flood_extent_path),
-                    f"alert_extent_{station_code}.tif",
-                )
-            ),
+            value=clipped_flood_extent_path,
+            extent=get_raster_extent(clipped_flood_extent_path)
         )
