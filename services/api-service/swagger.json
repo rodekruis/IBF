@@ -98,5 +98,76 @@
       "active",
       "timestamp"
     ]
+  },
+  {
+    "method": "get",
+    "path": "/api/admin-areas",
+    "params": [
+      "countryCodeIso3",
+      "adminLevel"
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/admin-areas",
+    "params": [],
+    "returnType": "AdminAreaResponseDto"
+  },
+  {
+    "method": "get",
+    "path": "/api/admin-areas/{placeCode}",
+    "params": [
+      "placeCode"
+    ],
+    "returnType": "AdminAreaResponseDto"
+  },
+  {
+    "method": "patch",
+    "path": "/api/admin-areas/{placeCode}",
+    "params": [
+      "placeCode"
+    ],
+    "returnType": "AdminAreaResponseDto"
+  },
+  {
+    "method": "delete",
+    "path": "/api/admin-areas/{placeCode}",
+    "params": [
+      "placeCode"
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/countries",
+    "params": []
+  },
+  {
+    "method": "post",
+    "path": "/api/countries",
+    "params": [],
+    "returnType": "CountryResponseDto"
+  },
+  {
+    "method": "get",
+    "path": "/api/countries/{countryCodeIso3}",
+    "params": [
+      "countryCodeIso3"
+    ],
+    "returnType": "CountryResponseDto"
+  },
+  {
+    "method": "patch",
+    "path": "/api/countries/{countryCodeIso3}",
+    "params": [
+      "countryCodeIso3"
+    ],
+    "returnType": "CountryResponseDto"
+  },
+  {
+    "method": "delete",
+    "path": "/api/countries/{countryCodeIso3}",
+    "params": [
+      "countryCodeIso3"
+    ]
   }
 ]
