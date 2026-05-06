@@ -118,12 +118,12 @@ export class SeedInit {
     }
 
     const BATCH_SIZE = 100;
-    for (let i = 0; i < adminAreas.length; i += BATCH_SIZE) {
-      const batch = adminAreas.slice(i, i + BATCH_SIZE);
-      await this.prisma.$transaction(
-        batch.map((area) => this.prisma.adminArea.create({ data: area })),
-      );
-    }
+    await this.prisma.$transaction(async (tx) => {
+      for (let i = 0; i < adminAreas.length; i += BATCH_SIZE) {
+        const batch = adminAreas.slice(i, i + BATCH_SIZE);
+        await tx.adminArea.createMany({ data: batch });
+      }
+    });
 
     this.logger.log(`Seeded ${adminAreas.length} admin areas from ${filename}`);
   }
