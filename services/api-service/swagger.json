@@ -46,6 +46,27 @@
     ]
   },
   {
+    "method": "post",
+    "path": "/api/alert-configs",
+    "params": [],
+    "returnType": "AlertConfigResponseDto"
+  },
+  {
+    "method": "get",
+    "path": "/api/alert-configs/{id}",
+    "params": [
+      "id"
+    ],
+    "returnType": "AlertConfigResponseDto"
+  },
+  {
+    "method": "delete",
+    "path": "/api/alert-configs/{id}",
+    "params": [
+      "id"
+    ]
+  },
+  {
     "method": "get",
     "path": "/api/alerts",
     "params": []

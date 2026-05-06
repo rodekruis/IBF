@@ -1,16 +1,31 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
+import { AlertConfigCreateDto } from '@api-service/src/alert-configs/dto/alert-config-create.dto';
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
+import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
+import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
 const alertConfigSelect = {
   id: true,
+  created: true,
+  updated: true,
   countryCodeIso3: true,
   hazardType: true,
   spatialExtentName: true,
   spatialExtentPlaceCodes: true,
   temporalExtents: true,
+  severityClassLevels: true,
+  probabilityClassLevels: true,
+  alertClassMatrix: true,
+  alertClassOrder: true,
+  triggerAlertClass: true,
+  triggerLeadTimeDuration: true,
 } satisfies Prisma.AlertConfigSelect;
 
 type AlertConfigRow = Prisma.AlertConfigGetPayload<{
@@ -24,15 +39,41 @@ export class AlertConfigsRepository {
   private toResponseDto(row: AlertConfigRow): AlertConfigResponseDto {
     return {
       id: row.id,
+      created: row.created,
+      updated: row.updated,
       countryCodeIso3: row.countryCodeIso3,
-      hazardType: row.hazardType,
+      hazardType: row.hazardType as HazardType,
       spatialExtentName: row.spatialExtentName,
       spatialExtentPlaceCodes: row.spatialExtentPlaceCodes,
       temporalExtents: row.temporalExtents as unknown as Record<
         string,
         string[]
       >[],
+      severityClassLevels:
+        row.severityClassLevels as unknown as ClassLevelDto[],
+      probabilityClassLevels:
+        row.probabilityClassLevels as unknown as ClassLevelDto[],
+      alertClassMatrix: row.alertClassMatrix as Record<
+        string,
+        Record<string, string | null>
+      >,
+      alertClassOrder: row.alertClassOrder,
+      triggerAlertClass: row.triggerAlertClass,
+      triggerLeadTimeDuration: row.triggerLeadTimeDuration,
     };
+  }
+
+  public async getAlertConfigOrThrow(
+    id: number,
+  ): Promise<AlertConfigResponseDto> {
+    const row = await this.prisma.alertConfig.findUnique({
+      where: { id },
+      select: alertConfigSelect,
+    });
+    if (!row) {
+      throw new NotFoundException(`Alert config with id ${id} not found`);
+    }
+    return this.toResponseDto(row);
   }
 
   public async getAlertConfigs({
@@ -40,7 +81,7 @@ export class AlertConfigsRepository {
     hazardType,
   }: {
     countryCodeIso3: string;
-    hazardType: string;
+    hazardType: HazardType;
   }): Promise<AlertConfigResponseDto[]> {
     const rows = await this.prisma.alertConfig.findMany({
       where: {
@@ -49,6 +90,53 @@ export class AlertConfigsRepository {
       },
       select: alertConfigSelect,
     });
-    return rows.map((row) => this.toResponseDto(row));
+    return rows.map((row: AlertConfigRow) => this.toResponseDto(row));
+  }
+
+  public async createAlertConfig(
+    alertConfigCreateDto: AlertConfigCreateDto,
+  ): Promise<AlertConfigResponseDto> {
+    try {
+      const row = await this.prisma.alertConfig.create({
+        data: {
+          countryCodeIso3: alertConfigCreateDto.countryCodeIso3,
+          hazardType: alertConfigCreateDto.hazardType,
+          spatialExtentName: alertConfigCreateDto.spatialExtentName,
+          spatialExtentPlaceCodes: alertConfigCreateDto.spatialExtentPlaceCodes,
+          temporalExtents: alertConfigCreateDto.temporalExtents,
+          severityClassLevels:
+            alertConfigCreateDto.severityClassLevels as unknown as Prisma.InputJsonValue,
+          probabilityClassLevels:
+            alertConfigCreateDto.probabilityClassLevels as unknown as Prisma.InputJsonValue,
+          alertClassMatrix:
+            alertConfigCreateDto.alertClassMatrix as Prisma.InputJsonValue,
+          alertClassOrder: alertConfigCreateDto.alertClassOrder,
+          triggerAlertClass: alertConfigCreateDto.triggerAlertClass ?? null,
+          triggerLeadTimeDuration:
+            alertConfigCreateDto.triggerLeadTimeDuration ?? null,
+        },
+        select: alertConfigSelect,
+      });
+
+      return this.toResponseDto(row);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003'
+      ) {
+        throw new BadRequestException(
+          `Country '${alertConfigCreateDto.countryCodeIso3}' does not exist`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  public async deleteAlertConfigOrThrow(id: number): Promise<void> {
+    const row = await this.prisma.alertConfig.findUnique({ where: { id } });
+    if (!row) {
+      throw new NotFoundException(`Alert config with id ${id} not found`);
+    }
+    await this.prisma.alertConfig.delete({ where: { id } });
   }
 }

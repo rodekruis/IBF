@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
 import { AlertConfigsRepository } from '@api-service/src/alert-configs/alert-configs.repository';
+import { AlertConfigCreateDto } from '@api-service/src/alert-configs/dto/alert-config-create.dto';
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
+import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 
 @Injectable()
 export class AlertConfigsService {
@@ -9,16 +11,32 @@ export class AlertConfigsService {
     private readonly alertConfigsRepository: AlertConfigsRepository,
   ) {}
 
+  public async getAlertConfigOrThrow(
+    id: number,
+  ): Promise<AlertConfigResponseDto> {
+    return this.alertConfigsRepository.getAlertConfigOrThrow(id);
+  }
+
   public async getAlertConfigs({
     countryCodeIso3,
     hazardType,
   }: {
     countryCodeIso3: string;
-    hazardType: string;
+    hazardType: HazardType;
   }): Promise<AlertConfigResponseDto[]> {
     return this.alertConfigsRepository.getAlertConfigs({
       countryCodeIso3,
       hazardType,
     });
+  }
+
+  public async createAlertConfig(
+    alertConfigCreateDto: AlertConfigCreateDto,
+  ): Promise<AlertConfigResponseDto> {
+    return this.alertConfigsRepository.createAlertConfig(alertConfigCreateDto);
+  }
+
+  public async deleteAlertConfigOrThrow(id: number): Promise<void> {
+    await this.alertConfigsRepository.deleteAlertConfigOrThrow(id);
   }
 }

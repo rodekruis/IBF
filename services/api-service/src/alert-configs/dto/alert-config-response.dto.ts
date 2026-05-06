@@ -1,21 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { IntersectionType } from '@nestjs/swagger';
 
-export class AlertConfigResponseDto {
-  @ApiProperty()
-  public readonly id: number;
+import { AlertConfigCreateDto } from '@api-service/src/alert-configs/dto/alert-config-create.dto';
+import { BaseDto } from '@api-service/src/shared/dto/base.dto';
 
-  @ApiProperty()
-  public readonly countryCodeIso3: string;
-
-  @ApiProperty()
-  public readonly hazardType: string;
-
-  @ApiProperty()
-  public readonly spatialExtentName: string;
-
-  @ApiProperty({ type: [String] })
-  public readonly spatialExtentPlaceCodes: string[];
-
-  @ApiProperty()
-  public readonly temporalExtents: Record<string, string[]>[];
-}
+export class AlertConfigResponseDto extends IntersectionType(
+  BaseDto,
+  AlertConfigCreateDto,
+) {}
