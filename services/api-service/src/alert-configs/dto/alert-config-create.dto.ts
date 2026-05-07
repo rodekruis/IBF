@@ -97,10 +97,10 @@ export class AlertConfigCreateDto {
   @ApiPropertyOptional({ example: 'high' })
   @IsOptional()
   @IsString()
-  public readonly triggerAlertClass: string | null;
+  public readonly triggerAlertClass?: string | null;
 
   @ApiPropertyOptional({ example: 'P7D' })
   @IsOptional()
   @IsString()
-  public readonly triggerLeadTimeDuration: string | null;
+  public readonly triggerLeadTimeDuration?: string | null;
 }

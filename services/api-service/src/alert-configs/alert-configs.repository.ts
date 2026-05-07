@@ -63,31 +63,19 @@ export class AlertConfigsRepository {
     };
   }
 
-  public async getAlertConfigOrThrow(
-    id: number,
-  ): Promise<AlertConfigResponseDto> {
-    const row = await this.prisma.alertConfig.findUnique({
-      where: { id },
-      select: alertConfigSelect,
-    });
-    if (!row) {
-      throw new NotFoundException(`Alert config with id ${id} not found`);
-    }
-    return this.toResponseDto(row);
-  }
-
   public async getAlertConfigs({
     countryCodeIso3,
     hazardType,
   }: {
-    countryCodeIso3: string;
-    hazardType: HazardType;
+    countryCodeIso3?: string;
+    hazardType?: HazardType;
   }): Promise<AlertConfigResponseDto[]> {
     const rows = await this.prisma.alertConfig.findMany({
       where: {
-        countryCodeIso3,
-        hazardType,
+        ...(countryCodeIso3 !== undefined && { countryCodeIso3 }),
+        ...(hazardType !== undefined && { hazardType }),
       },
+      orderBy: { updated: 'desc' },
       select: alertConfigSelect,
     });
     return rows.map((row: AlertConfigRow) => this.toResponseDto(row));

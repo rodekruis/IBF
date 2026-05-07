@@ -6,7 +6,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseEnumPipe,
   ParseIntPipe,
   Post,
   Query,
@@ -32,49 +31,29 @@ export class AlertConfigsController {
   @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get()
   @ApiOperation({
-    summary:
-      'Get spatial and temporal extents for alert configs by country and hazard type',
+    summary: 'Get alert configs for country and hazard type',
   })
-  @ApiQuery({ name: 'countryCodeIso3', required: true, example: 'KEN' })
-  @ApiQuery({ name: 'hazardType', required: true, enum: HazardType })
+  @ApiQuery({ name: 'countryCodeIso3', required: false, example: 'KEN' })
+  @ApiQuery({ name: 'hazardType', required: false, enum: HazardType })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Alert configs returned successfully',
     type: [AlertConfigResponseDto],
   })
   public async getAlertConfigs(
-    @Query('countryCodeIso3') countryCodeIso3: string,
-    @Query('hazardType', new ParseEnumPipe(HazardType)) hazardType: string,
+    @Query('countryCodeIso3') countryCodeIso3?: string,
+    @Query('hazardType') hazardType?: string,
   ): Promise<AlertConfigResponseDto[]> {
     return this.alertConfigsService.getAlertConfigs({
       countryCodeIso3,
-      hazardType: hazardType as HazardType,
+      hazardType: hazardType as HazardType | undefined,
     });
-  }
-
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
-  @Get(':id')
-  @ApiOperation({ summary: 'Get alert config by id' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Alert config returned successfully',
-    type: AlertConfigResponseDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Alert config not found',
-  })
-  public async getAlertConfig(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<AlertConfigResponseDto> {
-    return this.alertConfigsService.getAlertConfigOrThrow(id);
   }
 
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
   @ApiOperation({
-    summary:
-      'Create spatial and temporal extents for alert configs by country and hazard type',
+    summary: 'Create alert config for country and hazard type',
   })
   @ApiResponse({
     status: HttpStatus.OK,

@@ -11,18 +11,12 @@ export class AlertConfigsService {
     private readonly alertConfigsRepository: AlertConfigsRepository,
   ) {}
 
-  public async getAlertConfigOrThrow(
-    id: number,
-  ): Promise<AlertConfigResponseDto> {
-    return this.alertConfigsRepository.getAlertConfigOrThrow(id);
-  }
-
   public async getAlertConfigs({
     countryCodeIso3,
     hazardType,
   }: {
-    countryCodeIso3: string;
-    hazardType: HazardType;
+    countryCodeIso3?: string;
+    hazardType?: HazardType;
   }): Promise<AlertConfigResponseDto[]> {
     return this.alertConfigsRepository.getAlertConfigs({
       countryCodeIso3,

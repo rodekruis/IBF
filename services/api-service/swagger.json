@@ -52,14 +52,6 @@
     "returnType": "AlertConfigResponseDto"
   },
   {
-    "method": "get",
-    "path": "/api/alert-configs/{id}",
-    "params": [
-      "id"
-    ],
-    "returnType": "AlertConfigResponseDto"
-  },
-  {
     "method": "delete",
     "path": "/api/alert-configs/{id}",
     "params": [
