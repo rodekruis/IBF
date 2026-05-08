@@ -1,6 +1,13 @@
 # NRW Standalone
 
 NOTE: Writing more on this in a side PR, along with changes to other readmes.
+TODOs:
+
+- mention docker container needs to run, and DB must be populated for local running
+- mention env file set up
+- mention IBF service readme
+- Look up all readmes, and add reference to this where needed (such as system design, etc.)
+- state how to use this (no commits to submodule, how to make changes, link to go repo ibf-main on our fork)
 
 ## Setup and running the app
 
@@ -11,13 +18,13 @@ NOTE: Writing more on this in a side PR, along with changes to other readmes.
 
 ## Updating the submodule
 
-Updating is not automatic. To update the submodule pointer, run the following, and commit the change to the pointer.
+This uses a submodule pointer, pointing to a specific commit. To update it to latest, run the following, and commit the change to the submodule pointer.
 
 `git submodule update --remote portal/nrw-standalone/src/go-web-app`
 
-## Adding directories to the checkout
+## Adding directories to the submodule checkout
 
-This was set up using a submodule with sparse checkout. The exact command was this:
+This submodule was set up using sparse checkout. The exact command was this:
 
 `git sparse-checkout set --no-cone '/app/src/utils/nrw/' '/app/src/components/NrwMap/'`
 
@@ -25,7 +32,7 @@ If you need to add more directories to the checkout, such as for `/a-new-dir/my-
 
 `git sparse-checkout add --no-cone '/a-new-dir/my-dir/'`
 
-Note: `cone` is the default and also checks out all files in the base level dirs of all parents of what you check out. `--no-cone` give you just the directories you indicate.
+Note: `cone` is the default setting and also checks out all files in the base-level directories of all parents of what you check out. `--no-cone` gives you just the directories you indicate.
 
 ## Other changes from Go
 
