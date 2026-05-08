@@ -14,6 +14,9 @@ from rasterio.warp import calculate_default_transform, reproject, Resampling
 
 CRS = rasterio.crs.CRS
 
+# Allow PIL to open large images
+Image.MAX_IMAGE_PIXELS = None
+
 
 def colorize_image_from_file(
     png_in_bytes: bytes, color1: tuple, color2: tuple, log_scale: bool
@@ -229,3 +232,26 @@ def geotiff_to_rgb_data_array(tif_data: bytes):
             # Place into an RGB array
             rgb_array = np.dstack([r, g, b])
             return geo_data, rgb_array
+
+
+def rgb_png_to_int_array(png_in_bytes: bytes):
+    """
+    Inverse of geotiff_to_rgb_data_array's RGB encoding.
+    Opens a PNG whose pixel values encode an integer across the R, G, B channels
+    (value = R * 65536 + G * 256 + B), and returns a 2D array of decoded integers.
+
+    Prints the lowest and highest decoded values, and returns the array.
+    """
+    img = Image.open(io.BytesIO(png_in_bytes)).convert("RGB")
+    rgb = np.array(img, dtype=np.uint32)
+
+    r = rgb[:, :, 0]
+    g = rgb[:, :, 1]
+    b = rgb[:, :, 2]
+
+    values = (r << 16) | (g << 8) | b
+
+    print(f"Lowest value: {int(values.min())}")
+    print(f"Highest value: {int(values.max())}")
+
+    return values
