@@ -18,10 +18,9 @@
     /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
+    "erasableSyntaxOnly": false,
     "noFallthroughCasesInSwitch": true,
 
-    "baseUrl": ".",
     "paths": {
       "#utils/*": ["./src/go-web-app/app/src/utils/*"],
       "#hooks/*": ["./src/hooks/*"],

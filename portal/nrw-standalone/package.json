@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "start": "tsc -b && vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -12,13 +12,23 @@
   "dependencies": {
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "react-router-dom": "^7.15.0"
+    "react-router-dom": "^7.15.0",
+    "translatte": "tsx scripts/translatte/main.ts",
+    "translatte:generate": "pnpm translatte generate-migration ../translationMigrations ./src/**/i18n.json ../packages/ui/src/**/i18n.json",
+    "translatte:lint": "pnpm translatte lint ./src/**/i18n.json ../packages/ui/src/**/i18n.json"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
     "@eslint/js": "^10.0.1",
+    "@ifrc-go/icons": "^2.0.1",
+    "@ifrc-go/ui": "^2.0.0-beta.2",
     "@rolldown/plugin-babel": "^0.2.3",
+    "@togglecorp/fujs": "^2.1.1",
+    "@togglecorp/re-map": "^0.3.0",
+    "@togglecorp/toggle-form": "^2.0.4",
+    "@togglecorp/toggle-request": "^1.0.0-beta.3",
     "@types/babel__core": "^7.20.5",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -28,6 +38,11 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
+    "html-to-image": "^1.11.11",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "ol": "^10.8.0",
+    "ol-mapbox-style": "^13.3.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.10"
