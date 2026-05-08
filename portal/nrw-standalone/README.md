@@ -1,20 +1,18 @@
-# NRW Standalone
+# NRW Standalone Web App
 
-NOTE: Writing more on this in a side PR, along with changes to other readmes.
-TODOs:
+This is the front end for NRW. It is being developed inside [our fork of the IFRC Go repo](https://github.com/rodekruis/go-web-app).
 
-- mention docker container needs to run, and DB must be populated for local running
-- mention env file set up
-- mention IBF service readme
-- Look up all readmes, and add reference to this where needed (such as system design, etc.)
-- state how to use this (no commits to submodule, how to make changes, link to go repo ibf-main on our fork)
+This project is a wrapper of the core NRW files to allow standalone deployment and testing. All changes to core NRW files must be done in the `go-web-app` repo, and then brought here as part of the submodule checkout in `/src/go-web-app`. Do not make any changes inside the submodule.
 
 ## Setup and running the app
 
+Note: This project requires a running DB populated with admin area data. See [the main README](../../README.md) for the latest information on the setup.
+
+1. Copy the `sample.env` file, rename it as `.env`, and set the required values.
 1. Run `git submodule update --init --recursive` to get the files in the submodule. This can be done from either the root or from `portal/nrw-standalone`.
-2. From `portal/nrw-standalone`, run `pnpm install` to install all requirements.
-3. From the same dir, run `pnpm start` to build and start it.
-4. Use an existing link, or enter a valid ISO-A3 country code in the URL to use the app. For instance `http://localhost:5173/nrw?c=MWI`
+1. From `portal/nrw-standalone`, run `pnpm install` to install all requirements.
+1. From the same dir, run `pnpm start` to build and start it.
+1. Use an existing link, or enter a valid ISO-A3 country code in the URL to use the app. For instance `http://localhost:5173/nrw?c=MWI`
 
 ## Updating the submodule
 
@@ -36,7 +34,7 @@ Note: `cone` is the default setting and also checks out all files in the base-le
 
 ## Other changes from Go
 
-To match styling, these files outside the submodule had styling copied from GO
+To match styling, these files outside the submodule had styling copied from Go:
 
 - `/nrw-standalone/src/index.css`
 - `/nrw-standalone/src/main.tsx`
