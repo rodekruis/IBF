@@ -88,7 +88,7 @@ export class SeedInit {
   ): Promise<void> {
     const filename = `${countryCodeIso3}_adm${adminLevel}.json`;
     const url = getAdminAreaFileUrl(countryCodeIso3, adminLevel);
-    this.logger.log(`Downloading ${filename}...`);
+    this.logger.log(`Download ${filename}...`);
 
     const response = await fetch(url);
     if (!response.ok) {

@@ -144,17 +144,23 @@ def run_forecasts(config_path: str, run_target_str: str) -> list[str]:
 
     api_client = ApiClient()
 
+    country_label = "country" if len(countries) == 1 else "countries"
+    country_list = ", ".join(c.country_code_iso_3 for c in countries)
+    logger.info(
+        f"Start '{hazard_type}' pipeline for {country_label} '{country_list}' (run target: '{run_target}')"
+    )
+
     for country in countries:
-        logger.info(f"Processing {hazard_type} for {country.country_code_iso_3}")
+        logger.info(f"Forecast '{hazard_type}' for '{country.country_code_iso_3}'")
 
         errors = _run_country(
             hazard_fn, country, config_reader, run_target, hazard_type, api_client
         )
         if errors:
-            logger.error(f"Errors for {country.country_code_iso_3}: {errors}")
+            logger.error(f"Errors for '{country.country_code_iso_3}': {errors}")
             all_errors.extend(errors)
         else:
-            logger.info(f"Completed {hazard_type} for {country.country_code_iso_3}")
+            logger.info(f"Completed '{hazard_type}' for '{country.country_code_iso_3}'")
 
     return all_errors
 

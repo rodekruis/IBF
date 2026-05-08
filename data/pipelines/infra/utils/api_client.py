@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from urllib.parse import urlencode
 
 import requests
 
@@ -35,7 +36,7 @@ class ApiClient:
         )
 
         if response.status_code == 201:
-            logger.info("Submitted forecast successfully")
+            logger.info(f"Forecast submitted to '{url}'")
             return []
 
         try:
@@ -55,18 +56,14 @@ class ApiClient:
         params: dict = {"countryCodeIso3": country_code_iso_3}
         if admin_level is not None:
             params["adminLevel"] = admin_level
+        logger.info(f"Download '{url}?{urlencode(params)}'")
         response = self._session.get(url, params=params, timeout=30)
         if response.status_code == 200:
-            level_str = (
-                f"admin level {admin_level}"
-                if admin_level is not None
-                else "all admin levels"
-            )
-            logger.info(
-                f"Fetched admin areas for {country_code_iso_3} {level_str} successfully"
-            )
-            return response.json()
+            admin_areas = response.json()
+            if not admin_areas:
+                logger.warning(f"Downloaded 0 admin areas for {country_code_iso_3}")
+            return admin_areas
         logger.error(
-            f"Failed to fetch admin areas for {country_code_iso_3}: {response.status_code} {response.text}"
+            f"Failed to download admin areas for {country_code_iso_3}: {response.status_code} {response.text}"
         )
         return []

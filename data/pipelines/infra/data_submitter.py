@@ -173,7 +173,7 @@ class DataSubmitter:
         integrity_errors = self._check_integrity()
         if integrity_errors:
             for err in integrity_errors:
-                logger.error(f"Integrity error: {err}")
+                logger.error(f"Integrity error: '{err}'")
             return integrity_errors
 
         if self._forecast is None:
@@ -186,25 +186,25 @@ class DataSubmitter:
 
         if output_mode == OutputMode.API:
             if file_errors:
-                logger.warning(f"Local debug write failed: {file_errors}")
+                logger.warning(f"Local debug write failed: '{file_errors}'")
             api_errors = self.api_client.submit_forecast(forecast_dict)
             if not api_errors:
                 shutil.rmtree(output_path, ignore_errors=True)
-                logger.info(f"Cleaned up local output at {output_path}")
+                logger.info(f"Remove local output at '{output_path}'")
             return api_errors
 
         return file_errors
 
     def _write_to_file(self, forecast_dict: dict, output_dir: str) -> list[str]:
+        file_path = os.path.join(output_dir, "forecast.json")
+        logger.info(f"Write forecast with {len(self._alerts)} alerts to '{file_path}'")
         try:
             os.makedirs(output_dir, exist_ok=True)
-            file_path = os.path.join(output_dir, "forecast.json")
             with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(forecast_dict, f, indent=2)
         except OSError as e:
             return [f"Failed to write forecast to {output_dir}: {e}"]
 
-        logger.info(f"Wrote forecast with {len(self._alerts)} alerts to {file_path}")
         return []
 
     def _check_forecast_metadata_integrity(self) -> list[str]:

@@ -37,6 +37,9 @@ class AdminAreasSet:
     # Admin areas are keyed on admin area code, spanning all levels 0..target_admin_level
     admin_areas: dict[str, AdminArea]
 
+    def __bool__(self) -> bool:
+        return bool(self.admin_areas)
+
     @staticmethod
     def from_api(rows: list) -> AdminAreasSet:
         admin_areas: dict[str, AdminArea] = {}
