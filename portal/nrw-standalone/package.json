@@ -12,10 +12,7 @@
   "dependencies": {
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "react-router-dom": "^7.15.0",
-    "translatte": "tsx scripts/translatte/main.ts",
-    "translatte:generate": "pnpm translatte generate-migration ../translationMigrations ./src/**/i18n.json ../packages/ui/src/**/i18n.json",
-    "translatte:lint": "pnpm translatte lint ./src/**/i18n.json ../packages/ui/src/**/i18n.json"
+    "react-router-dom": "^7.15.0"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",

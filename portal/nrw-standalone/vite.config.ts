@@ -26,6 +26,7 @@ export default defineConfig({
       '#config': fileURLToPath(
         new URL('./src/utils/envParser.ts', import.meta.url),
       ),
+      '#base': fileURLToPath(new URL('./src/main.tsx', import.meta.url)),
     },
   },
 });
