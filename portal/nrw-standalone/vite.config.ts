@@ -6,6 +6,7 @@ import babel from '@rolldown/plugin-babel'
 
 // https://vite.dev/config/
 export default defineConfig({
+  envPrefix: 'APP_',
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] })
@@ -15,6 +16,7 @@ export default defineConfig({
       '#utils': fileURLToPath(new URL('./src/go-web-app/app/src/utils', import.meta.url)),
       '#hooks': fileURLToPath(new URL('./src/hooks', import.meta.url)),
       '#components': fileURLToPath(new URL('./src/go-web-app/app/src/components', import.meta.url)),
+      '#config': fileURLToPath(new URL('./src/utils/envParser.ts', import.meta.url)),
     },
   },
 })

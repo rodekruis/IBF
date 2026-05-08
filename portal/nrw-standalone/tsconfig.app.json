@@ -24,7 +24,8 @@
     "paths": {
       "#utils/*": ["./src/go-web-app/app/src/utils/*"],
       "#hooks/*": ["./src/hooks/*"],
-      "#components/*": ["./src/go-web-app/app/src/components/*"]
+      "#components/*": ["./src/go-web-app/app/src/components/*"],
+      "#config": ["./src/utils/envParser.ts"]
     }
   },
   "include": ["src"]
