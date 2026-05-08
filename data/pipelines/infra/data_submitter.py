@@ -35,10 +35,11 @@ logger = logging.getLogger(__name__)
 
 
 class DataSubmitter:
-    def __init__(self) -> None:
+    def __init__(self, api_client: ApiClient) -> None:
         self._alerts: dict[str, Alert] = {}
         self._forecast: Forecast | None = None
         self.errors: dict[str, str] = {}
+        self.api_client = api_client
 
     def add_error(self, error: str) -> None:
         self.errors[f"manual:{len(self.errors)}"] = error
@@ -186,7 +187,7 @@ class DataSubmitter:
         if output_mode == OutputMode.API:
             if file_errors:
                 logger.warning(f"Local debug write failed: {file_errors}")
-            api_errors = self._send_to_api(forecast_dict)
+            api_errors = self.api_client.submit_forecast(forecast_dict)
             if not api_errors:
                 shutil.rmtree(output_path, ignore_errors=True)
                 logger.info(f"Cleaned up local output at {output_path}")
@@ -205,18 +206,6 @@ class DataSubmitter:
 
         logger.info(f"Wrote forecast with {len(self._alerts)} alerts to {file_path}")
         return []
-
-    def _send_to_api(self, forecast_dict: dict) -> list[str]:
-        api_base_url = os.environ.get("IBF_API_URL", "")
-        if not api_base_url:
-            return ["IBF_API_URL environment variable must be set for api output mode"]
-
-        try:
-            client = ApiClient(api_base_url)
-        except ValueError as e:
-            return [str(e)]
-
-        return client.submit_forecast(forecast_dict)
 
     def _check_forecast_metadata_integrity(self) -> list[str]:
         errors: list[str] = []

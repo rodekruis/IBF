@@ -15,6 +15,7 @@ from pipelines.flood.forecast import calculate_flood_forecasts
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
+from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.alert_types import ForecastSource, HazardType
 from pipelines.infra.data_types.data_config_types import (
@@ -51,14 +52,15 @@ def _run_country(
     config_reader: ConfigReader,
     run_target: RunTargetType,
     hazard_type: HazardType,
+    api_client: ApiClient,
 ) -> list[str]:
-    data_provider = DataProvider()
+    data_provider = DataProvider(api_client)
     if not data_provider.try_load_data(
         config_reader, country.country_code_iso_3, run_target
     ):
         return [f"Failed to load data for {country.country_code_iso_3}"]
 
-    data_submitter = DataSubmitter()
+    data_submitter = DataSubmitter(api_client)
 
     # --- Set forecast metadata based on hazard type ---
     issued_at = datetime.now(timezone.utc)
@@ -78,7 +80,7 @@ def _run_country(
     )
 
     # --- Post-processing: aggregate deepest-level admin area data upward ---
-    admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_SEED_REPO, AdminAreasSet)
+    admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_IBF_API, AdminAreasSet)
     for alert in data_submitter.get_alerts():
         aggregate_to_parent_admin_levels(alert, admin_areas)
 
@@ -140,11 +142,13 @@ def run_forecasts(config_path: str, run_target_str: str) -> list[str]:
 
     all_errors: list[str] = []
 
+    api_client = ApiClient()
+
     for country in countries:
         logger.info(f"Processing {hazard_type} for {country.country_code_iso_3}")
 
         errors = _run_country(
-            hazard_fn, country, config_reader, run_target, hazard_type
+            hazard_fn, country, config_reader, run_target, hazard_type, api_client
         )
         if errors:
             logger.error(f"Errors for {country.country_code_iso_3}: {errors}")

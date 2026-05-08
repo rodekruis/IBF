@@ -26,7 +26,7 @@ class DataSource(StrEnum):
     See the readme for more details on how to add to this.
     """
 
-    ADMIN_AREA_SEED_REPO = "admin_area_seed_repo"
+    ADMIN_AREA_IBF_API = "admin_area_ibf_api"
     POPULATION_SEED_REPO = "population_seed_repo"
     GLOFAS_STATIONS_SEED_REPO = "glofas_stations_seed_repo"
     CLIMATE_REGIONS_IBF_API = "climate_regions_ibf_api"

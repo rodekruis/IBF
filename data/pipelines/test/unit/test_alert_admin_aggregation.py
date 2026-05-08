@@ -18,12 +18,16 @@ from pipelines.infra.utils.alert_admin_aggregation import (
 )
 
 
-def _mock_admin_area(pcode: str, parent_pcodes: dict[int, str]) -> AdminArea:
+def _mock_admin_area(
+    pcode: str, admin_level: int, parent_pcode: str | None, country_code: str = "MOC"
+) -> AdminArea:
     return AdminArea(
         properties=AdminAreaProperties(
             pcode=pcode,
             name=f"mock_name_for_{pcode}",
-            parent_pcodes=parent_pcodes,
+            admin_level=admin_level,
+            country_code=country_code,
+            parent_pcode=parent_pcode,
         ),
         geometry_type="",
         coordinates=[],
@@ -31,19 +35,30 @@ def _mock_admin_area(pcode: str, parent_pcodes: dict[int, str]) -> AdminArea:
 
 
 MOCK_ADMIN_AREAS_LEVEL_3: AdminAreasSet = AdminAreasSet(
-    admin_level=3,
     admin_areas={
-        "child-A": _mock_admin_area("child-A", {2: "parent-X", 1: "top", 0: "country"}),
-        "child-B": _mock_admin_area("child-B", {2: "parent-X", 1: "top", 0: "country"}),
-        "child-C": _mock_admin_area("child-C", {2: "parent-Y", 1: "top", 0: "country"}),
+        # Level 3
+        "child-A": _mock_admin_area("child-A", 3, parent_pcode="parent-X"),
+        "child-B": _mock_admin_area("child-B", 3, parent_pcode="parent-X"),
+        "child-C": _mock_admin_area("child-C", 3, parent_pcode="parent-Y"),
+        # Level 2
+        "parent-X": _mock_admin_area("parent-X", 2, parent_pcode="top"),
+        "parent-Y": _mock_admin_area("parent-Y", 2, parent_pcode="top"),
+        # Level 1
+        "top": _mock_admin_area("top", 1, parent_pcode="country"),
+        # Level 0
+        "country": _mock_admin_area("country", 0, parent_pcode=None),
     },
 )
 
 MOCK_ADMIN_AREAS_LEVEL_2: AdminAreasSet = AdminAreasSet(
-    admin_level=2,
     admin_areas={
-        "child-A": _mock_admin_area("child-A", {1: "top", 0: "country"}),
-        "child-B": _mock_admin_area("child-B", {1: "top", 0: "country"}),
+        # Level 2
+        "child-A": _mock_admin_area("child-A", 2, parent_pcode="top"),
+        "child-B": _mock_admin_area("child-B", 2, parent_pcode="top"),
+        # Level 1
+        "top": _mock_admin_area("top", 1, parent_pcode="country"),
+        # Level 0
+        "country": _mock_admin_area("country", 0, parent_pcode=None),
     },
 )
 
