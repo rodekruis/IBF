@@ -15,6 +15,7 @@ interface AddAlertOption {
  * Standalone stub of the GO `useAlert` hook.
  * Logs alerts to the console instead of rendering them.
  * Mirrors the signature of `#hooks/useAlert` so submodule code works unchanged.
+ * Modify this as needed as long as the signature matches.
  */
 function useAlert() {
     return useMemo(() => ({
