@@ -124,23 +124,3 @@ def determine_temporal_extent(
 
     return time_interval_severities
 
-
-def determine_alert_stations(
-    station_time_interval_severities: list[TimeIntervalSeverity],
-    station_code: str,
-    station: LocationPoint,
-) -> AlertStation:
-    """
-    Create an alert station from pre-computed lead time severities for one station.
-    """
-    
-    alert_station = AlertStation(
-        station_code=station_code,
-        station=station,
-        time_interval_severities=station_time_interval_severities,
-    )
-    logging.info(
-        f"Station {station_code} alert for "
-        f"{len(station_time_interval_severities)} lead time(s)"
-    )
-    return alert_station
