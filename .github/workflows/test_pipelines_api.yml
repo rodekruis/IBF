@@ -89,6 +89,14 @@ jobs:
         working-directory: .
         run: npm run start:services:ci
 
+      - name: Reset database to test script
+        run: |
+          curl --fail --silent --show-error \
+            --request POST \
+            --url "http://localhost:4000/api/instance/reset?script=test&resetIdentifier=ci-pipeline-test" \
+            --header "Content-Type: application/json" \
+            --data '{"secret":"fill_in_secret"}'
+
       - name: Run test shard
         env:
           PYTHONFAULTHANDLER: '1'
