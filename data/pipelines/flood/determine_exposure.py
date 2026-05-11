@@ -105,18 +105,10 @@ def aggregate_population_exposed(
 
     population: dict[str, float] = {}
 
-    geometries = []
-    pcodes_ordered = []
-    for pcode in place_codes_exposed:
-        admin_area = admin_areas.admin_areas.get(pcode)
-        if admin_area is None:
-            continue
-        geom = {
-            "type": admin_area.geometry_type,
-            "coordinates": admin_area.coordinates,
-        }
-        geometries.append(geom)
-        pcodes_ordered.append(pcode)
+    geometries, pcodes_ordered = get_admin_area_geometries(
+        place_codes=place_codes_exposed,
+        admin_areas=admin_areas,
+    )
 
     if not geometries:
         return population
@@ -152,17 +144,10 @@ def clip_flood_extent_to_admin_areas(
         f"alert_extent_{station_code}.tif",
     )
 
-    geometries: list[dict] = []
-    for place_code in place_codes:
-        admin_area = admin_areas.admin_areas.get(place_code)
-        if admin_area is None:
-            continue
-        geometries.append(
-            {
-                "type": admin_area.geometry_type,
-                "coordinates": admin_area.coordinates,
-            }
-        )
+    geometries, _ = get_admin_area_geometries(
+        place_codes=place_codes,
+        admin_areas=admin_areas,
+    )
 
     with rasterio.open(flood_extent_raster_path) as src:
         profile = src.profile.copy()
@@ -198,3 +183,25 @@ def clip_flood_extent_to_admin_areas(
         dst.write(clipped_data)
 
     return output_path
+
+
+def get_admin_area_geometries(
+    place_codes: list[str],
+    admin_areas: AdminAreasSet,
+) -> tuple[list[dict], list[str]]:
+    geometries: list[dict] = []
+    place_codes_ordered: list[str] = []
+
+    for place_code in place_codes:
+        admin_area = admin_areas.admin_areas.get(place_code)
+        if admin_area is None:
+            continue
+        geometries.append(
+            {
+                "type": admin_area.geometry_type,
+                "coordinates": admin_area.coordinates,
+            }
+        )
+        place_codes_ordered.append(place_code)
+
+    return geometries, place_codes_ordered
