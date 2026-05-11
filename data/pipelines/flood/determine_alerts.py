@@ -81,7 +81,7 @@ def _match_return_period(
 
 def determine_temporal_extent(
     station_code: str,
-    time_intervals: list[TimeIntervalDischarge],
+    time_interval_discharges: list[TimeIntervalDischarge],
     thresholds: list[ReturnPeriodThresholds],
     minimum_return_period: str = MINIMUM_RETURN_PERIOD,
 ) -> list[TimeIntervalSeverity]:
@@ -104,7 +104,7 @@ def determine_temporal_extent(
         return []
 
     time_interval_severities: list[TimeIntervalSeverity] = []
-    for time_interval_discharge in time_intervals:
+    for time_interval_discharge in time_interval_discharges:
         if not time_interval_discharge.ensemble_discharges:
             continue
         median_discharge = statistics.median(

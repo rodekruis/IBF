@@ -105,7 +105,7 @@ def calculate_flood_forecasts(
         ### Step 4 - Determine temporal extent - which time intervals exceed the minimum return period threshold
         time_interval_severities = determine_temporal_extent(
             station_code=station_code,
-            time_intervals=discharges.get(station_code, []),
+            time_interval_discharges=discharges.get(station_code, []),
             thresholds=thresholds,
         )
 
