@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import glob
 import json
-import os
 
 from pipelines.flood.determine_alerts import (
     ReturnPeriodThresholds,
