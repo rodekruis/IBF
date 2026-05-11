@@ -70,42 +70,6 @@ def slice_netcdf_to_bounds(
     return output_path
 
 
-def clip_raster_to_bounds(
-    input_path: str,
-    bounds: BoundingBox,
-    output_path: str | None = None,
-) -> str:
-    """Clip a GeoTIFF to the given bounding box using a rasterio window.
-
-    Returns the path to the clipped file. If output_path is None, a temporary
-    file is created in the same directory as the input file.
-    """
-    min_lon, min_lat, max_lon, max_lat = bounds
-
-    with rasterio.open(input_path) as src:
-        window = from_bounds(min_lon, min_lat, max_lon, max_lat, src.transform)
-        transform = src.window_transform(window)
-        data = src.read(window=window)
-
-        profile = src.profile.copy()
-        profile.update(
-            width=data.shape[2],
-            height=data.shape[1],
-            transform=transform,
-        )
-
-        if output_path is None:
-            directory = os.path.dirname(input_path)
-            basename = os.path.splitext(os.path.basename(input_path))[0]
-            output_path = os.path.join(directory, f"{basename}_clipped.tif")
-
-        with rasterio.open(output_path, "w", **profile) as dst:
-            dst.write(data)
-
-    logging.info(f"Clipped raster {input_path} to bounds {bounds} -> {output_path}")
-    return output_path
-
-
 def get_raster_extent(raster_path: str) -> dict[str, float]:
     """Return raster bounds as an extent dict expected by the API layer."""
     with rasterio.open(raster_path) as src:
