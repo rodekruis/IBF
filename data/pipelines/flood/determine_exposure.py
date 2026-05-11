@@ -121,8 +121,9 @@ def aggregate_population_exposed(
     if not geometries:
         return population
     
-    with rasterio.open(population_raster_path) as pop_src:\
-        pop_nodata = pop_src.nodata if pop_src.nodata is not None else -9999
+    with rasterio.open(population_raster_path) as pop_src:
+        nodata_value = -9999
+        pop_nodata = pop_src.nodata if pop_src.nodata is not None else nodata_value
 
     stats = zonal_stats(
         geometries,
