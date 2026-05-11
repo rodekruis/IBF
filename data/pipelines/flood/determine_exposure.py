@@ -140,6 +140,7 @@ def aggregate_population_exposed(
     return population
 
 
+# TODO: to reuse with other hazard types, create a common utils across hazards?
 def clip_flood_extent_to_admin_areas(
     place_codes: list[str],
     admin_areas: AdminAreasSet,
