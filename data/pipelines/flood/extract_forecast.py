@@ -47,13 +47,13 @@ def extract_discharge_glofas_station(
 
     forecast_base_datetime: datetime | None = None
 
-    for sliced_path in netcdf_paths:
-        if not os.path.exists(sliced_path):
-            logging.warning(f"NetCDF file not found, skipping: {sliced_path}")
+    for netcdf_path in netcdf_paths:
+        if not os.path.exists(netcdf_path):
+            logging.warning(f"NetCDF file not found, skipping: {netcdf_path}")
             continue
 
         if forecast_base_datetime is None:
-            forecast_base_datetime = _extract_forecast_base_datetime(sliced_path)
+            forecast_base_datetime = _extract_forecast_base_datetime(netcdf_path)
             for lead_time in range(lead_time_min, lead_time_max+1):
                 time_interval_start, time_interval_end = _lead_time_to_time_interval(
                     forecast_base_datetime,
@@ -67,8 +67,8 @@ def extract_discharge_glofas_station(
                     )
                 )
 
-        logging.info(f"Extracting station discharge from {sliced_path}")
-        with rasterio.open(sliced_path) as src:
+        logging.info(f"Extracting station discharge from {netcdf_path}")
+        with rasterio.open(netcdf_path) as src:
             station_coords = [(float(station.lon), float(station.lat))]
             for lead_time in range(lead_time_min, lead_time_max+1):
                 discharge_sampled = list(src.sample(station_coords, indexes=lead_time + 1))

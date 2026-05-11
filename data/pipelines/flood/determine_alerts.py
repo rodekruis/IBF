@@ -110,15 +110,15 @@ def determine_temporal_extent(
         median_discharge = statistics.median(
             time_interval_discharge.ensemble_discharges
         )
-        matched_rp = _match_return_period(median_discharge, station_thresholds)
-        if matched_rp is not None:
+        return_period = _match_return_period(median_discharge, station_thresholds)
+        if return_period is not None:
             time_interval_severities.append(
                 TimeIntervalSeverity(
                     time_interval_start=time_interval_discharge.time_interval_start,
                     time_interval_end=time_interval_discharge.time_interval_end,
                     median_discharge=median_discharge,
                     ensemble_discharges=time_interval_discharge.ensemble_discharges,
-                    return_period=matched_rp,
+                    return_period=return_period,
                 )
             )
 
