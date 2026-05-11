@@ -51,11 +51,11 @@ def _extract_return_period_label_value(return_period_label: str) -> int | None:
 
 
 def _resolve_empty_flood_extent_path(flood_extent_paths: list[str]) -> str | None:
-    for path in flood_extent_paths:
-        filename = os.path.basename(path).lower()
+    for flood_extent_path in flood_extent_paths:
+        filename = os.path.basename(flood_extent_path).lower()
 
         if filename.endswith("_empty.tif"):
-            return path
+            return flood_extent_path
 
         filename_stem, _ = os.path.splitext(filename)
         rp_index = filename_stem.rfind("_rp")
@@ -63,7 +63,7 @@ def _resolve_empty_flood_extent_path(flood_extent_paths: list[str]) -> str | Non
             continue
 
         base_without_suffix = filename_stem[:rp_index]
-        directory = os.path.dirname(path)
+        directory = os.path.dirname(flood_extent_path)
         empty_tif_path = os.path.join(directory, f"{base_without_suffix}_empty.tif")
         if os.path.exists(empty_tif_path):
             return empty_tif_path
@@ -121,12 +121,12 @@ def resolve_flood_extent(
     matched_value = _resolve_requested_return_period_value(time_interval_severities)
 
     available_paths_by_value: dict[int, str] = {}
-    for path in flood_extent_paths:
-        if not os.path.exists(path):
+    for flood_extent_path in flood_extent_paths:
+        if not os.path.exists(flood_extent_path):
             continue
-        value = _extract_return_period_value(path)
+        value = _extract_return_period_value(flood_extent_path)
         if value is not None:
-            available_paths_by_value[value] = path
+            available_paths_by_value[value] = flood_extent_path
 
     if matched_value is not None and matched_value in available_paths_by_value:
         return available_paths_by_value[matched_value]
