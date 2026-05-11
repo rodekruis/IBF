@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
-import statistics
 from dataclasses import dataclass
 from typing import TypedDict
+
+import numpy as np
 
 from pipelines.flood.extract_forecast import TimeIntervalDischarge
 from pipelines.infra.data_types.location_point import LocationPoint
@@ -107,9 +108,13 @@ def determine_temporal_extent(
     for time_interval_discharge in time_interval_discharges:
         if not time_interval_discharge.ensemble_discharges:
             continue
-        median_discharge = statistics.median(
-            time_interval_discharge.ensemble_discharges
+        ensemble_array = np.asarray(
+            time_interval_discharge.ensemble_discharges,
+            dtype=float,
         )
+        if np.isnan(ensemble_array).all():
+            continue
+        median_discharge = float(np.nanmedian(ensemble_array))
         return_period = _match_return_period(median_discharge, station_thresholds)
         if return_period is not None:
             time_interval_severities.append(

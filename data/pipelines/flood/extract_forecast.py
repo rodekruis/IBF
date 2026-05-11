@@ -6,7 +6,6 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-import numpy as np
 import rasterio
 
 from pipelines.infra.data_types.location_point import LocationPoint
@@ -74,8 +73,6 @@ def extract_discharge_glofas_station(
             for lead_time in range(lead_time_min, lead_time_max+1):
                 discharge_sampled = list(src.sample(station_coords, indexes=lead_time + 1))
                 discharge_value = float(discharge_sampled[0][0]) * 100 #TODO: *100 for mocking alert. To remove in op code 
-                if np.isnan(discharge_value):
-                    discharge_value = 0.0
                 discharges[station_code][lead_time].ensemble_discharges.append(discharge_value)
 
     return discharges
