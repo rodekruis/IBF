@@ -48,6 +48,7 @@ def extract_discharge_glofas_station(
     forecast_base_datetime: datetime | None = None
 
     for netcdf_path in netcdf_paths:
+        # TODO: to catch exact today date netcdf file
         if not os.path.exists(netcdf_path):
             logging.warning(f"NetCDF file not found, skipping: {netcdf_path}")
             continue

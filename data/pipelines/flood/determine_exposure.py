@@ -93,6 +93,7 @@ def compute_population_exposed(
     return population_exposed_raster_output_path
 
 
+# TODO: reusable function for other hazard types, create a common utils across hazards?
 def aggregate_population_exposed(
     population_raster_path: str,
     place_codes_exposed: list[str],
