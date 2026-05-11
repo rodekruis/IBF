@@ -6,7 +6,7 @@ import { SeedInit } from '@api-service/src/scripts/seed-init';
 
 @Injectable()
 export class ScriptsService {
-  logger = new Logger(ScriptsService.name);
+  private readonly logger = new Logger(ScriptsService.name);
 
   public constructor(private readonly seedInit: SeedInit) {}
 

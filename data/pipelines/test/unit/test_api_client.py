@@ -40,7 +40,7 @@ class TestApiClientInit:
 
     @patch.dict(
         "os.environ",
-        {"IBF_API_URL": "http://localhost:4000", "IBF_PIPELINE_API_KEY": "a" * 32},
+        {"IBF_API_URL": "http://localhost:4000/", "IBF_PIPELINE_API_KEY": "a" * 32},
     )
     def test_strips_trailing_slash_from_base_url(self) -> None:
         """Trailing slash is stripped from the base URL to avoid double slashes."""
@@ -92,3 +92,58 @@ class TestSubmitAlerts:
         mock_post.return_value = response
         result = self.client.submit_forecast({})
         assert result == ["API returned 502: Bad Gateway"]
+
+
+class TestGetAdminAreas:
+    def setup_method(self) -> None:
+        with patch.dict(
+            "os.environ",
+            {"IBF_API_URL": "http://localhost:4000", "IBF_PIPELINE_API_KEY": "a" * 32},
+        ):
+            self.client = ApiClient()
+
+    @patch.object(requests.Session, "get")
+    def test_returns_admin_areas_on_success(self, mock_get: MagicMock) -> None:
+        """Successful 200 response returns the parsed list of admin areas."""
+        admin_areas = [{"placeCode": "ETH001", "adminLevel": 1}]
+        mock_get.return_value = MagicMock(status_code=200, json=lambda: admin_areas)
+        result = self.client.get_admin_areas("ETH")
+        assert result == admin_areas
+
+    @patch.object(requests.Session, "get")
+    def test_sends_country_code_as_query_param(self, mock_get: MagicMock) -> None:
+        """countryCodeIso3 is passed as a query parameter."""
+        mock_get.return_value = MagicMock(status_code=200, json=lambda: [])
+        self.client.get_admin_areas("PHL")
+        _args, kwargs = mock_get.call_args
+        assert kwargs["params"]["countryCodeIso3"] == "PHL"
+
+    @patch.object(requests.Session, "get")
+    def test_sends_admin_level_when_provided(self, mock_get: MagicMock) -> None:
+        """adminLevel is included in the query params when provided."""
+        mock_get.return_value = MagicMock(status_code=200, json=lambda: [])
+        self.client.get_admin_areas("PHL", admin_level=2)
+        _args, kwargs = mock_get.call_args
+        assert kwargs["params"]["adminLevel"] == 2
+
+    @patch.object(requests.Session, "get")
+    def test_omits_admin_level_when_not_provided(self, mock_get: MagicMock) -> None:
+        """adminLevel is not included in the query params when not provided."""
+        mock_get.return_value = MagicMock(status_code=200, json=lambda: [])
+        self.client.get_admin_areas("PHL")
+        _args, kwargs = mock_get.call_args
+        assert "adminLevel" not in kwargs["params"]
+
+    @patch.object(requests.Session, "get")
+    def test_returns_empty_list_on_empty_response(self, mock_get: MagicMock) -> None:
+        """200 response with empty list returns an empty list."""
+        mock_get.return_value = MagicMock(status_code=200, json=lambda: [])
+        result = self.client.get_admin_areas("ETH")
+        assert result == []
+
+    @patch.object(requests.Session, "get")
+    def test_returns_empty_list_on_error_response(self, mock_get: MagicMock) -> None:
+        """Non-200 response returns an empty list."""
+        mock_get.return_value = MagicMock(status_code=404, text="Not Found")
+        result = self.client.get_admin_areas("XYZ")
+        assert result == []

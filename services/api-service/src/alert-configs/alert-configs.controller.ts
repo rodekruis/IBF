@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -44,9 +45,20 @@ export class AlertConfigsController {
     @Query('countryCodeIso3') countryCodeIso3?: string,
     @Query('hazardType') hazardType?: string,
   ): Promise<AlertConfigResponseDto[]> {
+    let hazardTypeValue: HazardType | undefined = undefined;
+    if (hazardType !== undefined) {
+      if (Object.values(HazardType).includes(hazardType as HazardType)) {
+        hazardTypeValue = hazardType as HazardType;
+      } else {
+        throw new BadRequestException(
+          `Invalid hazardType "${hazardType}". Valid values: ${Object.values(HazardType).join(', ')}`,
+        );
+      }
+    }
+
     return this.alertConfigsService.getAlertConfigs({
       countryCodeIso3,
-      hazardType: hazardType as HazardType | undefined,
+      hazardType: hazardTypeValue,
     });
   }
 
@@ -56,7 +68,7 @@ export class AlertConfigsController {
     summary: 'Create alert config for country and hazard type',
   })
   @ApiResponse({
-    status: HttpStatus.OK,
+    status: HttpStatus.CREATED,
     description: 'Alert config created successfully',
     type: AlertConfigResponseDto,
   })
