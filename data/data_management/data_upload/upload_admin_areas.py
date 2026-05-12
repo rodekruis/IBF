@@ -29,16 +29,22 @@ COL_COUNTRY = "country"
 COL_ADMIN_LEVEL = "admin_level"
 COL_NAME_EN = "name_en"
 COL_CODE = "code"
+COL_PARENT_ADMIN1_CODE = "admin1_pcode"
+COL_PARENT_ADMIN2_CODE = "admin2_pcode"
+COL_PARENT_ADMIN3_CODE = "admin3_pcode"
 COL_GEOM = "geom"
 
 EPSG_PROJECTION = 4326
 
 ADMIN_TABLE_COLUMNS = {
     "id": "SERIAL PRIMARY KEY",
-    COL_COUNTRY: "VARCHAR(2)",
+    COL_COUNTRY: "VARCHAR(3)",
     COL_ADMIN_LEVEL: "SMALLINT",
     COL_NAME_EN: "VARCHAR(255)",
     COL_CODE: "VARCHAR(64)",
+    COL_PARENT_ADMIN1_CODE: "VARCHAR(64)",
+    COL_PARENT_ADMIN2_CODE: "VARCHAR(64)",
+    COL_PARENT_ADMIN3_CODE: "VARCHAR(64)",
     COL_GEOM: f"GEOMETRY(MultiPolygon, {EPSG_PROJECTION})",
 }
 
@@ -129,17 +135,23 @@ def insert_admin_areas_data(connection, features: list[dict]):
                 or props.get("ADM3_PCODE")
                 or props.get("ADM2_PCODE")
                 or props.get("ADM1_PCODE")
-                or props.get("ADM0_PCODE")
+                or props.get("ADM0_ISO_A3")
                 or None
             )
+
+            # Set the parent codes
+            # For the same level and higher (so for non-parents), set to None
+            admin1_code = props.get("ADM1_PCODE") if admin_level > 1 else None
+            admin2_code = props.get("ADM2_PCODE") if admin_level > 2 else None
+            admin3_code = props.get("ADM3_PCODE") if admin_level > 3 else None
 
             if not name or not code:
                 print(f"Error: could not parse: {props}.")
                 continue
 
-            # Try to get the two-letter country code (first two letters of the code)
+            # Try to get the ISO A3 code
             try:
-                country = code[:2]
+                country = props.get("ADM0_ISO_A3")
             except Exception as e:
                 print(f"Error: Invalid code for '{code}' from {props} - Error: {e}")
                 continue
@@ -151,8 +163,11 @@ def insert_admin_areas_data(connection, features: list[dict]):
             # .   ST_SetSRID: Sets the spatial reference ID (SRID) for the geometry
             query = f"""
                 INSERT INTO {TABLE_NAME}
-                ({COL_COUNTRY}, {COL_ADMIN_LEVEL}, {COL_NAME_EN}, {COL_CODE}, {COL_GEOM})
+                ({COL_COUNTRY}, {COL_ADMIN_LEVEL}, {COL_NAME_EN}, {COL_CODE}, {COL_PARENT_ADMIN1_CODE}, {COL_PARENT_ADMIN2_CODE}, {COL_PARENT_ADMIN3_CODE}, {COL_GEOM})
                 VALUES (
+                    %s,
+                    %s,
+                    %s,
                     %s,
                     %s,
                     %s,
@@ -161,7 +176,19 @@ def insert_admin_areas_data(connection, features: list[dict]):
                 )
             """
             try:
-                cur.execute(query, (country, admin_level, name, code, geom_json))
+                cur.execute(
+                    query,
+                    (
+                        country,
+                        admin_level,
+                        name,
+                        code,
+                        admin1_code,
+                        admin2_code,
+                        admin3_code,
+                        geom_json,
+                    ),
+                )
             except Exception as e:
                 print(f"Error inserting feature with properties {props} - Error: {e}")
                 return
@@ -178,6 +205,7 @@ def verify_data(connection):
     with connection.cursor() as cur:
         cur.execute(f"""
             SELECT id,  {COL_COUNTRY}, {COL_ADMIN_LEVEL}, {COL_NAME_EN}, {COL_CODE},
+                   {COL_PARENT_ADMIN1_CODE}, {COL_PARENT_ADMIN2_CODE}, {COL_PARENT_ADMIN3_CODE},
                    ST_GeometryType({COL_GEOM}) as geom_type, ST_NumGeometries({COL_GEOM}) as num_geoms
             FROM {TABLE_NAME}
             LIMIT 3;

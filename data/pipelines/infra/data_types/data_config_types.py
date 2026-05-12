@@ -1,10 +1,28 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from enum import StrEnum
 
 from pipelines.infra.data_types.alert_types import HazardType
 from shared.country_data import CountryCodeIso3
+
+
+class ScenarioType(StrEnum):
+    """Infra-level override that replaces the hazard-specific forecast logic in
+    forecast.py with a predetermined outcome. This is orthogonal to run_target:
+    run_target selects the environment config (countries, data sources, output),
+    while scenario controls *what the pipeline produces* without running any
+    hazard logic."""
+
+    NO_ALERT = "no-alert"
+    ALERT = "alert"
+
+
+@dataclass
+class Scenario:
+    type: ScenarioType
+    issued_at: datetime | None = None
 
 
 class RunTargetType(StrEnum):
@@ -65,6 +83,7 @@ class CountryRunConfig:
     data_sources: list[DataSourceConfig]
     output_mode: OutputMode
     output_path: str
+    scenario: Scenario | None = None
 
 
 @dataclass

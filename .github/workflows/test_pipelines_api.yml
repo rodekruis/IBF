@@ -53,8 +53,7 @@ jobs:
       fail-fast: false
       matrix:
         test_node:
-          - pipelines/test/integration_api/test_flood_pipeline_api.py
-          - pipelines/test/integration_api/test_drought_pipeline_api.py
+          - pipelines/test/integration_infra_api/
     defaults:
       run:
         working-directory: data

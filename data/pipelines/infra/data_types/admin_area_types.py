@@ -45,7 +45,7 @@ class AdminAreasSet:
             props = f.get("properties", {})
             pcode = props.get(f"ADM{admin_level}_PCODE", "")
             feature_name = props.get(f"ADM{admin_level}_EN", "")
-            adm0_pcode = props.get("ADM0_PCODE")
+            adm0_pcode = props.get("ADM0_ISO_A3")
 
             parent_pcodes = {}
             for level in range(0, admin_level):
