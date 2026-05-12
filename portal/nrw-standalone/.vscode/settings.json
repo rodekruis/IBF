@@ -4,11 +4,6 @@
     "source.fixAll.eslint": "explicit",
     "source.fixAll.stylelint": "explicit"
   },
-  "eslint.workingDirectories": [
-    "app",
-    "packages/ui",
-    "packages/go-ui-storybook"
-  ],
   "eslint.format.enable": true,
   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
   "[typescript]": {
