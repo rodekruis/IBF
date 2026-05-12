@@ -21,28 +21,8 @@ function toClassificationInput(
 }
 
 // These unit-tests should use specific fixed test config, and not the general mock-config, which will eventually be replaced by a configurable database table.
-const testFloodConfig: AlertConfigResponseDto = {
-  id: 1,
-  created: new Date(),
-  updated: new Date(),
-  countryCodeIso3: 'KEN',
+const testFloodConfig: Partial<AlertConfigResponseDto> = {
   hazardType: HazardType.floods,
-  spatialExtentName: 'G5142',
-  spatialExtentPlaceCodes: ['KE030'],
-  temporalExtents: [
-    {
-      'lead-time-spectrum': [
-        '0-day',
-        '1-day',
-        '2-day',
-        '3-day',
-        '4-day',
-        '5-day',
-        '6-day',
-        '7-day',
-      ],
-    },
-  ],
   severityClassLevels: [
     { label: 'low', threshold: 100 },
     { label: 'med', threshold: 200 },
@@ -63,15 +43,8 @@ const testFloodConfig: AlertConfigResponseDto = {
   triggerLeadTimeDuration: 'P7D',
 };
 
-const testDroughtConfig: AlertConfigResponseDto = {
-  id: 2,
-  created: new Date(),
-  updated: new Date(),
-  countryCodeIso3: 'KEN',
+const testDroughtConfig: Partial<AlertConfigResponseDto> = {
   hazardType: HazardType.drought,
-  spatialExtentName: 'G5142',
-  spatialExtentPlaceCodes: ['KE030'],
-  temporalExtents: [],
   severityClassLevels: [{ label: 'warning', threshold: 0.2 }],
   probabilityClassLevels: [{ label: 'any', threshold: 0 }],
   alertClassMatrix: {
@@ -86,8 +59,8 @@ describe('AlertClassificationService', () => {
 
   beforeEach(() => {
     const configsByHazardType: Record<string, AlertConfigResponseDto> = {
-      [HazardType.floods]: testFloodConfig,
-      [HazardType.drought]: testDroughtConfig,
+      [HazardType.floods]: testFloodConfig as AlertConfigResponseDto,
+      [HazardType.drought]: testDroughtConfig as AlertConfigResponseDto,
     };
 
     alertConfigsService = new AlertConfigsService(null as never);
