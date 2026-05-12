@@ -100,15 +100,18 @@ def compute_alert_extent(
     Compute the flood extent raster for the alert station by resolving the appropriate return period raster.
     Returns the path to the computed flood extent raster for the station.
     """
+
+    return_period = _resolve_requested_return_period_value(time_interval_severities)
+
     flood_extent_path = resolve_flood_extent(
-        time_interval_severities=time_interval_severities,
+        return_period=return_period,
         flood_extent_paths=flood_extent_paths,
     )
     return flood_extent_path
 
 
 def resolve_flood_extent(
-    time_interval_severities: list,
+    return_period: int | None,
     flood_extent_paths: list[str],
 ) -> str:
     """
