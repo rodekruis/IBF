@@ -1,12 +1,12 @@
 from pipelines.infra.data_types.data_config_types import OutputMode
 
 
-def test_floods_api(pipeline):
-    """Run the flood pipeline for KEN against the live API. A zero exit code
+def test_drought(pipeline):
+    """Run the drought pipeline for KEN against the live API. A zero exit code
     implies the API accepted all alerts, which—given server-side validation—
     implicitly asserts correct alert structure."""
     result = pipeline.run_pipeline(
-        "pipelines/infra/configs/floods.yaml",
+        "pipelines/infra/configs/drought.yaml",
         "DEBUG",
         extra_env={"IBF_OUTPUT_MODE": OutputMode.API},
     )
