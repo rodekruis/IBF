@@ -17,15 +17,6 @@ importers:
       react-router-dom:
         specifier: ^7.15.0
         version: 7.15.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      translatte:
-        specifier: tsx scripts/translatte/main.ts
-        version: link:tsx scripts/translatte/main.ts
-      translatte:generate:
-        specifier: pnpm translatte generate-migration ../translationMigrations ./src/**/i18n.json ../packages/ui/src/**/i18n.json
-        version: link:pnpm translatte generate-migration ../translationMigrations ./src/**/i18n.json ../packages/ui/src/**/i18n.json
-      translatte:lint:
-        specifier: pnpm translatte lint ./src/**/i18n.json ../packages/ui/src/**/i18n.json
-        version: link:pnpm translatte lint ./src/**/i18n.json ../packages/ui/src/**/i18n.json
     devDependencies:
       '@babel/core':
         specifier: ^7.29.0
