@@ -152,7 +152,9 @@ def calculate_flood_forecasts(
             target_admin_areas)
 
         ### Step 9 - Create alert and submit severity/exposure payloads ###
-        event_name = f"{country}_floods_{station_code}"
+        if station.name.lower() == "na":
+            station.name = station_code
+        event_name = f"{country}_floods_{station.name}"
         data_submitter.create_alert(
             event_name=event_name,
             centroid=Centroid(
