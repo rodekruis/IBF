@@ -257,7 +257,7 @@ def rgba_png_to_float_array(png_in_bytes: bytes):
     a = rgba[:, :, 3]
 
     values = np.round(
-        ((r << 24) | (g << 16) | (b << 8) | a).astype(np.float64) / 1000, 2
+        ((r << 24) | (g << 16) | (b << 8) | a).astype(np.float64) / 1000, 3
     )
 
     return values
