@@ -10,7 +10,7 @@ Note: This project requires a running DB populated with admin area data. See [th
 
 1. Copy the `sample.env` file, rename it as `.env`, and set the required values.
 1. Run `git submodule update --init` to get the files in the submodule. This can be done from either the root or from `portal/nrw-standalone`.
-1. Set up the submodule for a sparse checkout. from `portal/nrw-standalone/src/go-web-app`, run this: `git sparse-checkout set --no-cone '/app/src/utils/nrw/' '/app/src/components/NrwMap/'`
+1. Set up the submodule for a sparse checkout. From `portal/nrw-standalone/src/go-web-app`, run this: `git sparse-checkout set --no-cone '/app/src/utils/nrw/' '/app/src/components/NrwMap/'`
 1. From `portal/nrw-standalone`, run `pnpm install` to install all requirements.
 1. From the same dir, run `pnpm start` to build and start it.
 1. Use an existing link, or enter a valid ISO-A3 country code in the URL to use the app. For instance `http://localhost:5173/nrw?c=MWI`
