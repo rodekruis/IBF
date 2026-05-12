@@ -15,6 +15,24 @@ RETURN_PERIODS: dict[str, int] = {
 }
 
 
+def compute_alert_extent(
+    time_interval_severities: list,
+    flood_extent_paths: list[str],
+) -> str:
+    """
+    Compute the flood extent raster for the alert station by resolving the appropriate return period raster.
+    Returns the path to the computed flood extent raster for the station.
+    """
+
+    return_period = _resolve_requested_return_period_value(time_interval_severities)
+
+    flood_extent_path = _resolve_flood_extent(
+        return_period=return_period,
+        flood_extent_paths=flood_extent_paths,
+    )
+    return flood_extent_path
+
+
 def _extract_return_period_value(path: str) -> int | None:
     """
     Extract the return period value from a flood extent raster file name.
@@ -79,9 +97,9 @@ def _resolve_requested_return_period_value(time_interval_severities: list) -> in
         key=lambda s: s.median_discharge,
     ).return_period
 
-    matched_value = RETURN_PERIODS.get(highest_return_period)
-    if matched_value is not None:
-        return matched_value
+    return_period = RETURN_PERIODS.get(highest_return_period)
+    if return_period is not None:
+        return return_period
 
     parsed_return_period = _extract_return_period_label_value(highest_return_period)
     if parsed_return_period is None:
@@ -92,25 +110,7 @@ def _resolve_requested_return_period_value(time_interval_severities: list) -> in
     return parsed_return_period
 
 
-def compute_alert_extent(
-    time_interval_severities: list,
-    flood_extent_paths: list[str],
-) -> str:
-    """
-    Compute the flood extent raster for the alert station by resolving the appropriate return period raster.
-    Returns the path to the computed flood extent raster for the station.
-    """
-
-    return_period = _resolve_requested_return_period_value(time_interval_severities)
-
-    flood_extent_path = resolve_flood_extent(
-        return_period=return_period,
-        flood_extent_paths=flood_extent_paths,
-    )
-    return flood_extent_path
-
-
-def resolve_flood_extent(
+def _resolve_flood_extent(
     return_period: int | None,
     flood_extent_paths: list[str],
 ) -> str:
@@ -121,8 +121,6 @@ def resolve_flood_extent(
     3. flood_map_{country}_empty.tif fallback raster (guaranteed to exist).
     """
 
-    matched_value = _resolve_requested_return_period_value(time_interval_severities)
-
     available_paths_by_value: dict[int, str] = {}
     for flood_extent_path in flood_extent_paths:
         if not os.path.exists(flood_extent_path):
@@ -131,12 +129,12 @@ def resolve_flood_extent(
         if value is not None:
             available_paths_by_value[value] = flood_extent_path
 
-    if matched_value is not None and matched_value in available_paths_by_value:
-        return available_paths_by_value[matched_value]
+    if return_period is not None and return_period in available_paths_by_value:
+        return available_paths_by_value[return_period]
 
-    if matched_value is not None:
+    if return_period is not None:
         fallback_value = max(
-            (value for value in available_paths_by_value.keys() if value <= matched_value),
+            (value for value in available_paths_by_value.keys() if value <= return_period),
             default=None,
         )
         if fallback_value is not None:
