@@ -11,26 +11,7 @@ import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dt
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
-const alertConfigSelect = {
-  id: true,
-  created: true,
-  updated: true,
-  countryCodeIso3: true,
-  hazardType: true,
-  spatialExtentName: true,
-  spatialExtentPlaceCodes: true,
-  temporalExtents: true,
-  severityClassLevels: true,
-  probabilityClassLevels: true,
-  alertClassMatrix: true,
-  alertClassOrder: true,
-  triggerAlertClass: true,
-  triggerLeadTimeDuration: true,
-} satisfies Prisma.AlertConfigSelect;
-
-type AlertConfigRow = Prisma.AlertConfigGetPayload<{
-  select: typeof alertConfigSelect;
-}>;
+type AlertConfigRow = Prisma.AlertConfigGetPayload<null>;
 
 @Injectable()
 export class AlertConfigsRepository {
@@ -76,7 +57,6 @@ export class AlertConfigsRepository {
         ...(hazardType !== undefined && { hazardType }),
       },
       orderBy: { updated: 'desc' },
-      select: alertConfigSelect,
     });
     return rows.map((row: AlertConfigRow) => this.toResponseDto(row));
   }
@@ -103,7 +83,6 @@ export class AlertConfigsRepository {
           triggerLeadTimeDuration:
             alertConfigCreateDto.triggerLeadTimeDuration ?? null,
         },
-        select: alertConfigSelect,
       });
 
       return this.toResponseDto(row);
