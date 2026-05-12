@@ -106,8 +106,6 @@ def determine_temporal_extent(
 
     time_interval_severities: list[TimeIntervalSeverity] = []
     for time_interval_discharge in time_interval_discharges:
-        if not time_interval_discharge.ensemble_discharges:
-            continue
         ensemble_array = np.asarray(
             time_interval_discharge.ensemble_discharges,
             dtype=float,
