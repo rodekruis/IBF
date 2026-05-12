@@ -38,6 +38,47 @@ class ReturnPeriodThresholds(TypedDict):
     thresholds: list[ReturnPeriodThresholdValue]
 
 
+def determine_temporal_extent(
+    station_code: str,
+    time_interval_discharges: list[TimeIntervalDischarge],
+    thresholds: list[ReturnPeriodThresholds],
+    minimum_return_period: str = MINIMUM_RETURN_PERIOD,
+) -> list[TimeIntervalSeverity]:
+    """
+    Compute lead time severities for one station by comparing the median
+    ensemble discharge against return period thresholds.
+    Returns a list of lead time severities for the station.
+    """
+    station_thresholds = _prepare_station_threshold(
+        station_code, thresholds, minimum_return_period
+    )
+    if station_thresholds is None:
+        return []
+
+    time_interval_severities: list[TimeIntervalSeverity] = []
+    for time_interval_discharge in time_interval_discharges:
+        ensemble_array = np.asarray(
+            time_interval_discharge.ensemble_discharges,
+            dtype=float,
+        )
+        if np.isnan(ensemble_array).all():
+            continue
+        median_discharge = float(np.nanmedian(ensemble_array))
+        return_period = _match_return_period(median_discharge, station_thresholds)
+        if return_period is not None:
+            time_interval_severities.append(
+                TimeIntervalSeverity(
+                    time_interval_start=time_interval_discharge.time_interval_start,
+                    time_interval_end=time_interval_discharge.time_interval_end,
+                    median_discharge=median_discharge,
+                    ensemble_discharges=time_interval_discharge.ensemble_discharges,
+                    return_period=return_period,
+                )
+            )
+
+    return time_interval_severities
+
+
 def _format_return_period_label(return_period: float) -> str:
     return f"{return_period:g}yr"
 
@@ -80,50 +121,27 @@ def _match_return_period(
     return matched
 
 
-def determine_temporal_extent(
+def _prepare_station_threshold(
     station_code: str,
-    time_interval_discharges: list[TimeIntervalDischarge],
     thresholds: list[ReturnPeriodThresholds],
     minimum_return_period: str = MINIMUM_RETURN_PERIOD,
-) -> list[TimeIntervalSeverity]:
+) -> dict[str, float] | None:
     """
-    Compute lead time severities for one station by comparing the median
-    ensemble discharge against return period thresholds.
-    Returns a list of lead time severities for the station.
+    Retrieve and validate station return-period thresholds.
+    Returns the station thresholds dict, or None if validation fails.
     """
     station_thresholds = _get_station_return_period_thresholds(thresholds, station_code)
     if station_thresholds is None:
         logging.warning(
             f"No return period thresholds for station {station_code}, skipping"
         )
-        return []
+        return None
 
     if minimum_return_period not in station_thresholds:
         logging.warning(
             f"Return period '{minimum_return_period}' not found for station {station_code}, skipping"
         )
-        return []
+        return None
 
-    time_interval_severities: list[TimeIntervalSeverity] = []
-    for time_interval_discharge in time_interval_discharges:
-        ensemble_array = np.asarray(
-            time_interval_discharge.ensemble_discharges,
-            dtype=float,
-        )
-        if np.isnan(ensemble_array).all():
-            continue
-        median_discharge = float(np.nanmedian(ensemble_array))
-        return_period = _match_return_period(median_discharge, station_thresholds)
-        if return_period is not None:
-            time_interval_severities.append(
-                TimeIntervalSeverity(
-                    time_interval_start=time_interval_discharge.time_interval_start,
-                    time_interval_end=time_interval_discharge.time_interval_end,
-                    median_discharge=median_discharge,
-                    ensemble_discharges=time_interval_discharge.ensemble_discharges,
-                    return_period=return_period,
-                )
-            )
-
-    return time_interval_severities
+    return station_thresholds
 
