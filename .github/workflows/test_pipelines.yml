@@ -14,6 +14,7 @@ on:
     paths:
       - 'data/**'
       - '!data/data_management/**'
+      - 'services/api-service/**'
       - '.github/workflows/test_pipelines.yml'
 
 # This is needed for qlty to authenticate with OIDC
@@ -43,6 +44,7 @@ jobs:
           paths: |
             - data/**
             - '!data/data_management/**'
+            - services/api-service/**
             - .github/workflows/test_pipelines.yml
 
   test:
@@ -51,9 +53,6 @@ jobs:
     if: ${{ needs.path-filter.outputs.should_skip != 'true' }}
     strategy:
       fail-fast: false
-      matrix:
-        test_node:
-          - pipelines/test/
     defaults:
       run:
         working-directory: data
@@ -103,7 +102,7 @@ jobs:
           CDSAPI_KEY: ${{ secrets.PIPELINES_CDSAPI_KEY }}
           PYTHONFAULTHANDLER: '1'
           PYTHONUNBUFFERED: '1'
-        run: uv run -m pytest "${{ matrix.test_node }}" --ignore=pipelines/test/integration_api
+        run: uv run -m pytest pipelines/test/
 
       - name: Docker logs
         if: failure()

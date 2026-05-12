@@ -1,7 +1,7 @@
 from pipelines.infra.data_types.data_config_types import OutputMode
 
 
-def test_floods_ken(pipeline):
+def test_floods_local(pipeline):
     """Run the flood pipeline for KEN in local file mode and verify the output
     structure: 2 alerts, correct hazard types, forecast sources, and admin levels.
 
