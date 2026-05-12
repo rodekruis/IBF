@@ -151,22 +151,24 @@ def geotiff_to_array(tif_data: bytes):
             return geo_data, img_array_bw
 
 
-def geotiff_to_rgb_data_array(tif_data: bytes):
+def geotiff_to_rgba_data_array(tif_data: bytes):
     """
-    Convert a GeoTIFF to an RGB int array, without changing the projection.
-    This is used to convert GeoTIFFs to PNG while preserving the data range as best as possible.
+    Converts a GeoTIFF to an RGBA int array, without changing the projection, and
+    also returns metadata from the original GeoTIFF.
+    This is used to convert GeoTIFFs to PNG with three decimal precision.
 
-    Population values are encoded across the R, G, B channels,
-    allowing for a per pixel range of 256^3 (over 16 million per pixel)
-    The value can be decoded with: value = R * 65536 + G * 256 + B
-    Also returns metadata from the original GeoTIFF.
+    Population values are encoded across the R, G, B, A channels,
+    allowing for a per pixel range of 256^4 (over 4 million per pixel, with 3 decimal precision).
+    Even with very dense countries, we wouldn't see more than 15k per pixel.
+    RGB encoding gives us 16.8k per pixel. Since this risks being too low for some areas,
+    RGBA encoding was used. This only adds a small increase in file size (about 10%).
+
+    The value can be decoded with: value = (R * 16777216 + G * 65536 + B * 256 + A) / 1000
 
     Note: This conversion also does this to the data (due to PNG limitations):
       - NoData values are set to 0
-      - Values are clamped between 0 and about 16.8 million (max encoding value)
-      - All decimal values are rounded to integers
-
-      If higher numbers are needed, change this to use RGBA for the value encoding.
+      - Values are clamped between 0 and about 4.29 million (max encoding value)
+      - All decimal values are rounded to 3 decimal precision.
     """
     with MemoryFile(tif_data) as memfile:
         with memfile.open() as src:
@@ -180,7 +182,7 @@ def geotiff_to_rgb_data_array(tif_data: bytes):
             geo_data = {
                 "width": src.width,
                 "height": src.height,
-                "count": 3,  # this will be 3 since this converts to RGB
+                "count": 4,  # this will be 4 since this converts to RGBA
                 "crs": str(src.crs),
                 "transform": list(src.transform),
                 "bounds": {
@@ -203,55 +205,59 @@ def geotiff_to_rgb_data_array(tif_data: bytes):
                 else:
                     raw_data = np.where(raw_data == src.nodata, 0, raw_data)
 
-            # Clamp negatives to 0 and round to integer
-            values = np.round(np.clip(raw_data, 0, None)).astype(np.uint32)
+            # This does 3 things:
+            # - Remove negatives (Clip negatives to 0)
+            # - Preserve 3 decimal precision before int conversion (by multiplying by 1000)
+            # - Round to integer (PNG needs integers)
+            values = np.round(np.clip(raw_data, 0, None) * 1000).astype(np.uint64)
 
-            # Get max value and warn if any values go beyond the encoding max
+            # Get max value and throw if any values go beyond the encoding max
             max_value = int(values.max())
-            uint32_max = 256**3 - 1
+            uint32_max = 256**4 - 1
             if max_value > uint32_max:
-                print(
-                    f"Warning: max value {max_value} exceeds RGB encoding capacity "
-                    f"({uint32_max}). Values will be clipped."
+                # This would never be hit for population data (unless there is a data error),
+                # but this may be hit in non-population data.
+                # Throw an error, rather than clipping the data.
+                raise ValueError(
+                    f"Max value {max_value} exceeds RGBA encoding capacity ({uint32_max})."
                 )
-                max_value = uint32_max
-                values = np.clip(values, 0, uint32_max)
 
             # Update the max value in the meta data
             geo_data["max_value"] = max_value
 
-            # Encode value into R, G, B channels
-            # This works by shifting bits by 2, 1, or 0 bytes,
+            # Encode value into R, G, B, A channels
+            # This works by shifting bits by 3, 2, 1, or 0 bytes,
             # and then grabbing the last byte.
-            # It's like taking EF9A2F and splitting it into EF 9A 2F
-            # The value can be decoded with: R*65536 + G*256 + B
-            r = ((values >> 16) & 0xFF).astype(np.uint8)
-            g = ((values >> 8) & 0xFF).astype(np.uint8)
-            b = (values & 0xFF).astype(np.uint8)
+            # It's like taking a number in hex (such as EF9A2F1C) and
+            # splitting it into its 4 components (i.e. EF 9A 2F 1C).
+            r = ((values >> 24) & 0xFF).astype(np.uint8)
+            g = ((values >> 16) & 0xFF).astype(np.uint8)
+            b = ((values >> 8) & 0xFF).astype(np.uint8)
+            a = (values & 0xFF).astype(np.uint8)
 
-            # Place into an RGB array
-            rgb_array = np.dstack([r, g, b])
-            return geo_data, rgb_array
+            # Place into an RGBA array
+            rgba_array = np.dstack([r, g, b, a])
+            return geo_data, rgba_array
 
 
-def rgb_png_to_int_array(png_in_bytes: bytes):
+def rgba_png_to_float_array(png_in_bytes: bytes):
     """
-    Inverse of geotiff_to_rgb_data_array's RGB encoding.
-    Opens a PNG whose pixel values encode an integer across the R, G, B channels
-    (value = R * 65536 + G * 256 + B), and returns a 2D array of decoded integers.
-
-    Prints the lowest and highest decoded values, and returns the array.
+    Inverse of geotiff_to_rgba_data_array's RGBA encoding.
+    Opens a PNG whose pixel values encode an integer across the R, G, B, A channels.
+    The formula is:
+    (R * 16777216 + G * 65536 + B * 256 + A)/1000
+    The function returns a 2D array of floats.
     """
-    img = Image.open(io.BytesIO(png_in_bytes)).convert("RGB")
-    rgb = np.array(img, dtype=np.uint32)
+    img = Image.open(io.BytesIO(png_in_bytes)).convert("RGBA")
+    rgba = np.array(img, dtype=np.uint64)
 
-    r = rgb[:, :, 0]
-    g = rgb[:, :, 1]
-    b = rgb[:, :, 2]
+    r = rgba[:, :, 0]
+    g = rgba[:, :, 1]
+    b = rgba[:, :, 2]
+    a = rgba[:, :, 3]
 
-    values = (r << 16) | (g << 8) | b
-
-    print(f"Lowest value: {int(values.min())}")
-    print(f"Highest value: {int(values.max())}")
+    values = np.round(
+        ((r << 24) | (g << 16) | (b << 8) | a).astype(np.float64) / 1000, 2
+    )
 
     return values
