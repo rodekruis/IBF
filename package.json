@@ -12,7 +12,7 @@
     "start": "echo 'See README.md#getting-started \\n\\n'",
     "logs:services": "cd services/ && docker compose logs --follow",
     "start:services": "cd services/ && docker compose --file=docker-compose.yml --file=docker-compose.development.yml up --build",
-    "stop:services": "cd services/ && docker compose --file=docker-compose.yml --file=docker-compose.development.yml down",
+    "stop:services": "cd services/ && docker compose --file=docker-compose.yml --file=docker-compose.development.yml stop",
     "start:services:detach": "npm run start:services -- --detach",
     "start:services:ci": "npm run start:services:detach -- --quiet-pull --wait --wait-timeout 300",
     "start:services:ci:production": "cd services/ && docker --log-level='warn' compose --file=docker-compose.yml up --detach --build --quiet-pull --wait --wait-timeout 300",
