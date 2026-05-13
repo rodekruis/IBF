@@ -20,7 +20,6 @@ function toClassificationInput(
   };
 }
 
-// These unit-tests should use specific fixed test config, and not the general mock-config, which will eventually be replaced by a configurable database table.
 const testFloodConfig: Partial<AlertConfigResponseDto> = {
   hazardType: HazardType.floods,
   severityClassLevels: [
