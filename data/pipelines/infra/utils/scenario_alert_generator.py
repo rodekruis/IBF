@@ -48,7 +48,7 @@ def _generate_alert_scenario(
     hazard_type: HazardType,
 ) -> None:
     target_admin_areas = data_provider.get_data(
-        DataSource.ADMIN_AREA_SEED_REPO, AdminAreasSet
+        DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
     )
     if not target_admin_areas:
         data_submitter.add_error("Missing admin area data for alert scenario")

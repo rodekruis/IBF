@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.alert_types import (
@@ -16,7 +17,7 @@ EVENT_NAME = "KEN_floods_station-test"
 
 def test_incomplete_alert_is_rejected(tmp_output: Path):
     """An alert with only metadata and no severity/exposure data is rejected."""
-    submitter = DataSubmitter()
+    submitter = DataSubmitter(MagicMock())
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
         hazard_type=HazardType.FLOODS,
@@ -100,7 +101,7 @@ def test_admin_area_unequal_layer_counts_is_rejected(
 
 def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
     """Raster exposure without the required 'alert_extent' layer is rejected."""
-    submitter = DataSubmitter()
+    submitter = DataSubmitter(MagicMock())
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
         hazard_type=HazardType.FLOODS,
@@ -148,7 +149,7 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
 
 def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     """A centroid with latitude or longitude outside valid WGS84 bounds is rejected."""
-    submitter = DataSubmitter()
+    submitter = DataSubmitter(MagicMock())
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
         hazard_type=HazardType.FLOODS,
@@ -233,7 +234,7 @@ def test_time_interval_start_after_end_is_rejected(
 
 def test_admin_area_missing_is_rejected(tmp_output: Path):
     """An alert with no admin-area exposure records at all is rejected."""
-    submitter = DataSubmitter()
+    submitter = DataSubmitter(MagicMock())
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
         hazard_type=HazardType.FLOODS,
@@ -274,7 +275,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
 
 def test_naive_datetime_is_rejected(tmp_output: Path):
     """A naive (no timezone) issued_at datetime is rejected during integrity checks."""
-    submitter = DataSubmitter()
+    submitter = DataSubmitter(MagicMock())
     submitter.set_forecast_metadata(
         issued_at=datetime(2026, 3, 20, 12, 0, 0),
         hazard_type=HazardType.FLOODS,
@@ -289,7 +290,7 @@ def test_naive_datetime_is_rejected(tmp_output: Path):
 
 def test_hazard_type_missing_is_rejected(tmp_output: Path):
     """Forecast metadata with no hazard type is rejected during integrity checks."""
-    submitter = DataSubmitter()
+    submitter = DataSubmitter(MagicMock())
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
         hazard_type=None,  # type: ignore
@@ -304,7 +305,7 @@ def test_hazard_type_missing_is_rejected(tmp_output: Path):
 
 def test_empty_forecast_sources_is_rejected(tmp_output: Path):
     """Forecast metadata with no forecast sources is rejected during integrity checks."""
-    submitter = DataSubmitter()
+    submitter = DataSubmitter(MagicMock())
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
         hazard_type=HazardType.FLOODS,

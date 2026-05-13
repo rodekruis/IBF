@@ -19,6 +19,7 @@ from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource, RunTargetType
 from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
+from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.data_provider_fetchers import load_data_container
 
 logger = logging.getLogger(__name__)
@@ -27,8 +28,9 @@ _T = TypeVar("_T")
 
 
 class DataProvider:
-    def __init__(self) -> None:
+    def __init__(self, api_client: ApiClient) -> None:
         self.loaded_data: dict[DataSource, LoadedDataSource] = {}
+        self.api_client = api_client
 
     def try_load_data(
         self,
@@ -59,7 +61,12 @@ class DataProvider:
             )
 
             try:
-                load_data_container(country_config, source_config, data_container)
+                load_data_container(
+                    country_config,
+                    source_config,
+                    data_container,
+                    api_client=self.api_client,
+                )
             except Exception as exc:
                 data_container.error = str(exc)
                 logger.error(
@@ -105,7 +112,8 @@ if __name__ == "__main__":
             f"Data sources for DEBUG run target: {data.hazard_type} - {data.country_configs}"
         )
 
-        provider = DataProvider()
+        api_client = ApiClient()
+        provider = DataProvider(api_client)
         for country_code in data.country_configs:
             provider.try_load_data(config_reader, country_code, RunTargetType.DEBUG)
 
@@ -117,9 +125,11 @@ if __name__ == "__main__":
                         iter(container.data.admin_areas.items())
                     )
                     print(
-                        f"  [{container.data_source}] admin level {container.data.admin_level}: ",
+                        f"  [{container.data_source}]: ",
                         f"{first_item.properties.name}, {first_item.properties.pcode}, "
-                        f"parents: {first_item.properties.parent_pcodes}, ",
+                        f"level: {first_item.properties.admin_level}, "
+                        f"country: {first_item.properties.country_code}, "
+                        f"parent: {first_item.properties.parent_pcode}, ",
                     )
                 else:
                     print(

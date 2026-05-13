@@ -1,8 +1,8 @@
+import { AlertConfigsService } from '@api-service/src/alert-configs/alert-configs.service';
+import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { AlertClassificationInput } from '@api-service/src/events/alert-classification.service';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
-import { AlertClassificationConfigsService } from '@api-service/src/events/alert-classification-configs.service';
-import { AlertClassificationConfig } from '@api-service/src/events/interfaces/alert-classification-config';
 import {
   buildAlert,
   buildSeverityData,
@@ -21,7 +21,8 @@ function toClassificationInput(
 }
 
 // These unit-tests should use specific fixed test config, and not the general mock-config, which will eventually be replaced by a configurable database table.
-const testFloodConfig: AlertClassificationConfig = {
+const testFloodConfig: Partial<AlertConfigResponseDto> = {
+  hazardType: HazardType.floods,
   severityClassLevels: [
     { label: 'low', threshold: 100 },
     { label: 'med', threshold: 200 },
@@ -42,7 +43,8 @@ const testFloodConfig: AlertClassificationConfig = {
   triggerLeadTimeDuration: 'P7D',
 };
 
-const testDroughtConfig: AlertClassificationConfig = {
+const testDroughtConfig: Partial<AlertConfigResponseDto> = {
+  hazardType: HazardType.drought,
   severityClassLevels: [{ label: 'warning', threshold: 0.2 }],
   probabilityClassLevels: [{ label: 'any', threshold: 0 }],
   alertClassMatrix: {
@@ -53,24 +55,26 @@ const testDroughtConfig: AlertClassificationConfig = {
 
 describe('AlertClassificationService', () => {
   let service: AlertClassificationService;
-  let alertClassificationConfigsService: AlertClassificationConfigsService;
+  let alertConfigsService: AlertConfigsService;
 
   beforeEach(() => {
-    const configsByHazardType: Record<string, AlertClassificationConfig> = {
-      [HazardType.floods]: testFloodConfig,
-      [HazardType.drought]: testDroughtConfig,
+    const configsByHazardType: Record<string, AlertConfigResponseDto> = {
+      [HazardType.floods]: testFloodConfig as AlertConfigResponseDto,
+      [HazardType.drought]: testDroughtConfig as AlertConfigResponseDto,
     };
 
-    alertClassificationConfigsService = new AlertClassificationConfigsService(
-      null as never,
-    );
+    alertConfigsService = new AlertConfigsService(null as never);
+
     jest
-      .spyOn(alertClassificationConfigsService, 'getByHazardType')
-      .mockImplementation(
-        (hazardType: string): Promise<AlertClassificationConfig | undefined> =>
-          Promise.resolve(configsByHazardType[hazardType]),
+      .spyOn(alertConfigsService, 'getAlertConfigs')
+      .mockImplementation(({ hazardType }) =>
+        Promise.resolve(
+          hazardType && configsByHazardType[hazardType]
+            ? [configsByHazardType[hazardType]]
+            : [],
+        ),
       );
-    service = new AlertClassificationService(alertClassificationConfigsService);
+    service = new AlertClassificationService(alertConfigsService);
   });
 
   describe('classifyAlert', () => {
