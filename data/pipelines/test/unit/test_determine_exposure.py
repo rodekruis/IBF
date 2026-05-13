@@ -4,8 +4,6 @@ from pathlib import Path
 
 import numpy as np
 import rasterio
-from rasterio.transform import from_origin
-
 from pipelines.flood.determine_exposure import (
     aggregate_population_exposed,
     clip_flood_extent_to_admin_areas,
@@ -16,6 +14,7 @@ from pipelines.infra.data_types.admin_area_types import (
     AdminAreaProperties,
     AdminAreasSet,
 )
+from rasterio.transform import from_origin
 
 
 def _create_raster(path: Path, data: np.ndarray, nodata: float = -9999.0) -> str:
@@ -38,21 +37,24 @@ def _create_raster(path: Path, data: np.ndarray, nodata: float = -9999.0) -> str
 
 def _build_admin_areas() -> AdminAreasSet:
     return AdminAreasSet(
-        admin_level=1,
         admin_areas={
             "PC001": AdminArea(
                 properties=AdminAreaProperties(
                     pcode="PC001",
                     name="Test Area",
+                    admin_level=1,
+                    country_code="MOC",
                 ),
                 geometry_type="Polygon",
-                coordinates=[[
-                    [0.0, 0.0],
-                    [0.0, 2.0],
-                    [2.0, 2.0],
-                    [2.0, 0.0],
-                    [0.0, 0.0],
-                ]],
+                coordinates=[
+                    [
+                        [0.0, 0.0],
+                        [0.0, 2.0],
+                        [2.0, 2.0],
+                        [2.0, 0.0],
+                        [0.0, 0.0],
+                    ]
+                ],
             )
         },
     )
@@ -60,21 +62,24 @@ def _build_admin_areas() -> AdminAreasSet:
 
 def _build_partial_admin_areas() -> AdminAreasSet:
     return AdminAreasSet(
-        admin_level=1,
         admin_areas={
             "PC001": AdminArea(
                 properties=AdminAreaProperties(
                     pcode="PC001",
                     name="Partial Test Area",
+                    admin_level=1,
+                    country_code="MOC",
                 ),
                 geometry_type="Polygon",
-                coordinates=[[
-                    [0.0, 1.0],
-                    [0.0, 2.0],
-                    [1.0, 2.0],
-                    [1.0, 1.0],
-                    [0.0, 1.0],
-                ]],
+                coordinates=[
+                    [
+                        [0.0, 1.0],
+                        [0.0, 2.0],
+                        [1.0, 2.0],
+                        [1.0, 1.0],
+                        [0.0, 1.0],
+                    ]
+                ],
             )
         },
     )
