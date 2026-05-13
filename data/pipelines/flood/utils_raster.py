@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import logging
 import os
-import tempfile
 
 import rasterio
 import xarray as xr
-from rasterio.windows import from_bounds
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 
