@@ -3,4 +3,5 @@
 ```mermaid
 graph LR
   AlertsModule-->EventsModule
+  EventsModule-->AlertConfigsModule
 ```

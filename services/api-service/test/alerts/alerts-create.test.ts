@@ -21,7 +21,7 @@ describe('POST /alerts', () => {
   const apiKey = env.PIPELINE_API_KEY;
   let accessToken: string;
   beforeAll(async () => {
-    await resetDB(SeedScript.initialState, __filename);
+    await resetDB(SeedScript.test, __filename);
 
     accessToken = await getAccessToken();
   });

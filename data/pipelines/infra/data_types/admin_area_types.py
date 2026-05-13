@@ -4,20 +4,21 @@ Data structure for holding admin area data
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass
 class AdminAreaProperties:
     """
-    The code and name (in English) of an admin area, along with a list of all parent codes.
-    Adm0 would have no parents, while Adm4 would have 4 parents.
+    The code and name (in English) of an admin area, its admin level, its country code,
+    and the code of its immediate parent. Adm0 has no parent; Adm4's parent is its Adm3 area.
     """
 
     pcode: str
     name: str
-    adm0_pcode: str | None = None
-    parent_pcodes: dict[int, str] = field(default_factory=dict)
+    admin_level: int
+    country_code: str
+    parent_pcode: str | None = None
 
 
 @dataclass
@@ -33,40 +34,34 @@ class AdminArea:
 
 @dataclass
 class AdminAreasSet:
-    admin_level: int
-    # Admin areas are keyed on admin area code
+    # Admin areas are keyed on admin area code, spanning all levels 0..target_admin_level
     admin_areas: dict[str, AdminArea]
 
+    def __bool__(self) -> bool:
+        return bool(self.admin_areas)
+
     @staticmethod
-    def from_geojson(admin_level: int, raw: dict) -> AdminAreasSet:
-        admin_areas = {}
+    def from_api(rows: list) -> AdminAreasSet:
+        admin_areas: dict[str, AdminArea] = {}
 
-        for f in raw.get("features", []):
-            props = f.get("properties", {})
-            pcode = props.get(f"ADM{admin_level}_PCODE", "")
-            feature_name = props.get(f"ADM{admin_level}_EN", "")
-            adm0_pcode = props.get("ADM0_ISO_A3")
-
-            parent_pcodes = {}
-            for level in range(0, admin_level):
-                parent_pcode = props.get(f"ADM{level}_PCODE")
-                if parent_pcode:
-                    parent_pcodes[level] = parent_pcode
-
-            geom = f.get("geometry", {})
+        for row in rows:
+            pcode = row.get("placeCode", "")
+            name = row.get("nameEn", "")
+            admin_level = row.get("adminLevel", 0)
+            country_code = row.get("countryCodeIso3", "")
+            parent_pcode = row.get("parentPlaceCode") or None
+            geom = row.get("geometry", {})
 
             admin_areas[pcode] = AdminArea(
                 properties=AdminAreaProperties(
                     pcode=pcode,
-                    name=feature_name,
-                    adm0_pcode=adm0_pcode,
-                    parent_pcodes=parent_pcodes,
+                    name=name,
+                    admin_level=admin_level,
+                    country_code=country_code,
+                    parent_pcode=parent_pcode,
                 ),
                 geometry_type=geom.get("type", ""),
                 coordinates=geom.get("coordinates", []),
             )
 
-        return AdminAreasSet(
-            admin_level=admin_level,
-            admin_areas=admin_areas,
-        )
+        return AdminAreasSet(admin_areas=admin_areas)

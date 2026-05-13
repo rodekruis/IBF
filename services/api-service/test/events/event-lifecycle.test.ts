@@ -19,7 +19,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
   let accessToken: string;
 
   beforeEach(async () => {
-    await resetDB(SeedScript.initialState, __filename);
+    await resetDB(SeedScript.test, __filename);
     accessToken = await getAccessToken();
   });
 
@@ -360,7 +360,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       issuedAt: new Date(oldForecastTimestamp),
     });
 
-    const oldDroughtEventName = 'ETH_drought_event-close-previous';
+    const oldDroughtEventName = 'KEN_drought_event-close-previous';
     const oldDroughtAlert = buildAlert({
       eventName: oldDroughtEventName,
       severity: buildSeverityData({

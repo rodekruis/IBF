@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
+from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.alert_types import (
     Centroid,
@@ -14,10 +16,10 @@ from pipelines.infra.data_types.alert_types import (
 EVENT_NAME = "KEN_floods_station-test"
 
 
-def _create_valid_submitter() -> DataSubmitter:
+def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
     """Build a DataSubmitter with one fully valid alert (severity, admin areas,
     rasters) so tests can add a single defect on top and verify it is caught."""
-    submitter = DataSubmitter()
+    submitter = DataSubmitter(mock_api_client)
     submitter.set_forecast_metadata(
         issued_at=datetime.now(timezone.utc),
         hazard_type=HazardType.FLOODS,
@@ -60,8 +62,13 @@ def _create_valid_submitter() -> DataSubmitter:
 
 
 @pytest.fixture()
-def valid_submitter() -> DataSubmitter:
-    return _create_valid_submitter()
+def mock_api_client() -> MagicMock:
+    return MagicMock(spec=ApiClient)
+
+
+@pytest.fixture()
+def valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
+    return _create_valid_submitter(mock_api_client)
 
 
 @pytest.fixture()

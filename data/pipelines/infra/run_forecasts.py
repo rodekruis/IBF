@@ -28,6 +28,7 @@ from pipelines.infra.data_types.data_config_types import (
 from pipelines.infra.utils.alert_admin_aggregation import (
     aggregate_to_parent_admin_levels,
 )
+from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.scenario_alert_generator import make_scenario_hazard_function
 
 logger = logging.getLogger(__name__)
@@ -54,14 +55,15 @@ def _run_country(
     config_reader: ConfigReader,
     run_target: RunTargetType,
     hazard_type: HazardType,
+    api_client: ApiClient,
 ) -> list[str]:
-    data_provider = DataProvider()
+    data_provider = DataProvider(api_client)
     if not data_provider.try_load_data(
         config_reader, country.country_code_iso_3, run_target
     ):
         return [f"Failed to load data for {country.country_code_iso_3}"]
 
-    data_submitter = DataSubmitter()
+    data_submitter = DataSubmitter(api_client)
 
     # --- Set forecast metadata based on hazard type ---
     if country.scenario and country.scenario.issued_at:
@@ -84,7 +86,7 @@ def _run_country(
     )
 
     # --- Post-processing: aggregate deepest-level admin area data upward ---
-    admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_SEED_REPO, AdminAreasSet)
+    admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_IBF_API, AdminAreasSet)
     for alert in data_submitter.get_alerts():
         aggregate_to_parent_admin_levels(alert, admin_areas)
 
@@ -154,8 +156,14 @@ def run_forecasts(
 
     all_errors: list[str] = []
 
+    api_client = ApiClient()
+
+    logger.info(
+        f"Start '{hazard_type}' pipeline for '{", ".join(c.country_code_iso_3 for c in countries)}' (run target: '{run_target}')"
+    )
+
     for country in countries:
-        logger.info(f"Processing {hazard_type} for {country.country_code_iso_3}")
+        logger.info(f"Forecast '{hazard_type}' for '{country.country_code_iso_3}'")
 
         active_fn = hazard_fn
         if country.scenario:
@@ -167,13 +175,13 @@ def run_forecasts(
             )
 
         errors = _run_country(
-            active_fn, country, config_reader, run_target, hazard_type
+            active_fn, country, config_reader, run_target, hazard_type, api_client
         )
         if errors:
-            logger.error(f"Errors for {country.country_code_iso_3}: {errors}")
+            logger.error(f"Errors for '{country.country_code_iso_3}': {errors}")
             all_errors.extend(errors)
         else:
-            logger.info(f"Completed {hazard_type} for {country.country_code_iso_3}")
+            logger.info(f"Completed '{hazard_type}' for '{country.country_code_iso_3}'")
 
     return all_errors
 

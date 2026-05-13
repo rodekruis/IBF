@@ -20,7 +20,7 @@ def download_object(url: str) -> bytes | None:
     attempt = 0
     while attempt < max_retries:
         attempt += 1
-        logger.info(f"Downloading from '{url}' (attempt {attempt}/{max_retries})")
+        logger.info(f"Download '{url}' (attempt {attempt}/{max_retries})")
         try:
             if url.startswith("ftp://"):
                 with urlopen(url, timeout=60) as response:
