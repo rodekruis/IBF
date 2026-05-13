@@ -110,15 +110,13 @@ def _match_return_period(
     Thresholds are expected as e.g. {"2yr": 100, "5yr": 200, "10yr": 350, ...}.
     Returns the label of the highest exceeded return period, or None if none exceeded.
     """
-    matched: str | None = None
-    matched_value: float = 0.0
-
-    for return_period, threshold_value in station_thresholds.items():
-        if discharge > threshold_value and threshold_value >= matched_value:
-            matched = return_period
-            matched_value = threshold_value
-
-    return matched
+    # sort thresholds descending by value to find the highest exceeded efficiently
+    for return_period, threshold_value in sorted(
+        station_thresholds.items(), key=lambda item: item[1], reverse=True
+    ):
+        if discharge > threshold_value:
+            return return_period
+    return None
 
 
 def _prepare_station_threshold(
