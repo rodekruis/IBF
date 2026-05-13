@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import logging
 import glob
 import json
+import logging
 
+from pipelines.flood.compute_alert_extent import compute_alert_extent
 from pipelines.flood.determine_alerts import (
-    ReturnPeriodThresholds,
     determine_temporal_extent,
+    ReturnPeriodThresholds,
 )
 from pipelines.flood.determine_exposure import (
     aggregate_population_exposed,
@@ -14,21 +15,22 @@ from pipelines.flood.determine_exposure import (
     determine_spatial_extent,
 )
 from pipelines.flood.extract_forecast import extract_discharge_glofas_station
-from pipelines.flood.compute_alert_extent import compute_alert_extent
+from pipelines.flood.utils_raster import (  # TODO-infra: move utils to infra and import in flood pipeline
+    get_bounding_box,
+    get_raster_extent,
+    slice_netcdf_to_bounds,
+)
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.alert_types import Centroid, EnsembleMemberType, Layer
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.location_point import LocationPoint
-from pipelines.flood.utils_raster import ( # TODO-infra: move utils to infra and import in flood pipeline
-    slice_netcdf_to_bounds,
-    get_bounding_box,
-    get_raster_extent,
+
+GLOFAS_MIN_RP_THRESHOLDS = (
+    1.5  # GloFAS minimum return period thresholds # TODO-infra: where to put this?
 )
 
-
-GLOFAS_MIN_RP_THRESHOLDS = 1.5  # GloFAS minimum return period thresholds # TODO-infra: where to put this?
 
 def calculate_flood_forecasts(
     data_provider: DataProvider,
@@ -42,7 +44,7 @@ def calculate_flood_forecasts(
     )
     target_admin_areas = data_provider.get_data(
         DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
-    ) # TODO AB#41454:  load population using data_provider. This is already available, but as png. For now a tiff is used, which is loaded directly below. 
+    )  # TODO AB#41454:  load population using data_provider. This is already available, but as png. For now a tiff is used, which is loaded directly below.
     # Make sure your data loaded
     if not stations or not target_admin_areas:
         data_submitter.add_error(
@@ -50,7 +52,7 @@ def calculate_flood_forecasts(
         )
         return
 
-    # TODO AB#454: load these through the data provider once the data sources are registered
+    # TODO AB#41454: load these through the data provider once the data sources are registered
     # thresholds: dict[str, dict[str, float]] = data_provider.get_data(
     #     DataSource.GLOFAS_MIN_RP_THRESHOLDS
     # ).data
@@ -66,24 +68,39 @@ def calculate_flood_forecasts(
     # TODO: (placeholder data) replace with data provider calls above once data sources are wired
     # all below data in zip and share in PR
     # glofas netcdf files
-    glofas_netcdf_paths: list[str] = ["./pipelines/flood/bronze/glofas/dis_00_2026040800.nc"]
+    glofas_netcdf_paths: list[str] = [
+        "./pipelines/flood/bronze/glofas/dis_00_2026040800.nc"
+    ]
     # thresholds for stations json files
-    thresholds_path: list[str] = [f for f in glob.glob(f"./pipelines/flood/bronze/thresholds/*_{country}.json")]
+    thresholds_path: list[str] = [
+        f for f in glob.glob(f"./pipelines/flood/bronze/thresholds/*_{country}.json")
+    ]
     thresholds: list[ReturnPeriodThresholds] = []
     for path in thresholds_path:
         with open(path) as f:
             loaded_thresholds = json.load(f)
         thresholds.append(loaded_thresholds)
     # station-district mapping json file (or basins_geojson if mapping with basin instead)
-    station_district_mapping_path: str = f"./pipelines/flood/bronze/station-district/{country}_station_district_mapping.json"
+    station_district_mapping_path: str = (
+        f"./pipelines/flood/bronze/station-district/{country}_station_district_mapping.json"
+    )
     station_district_mapping: dict = {}
     with open(station_district_mapping_path) as f:
         station_district_mapping = json.load(f)
     # population raster tiff file
-    population_raster_paths = glob.glob(f"./pipelines/flood/bronze/population/{country}.tif")
-    population_raster_path: str = population_raster_paths[0] if population_raster_paths else ""
+    population_raster_paths = glob.glob(
+        f"./pipelines/flood/bronze/population/{country}.tif"
+    )
+    population_raster_path: str = (
+        population_raster_paths[0] if population_raster_paths else ""
+    )
     # flood extent rasters
-    flood_extent_paths: list[str] = [f for f in glob.glob(f"./pipelines/flood/bronze/flood_extents/flood_map_{country}_*.tif")]
+    flood_extent_paths: list[str] = [
+        f
+        for f in glob.glob(
+            f"./pipelines/flood/bronze/flood_extents/flood_map_{country}_*.tif"
+        )
+    ]
 
     ### Step 2 - Extract discharge per station from GloFAS data ###
     country_bounds = get_bounding_box(target_admin_areas)
@@ -147,9 +164,8 @@ def calculate_flood_forecasts(
 
         ### Step 8 - Aggregate population exposed per place_code ###
         population_exposed = aggregate_population_exposed(
-            population_exposed_raster_path, 
-            place_codes_exposed, 
-            target_admin_areas)
+            population_exposed_raster_path, place_codes_exposed, target_admin_areas
+        )
 
         ### Step 9 - Create alert and submit severity/exposure payloads ###
         if station.name.lower() == "na":
@@ -191,7 +207,7 @@ def calculate_flood_forecasts(
                 layer=Layer.POPULATION_EXPOSED,
                 value=population_exposed.get(place_code, 0),
             )
-        # TODO: use this in the future to (A) add water-discharege/return-period for glofas-station-popup and (B) add exposure status of points/roads/buildings. 
+        # TODO: use this in the future to (A) add water-discharege/return-period for glofas-station-popup and (B) add exposure status of points/roads/buildings.
         # data_submitter.add_geo_feature_exposure(
         #     event_name=event_name,
         #     geo_feature_id=station_code,
@@ -203,5 +219,5 @@ def calculate_flood_forecasts(
             event_name=event_name,
             layer="alert_extent",
             value=clipped_flood_extent_path,
-            extent=get_raster_extent(clipped_flood_extent_path)
+            extent=get_raster_extent(clipped_flood_extent_path),
         )
