@@ -7,8 +7,9 @@ import rasterio
 from rasterio.transform import from_origin
 
 from pipelines.flood.determine_exposure import (
+    aggregate_population_exposed,
     clip_flood_extent_to_admin_areas,
-    extract_population_within_flood_extent,
+    compute_population_exposed,
 )
 from pipelines.infra.data_types.admin_area_types import (
     AdminArea,
@@ -79,7 +80,7 @@ def _build_partial_admin_areas() -> AdminAreasSet:
     )
 
 
-def test_extract_population_within_flood_extent_sums_only_flooded_pixels(
+def test_compute_population_exposed_sums_only_flooded_pixels(
     tmp_path: Path,
 ):
     population_path = _create_raster(
@@ -92,17 +93,22 @@ def test_extract_population_within_flood_extent_sums_only_flooded_pixels(
         nodata=0,
     )
 
-    population = extract_population_within_flood_extent(
-        place_codes=["PC001"],
-        admin_areas=_build_admin_areas(),
+    population_exposed_raster_path = compute_population_exposed(
         population_raster_path=population_path,
         flood_extent_raster_path=flood_extent_path,
+    )
+    assert population_exposed_raster_path is not None
+
+    population = aggregate_population_exposed(
+        population_raster_path=population_exposed_raster_path,
+        place_codes_exposed=["PC001"],
+        admin_areas=_build_admin_areas(),
     )
 
     assert population == {"PC001": 50.0}
 
 
-def test_extract_population_within_flood_extent_returns_zero_for_empty_extent(
+def test_compute_population_exposed_returns_zero_for_empty_extent(
     tmp_path: Path,
 ):
     population_path = _create_raster(
@@ -115,11 +121,16 @@ def test_extract_population_within_flood_extent_returns_zero_for_empty_extent(
         nodata=0,
     )
 
-    population = extract_population_within_flood_extent(
-        place_codes=["PC001"],
-        admin_areas=_build_admin_areas(),
+    population_exposed_raster_path = compute_population_exposed(
         population_raster_path=population_path,
         flood_extent_raster_path=flood_extent_path,
+    )
+    assert population_exposed_raster_path is not None
+
+    population = aggregate_population_exposed(
+        population_raster_path=population_exposed_raster_path,
+        place_codes_exposed=["PC001"],
+        admin_areas=_build_admin_areas(),
     )
 
     assert population == {"PC001": 0.0}
