@@ -95,7 +95,7 @@ def calculate_flood_forecasts(
         country_sliced_netcdf_paths.append(country_sliced_path)
 
     ### Step 3 - Loop through spatial extent (stations and extract discharge) ###
-    for station_code, station in list(stations.items())[:2]:
+    for station_code, station in stations.items():
         discharges = extract_discharge_glofas_station(
             station_code=station_code,
             station=station,
