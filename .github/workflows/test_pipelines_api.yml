@@ -66,6 +66,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Set apt cache permissions
+        run: sudo chown -R "$(id -u)" /var/cache/apt/archives
+
       - name: Cache apt packages
         uses: actions/cache@v4
         with:
