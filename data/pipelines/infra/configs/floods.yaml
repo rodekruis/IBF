@@ -7,7 +7,7 @@ run_targets:
         target_admin_level: 3
         data_sources:
           - source: glofas_stations_seed_repo
-          - source: admin_area_seed_repo
+          - source: admin_area_ibf_api
           - source: population_seed_repo
           - source: todo_glofas_discharge
         output:

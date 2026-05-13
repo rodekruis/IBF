@@ -10,19 +10,21 @@ def aggregate_to_parent_admin_levels(
 ) -> None:
     """Aggregate admin area exposure from the deepest admin level upward.
 
-    Each pass groups the deepest-level entries by a parent at the target level
-    and aggregates per layer:
-    - Boolean layers: aggregated via ``any()`` (True if any child is True).
-    - Numeric layers (e.g. population_exposed): aggregated via ``sum()``,
+    Each pass groups values by their parent at the next level up, taking one
+    ``parent_pcode`` lookup per group key rather than re-walking the full
+    ancestor chain from the deepest level on every iteration.
+
+    Aggregation rules per layer:
+    - Boolean layers: ``any()`` — True if any descendant is True.
+    - Numeric layers (e.g. population_exposed): ``sum()``,
       which is correct for absolute counts.
 
     Note: percentage or rate-based layers are not yet supported. These would
     require a weighted average (e.g. weighted by child population). When such
     layers are added, extend the aggregation logic here.
 
-    Only deepest-level admin area entries are expected in admin_areas.
-    Entries whose place code is not in admin_areas or whose ancestor
-    field is missing/None are silently skipped. Downstream integrity checks
+    Entries whose place code is not in admin_areas or whose parent_pcode is
+    None are silently skipped. Downstream integrity checks
     (alert_integrity_checks) will catch incomplete results.
 
     The aggregated entries are appended directly to ``alert.exposure.admin_areas``.
@@ -33,25 +35,22 @@ def aggregate_to_parent_admin_levels(
 
     deepest_level = max(entry.admin_level for entry in deepest_entries)
 
-    # Aggregate upward, for instance level 3 → level 2 → level 1 → level 0
-    parent_levels = list(reversed(range(0, deepest_level)))
-    for target_level in parent_levels:
-        # Group deepest-level values by (ancestor_place_code, layer)
-        grouped: dict[tuple[str, Layer], list[bool | int | float]] = {}
+    # Group deepest values by (pcode, layer) — the starting "current" level
+    current: dict[tuple[str, Layer], list[bool | int | float]] = {}
+    for entry in deepest_entries:
+        current.setdefault((entry.place_code, entry.layer), []).append(entry.value)
 
-        for entry in deepest_entries:
-            feature = admin_areas.admin_areas.get(entry.place_code)
-            if feature is None:
+    # Walk upward one level at a time, carrying accumulated values forward
+    for target_level in reversed(range(0, deepest_level)):
+        parent: dict[tuple[str, Layer], list[bool | int | float]] = {}
+
+        for (pcode, layer), values in current.items():
+            area = admin_areas.admin_areas.get(pcode)
+            if area is None or area.properties.parent_pcode is None:
                 continue
+            parent.setdefault((area.properties.parent_pcode, layer), []).extend(values)
 
-            ancestor_code = feature.properties.parent_pcodes.get(target_level)
-            if ancestor_code is None:
-                continue
-
-            key = (ancestor_code, entry.layer)
-            grouped.setdefault(key, []).append(entry.value)
-
-        for (place_code, layer), values in grouped.items():
+        for (place_code, layer), values in parent.items():
             if all(isinstance(v, bool) for v in values):
                 aggregated_value: bool | int | float = any(values)
             elif all(
@@ -72,3 +71,5 @@ def aggregate_to_parent_admin_levels(
                     value=aggregated_value,
                 )
             )
+
+        current = parent

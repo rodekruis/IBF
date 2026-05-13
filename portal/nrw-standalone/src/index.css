@@ -1,0 +1,71 @@
+* {
+    box-sizing: border-box;
+}
+::-webkit-scrollbar {
+    transform: translateX(100%);
+    background-color: var(--go-ui-color-scrollbar-background);
+    width: var(--go-ui-width-scrollbar);
+    height: var(--go-ui-width-scrollbar);
+}
+
+::-webkit-scrollbar-track {
+    background-color: var(--go-ui-color-scrollbar-background);
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: var(--go-ui-radius-scrollbar-border);
+    background-color: var(--go-ui-color-scrollbar-foreground);
+}
+
+html {
+    @media screen {
+        margin: 0;
+        padding: 0;
+        scrollbar-gutter: stable;
+    }
+}
+
+body {
+    line-height: var(--go-ui-line-height-md);
+    color: var(--go-ui-color-text);
+    font-family: var(--go-ui-font-family-sans-serif);
+    font-size: var(--go-ui-font-size-md);
+    font-weight: var(--go-ui-font-weight-normal);
+
+    @media screen {
+        margin: 0;
+        background-color: var(--go-ui-color-background);
+        padding: 0;
+    }
+}
+
+ul, ol, p {
+    margin: 0;
+}
+
+ul, ol {
+    padding-inline-start: var(--go-ui-spacing-lg);
+}
+
+li {
+    margin: var(--go-ui-spacing-2xs) 0;
+
+    &:first-child {
+        margin-top: unset;
+    }
+
+    &:last-child {
+        margin-bottom: unset;
+    }
+}
+
+@media print {
+    @page {
+        size: portrait A4;
+        margin: 10mm 10mm 16mm 10mm;
+    }
+
+    body {
+        font-family: 'Open Sans', sans-serif;
+    }
+}

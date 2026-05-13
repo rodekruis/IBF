@@ -41,9 +41,9 @@ def calculate_flood_forecasts(
         DataSource.GLOFAS_STATIONS_SEED_REPO, dict
     )
     target_admin_areas = data_provider.get_data(
-        DataSource.ADMIN_AREA_SEED_REPO, AdminAreasSet
-    )    # TODO AB#41454:  load population using data_provider. This is already available, but as png. For now a tiff is used, which is loaded directly below. 
-
+        DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
+    ) # TODO AB#41454:  load population using data_provider. This is already available, but as png. For now a tiff is used, which is loaded directly below. 
+    # Make sure your data loaded
     if not stations or not target_admin_areas:
         data_submitter.add_error(
             f"Missing input data: stations={bool(stations)}, admin_areas={bool(target_admin_areas)}"

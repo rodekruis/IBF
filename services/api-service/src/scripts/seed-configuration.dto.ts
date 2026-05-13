@@ -9,4 +9,7 @@ export class SeedConfigurationDto {
 
   @ApiProperty({ default: false })
   readonly seedAdminOnly?: boolean;
+
+  @ApiProperty({ required: false })
+  readonly countryCodes?: string[];
 }

@@ -59,8 +59,7 @@ pipelines/
 │   └── forecast.py            # calculate_drought_forecasts(data_provider, data_submitter, country)
 ├── test/
 │   ├── unit/                  # Unit tests on individual functions
-│   ├── integration_infra/     # Infra integration tests (scenarios, bypasses forecast.py)
-│   ├── integration_infra_api/ # Infra + API integration tests (scenarios submitted to live API)
+│   ├── integration_infra/     # test pipeline-infra + integration with API (using scenarios, bypasses hazard-logic in forecast.py)
 │   └── integration_pipeline/  # FUTURE: full pipeline tests with mock input data through forecast.py
 ```
 
@@ -107,8 +106,7 @@ From the `<repo root>/data/` directory:
 
 ```bash
 uv run pytest pipelines/test/unit/                  # unit tests
-uv run pytest pipelines/test/integration_infra/     # infra integration tests (scenarios, bypasses forecast.py)
-uv run pytest pipelines/test/integration_infra_api/ # infra + API integration tests (scenarios submitted to live API)
+uv run pytest pipelines/test/integration_infra/     test pipeline-infra + integration with API (using scenarios, bypasses hazard-logic in forecast.py)
 ```
 
 Unit tests cover alert validation and data submitter logic. Infra integration tests use the `--scenario` flag to bypass `forecast.py`, exercising only the pipeline infrastructure (config parsing, data loading, data submission, output writing). Future `integration_pipeline/` tests will run the full pipeline with controlled mock input data flowing through `forecast.py`.

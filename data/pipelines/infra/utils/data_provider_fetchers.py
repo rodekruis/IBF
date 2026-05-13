@@ -9,6 +9,7 @@ import io
 import logging
 import os
 
+from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
@@ -27,7 +28,6 @@ from shared.download_helpers import download_json_source, download_object
 logger = logging.getLogger(__name__)
 
 SEED_REPO_POPULATION_DATA_PNG_PATH = "/raster-data/population/data-png/"
-SEED_REPO_ADMIN_AREAS_PATH = "/admin-areas/processed/"
 # Note: this is getting glofas stations now. In the future, we most likely will be fetching
 # climate areas, catchments or something like that.
 # When we switch to that, the glofas station flow can be removed.
@@ -46,12 +46,15 @@ def load_data_container(
     country_config: CountryRunConfig,
     data_config: DataSourceConfig,
     container: LoadedDataSource,
+    api_client: ApiClient,
 ):
 
     match data_config.source:
-        case DataSource.ADMIN_AREA_SEED_REPO:
-            return _load_seed_repo_admin_areas(
-                data_config, container, country_config.target_admin_level
+        case DataSource.ADMIN_AREA_IBF_API:
+            return _load_ibf_api_admin_areas(
+                container,
+                api_client,
+                data_config.country_code_iso_3,
             )
         case DataSource.POPULATION_SEED_REPO:
             return _load_seed_repo_population_data(data_config, container)
@@ -71,27 +74,14 @@ def load_data_container(
             raise ValueError(f"Unknown source type: '{data_config.source}'")
 
 
-def _load_seed_repo_admin_areas(
-    config: DataSourceConfig, container: LoadedDataSource, target_admin_level: int
+def _load_ibf_api_admin_areas(
+    container: LoadedDataSource,
+    api_client: ApiClient,
+    country_code_iso_3: str,
 ):
-    # Example of the data being loaded:
-    # https://github.com/rodekruis/IBF-seed-data/blob/main/admin-areas/processed/AGO_adm1.json
-
     container.data_type = DataType.ADMIN_AREA_SET
-
-    filename = f"{config.country_code_iso_3}_adm{target_admin_level}.json"
-    uri = _get_seed_repo_uri() + SEED_REPO_ADMIN_AREAS_PATH + filename
-
-    geojson = download_json_source(uri, check_count=False)
-    if geojson is None:
-        container.error = f"Failed to download admin areas GeoJSON data from '{uri}'"
-        raise ValueError(container.error)
-    admin_areas = AdminAreasSet.from_geojson(target_admin_level, geojson)
-    logger.info(
-        f"Loaded {len(admin_areas.admin_areas)} features for admin level {target_admin_level}"
-    )
-
-    container.data = admin_areas
+    data = api_client.get_admin_areas(country_code_iso_3)
+    container.data = AdminAreasSet.from_api(data)
 
 
 def _load_seed_repo_glofas_stations(
