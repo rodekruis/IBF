@@ -19,7 +19,6 @@ dependencies = [
     "numpy",
     "pillow",
     "psycopg[binary]",
-    "pydantic",
     "PyYAML",
     "python-dotenv",
     "rasterio",
