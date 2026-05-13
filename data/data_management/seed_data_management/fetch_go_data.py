@@ -1,12 +1,11 @@
 """
 This script fetches the various country data and feature data from the IFRC GO API
-and writes it directly to file
+and writes them directly to file
 """
 
 import json
 from pathlib import Path
 
-from pydantic import BaseModel
 from shared.data_helpers import get_seed_data_repo_path
 from shared.download_helpers import download_json_source
 
