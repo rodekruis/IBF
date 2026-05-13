@@ -43,7 +43,7 @@ def _build_admin_areas() -> AdminAreasSet:
                     pcode="PC001",
                     name="Test Area",
                     admin_level=1,
-                    country_code="MOC",
+                    country_code="PC",
                 ),
                 geometry_type="Polygon",
                 coordinates=[
@@ -68,7 +68,7 @@ def _build_partial_admin_areas() -> AdminAreasSet:
                     pcode="PC001",
                     name="Partial Test Area",
                     admin_level=1,
-                    country_code="MOC",
+                    country_code="PC",
                 ),
                 geometry_type="Polygon",
                 coordinates=[
