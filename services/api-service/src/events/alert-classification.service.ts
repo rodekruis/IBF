@@ -1,12 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
+import { AlertConfigsService } from '@api-service/src/alert-configs/alert-configs.service';
+import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
+import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
-import { AlertClassificationConfigsService } from '@api-service/src/events/alert-classification-configs.service';
-import {
-  AlertClassificationConfig,
-  ClassLevel,
-} from '@api-service/src/events/interfaces/alert-classification-config';
+import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
 
 interface TimeIntervalGroup {
@@ -17,7 +16,7 @@ interface TimeIntervalGroup {
 }
 
 export interface AlertClassificationInput {
-  readonly hazardType: string;
+  readonly hazardType: HazardType;
   readonly issuedAt: Date;
   readonly severity: SeverityDto[];
 }
@@ -25,17 +24,17 @@ export interface AlertClassificationInput {
 @Injectable()
 export class AlertClassificationService {
   public constructor(
-    private readonly alertClassificationConfigsService: AlertClassificationConfigsService,
+    private readonly alertConfigsService: AlertConfigsService,
   ) {}
 
-  public classifyAlert(
+  public async classifyAlert(
     classificationInput: AlertClassificationInput,
-  ): ClassificationResult {
-    const config = this.alertClassificationConfigsService.getByHazardType(
-      classificationInput.hazardType,
-    );
-    if (!config) {
-      throw new Error(
+  ): Promise<ClassificationResult> {
+    const config = await this.alertConfigsService.getAlertConfigs({
+      hazardType: classificationInput.hazardType,
+    });
+    if (!config[0]) {
+      throw new NotFoundException(
         `No classification config found for hazard type '${classificationInput.hazardType}'`,
       );
     }
@@ -43,14 +42,14 @@ export class AlertClassificationService {
     return this.classify(
       classificationInput.severity,
       classificationInput.issuedAt,
-      config,
+      config[0],
     );
   }
 
   private classify(
     severityData: SeverityDto[],
     issuedAt: Date,
-    config: AlertClassificationConfig,
+    config: AlertConfigResponseDto,
   ): ClassificationResult {
     const timeIntervalGroups = this.groupByTimeInterval(severityData);
     const alertClassPerTimeInterval = new Map<string, string | null>();
@@ -147,8 +146,8 @@ export class AlertClassificationService {
 
   private computeAlertClassForTimeInterval(
     group: TimeIntervalGroup,
-    sortedSeverityLevels: ClassLevel[],
-    sortedProbabilityLevels: ClassLevel[],
+    sortedSeverityLevels: ClassLevelDto[],
+    sortedProbabilityLevels: ClassLevelDto[],
     alertClassMatrix: Record<string, Record<string, string | null>>,
   ): string | null {
     const severityClass = this.classifyValue(
@@ -179,7 +178,7 @@ export class AlertClassificationService {
 
   private classifyValue(
     value: number,
-    sortedLevelsDescending: ClassLevel[],
+    sortedLevelsDescending: ClassLevelDto[],
   ): string | null {
     for (const level of sortedLevelsDescending) {
       if (value >= level.threshold) {
@@ -245,7 +244,7 @@ export class AlertClassificationService {
     alertClass: string | null,
     reachesPeakAlertClassAt: Date,
     issuedAt: Date,
-    config: AlertClassificationConfig,
+    config: AlertConfigResponseDto,
   ): boolean {
     if (!config.triggerAlertClass || alertClass === null) {
       return false;
@@ -299,8 +298,8 @@ export class AlertClassificationService {
   }
 
   private sortByThresholdDescending(
-    levels: readonly ClassLevel[],
-  ): ClassLevel[] {
+    levels: readonly ClassLevelDto[],
+  ): ClassLevelDto[] {
     return [...levels].sort((a, b) => b.threshold - a.threshold);
   }
 }

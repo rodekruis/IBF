@@ -202,8 +202,7 @@ Before requesting review, ensure:
 ```bash
 cd data
 uv run pytest pipelines/test/unit/                  # unit tests on individual functions
-uv run pytest pipelines/test/integration_infra/     # infra integration tests (scenarios, bypasses hazard-logic in forecast.py)
-uv run pytest pipelines/test/integration_infra_api/ # tests integration between pipeline (infra) and API
+uv run pytest pipelines/test/integration_infra/     # test pipeline-infra + integration with API (using scenarios, bypasses hazard-logic in forecast.py)
 uv run pytest pipelines/test/integration_pipeline/  # FUTURE: tests full pipeline, including hazard-logic based on mock-input-forecast-data
 uv run python python-knip.py                        # linting (ruff, deptry, vulture)
 ```

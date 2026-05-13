@@ -1,8 +1,8 @@
+import { AlertConfigsService } from '@api-service/src/alert-configs/alert-configs.service';
+import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
 import { AlertClassificationInput } from '@api-service/src/events/alert-classification.service';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
-import { AlertClassificationConfigsService } from '@api-service/src/events/alert-classification-configs.service';
-import { AlertClassificationConfig } from '@api-service/src/events/interfaces/alert-classification-config';
 import {
   buildAlert,
   buildSeverityData,
@@ -20,8 +20,8 @@ function toClassificationInput(
   };
 }
 
-// These unit-tests should use specific fixed test config, and not the general mock-config, which will eventually be replaced by a configurable database table.
-const testFloodConfig: AlertClassificationConfig = {
+const testFloodConfig: Partial<AlertConfigResponseDto> = {
+  hazardType: HazardType.floods,
   severityClassLevels: [
     { label: 'low', threshold: 100 },
     { label: 'med', threshold: 200 },
@@ -42,7 +42,8 @@ const testFloodConfig: AlertClassificationConfig = {
   triggerLeadTimeDuration: 'P7D',
 };
 
-const testDroughtConfig: AlertClassificationConfig = {
+const testDroughtConfig: Partial<AlertConfigResponseDto> = {
+  hazardType: HazardType.drought,
   severityClassLevels: [{ label: 'warning', threshold: 0.2 }],
   probabilityClassLevels: [{ label: 'any', threshold: 0 }],
   alertClassMatrix: {
@@ -53,36 +54,42 @@ const testDroughtConfig: AlertClassificationConfig = {
 
 describe('AlertClassificationService', () => {
   let service: AlertClassificationService;
-  let alertClassificationConfigsService: AlertClassificationConfigsService;
+  let alertConfigsService: AlertConfigsService;
 
   beforeEach(() => {
-    const configsByHazardType: Record<string, AlertClassificationConfig> = {
-      [HazardType.floods]: testFloodConfig,
-      [HazardType.drought]: testDroughtConfig,
+    const configsByHazardType: Record<string, AlertConfigResponseDto> = {
+      [HazardType.floods]: testFloodConfig as AlertConfigResponseDto,
+      [HazardType.drought]: testDroughtConfig as AlertConfigResponseDto,
     };
 
-    alertClassificationConfigsService = new AlertClassificationConfigsService();
+    alertConfigsService = new AlertConfigsService(null as never);
+
     jest
-      .spyOn(alertClassificationConfigsService, 'getByHazardType')
-      .mockImplementation(
-        (hazardType: string): AlertClassificationConfig | undefined =>
-          configsByHazardType[hazardType],
+      .spyOn(alertConfigsService, 'getAlertConfigs')
+      .mockImplementation(({ hazardType }) =>
+        Promise.resolve(
+          hazardType && configsByHazardType[hazardType]
+            ? [configsByHazardType[hazardType]]
+            : [],
+        ),
       );
-    service = new AlertClassificationService(alertClassificationConfigsService);
+    service = new AlertClassificationService(alertConfigsService);
   });
 
   describe('classifyAlert', () => {
-    it('should throw when no config exists for hazard type', () => {
+    it('should throw when no config exists for hazard type', async () => {
       const alert = buildAlert();
-      expect(() =>
+      await expect(
         service.classifyAlert(
           toClassificationInput(alert, 'unknown' as HazardType),
         ),
-      ).toThrow("No classification config found for hazard type 'unknown'");
+      ).rejects.toThrow(
+        "No classification config found for hazard type 'unknown'",
+      );
     });
 
     describe('floods', () => {
-      it('should return null alertClass when severity is below all thresholds', () => {
+      it('should return null alertClass when severity is below all thresholds', async () => {
         const alert = buildAlert({
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
@@ -92,11 +99,13 @@ describe('AlertClassificationService', () => {
           }),
         });
 
-        const result = service.classifyAlert(toClassificationInput(alert));
+        const result = await service.classifyAlert(
+          toClassificationInput(alert),
+        );
         expect(result.alertClass).toBeNull();
       });
 
-      it('should return low alertClass for low severity with high probability', () => {
+      it('should return low alertClass for low severity with high probability', async () => {
         const alert = buildAlert({
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
@@ -106,11 +115,13 @@ describe('AlertClassificationService', () => {
           }),
         });
 
-        const result = service.classifyAlert(toClassificationInput(alert));
+        const result = await service.classifyAlert(
+          toClassificationInput(alert),
+        );
         expect(result.alertClass).toBe('low');
       });
 
-      it('should return high alertClass for high severity with high probability', () => {
+      it('should return high alertClass for high severity with high probability', async () => {
         // median=500 → severity 'high' (≥400), all runs exceed 400 → prob=1.0 → 'high'
         // matrix[high][high] = 'high'
         const alert = buildAlert({
@@ -122,11 +133,13 @@ describe('AlertClassificationService', () => {
           }),
         });
 
-        const result = service.classifyAlert(toClassificationInput(alert));
+        const result = await service.classifyAlert(
+          toClassificationInput(alert),
+        );
         expect(result.alertClass).toBe('high');
       });
 
-      it('should pick highest alertClass across multiple lead times and compute correct dates', () => {
+      it('should pick highest alertClass across multiple lead times and compute correct dates', async () => {
         // LT1: Apr 1–2, median=120, all runs=150 → 'low'
         // LT2: Apr 3–5, median=500, all runs=500 → 'high'
         const alert = buildAlert({
@@ -146,7 +159,9 @@ describe('AlertClassificationService', () => {
           ],
         });
 
-        const result = service.classifyAlert(toClassificationInput(alert));
+        const result = await service.classifyAlert(
+          toClassificationInput(alert),
+        );
         expect(result.alertClass).toBe('high');
         expect(result.startAt).toEqual(new Date('2026-04-01T00:00:00Z'));
         expect(result.endAt).toEqual(new Date('2026-04-05T00:00:00Z'));
@@ -156,7 +171,7 @@ describe('AlertClassificationService', () => {
       });
 
       describe('trigger', () => {
-        it('should be true when high alertClass peaks within lead time duration', () => {
+        it('should be true when high alertClass peaks within lead time duration', async () => {
           const alert = buildAlert({
             severity: buildSeverityData({
               start: new Date('2026-04-01T00:00:00Z'),
@@ -166,7 +181,7 @@ describe('AlertClassificationService', () => {
             }),
           });
 
-          const result = service.classifyAlert(
+          const result = await service.classifyAlert(
             toClassificationInput(
               alert,
               HazardType.floods,
@@ -176,7 +191,7 @@ describe('AlertClassificationService', () => {
           expect(result.trigger).toBe(true);
         });
 
-        it('should be false when peak exceeds trigger lead time duration', () => {
+        it('should be false when peak exceeds trigger lead time duration', async () => {
           const alert = buildAlert({
             severity: buildSeverityData({
               start: new Date('2026-04-10T00:00:00Z'),
@@ -186,7 +201,7 @@ describe('AlertClassificationService', () => {
             }),
           });
 
-          const result = service.classifyAlert(
+          const result = await service.classifyAlert(
             toClassificationInput(
               alert,
               HazardType.floods,
@@ -197,7 +212,7 @@ describe('AlertClassificationService', () => {
           expect(result.trigger).toBe(false);
         });
 
-        it('should be false when alertClass is below trigger threshold', () => {
+        it('should be false when alertClass is below trigger threshold', async () => {
           const alert = buildAlert({
             severity: buildSeverityData({
               start: new Date('2026-04-01T00:00:00Z'),
@@ -207,7 +222,9 @@ describe('AlertClassificationService', () => {
             }),
           });
 
-          const result = service.classifyAlert(toClassificationInput(alert));
+          const result = await service.classifyAlert(
+            toClassificationInput(alert),
+          );
           expect(result.alertClass).toBe('low');
           expect(result.trigger).toBe(false);
         });
@@ -215,7 +232,7 @@ describe('AlertClassificationService', () => {
     });
 
     describe('drought', () => {
-      it('should classify as warning with no trigger', () => {
+      it('should classify as warning with no trigger', async () => {
         const alert = buildAlert({
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
@@ -225,22 +242,12 @@ describe('AlertClassificationService', () => {
           }),
         });
 
-        const result = service.classifyAlert(
+        const result = await service.classifyAlert(
           toClassificationInput(alert, HazardType.drought),
         );
         expect(result.alertClass).toBe('warning');
         expect(result.trigger).toBe(false);
       });
-    });
-
-    it('should classify using default config lookup for known hazard type', () => {
-      const defaultService = new AlertClassificationService(
-        new AlertClassificationConfigsService(),
-      );
-      const result = defaultService.classifyAlert(
-        toClassificationInput(buildAlert()),
-      );
-      expect(result.alertClass).not.toBeNull();
     });
   });
 });

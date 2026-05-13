@@ -18,12 +18,12 @@ describe('GET /events', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.initialState, __filename);
+    await resetDB(SeedScript.test, __filename);
     accessToken = await getAccessToken();
   });
 
   async function seedEventsForReadTests(): Promise<void> {
-    await resetDB(SeedScript.initialState, __filename);
+    await resetDB(SeedScript.test, __filename);
 
     const closedAlert = buildAlert({
       eventName: 'KEN_floods_station-closed',

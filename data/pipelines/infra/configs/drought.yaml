@@ -3,11 +3,11 @@ hazard_type: drought
 run_targets:
   DEBUG:
     countries:
-      - iso_3_code: ETH
+      - iso_3_code: KEN
         target_admin_level: 2
         data_sources:
           - source: climate_regions_ibf_api
-          - source: admin_area_seed_repo
+          - source: admin_area_ibf_api
           - source: population_seed_repo
           - source: todo_ecmwf_forecast
         output:

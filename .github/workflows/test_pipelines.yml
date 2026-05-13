@@ -14,6 +14,7 @@ on:
     paths:
       - 'data/**'
       - '!data/data_management/**'
+      - 'services/api-service/**'
       - '.github/workflows/test_pipelines.yml'
 
 # This is needed for qlty to authenticate with OIDC
@@ -43,6 +44,7 @@ jobs:
           paths: |
             - data/**
             - '!data/data_management/**'
+            - services/api-service/**
             - .github/workflows/test_pipelines.yml
 
   test:
@@ -51,9 +53,6 @@ jobs:
     if: ${{ needs.path-filter.outputs.should_skip != 'true' }}
     strategy:
       fail-fast: false
-      matrix:
-        test_node:
-          - pipelines/test/
     defaults:
       run:
         working-directory: data
@@ -92,6 +91,22 @@ jobs:
       - name: Prepare environment
         run: cp .env.example .env
 
+      - name: Prepare API service
+        working-directory: .
+        run: cp ./services/.env.example services/.env
+
+      - name: Start API service
+        working-directory: .
+        run: npm run start:services:ci
+
+      - name: Reset database to test script
+        run: |
+          curl --fail --silent --show-error \
+            --request POST \
+            --url "http://localhost:4000/api/instance/reset?script=test&resetIdentifier=ci-pipeline-test" \
+            --header "Content-Type: application/json" \
+            --data '{"secret":"fill_in_secret"}'
+
       - name: Run test shard
         env:
           BLOB_ACCOUNT_KEY: ${{ secrets.PIPELINES_BLOB_ACCOUNT_KEY }}
@@ -99,7 +114,11 @@ jobs:
           CDSAPI_KEY: ${{ secrets.PIPELINES_CDSAPI_KEY }}
           PYTHONFAULTHANDLER: '1'
           PYTHONUNBUFFERED: '1'
-        run: uv run -m pytest "${{ matrix.test_node }}" --ignore=pipelines/test/integration_infra_api
+        run: uv run -m pytest pipelines/test/
+
+      - name: Docker logs
+        if: failure()
+        uses: jwalton/gh-docker-logs@v2
 
   # This job is here to make the above jobs "required" in GitHub.
   # This is a workaround for this issue: https://github.com/orgs/community/discussions/44490
