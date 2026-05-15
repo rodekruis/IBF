@@ -94,10 +94,7 @@
   {
     "method": "get",
     "path": "/api/admin-areas",
-    "params": [
-      "countryCodeIso3",
-      "adminLevel"
-    ]
+    "params": []
   },
   {
     "method": "post",
@@ -110,8 +107,7 @@
     "path": "/api/admin-areas/{placeCode}",
     "params": [
       "placeCode"
-    ],
-    "returnType": "AdminAreaResponseDto"
+    ]
   },
   {
     "method": "patch",

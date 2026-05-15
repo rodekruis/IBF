@@ -14,7 +14,11 @@ describe('AdminAreasService', () => {
         {
           provide: AdminAreasRepository,
           useValue: {
-            getAdminAreas: jest.fn().mockResolvedValue([]),
+            getAdminAreas: jest.fn().mockResolvedValue({
+              type: 'FeatureCollection',
+              features: [],
+              numberReturned: 0,
+            }),
           },
         },
       ],
@@ -25,22 +29,15 @@ describe('AdminAreasService', () => {
   });
 
   describe('getAdminAreas', () => {
-    it('should query by countryCodeIso3 and adminLevel', async () => {
-      await service.getAdminAreas({ countryCodeIso3: 'ETH', adminLevel: 1 });
+    it('should forward all query params to the repository', async () => {
+      const query = {
+        filter: "countryCodeIso3='ETH' AND adminLevel=1",
+        limit: '500',
+      };
 
-      expect(repository.getAdminAreas).toHaveBeenCalledWith({
-        countryCodeIso3: 'ETH',
-        adminLevel: 1,
-      });
-    });
+      await service.getAdminAreas(query);
 
-    it('should query by countryCodeIso3 only when adminLevel is omitted', async () => {
-      await service.getAdminAreas({ countryCodeIso3: 'ETH' });
-
-      expect(repository.getAdminAreas).toHaveBeenCalledWith({
-        countryCodeIso3: 'ETH',
-        adminLevel: undefined,
-      });
+      expect(repository.getAdminAreas).toHaveBeenCalledWith(query);
     });
   });
 });

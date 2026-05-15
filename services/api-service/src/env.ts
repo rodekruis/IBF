@@ -62,6 +62,12 @@ export const env = createEnv({
     // Pipeline service account (optional — only when pipeline submission is enabled)
     PIPELINE_API_KEY: z.string().min(32).optional(),
 
+    // pg_featureserv
+    PG_FEATURESERV_URL: z
+      .url()
+      .pipe(z.transform((url) => withoutTrailingSlash(url)))
+      .default('http://pg_featureserv:9000'),
+
     // Third-party: Azure ApplicationInsights
     APPLICATIONINSIGHTS_CONNECTION_STRING: z.string().optional(),
 

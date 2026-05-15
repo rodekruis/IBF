@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import type { Feature, FeatureCollection } from 'geojson';
 
 import { AdminAreasRepository } from '@api-service/src/admin-areas/admin-areas.repository';
 import { AdminAreaCreateDto } from '@api-service/src/admin-areas/dto/admin-area-create.dto';
-import { AdminAreaResponseDto } from '@api-service/src/admin-areas/dto/admin-area-response.dto';
 import { AdminAreaUpdateDto } from '@api-service/src/admin-areas/dto/admin-area-update.dto';
 
 @Injectable()
@@ -11,35 +11,24 @@ export class AdminAreasService {
     private readonly adminAreasRepository: AdminAreasRepository,
   ) {}
 
-  public async getAdminAreas({
-    countryCodeIso3,
-    adminLevel,
-  }: {
-    countryCodeIso3: string;
-    adminLevel?: number;
-  }): Promise<AdminAreaResponseDto[]> {
-    return this.adminAreasRepository.getAdminAreas({
-      countryCodeIso3,
-      adminLevel,
-    });
+  public async getAdminAreas(query: Record<string, string>): Promise<FeatureCollection> {
+    return this.adminAreasRepository.getAdminAreas(query);
   }
 
-  public async getAdminAreaOrThrow(
-    placeCode: string,
-  ): Promise<AdminAreaResponseDto> {
+  public async getAdminAreaOrThrow(placeCode: string): Promise<Feature> {
     return this.adminAreasRepository.getAdminAreaOrThrow(placeCode);
   }
 
   public async createAdminArea(
     adminAreaCreateDto: AdminAreaCreateDto,
-  ): Promise<AdminAreaResponseDto> {
+  ): Promise<Feature> {
     return this.adminAreasRepository.createAdminArea(adminAreaCreateDto);
   }
 
   public async updateAdminAreaOrThrow(
     placeCode: string,
     adminAreaUpdateDto: AdminAreaUpdateDto,
-  ): Promise<AdminAreaResponseDto> {
+  ): Promise<Feature> {
     return this.adminAreasRepository.updateAdminAreaOrThrow(
       placeCode,
       adminAreaUpdateDto,

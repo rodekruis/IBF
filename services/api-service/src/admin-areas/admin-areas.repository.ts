@@ -5,109 +5,57 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import type { Feature, FeatureCollection } from 'geojson';
 
 import { AdminAreaCreateDto } from '@api-service/src/admin-areas/dto/admin-area-create.dto';
-import { AdminAreaResponseDto } from '@api-service/src/admin-areas/dto/admin-area-response.dto';
 import { AdminAreaUpdateDto } from '@api-service/src/admin-areas/dto/admin-area-update.dto';
+import { env } from '@api-service/src/env';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
-// geometry is Unsupported by Prisma ORM; it is fetched/written with targeted
-// raw SQL while all scalar fields continue to use the Prisma client.
-const adminAreaSelect = {
-  id: true,
-  created: true,
-  updated: true,
-  placeCode: true,
-  adminLevel: true,
-  nameEn: true,
-  countryCodeIso3: true,
-  parentPlaceCode: true,
-} as const;
-
-type AdminAreaScalarRow = Prisma.AdminAreaGetPayload<{
-  select: typeof adminAreaSelect;
-}>;
-
-interface AdminAreaRow extends AdminAreaScalarRow {
-  geometry: Record<string, unknown>;
-}
+const ADMIN_AREA_COLLECTION = 'api-service.admin-area';
 
 @Injectable()
 export class AdminAreasRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  private toResponseDto(row: AdminAreaRow): AdminAreaResponseDto {
-    return {
-      id: row.id,
-      created: row.created,
-      updated: row.updated,
-      placeCode: row.placeCode,
-      adminLevel: row.adminLevel,
-      nameEn: row.nameEn,
-      countryCodeIso3: row.countryCodeIso3,
-      parentPlaceCode: row.parentPlaceCode ?? null,
-      geometry: row.geometry,
-    };
-  }
-
-  private async fetchGeometryForRows(
-    placeCodes: string[],
-  ): Promise<Map<string, Record<string, unknown>>> {
-    const geos = await this.prisma.$queryRaw<
-      { placeCode: string; geometry: Record<string, unknown> }[]
-    >`
-      SELECT "placeCode", public.ST_AsGeoJSON(geometry)::jsonb AS geometry
-      FROM "api-service"."admin-area"
-      WHERE "placeCode" = ANY(${placeCodes}::text[])`;
-    return new Map(geos.map((g) => [g.placeCode, g.geometry]));
-  }
-
-  public async getAdminAreas({
-    countryCodeIso3,
-    adminLevel,
-  }: {
-    countryCodeIso3: string;
-    adminLevel?: number;
-  }): Promise<AdminAreaResponseDto[]> {
-    const rows = await this.prisma.adminArea.findMany({
-      where: {
-        countryCodeIso3,
-        ...(adminLevel !== undefined && { adminLevel }),
-      },
-      select: adminAreaSelect,
-      orderBy: { placeCode: 'asc' },
-    });
-    const geometryMap = await this.fetchGeometryForRows(
-      rows.map((r) => r.placeCode),
+  private async fetchFromFeatureServ(
+    params: Record<string, string>,
+  ): Promise<FeatureCollection> {
+    const url = new URL(
+      `/collections/${ADMIN_AREA_COLLECTION}/items.json`,
+      env.PG_FEATURESERV_URL,
     );
-    return rows.map((row) =>
-      this.toResponseDto({
-        ...row,
-        geometry: geometryMap.get(row.placeCode) ?? {},
-      }),
-    );
+    for (const [key, value] of Object.entries(params)) {
+      url.searchParams.set(key, value);
+    }
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(
+        `pg_featureserv request failed: ${response.status} ${response.statusText}`,
+      );
+    }
+    return response.json() as Promise<FeatureCollection>;
   }
 
-  public async getAdminAreaOrThrow(
-    placeCode: string,
-  ): Promise<AdminAreaResponseDto> {
-    const row = await this.prisma.adminArea.findUnique({
-      where: { placeCode },
-      select: adminAreaSelect,
+  public async getAdminAreas(
+    query: Record<string, string>,
+  ): Promise<FeatureCollection> {
+    return this.fetchFromFeatureServ(query);
+  }
+
+  public async getAdminAreaOrThrow(placeCode: string): Promise<Feature> {
+    const collection = await this.fetchFromFeatureServ({
+      filter: `placeCode='${placeCode}'`,
     });
-    if (!row) {
+    if (collection.features.length === 0) {
       throw new NotFoundException(`Admin area '${placeCode}' not found`);
     }
-    const geometryMap = await this.fetchGeometryForRows([placeCode]);
-    return this.toResponseDto({
-      ...row,
-      geometry: geometryMap.get(placeCode) ?? {},
-    });
+    return collection.features[0];
   }
 
   public async createAdminArea(
     adminAreaCreateDto: AdminAreaCreateDto,
-  ): Promise<AdminAreaResponseDto> {
+  ): Promise<Feature> {
     const geojson = JSON.stringify(adminAreaCreateDto.geometry);
     try {
       await this.prisma.$transaction(async (tx) => {
@@ -146,7 +94,7 @@ export class AdminAreasRepository {
   public async updateAdminAreaOrThrow(
     placeCode: string,
     adminAreaUpdateDto: AdminAreaUpdateDto,
-  ): Promise<AdminAreaResponseDto> {
+  ): Promise<Feature> {
     try {
       await this.prisma.$transaction(async (tx) => {
         await tx.adminArea.update({
