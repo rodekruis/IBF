@@ -53,9 +53,25 @@ export class AdminAreasRepository {
     return collection.features[0];
   }
 
+  private validateMultiPolygonGeometry(
+    geometry: Record<string, unknown>,
+  ): void {
+    if (geometry.type !== 'MultiPolygon') {
+      throw new BadRequestException(
+        `Invalid geometry: expected type 'MultiPolygon', got '${String(geometry.type)}'`,
+      );
+    }
+    if (!Array.isArray(geometry.coordinates)) {
+      throw new BadRequestException(
+        'Invalid geometry: coordinates must be an array',
+      );
+    }
+  }
+
   public async createAdminArea(
     adminAreaCreateDto: AdminAreaCreateDto,
   ): Promise<Feature> {
+    this.validateMultiPolygonGeometry(adminAreaCreateDto.geometry);
     const geojson = JSON.stringify(adminAreaCreateDto.geometry);
     try {
       await this.prisma.$transaction(async (tx) => {
@@ -85,6 +101,11 @@ export class AdminAreasRepository {
             `Country '${adminAreaCreateDto.countryCodeIso3}' does not exist`,
           );
         }
+        if (error.code === 'P2010') {
+          throw new BadRequestException(
+            'Invalid geometry: could not parse GeoJSON',
+          );
+        }
       }
       throw error;
     }
@@ -95,6 +116,9 @@ export class AdminAreasRepository {
     placeCode: string,
     adminAreaUpdateDto: AdminAreaUpdateDto,
   ): Promise<Feature> {
+    if (adminAreaUpdateDto.geometry !== undefined) {
+      this.validateMultiPolygonGeometry(adminAreaUpdateDto.geometry);
+    }
     try {
       await this.prisma.$transaction(async (tx) => {
         await tx.adminArea.update({
@@ -122,6 +146,11 @@ export class AdminAreasRepository {
         if (error.code === 'P2003') {
           throw new BadRequestException(
             `Country '${adminAreaUpdateDto.countryCodeIso3}' does not exist`,
+          );
+        }
+        if (error.code === 'P2010') {
+          throw new BadRequestException(
+            'Invalid geometry: could not parse GeoJSON',
           );
         }
       }
