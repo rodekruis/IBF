@@ -9,10 +9,10 @@ import rasterio
 import rasterio.crs
 from PIL import Image
 from rasterio.io import MemoryFile
-
-Image.MAX_IMAGE_PIXELS = None
 from rasterio.transform import array_bounds
 from rasterio.warp import calculate_default_transform, reproject, Resampling
+
+Image.MAX_IMAGE_PIXELS = None
 
 CRS = rasterio.crs.CRS
 
