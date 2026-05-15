@@ -1,6 +1,6 @@
 -- Enable PostGIS so geometry types and functions are available.
 -- IF NOT EXISTS makes this safe to run against databases where PostGIS is already installed.
-CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS postgis SCHEMA public;
 
 -- Change admin-area.geometry from JSONB to a real PostGIS geometry column so
 -- that pg_featureserv can discover the table.
