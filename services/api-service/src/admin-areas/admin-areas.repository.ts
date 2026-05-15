@@ -43,7 +43,7 @@ export class AdminAreasRepository {
     return this.fetchFromFeatureServ(query);
   }
 
-  public async getAdminAreaOrThrow(placeCode: string): Promise<Feature> {
+  private async getAdminAreaOrThrow(placeCode: string): Promise<Feature> {
     const collection = await this.fetchFromFeatureServ({
       filter: `placeCode='${placeCode}'`,
     });

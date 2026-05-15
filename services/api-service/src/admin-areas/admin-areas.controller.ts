@@ -43,23 +43,6 @@ export class AdminAreasController {
     return this.adminAreasService.getAdminAreas(query);
   }
 
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
-  @Get(':placeCode')
-  @ApiOperation({ summary: 'Get admin area by place code' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'GeoJSON Feature for the requested admin area',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Admin area not found',
-  })
-  public async getAdminArea(
-    @Param('placeCode') placeCode: string,
-  ): Promise<Feature> {
-    return this.adminAreasService.getAdminAreaOrThrow(placeCode);
-  }
-
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
   @ApiOperation({ summary: 'Create an admin area' })

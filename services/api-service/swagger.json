@@ -103,13 +103,6 @@
     "returnType": "AdminAreaResponseDto"
   },
   {
-    "method": "get",
-    "path": "/api/admin-areas/{placeCode}",
-    "params": [
-      "placeCode"
-    ]
-  },
-  {
     "method": "patch",
     "path": "/api/admin-areas/{placeCode}",
     "params": [
