@@ -11,7 +11,9 @@ export class AdminAreasService {
     private readonly adminAreasRepository: AdminAreasRepository,
   ) {}
 
-  public async getAdminAreas(query: Record<string, string>): Promise<FeatureCollection> {
+  public async getAdminAreas(
+    query: Record<string, string>,
+  ): Promise<FeatureCollection> {
     return this.adminAreasRepository.getAdminAreas(query);
   }
 
