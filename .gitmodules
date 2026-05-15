@@ -1,0 +1,4 @@
+[submodule "portal/nrw-standalone/src/go-web-app"]
+	path = portal/nrw-standalone/src/go-web-app
+	url = https://github.com/rodekruis/go-web-app.git
+	branch = ibf-main

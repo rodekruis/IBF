@@ -7,7 +7,7 @@ Each admin level is computed independently.
 Since there can be some errors in the admin boundaries, especially at lower levels,
 if you summed the computed population of child areas, and passed those values up to the parent,
 you might inflate errors.
-Since this does not sum up then, there is a chance the sum of child admin area do not exactly
+Since this does not sum up them, there is a chance the sum of child admin area do not exactly
 match the parent admin area population.
 """
 

@@ -7,7 +7,7 @@ A system that forecasts Early Warning alerts, disseminates notifications, and vi
 
 - [data pipelines](./pipelines) producing forecasts
 - [back-end services](./services) ingesting and processing forecast data via API and publishing this - alongside seed data - via APIs
-- to e.g. a React front-end, which is in a [separate repo](https://github.com/rodekruis/go-web-app/tree/ibf-main).
+- to e.g. a React front-end, which is used in the [NRW standalone front end](/portal/nrw-standalone/README.md) in this repo, but development for it is done in a [separate repo](https://github.com/rodekruis/go-web-app/tree/ibf-main).
 
 Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 
@@ -23,13 +23,13 @@ Read our [documentation](https://github.com/rodekruis/IBF-documentation).
 2. Start services
 
 - Setup env variables `cp services/.env.example services/.env`
-- Start services with `npm run start:services:detach`.
+- Start services with `npm run start:services:detach`. To stop them, run `npm run stop:services`.
 - Open
   - [http://localhost:4000/docs](http://localhost:4000/docs) to access the `api-service` documentation
   - [http://localhost:9000/](http://localhost:9000/) for pg_featureserv (GIS feature service)
   - [http://localhost:7800/](http://localhost:7800/) for pg_tileserv (vector tile service)
 
-3. Start portal > see [separate repo](https://github.com/rodekruis/go-web-app/tree/ibf-main)
+3. Start portal > see the [NRW standalone front end](/portal/nrw-standalone/README.md) or [the Go repo](https://github.com/rodekruis/go-web-app/tree/ibf-main)
 
 4. Start pipelines
 
