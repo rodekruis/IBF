@@ -20,6 +20,11 @@ BASE_RASTER_DIR = "raster-data/mock-events"
 GREYSCALE_OUTPUT_DIR = Path(BASE_REPO_DIR) / f"{BASE_RASTER_DIR}/greyscale/"
 RGBA_OUTPUT_DIR = Path(BASE_REPO_DIR) / f"{BASE_RASTER_DIR}/rgba/"
 
+# Design settings:
+COLOR_STEPS = 6
+COLOR_START = (255, 200, 0, 0)
+COLOR_END = (255, 0, 100, 255)
+
 if __name__ == "__main__":
     GREYSCALE_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     RGBA_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -53,8 +58,9 @@ if __name__ == "__main__":
                 print(f"Converting to color: {tif_path.stem}...")
                 color_image_data = colorize_image_array(
                     img_data,
-                    [255, 200, 0, 0],
-                    [255, 0, 100, 255],
+                    COLOR_START,
+                    COLOR_END,
+                    COLOR_STEPS,
                     log_scale=True,
                 )
                 color_img = Image.fromarray(color_image_data, mode="RGBA")
