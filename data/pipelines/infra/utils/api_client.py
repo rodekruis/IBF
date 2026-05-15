@@ -51,19 +51,21 @@ class ApiClient:
 
     def get_admin_areas(
         self, country_code_iso_3: str, admin_level: int | None = None
-    ) -> list:
+    ) -> dict:
         url = f"{self._base_url}{ADMIN_AREAS_PATH}"
-        params: dict = {"countryCodeIso3": country_code_iso_3}
+        cql_filter = f"countryCodeIso3='{country_code_iso_3}'"
         if admin_level is not None:
-            params["adminLevel"] = admin_level
+            cql_filter += f" AND adminLevel={admin_level}"
+        params = {"filter": cql_filter}
         logger.info(f"Download '{url}?{urlencode(params)}'")
         response = self._session.get(url, params=params, timeout=30)
         if response.status_code == 200:
-            admin_areas = response.json()
-            if not admin_areas:
+            feature_collection = response.json()
+            features = feature_collection.get("features", [])
+            if not features:
                 logger.warning(f"Downloaded 0 admin areas for {country_code_iso_3}")
-            return admin_areas
+            return feature_collection
         logger.error(
             f"Failed to download admin areas for {country_code_iso_3}: {response.status_code} {response.text}"
         )
-        return []
+        return {}
