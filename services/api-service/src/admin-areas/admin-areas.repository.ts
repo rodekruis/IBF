@@ -11,6 +11,8 @@ import { AdminAreaResponseDto } from '@api-service/src/admin-areas/dto/admin-are
 import { AdminAreaUpdateDto } from '@api-service/src/admin-areas/dto/admin-area-update.dto';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
+// geometry is Unsupported by Prisma ORM; it is fetched/written with targeted
+// raw SQL while all scalar fields continue to use the Prisma client.
 const adminAreaSelect = {
   id: true,
   created: true,
@@ -20,12 +22,15 @@ const adminAreaSelect = {
   nameEn: true,
   countryCodeIso3: true,
   parentPlaceCode: true,
-  geometry: true,
 } as const;
 
-type AdminAreaRow = Prisma.AdminAreaGetPayload<{
+type AdminAreaScalarRow = Prisma.AdminAreaGetPayload<{
   select: typeof adminAreaSelect;
 }>;
+
+interface AdminAreaRow extends AdminAreaScalarRow {
+  geometry: Record<string, unknown>;
+}
 
 @Injectable()
 export class AdminAreasRepository {
@@ -41,8 +46,20 @@ export class AdminAreasRepository {
       nameEn: row.nameEn,
       countryCodeIso3: row.countryCodeIso3,
       parentPlaceCode: row.parentPlaceCode ?? null,
-      geometry: row.geometry as Record<string, unknown>,
+      geometry: row.geometry,
     };
+  }
+
+  private async fetchGeometryForRows(
+    placeCodes: string[],
+  ): Promise<Map<string, Record<string, unknown>>> {
+    const geos = await this.prisma.$queryRaw<
+      { placeCode: string; geometry: Record<string, unknown> }[]
+    >`
+      SELECT "placeCode", public.ST_AsGeoJSON(geometry)::jsonb AS geometry
+      FROM "api-service"."admin-area"
+      WHERE "placeCode" = ANY(${placeCodes}::text[])`;
+    return new Map(geos.map((g) => [g.placeCode, g.geometry]));
   }
 
   public async getAdminAreas({
@@ -60,7 +77,15 @@ export class AdminAreasRepository {
       select: adminAreaSelect,
       orderBy: { placeCode: 'asc' },
     });
-    return rows.map((row) => this.toResponseDto(row));
+    const geometryMap = await this.fetchGeometryForRows(
+      rows.map((r) => r.placeCode),
+    );
+    return rows.map((row) =>
+      this.toResponseDto({
+        ...row,
+        geometry: geometryMap.get(row.placeCode) ?? {},
+      }),
+    );
   }
 
   public async getAdminAreaOrThrow(
@@ -73,25 +98,33 @@ export class AdminAreasRepository {
     if (!row) {
       throw new NotFoundException(`Admin area '${placeCode}' not found`);
     }
-    return this.toResponseDto(row);
+    const geometryMap = await this.fetchGeometryForRows([placeCode]);
+    return this.toResponseDto({
+      ...row,
+      geometry: geometryMap.get(placeCode) ?? {},
+    });
   }
 
   public async createAdminArea(
     adminAreaCreateDto: AdminAreaCreateDto,
   ): Promise<AdminAreaResponseDto> {
+    const geojson = JSON.stringify(adminAreaCreateDto.geometry);
     try {
-      const row = await this.prisma.adminArea.create({
-        data: {
-          placeCode: adminAreaCreateDto.placeCode,
-          adminLevel: adminAreaCreateDto.adminLevel,
-          nameEn: adminAreaCreateDto.nameEn,
-          countryCodeIso3: adminAreaCreateDto.countryCodeIso3,
-          parentPlaceCode: adminAreaCreateDto.parentPlaceCode ?? null,
-          geometry: adminAreaCreateDto.geometry as Prisma.InputJsonValue,
-        },
-        select: adminAreaSelect,
+      await this.prisma.$transaction(async (tx) => {
+        await tx.adminArea.create({
+          data: {
+            placeCode: adminAreaCreateDto.placeCode,
+            adminLevel: adminAreaCreateDto.adminLevel,
+            nameEn: adminAreaCreateDto.nameEn,
+            countryCodeIso3: adminAreaCreateDto.countryCodeIso3,
+            parentPlaceCode: adminAreaCreateDto.parentPlaceCode ?? null,
+          },
+        });
+        await tx.$executeRaw`
+          UPDATE "api-service"."admin-area"
+          SET geometry = public.ST_Force2D(public.ST_GeomFromGeoJSON(${geojson}))
+          WHERE "placeCode" = ${adminAreaCreateDto.placeCode}`;
       });
-      return this.toResponseDto(row);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
@@ -107,6 +140,7 @@ export class AdminAreasRepository {
       }
       throw error;
     }
+    return this.getAdminAreaOrThrow(adminAreaCreateDto.placeCode);
   }
 
   public async updateAdminAreaOrThrow(
@@ -114,20 +148,24 @@ export class AdminAreasRepository {
     adminAreaUpdateDto: AdminAreaUpdateDto,
   ): Promise<AdminAreaResponseDto> {
     try {
-      const row = await this.prisma.adminArea.update({
-        where: { placeCode },
-        data: {
-          adminLevel: adminAreaUpdateDto.adminLevel,
-          nameEn: adminAreaUpdateDto.nameEn,
-          countryCodeIso3: adminAreaUpdateDto.countryCodeIso3,
-          parentPlaceCode: adminAreaUpdateDto.parentPlaceCode,
-          ...(adminAreaUpdateDto.geometry !== undefined && {
-            geometry: adminAreaUpdateDto.geometry as Prisma.InputJsonValue,
-          }),
-        },
-        select: adminAreaSelect,
+      await this.prisma.$transaction(async (tx) => {
+        await tx.adminArea.update({
+          where: { placeCode },
+          data: {
+            adminLevel: adminAreaUpdateDto.adminLevel,
+            nameEn: adminAreaUpdateDto.nameEn,
+            countryCodeIso3: adminAreaUpdateDto.countryCodeIso3,
+            parentPlaceCode: adminAreaUpdateDto.parentPlaceCode,
+          },
+        });
+        if (adminAreaUpdateDto.geometry !== undefined) {
+          const geojson = JSON.stringify(adminAreaUpdateDto.geometry);
+          await tx.$executeRaw`
+            UPDATE "api-service"."admin-area"
+            SET geometry = public.ST_Force2D(public.ST_GeomFromGeoJSON(${geojson}))
+            WHERE "placeCode" = ${placeCode}`;
+        }
       });
-      return this.toResponseDto(row);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
@@ -141,6 +179,7 @@ export class AdminAreasRepository {
       }
       throw error;
     }
+    return this.getAdminAreaOrThrow(placeCode);
   }
 
   public async deleteAdminAreaOrThrow(placeCode: string): Promise<void> {
