@@ -99,16 +99,14 @@
   {
     "method": "post",
     "path": "/api/admin-areas",
-    "params": [],
-    "returnType": "AdminAreaResponseDto"
+    "params": []
   },
   {
     "method": "patch",
     "path": "/api/admin-areas/{placeCode}",
     "params": [
       "placeCode"
-    ],
-    "returnType": "AdminAreaResponseDto"
+    ]
   },
   {
     "method": "delete",

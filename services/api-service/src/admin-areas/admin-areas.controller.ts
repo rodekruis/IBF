@@ -16,7 +16,6 @@ import type { Feature, FeatureCollection } from 'geojson';
 
 import { AdminAreasService } from '@api-service/src/admin-areas/admin-areas.service';
 import { AdminAreaCreateDto } from '@api-service/src/admin-areas/dto/admin-area-create.dto';
-import { AdminAreaResponseDto } from '@api-service/src/admin-areas/dto/admin-area-response.dto';
 import { AdminAreaUpdateDto } from '@api-service/src/admin-areas/dto/admin-area-update.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
@@ -49,7 +48,14 @@ export class AdminAreasController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Admin area created successfully',
-    type: AdminAreaResponseDto,
+    schema: {
+      type: 'object',
+      properties: {
+        type: { type: 'string', example: 'Feature' },
+        geometry: { type: 'object' },
+        properties: { type: 'object' },
+      },
+    },
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
@@ -71,7 +77,14 @@ export class AdminAreasController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Admin area updated successfully',
-    type: AdminAreaResponseDto,
+    schema: {
+      type: 'object',
+      properties: {
+        type: { type: 'string', example: 'Feature' },
+        geometry: { type: 'object' },
+        properties: { type: 'object' },
+      },
+    },
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
