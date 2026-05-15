@@ -18,7 +18,7 @@ interface EventAlertHistorySeverity {
 
 export interface EventAlertHistoryRecord {
   readonly issuedAt: Date;
-  readonly hazardType: string;
+  readonly hazardType: HazardType;
   readonly severityData: EventAlertHistorySeverity[];
 }
 
@@ -124,7 +124,7 @@ export class EventsRepository {
 
     return alerts.map((alert) => ({
       issuedAt: alert.issuedAt,
-      hazardType: alert.hazardType,
+      hazardType: alert.hazardType as HazardType,
       severityData: alert.severity.map((severity) => ({
         timeInterval: severity.timeInterval as { start: string; end: string },
         ensembleMemberType: severity.ensembleMemberType as EnsembleMemberType,

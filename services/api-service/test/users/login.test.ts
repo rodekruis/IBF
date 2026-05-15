@@ -13,7 +13,7 @@ describe('/ Users', () => {
     };
 
     beforeAll(async () => {
-      await resetDB(SeedScript.initialState, __filename);
+      await resetDB(SeedScript.test, __filename);
     });
 
     it('should log-in with valid credentials', async () => {

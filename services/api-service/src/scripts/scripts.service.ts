@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { SEED_CONFIGURATION_SETTINGS } from '@api-service/src/scripts/seed-configuration.const';
 import { SeedConfigurationDto } from '@api-service/src/scripts/seed-configuration.dto';
@@ -6,6 +6,8 @@ import { SeedInit } from '@api-service/src/scripts/seed-init';
 
 @Injectable()
 export class ScriptsService {
+  private readonly logger = new Logger(ScriptsService.name);
+
   public constructor(private readonly seedInit: SeedInit) {}
 
   public async loadSeedScenario({
@@ -15,12 +17,12 @@ export class ScriptsService {
     seedScript: string;
     resetIdentifier?: string;
   }) {
-    console.log(
+    this.logger.log(
       `DB reset - Seed: ${seedScript} - Identifier: ${resetIdentifier}`,
     );
     const seedConfig = this.getSeedConfigByNameOrThrow(seedScript);
 
-    await this.seedInit.run();
+    await this.seedInit.run({ countryCodes: seedConfig.countryCodes });
     if (seedConfig.seedAdminOnly) {
       return;
     }

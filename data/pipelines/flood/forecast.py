@@ -28,7 +28,7 @@ def calculate_flood_forecasts(
         DataSource.GLOFAS_STATIONS_SEED_REPO, dict
     )
     target_admin_areas = data_provider.get_data(
-        DataSource.ADMIN_AREA_SEED_REPO, AdminAreasSet
+        DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
     )
     # Make sure your data loaded
     if not stations or not target_admin_areas:
@@ -77,9 +77,11 @@ def calculate_flood_forecasts(
 
         # TODO: determine place codes by looking at the admin areas in a catchment area.
         # For now, just get the first two place codes from the admin areas for debug.
-        debug_alert_place_codes: list[str] = list(
-            target_admin_areas.admin_areas.keys()
-        )[:2]
+        debug_alert_place_codes: list[str] = [
+            pcode
+            for pcode, area in target_admin_areas.admin_areas.items()
+            if area.properties.admin_level == target_admin_level
+        ][:2]
 
         # TODO: actually, do not call add_admin_area_exposure per place_code, but just once (per layer)
         for place_code in debug_alert_place_codes:
