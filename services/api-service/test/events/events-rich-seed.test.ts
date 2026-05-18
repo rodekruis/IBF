@@ -16,115 +16,115 @@ import {
   resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
-// Tana River county hierarchy (station: TANA HOLA G5305)
-// Admin 3 (wards) → Admin 2 (sub-counties) → Admin 1 (county) → Admin 0 (country)
-const TANA_RIVER_ADMIN_AREAS: ExposureAdminAreaDto[] = [
-  // Admin level 3 — wards along the Tana River
+// Awash River zone hierarchy (station: AWASH G5305)
+// Admin 3 (woredas) → Admin 2 (zones) → Admin 1 (region) → Admin 0 (country)
+const AWASH_RIVER_ADMIN_AREAS: ExposureAdminAreaDto[] = [
+  // Admin level 3 — woredas along the Awash River
   {
-    placeCode: 'KE0040180088',
+    placeCode: 'ET0040180088',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 12400,
   },
   {
-    placeCode: 'KE0040180089',
+    placeCode: 'ET0040180089',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 8300,
   },
   {
-    placeCode: 'KE0040180091',
+    placeCode: 'ET0040180091',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 5600,
   },
   {
-    placeCode: 'KE0040190092',
+    placeCode: 'ET0040190092',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 15200,
   },
   {
-    placeCode: 'KE0040190093',
+    placeCode: 'ET0040190093',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 9100,
   },
   {
-    placeCode: 'KE0040190094',
+    placeCode: 'ET0040190094',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 3400,
   },
   {
-    placeCode: 'KE0040200096',
+    placeCode: 'ET0040200096',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 7800,
   },
-  // Admin level 2 — sub-counties
+  // Admin level 2 — zones
   {
-    placeCode: 'KE004018',
+    placeCode: 'ET004018',
     adminLevel: 2,
     layer: Layer.populationExposed,
     value: 26300,
   },
   {
-    placeCode: 'KE004019',
+    placeCode: 'ET004019',
     adminLevel: 2,
     layer: Layer.populationExposed,
     value: 27700,
   },
   {
-    placeCode: 'KE004020',
+    placeCode: 'ET004020',
     adminLevel: 2,
     layer: Layer.populationExposed,
     value: 7800,
   },
-  // Admin level 1 — Tana River county
+  // Admin level 1 — Afar region
   {
-    placeCode: 'KE004',
+    placeCode: 'ET004',
     adminLevel: 1,
     layer: Layer.populationExposed,
     value: 61800,
   },
-  // Admin level 0 — Kenya
+  // Admin level 0 — Ethiopia
   {
-    placeCode: 'KE',
+    placeCode: 'ET',
     adminLevel: 0,
     layer: Layer.populationExposed,
     value: 61800,
   },
 ];
 
-// Busia county — second event with smaller footprint
-const BUSIA_ADMIN_AREAS: ExposureAdminAreaDto[] = [
+// Gambella region — second event with smaller footprint
+const GAMBELLA_ADMIN_AREAS: ExposureAdminAreaDto[] = [
   {
-    placeCode: 'KE0402301149',
+    placeCode: 'ET0402301149',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 4200,
   },
   {
-    placeCode: 'KE0402301150',
+    placeCode: 'ET0402301150',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 3100,
   },
   {
-    placeCode: 'KE040230',
+    placeCode: 'ET040230',
     adminLevel: 2,
     layer: Layer.populationExposed,
     value: 7300,
   },
   {
-    placeCode: 'KE040',
+    placeCode: 'ET040',
     adminLevel: 1,
     layer: Layer.populationExposed,
     value: 7300,
   },
   {
-    placeCode: 'KE',
+    placeCode: 'ET',
     adminLevel: 0,
     layer: Layer.populationExposed,
     value: 7300,
@@ -143,10 +143,10 @@ describe('GET /events - rich seed data for demo/debugging', () => {
     const now = new Date();
     const daysFromNow = (days: number): Date => addDays(now, days);
 
-    // Event 1: Tana River — high severity, triggered
-    const tanaRiverAlert = buildAlert({
-      eventName: 'KEN_floods_tana-hola',
-      centroid: { latitude: -1.5, longitude: 40.05 },
+    // Event 1: Awash River — high severity, triggered
+    const awashRiverAlert = buildAlert({
+      eventName: 'ETH_floods_awash-metehara',
+      centroid: { latitude: 8.9, longitude: 39.9 },
       severity: buildSeverityData({
         start: daysFromNow(-1),
         end: daysFromNow(7),
@@ -154,21 +154,21 @@ describe('GET /events - rich seed data for demo/debugging', () => {
         runValues: [480, 520, 510, 490, 530],
       }),
       exposure: {
-        adminAreas: TANA_RIVER_ADMIN_AREAS,
+        adminAreas: AWASH_RIVER_ADMIN_AREAS,
         rasters: [
           {
             layer: Layer.alertExtent,
-            value: 'base64-tana-river',
-            extent: { xmin: 39.5, ymin: -2.0, xmax: 40.5, ymax: -1.0 },
+            value: 'base64-awash-river',
+            extent: { xmin: 39.0, ymin: 8.0, xmax: 40.5, ymax: 10.0 },
           },
         ],
       },
     });
 
-    // Event 2: Busia — medium severity, not triggered
-    const busiaAlert = buildAlert({
-      eventName: 'KEN_floods_nzoia-ruambwa',
-      centroid: { latitude: 0.124, longitude: 34.09 },
+    // Event 2: Gambella — medium severity, not triggered
+    const gambellaAlert = buildAlert({
+      eventName: 'ETH_floods_baro-gambella',
+      centroid: { latitude: 8.25, longitude: 34.59 },
       severity: buildSeverityData({
         start: daysFromNow(1),
         end: daysFromNow(8),
@@ -176,19 +176,19 @@ describe('GET /events - rich seed data for demo/debugging', () => {
         runValues: [150, 140, 160],
       }),
       exposure: {
-        adminAreas: BUSIA_ADMIN_AREAS,
+        adminAreas: GAMBELLA_ADMIN_AREAS,
         rasters: [
           {
             layer: Layer.alertExtent,
-            value: 'base64-busia',
-            extent: { xmin: 33.5, ymin: -0.5, xmax: 34.5, ymax: 0.5 },
+            value: 'base64-gambella',
+            extent: { xmin: 33.5, ymin: 7.5, xmax: 35.0, ymax: 9.0 },
           },
         ],
       },
     });
 
     // Submit as a single forecast
-    const forecast = buildForecast([tanaRiverAlert, busiaAlert], {
+    const forecast = buildForecast([awashRiverAlert, gambellaAlert], {
       issuedAt: daysFromNow(-2),
     });
 
