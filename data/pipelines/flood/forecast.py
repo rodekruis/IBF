@@ -198,8 +198,16 @@ def calculate_flood_forecasts(
                 severity_value=severity.median_discharge,
             )
 
-        # TODO-infra: all pcode at once instead of looping
-        for place_code in place_codes_exposed:
+        # TODO: determine place codes by looking at the admin areas in a catchment area.
+        # For now, just get the first two place codes from the admin areas for debug.
+        debug_alert_place_codes: list[str] = [
+            pcode
+            for pcode, area in target_admin_areas.admin_areas.items()
+            if area.properties.admin_level == target_admin_level
+        ][:2]
+
+        # TODO: actually, do not call add_admin_area_exposure per place_code, but just once (per layer)
+        for place_code in debug_alert_place_codes:
             data_submitter.add_admin_area_exposure(
                 event_name=event_name,
                 place_code=place_code,
