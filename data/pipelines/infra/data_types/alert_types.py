@@ -3,7 +3,23 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import StrEnum
+
+# Shared enums are generated from services/api-service/src/alerts/enum/shared-enums.ts.
+# Re-exported here so existing `from ...alert_types import HazardType` imports
+# keep working.
+from pipelines.infra.data_types.enums import (
+    EnsembleMemberType,
+    ForecastSource,
+    HazardType,
+    Layer,
+)
+
+__all__ = [
+    "EnsembleMemberType",
+    "ForecastSource",
+    "HazardType",
+    "Layer",
+]
 
 # Pyright cannot enforce recursive JSON types due to dict invariance.
 # This alias documents the intent: values are JSON-serializable primitives, lists, or dicts.
@@ -28,31 +44,11 @@ class TimeInterval:
         return {"start": self.start, "end": self.end}
 
 
-class EnsembleMemberType(StrEnum):
-    MEDIAN = "median"
-    RUN = "run"
-
-
-class HazardType(StrEnum):
-    FLOODS = "floods"
-    DROUGHT = "drought"
-
-
 # This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
 # Keep in line with definition in alerts.service.ts
 EVENT_NAME_PATTERN = re.compile(
     r"^[A-Z]{3}_(" + "|".join(re.escape(h.value) for h in HazardType) + r")_.+$"
 )
-
-
-class ForecastSource(StrEnum):
-    GLOFAS = "glofas"
-    ECMWF = "ECMWF"
-
-
-class Layer(StrEnum):
-    ALERT_EXTENT = "alert_extent"
-    POPULATION_EXPOSED = "population_exposed"
 
 
 @dataclass
