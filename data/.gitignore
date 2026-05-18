@@ -56,3 +56,6 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+# temp pipeline source data
+pipelines/flood/bronze
