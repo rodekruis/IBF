@@ -217,6 +217,7 @@ export class SeedInit {
         SELECT tablename
         FROM pg_tables
         WHERE schemaname = 'api-service'
+          AND tablename != '_prisma_migrations'
       `,
     );
 
