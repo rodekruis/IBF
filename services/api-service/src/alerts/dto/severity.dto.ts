@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import { IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
 
 import { TimeIntervalDto } from '@api-service/src/alerts/dto/time-interval.dto';
-import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
+import { EnsembleMemberType } from '@api-service/src/alerts/enum/shared-enums';
 
 export class SeverityDto {
   @ApiProperty({ type: TimeIntervalDto })

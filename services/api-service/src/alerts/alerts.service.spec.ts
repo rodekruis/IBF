@@ -5,10 +5,12 @@ import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
-import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
-import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
-import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
-import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import {
+  EnsembleMemberType,
+  ForecastSource,
+  HazardType,
+  Layer,
+} from '@api-service/src/alerts/enum/shared-enums';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
 
 function createMockValidForecast(

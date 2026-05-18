@@ -8,8 +8,10 @@ import { ExposureAdminAreaReadDto } from '@api-service/src/alerts/dto/exposure-a
 import { ExposureGeoFeatureReadDto } from '@api-service/src/alerts/dto/exposure-geo-feature-read.dto';
 import { ExposureRasterReadDto } from '@api-service/src/alerts/dto/exposure-raster-read.dto';
 import { SeverityReadDto } from '@api-service/src/alerts/dto/severity-read.dto';
-import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
-import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
+import {
+  ForecastSource,
+  HazardType,
+} from '@api-service/src/alerts/enum/shared-enums';
 import { ForecastMetadata } from '@api-service/src/events/alert-to-event.service';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 

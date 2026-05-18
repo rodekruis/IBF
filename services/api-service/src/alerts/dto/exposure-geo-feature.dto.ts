@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsObject, IsString } from 'class-validator';
 
-import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import { Layer } from '@api-service/src/alerts/enum/shared-enums';
 
 export class ExposureGeoFeatureDto {
   @ApiProperty({ example: 'station-001' })

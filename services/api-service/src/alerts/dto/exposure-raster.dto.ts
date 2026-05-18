@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import { IsEnum, IsString, ValidateNested } from 'class-validator';
 
 import { RasterExtentDto } from '@api-service/src/alerts/dto/raster-extent.dto';
-import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import { Layer } from '@api-service/src/alerts/enum/shared-enums';
 
 export class ExposureRasterDto {
   @ApiProperty({ enum: Layer, example: Layer.alertExtent })

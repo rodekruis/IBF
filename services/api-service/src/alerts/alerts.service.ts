@@ -4,9 +4,11 @@ import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { AlertReadDto } from '@api-service/src/alerts/dto/alert-read.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
-import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
-import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
-import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import {
+  EnsembleMemberType,
+  HazardType,
+  Layer,
+} from '@api-service/src/alerts/enum/shared-enums';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
 
 // This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts

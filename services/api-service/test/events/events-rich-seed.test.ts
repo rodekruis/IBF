@@ -2,7 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 import { addDays } from 'date-fns';
 
 import { ExposureAdminAreaDto } from '@api-service/src/alerts/dto/exposure-admin-area.dto';
-import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import { Layer } from '@api-service/src/alerts/enum/shared-enums';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   buildAlert,

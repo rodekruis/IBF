@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
+import { EnsembleMemberType } from '@api-service/src/alerts/enum/shared-enums';
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
