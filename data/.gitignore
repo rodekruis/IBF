@@ -27,6 +27,7 @@ npm-debug.log*
 
 # Data
 data/
+pipelines/flood/bronze
 pipelines/output/
 *.nc
 
