@@ -31,7 +31,7 @@ def determine_spatial_extent(
         for place_code in mapped_place_codes
         if place_code in admin_areas.admin_areas
     ]
-    
+
     clipped_flood_extent_raster_path = clip_flood_extent_to_admin_areas(
         place_codes=place_codes,
         admin_areas=admin_areas,
@@ -40,6 +40,7 @@ def determine_spatial_extent(
     )
 
     return clipped_flood_extent_raster_path, place_codes
+
 
 def compute_population_exposed(
     population_raster_path: str,
@@ -85,9 +86,10 @@ def compute_population_exposed(
     output_profile.update(
         dtype=rasterio.float32,
         count=1,
-        nodata=0.0,
     )
-    with rasterio.open(population_exposed_raster_output_path, "w", **output_profile) as dst:
+    with rasterio.open(
+        population_exposed_raster_output_path, "w", **output_profile
+    ) as dst:
         dst.write(population_in_flood_extent.astype(np.float32), 1)
 
     return population_exposed_raster_output_path
@@ -112,16 +114,15 @@ def aggregate_population_exposed(
 
     if not geometries:
         return population
-    
+
     with rasterio.open(population_raster_path) as pop_src:
-        nodata_value = -9999
-        pop_nodata = pop_src.nodata if pop_src.nodata is not None else nodata_value
+        pop_nodata = pop_src.nodata
 
     stats = zonal_stats(
         geometries,
         population_raster_path,
         stats=["sum"],
-        all_touched=True,
+        all_touched=False,
         nodata=pop_nodata,
     )
 
