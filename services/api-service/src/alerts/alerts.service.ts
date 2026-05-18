@@ -178,6 +178,12 @@ export class AlertsService {
     const layers = new Map<string, number>();
     for (const entry of adminAreas) {
       layers.set(entry.layer, (layers.get(entry.layer) ?? 0) + 1);
+
+      if (entry.value < 0) {
+        errors.push(
+          `Alert '${alert.eventName}' admin-area '${entry.placeCode}': layer '${entry.layer}' must be non-negative, got ${entry.value}`,
+        );
+      }
     }
 
     const counts = [...layers.values()];
