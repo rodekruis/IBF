@@ -16,7 +16,7 @@ from pipelines.infra.data_types.data_config_types import (
     DataSourceConfig,
 )
 from pipelines.infra.data_types.loaded_data_types import (
-    ClimateRegion,
+    AlertConfig,
     DataType,
     LoadedDataSource,
 )
@@ -28,9 +28,6 @@ from shared.download_helpers import download_json_source, download_object
 logger = logging.getLogger(__name__)
 
 SEED_REPO_POPULATION_DATA_PNG_PATH = "/raster-data/population/data-png/"
-# Note: this is getting glofas stations now. In the future, we most likely will be fetching
-# climate areas, catchments or something like that.
-# When we switch to that, the glofas station flow can be removed.
 SEED_REPO_GLOFAS_STATIONS_PATH = "/country-data/glofas-loc/"
 
 
@@ -57,12 +54,16 @@ def load_data_container(
                 data_config.country_code_iso_3,
                 country_config.target_admin_level,
             )
-        case DataSource.POPULATION_SEED_REPO:
-            return _load_seed_repo_population_data(data_config, container)
+        case DataSource.ALERT_CONFIGS_IBF_API:
+            return _load_ibf_api_alert_configs(
+                container,
+                api_client,
+                data_config,
+            )
         case DataSource.GLOFAS_STATIONS_SEED_REPO:
             return _load_seed_repo_glofas_stations(data_config, container)
-        case DataSource.CLIMATE_REGIONS_IBF_API:
-            return _load_ibf_api_climate_regions(data_config, container)
+        case DataSource.POPULATION_SEED_REPO:
+            return _load_seed_repo_population_data(data_config, container)
         case DataSource.TODO_ECMWF_FORECAST:
             return _load_ecmwf_forecast(data_config, container)
         case DataSource.TODO_GLOFAS_DISCHARGE:
@@ -90,12 +91,24 @@ def _load_ibf_api_admin_areas(
     container.data = AdminAreasSet.from_api(data)
 
 
+def _load_ibf_api_alert_configs(
+    container: LoadedDataSource,
+    api_client: ApiClient,
+    data_config: DataSourceConfig,
+):
+    container.data_type = DataType.ALERT_CONFIG_LIST
+    data = api_client.get_alert_configs(
+        data_config.country_code_iso_3,
+        data_config.hazard_type.value,
+    )
+    container.data = [AlertConfig.from_api(item) for item in data]
+
+
 def _load_seed_repo_glofas_stations(
     config: DataSourceConfig, container: LoadedDataSource
 ):
     container.data_type = DataType.LOCATION_POINT_DICT
 
-    # https://github.com/rodekruis/IBF-seed-data/blob/main/country-data/glofas-loc/glofas_stations_AGO.csv
     filename = f"glofas_stations_{config.country_code_iso_3}.csv"
     csv_uri = _get_seed_repo_uri() + SEED_REPO_GLOFAS_STATIONS_PATH + filename
     csv_data = download_object(csv_uri)
@@ -105,8 +118,6 @@ def _load_seed_repo_glofas_stations(
         )
         raise ValueError(container.error)
 
-    # Convert the CSV into a dict of location points keyed by id
-    # Note: the data also has a station code, but this is the same value as the id
     reader = csv.DictReader(io.StringIO(csv_data.decode("utf-8")))
     stations: dict[str, LocationPoint] = {}
     for row in reader:
@@ -170,17 +181,6 @@ def _load_glofas_discharge(config: DataSourceConfig, container: LoadedDataSource
     container.data = _load_dummy_data(config)
     if container.data is None:
         container.error = f"No dummy data found for source '{config.source}'"
-
-
-def _load_ibf_api_climate_regions(
-    config: DataSourceConfig, container: LoadedDataSource
-):
-    container.data_type = DataType.CLIMATE_REGION_LIST
-    raw = _load_dummy_data(config)
-    if not isinstance(raw, list):
-        container.error = f"No dummy data found for source '{config.source}'"
-        return
-    container.data = [ClimateRegion.from_raw(item) for item in raw]
 
 
 def _load_dummy_data(source_config: DataSourceConfig) -> object:

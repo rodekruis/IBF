@@ -25,6 +25,7 @@ from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.alert_types import Centroid, EnsembleMemberType, Layer
 from pipelines.infra.data_types.data_config_types import DataSource
+from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.data_types.location_point import LocationPoint
 
 GLOFAS_MIN_RP_THRESHOLDS = (
@@ -39,16 +40,20 @@ def calculate_flood_forecasts(
     target_admin_level: int,
 ) -> None:
     ### Step 1 - Load data from the data provider ###
+    alert_configs: list[AlertConfig] = data_provider.get_data(
+        DataSource.ALERT_CONFIGS_IBF_API, list
+    )
     stations: dict[str, LocationPoint] = data_provider.get_data(
         DataSource.GLOFAS_STATIONS_SEED_REPO, dict
     )
     target_admin_areas = data_provider.get_data(
         DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
     )  # TODO AB#41454:  load population using data_provider. This is already available, but as png. For now a tiff is used, which is loaded directly below.
-    # Make sure your data loaded
-    if not stations or not target_admin_areas:
+
+    # TODO: add more data-loaded checks as more sources move to data_provider class
+    if not alert_configs or not stations or not target_admin_areas:
         data_submitter.add_error(
-            f"Missing input data: stations={bool(stations)}, admin_areas={bool(target_admin_areas)}"
+            f"Missing input data: alert_configs={bool(alert_configs)}, stations={bool(stations)}, admin_areas={bool(target_admin_areas)}"
         )
         return
 
@@ -66,7 +71,6 @@ def calculate_flood_forecasts(
     # ).data
 
     # TODO: (placeholder data) replace with data provider calls above once data sources are wired
-    # all below data in zip and share in PR
     # glofas netcdf files
     glofas_netcdf_paths: list[str] = [
         "./pipelines/flood/bronze/glofas/dis_00_2026040800.nc"
@@ -111,8 +115,14 @@ def calculate_flood_forecasts(
         country_sliced_path = slice_netcdf_to_bounds(netcdf_path, country_bounds)
         country_sliced_netcdf_paths.append(country_sliced_path)
 
-    ### Step 3 - Loop through spatial extent (stations and extract discharge) ###
-    for station_code, station in stations.items():
+    ### Step 3 - Loop through alert configs (spatial extents / stations) ###
+    for config in alert_configs:
+        station_code = config.spatial_extent_name
+        station = stations.get(station_code)
+        if station is None:
+            logging.warning(f"No station location found for '{station_code}', skipping")
+            continue
+
         discharges = extract_discharge_glofas_station(
             station_code=station_code,
             station=station,
@@ -168,9 +178,7 @@ def calculate_flood_forecasts(
         )
 
         ### Step 9 - Create alert and submit severity/exposure payloads ###
-        if station.name.lower() == "na":
-            station.name = station_code
-        event_name = f"{country}_floods_{station.name}"
+        event_name = f"{country}_floods_{station.name if station.name.lower() != 'na' else station_code}"
         data_submitter.create_alert(
             event_name=event_name,
             centroid=Centroid(
@@ -199,10 +207,8 @@ def calculate_flood_forecasts(
             )
 
         # TODO: determine place codes by looking at the admin areas in a catchment area.
-        alert_place_codes: list[str] = list(target_admin_areas.admin_areas.keys())
-
         # TODO-infra: actually, do not call add_admin_area_exposure per place_code, but just once (per layer)
-        for place_code in alert_place_codes:
+        for place_code in config.spatial_extent_place_codes:
             data_submitter.add_admin_area_exposure(
                 event_name=event_name,
                 place_code=place_code,

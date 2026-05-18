@@ -6,6 +6,7 @@ run_targets:
       - iso_3_code: ETH
         target_admin_level: 3
         data_sources:
+          - source: alert_configs_ibf_api
           - source: glofas_stations_seed_repo
           - source: admin_area_ibf_api
           - source: population_seed_repo

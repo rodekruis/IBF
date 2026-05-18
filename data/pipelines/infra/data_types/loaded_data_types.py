@@ -7,27 +7,19 @@ from pipelines.infra.data_types.data_config_types import DataSource
 
 
 @dataclass
-class ClimateRegion:
-    id: str
-    name: str
-    seasons: list[str]
-    place_codes: list[str]
+class AlertConfig:
+    spatial_extent_name: str
+    spatial_extent_place_codes: list[str]
+    temporal_extents: list[dict[str, list]]
 
     @staticmethod
-    def from_raw(raw: dict[str, object]) -> ClimateRegion:
-        raw_seasons = raw.get("seasons")
-        raw_place_codes = raw.get("place_codes")
-        return ClimateRegion(
-            id=str(raw["id"]),
-            name=str(raw["name"]),
-            seasons=(
-                [str(s) for s in raw_seasons] if isinstance(raw_seasons, list) else []
-            ),
-            place_codes=(
-                [str(p) for p in raw_place_codes]
-                if isinstance(raw_place_codes, list)
-                else []
-            ),
+    def from_api(raw: dict) -> AlertConfig:
+        return AlertConfig(
+            spatial_extent_name=str(raw["spatialExtentName"]),
+            spatial_extent_place_codes=[
+                str(p) for p in raw.get("spatialExtentPlaceCodes", [])
+            ],
+            temporal_extents=raw.get("temporalExtents", []),
         )
 
 
@@ -45,10 +37,10 @@ class DataType(StrEnum):
     # an AdminAreasSet object
     ADMIN_AREA_SET = "admin_area_set"
 
+    ALERT_CONFIG_LIST = "alert_config_list"
+
     # a dict of LocationPoints keyed by id
     LOCATION_POINT_DICT = "location_point_dict"
-
-    CLIMATE_REGION_LIST = "climate_region_list"
 
     # Generic types
     STRING = "string"
