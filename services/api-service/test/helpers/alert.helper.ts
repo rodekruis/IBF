@@ -44,7 +44,7 @@ export function buildAlert(
   const now = new Date();
   const tomorrow = addDays(now, 1);
   return {
-    eventName: 'KEN_floods_test-station',
+    eventName: 'ETH_floods_test-station',
     centroid: { latitude: 0.35, longitude: 32.6 },
     severity: [
       {
@@ -69,7 +69,7 @@ export function buildAlert(
     exposure: {
       adminAreas: [
         {
-          placeCode: 'KEN_01',
+          placeCode: 'ETH_01',
           adminLevel: 3,
           layer: Layer.populationExposed,
           value: 1000,

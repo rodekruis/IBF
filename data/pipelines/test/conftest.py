@@ -3,7 +3,6 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.alert_types import (
     Centroid,
@@ -12,8 +11,9 @@ from pipelines.infra.data_types.alert_types import (
     HazardType,
     Layer,
 )
+from pipelines.infra.utils.api_client import ApiClient
 
-EVENT_NAME = "KEN_floods_station-test"
+EVENT_NAME = "ETH_floods_station-test"
 
 
 def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:

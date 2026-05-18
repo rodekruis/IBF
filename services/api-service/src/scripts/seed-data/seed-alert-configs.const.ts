@@ -3,10 +3,10 @@
 // This should be expanded soon for the pipeline to get meaningful data from this
 export const SEED_ALERT_CONFIGS = [
   {
-    countryCodeIso3: 'KEN',
+    countryCodeIso3: 'ETH',
     hazardType: 'floods',
     spatialExtentName: 'G5142',
-    spatialExtentPlaceCodes: ['KE030'],
+    spatialExtentPlaceCodes: ['ET04'],
     // TODO: re-evaluate lead-time-spectrum values
     temporalExtents: [
       {
@@ -60,10 +60,10 @@ export const SEED_ALERT_CONFIGS = [
     triggerLeadTimeDuration: null,
   },
   {
-    countryCodeIso3: 'KEN',
+    countryCodeIso3: 'ETH',
     hazardType: 'drought',
     spatialExtentName: 'test-region',
-    spatialExtentPlaceCodes: ['KE030'],
+    spatialExtentPlaceCodes: ['ET04'],
     temporalExtents: [
       { MAM: ['Mar', 'Apr', 'May'] },
       { OND: ['Oct', 'Nov', 'Dec'] },

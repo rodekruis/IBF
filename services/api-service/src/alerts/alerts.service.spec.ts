@@ -28,7 +28,7 @@ function createMockValidAlert(
   overrides: Partial<AlertCreateDto> = {},
 ): AlertCreateDto {
   return {
-    eventName: 'KEN_floods_station-A',
+    eventName: 'ETH_floods_station-A',
     centroid: { latitude: 0.35, longitude: 32.6 },
     severity: [
       {
@@ -53,7 +53,7 @@ function createMockValidAlert(
     exposure: {
       adminAreas: [
         {
-          placeCode: 'KEN_01_001',
+          placeCode: 'ETH_01_001',
           adminLevel: 3,
           layer: Layer.populationExposed,
           value: 1,
@@ -147,7 +147,7 @@ describe('AlertsService', () => {
     it('should include alert name in centroid error message', async () => {
       const alerts = [
         createMockValidAlert({
-          eventName: 'KEN_floods_bad-centroid',
+          eventName: 'ETH_floods_bad-centroid',
           centroid: { latitude: 100, longitude: 200 },
         }),
       ];
@@ -160,7 +160,7 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('KEN_floods_bad-centroid'),
+          expect.stringContaining('ETH_floods_bad-centroid'),
           expect.stringContaining('latitude'),
         ]),
       );

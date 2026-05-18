@@ -26,19 +26,19 @@ describe('AdminAreasService', () => {
 
   describe('getAdminAreas', () => {
     it('should query by countryCodeIso3 and adminLevel', async () => {
-      await service.getAdminAreas({ countryCodeIso3: 'KEN', adminLevel: 1 });
+      await service.getAdminAreas({ countryCodeIso3: 'ETH', adminLevel: 1 });
 
       expect(repository.getAdminAreas).toHaveBeenCalledWith({
-        countryCodeIso3: 'KEN',
+        countryCodeIso3: 'ETH',
         adminLevel: 1,
       });
     });
 
     it('should query by countryCodeIso3 only when adminLevel is omitted', async () => {
-      await service.getAdminAreas({ countryCodeIso3: 'KEN' });
+      await service.getAdminAreas({ countryCodeIso3: 'ETH' });
 
       expect(repository.getAdminAreas).toHaveBeenCalledWith({
-        countryCodeIso3: 'KEN',
+        countryCodeIso3: 'ETH',
         adminLevel: undefined,
       });
     });

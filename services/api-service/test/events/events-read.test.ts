@@ -26,7 +26,7 @@ describe('GET /events', () => {
     await resetDB(SeedScript.test, __filename);
 
     const closedAlert = buildAlert({
-      eventName: 'KEN_floods_station-closed',
+      eventName: 'ETH_floods_station-closed',
       severity: buildSeverityData({
         start: new Date('2026-03-27T00:00:00Z'),
         end: new Date('2026-03-28T00:00:00Z'),
@@ -36,7 +36,7 @@ describe('GET /events', () => {
     });
 
     const ongoingAlert = buildAlert({
-      eventName: 'KEN_floods_station-ongoing',
+      eventName: 'ETH_floods_station-ongoing',
       severity: buildSeverityData({
         start: new Date('2026-03-25T00:00:00Z'),
         end: new Date('2026-03-26T00:00:00Z'),
@@ -46,7 +46,7 @@ describe('GET /events', () => {
     });
 
     const expiredAlert = buildAlert({
-      eventName: 'KEN_floods_station-expired',
+      eventName: 'ETH_floods_station-expired',
       severity: buildSeverityData({
         start: new Date('2026-03-24T00:00:00Z'),
         end: new Date('2026-03-25T00:00:00Z'),
@@ -92,9 +92,9 @@ describe('GET /events', () => {
           .map((event: { eventName: string }) => event.eventName)
           .sort(),
       ).toEqual([
-        'KEN_floods_station-closed',
-        'KEN_floods_station-expired',
-        'KEN_floods_station-ongoing',
+        'ETH_floods_station-closed',
+        'ETH_floods_station-expired',
+        'ETH_floods_station-ongoing',
       ]);
     });
 
@@ -107,7 +107,7 @@ describe('GET /events', () => {
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body).toHaveLength(1);
       expect(response.body[0]).toMatchObject({
-        eventName: 'KEN_floods_station-ongoing',
+        eventName: 'ETH_floods_station-ongoing',
         eventLabel: 'station-ongoing',
         isOngoing: true,
       });
@@ -125,15 +125,15 @@ describe('GET /events', () => {
         response.body
           .map((event: { eventName: string }) => event.eventName)
           .sort(),
-      ).toEqual(['KEN_floods_station-closed', 'KEN_floods_station-expired']);
+      ).toEqual(['ETH_floods_station-closed', 'ETH_floods_station-expired']);
 
       const closedEvent = response.body.find(
         (event: { eventName: string }) =>
-          event.eventName === 'KEN_floods_station-closed',
+          event.eventName === 'ETH_floods_station-closed',
       );
       const expiredEvent = response.body.find(
         (event: { eventName: string }) =>
-          event.eventName === 'KEN_floods_station-expired',
+          event.eventName === 'ETH_floods_station-expired',
       );
 
       expect(closedEvent.isOngoing).toBe(false);
