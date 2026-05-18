@@ -12,7 +12,7 @@ from pipelines.infra.data_types.alert_types import (
 )
 from pipelines.infra.data_types.data_config_types import OutputMode
 
-EVENT_NAME = "KEN_floods_station-test"
+EVENT_NAME = "ETH_floods_station-test"
 
 
 def test_incomplete_alert_is_rejected(tmp_output: Path):

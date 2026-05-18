@@ -10,7 +10,7 @@ from pipelines.infra.data_types.data_config_types import OutputMode
 
 
 def test_drought_scenario_no_alert(pipeline):
-    """Run the drought pipeline for KEN with the no-alert scenario. A zero exit
+    """Run the drought pipeline for ETH with the no-alert scenario. A zero exit
     code implies the API accepted the forecast, which—given server-side
     validation—implicitly asserts correct structure."""
     result = pipeline.run_pipeline(
@@ -26,7 +26,7 @@ def test_drought_scenario_no_alert(pipeline):
 
 
 def test_drought_scenario_alert(pipeline):
-    """Run the drought pipeline for KEN with the alert scenario. A zero exit
+    """Run the drought pipeline for ETH with the alert scenario. A zero exit
     code implies the API accepted the alert, which—given server-side
     validation—implicitly asserts correct alert structure."""
     result = pipeline.run_pipeline(
