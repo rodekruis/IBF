@@ -4,21 +4,22 @@ Data structure for holding admin area data
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
 class AdminAreaProperties:
     """
     The code and name (in English) of an admin area, its admin level, its country code,
-    and the code of its immediate parent. Adm0 has no parent; Adm4's parent is its Adm3 area.
+    and a dict of all parent place codes keyed by admin level.
+    Adm0 has no parents; Adm3 would have parents at levels 0, 1, and 2.
     """
 
     pcode: str
     name: str
     admin_level: int
     country_code: str
-    parent_pcode: str | None = None
+    parent_pcodes: dict[int, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -34,7 +35,7 @@ class AdminArea:
 
 @dataclass
 class AdminAreasSet:
-    # Admin areas are keyed on admin area code, spanning all levels 0..target_admin_level
+    # Admin areas are keyed on admin area code, at the target admin level only
     admin_areas: dict[str, AdminArea]
 
     def __bool__(self) -> bool:
@@ -47,6 +48,13 @@ class AdminAreasSet:
         for feature in feature_collection.get("features", []):
             props = feature.get("properties", {})
             geom = feature.get("geometry") or {}
+            attributes = props.get("attributes") or {}
+
+            parent_pcodes: dict[int, str] = {}
+            for key, value in attributes.items():
+                if key.startswith("ADM") and key.endswith("_PCODE") and value:
+                    level = int(key[3:-6])
+                    parent_pcodes[level] = value
 
             pcode = props.get("placeCode", "")
             admin_areas[pcode] = AdminArea(
@@ -55,7 +63,7 @@ class AdminAreasSet:
                     name=props.get("nameEn", ""),
                     admin_level=props.get("adminLevel", 0),
                     country_code=props.get("countryCodeIso3", ""),
-                    parent_pcode=props.get("parentPlaceCode") or None,
+                    parent_pcodes=parent_pcodes,
                 ),
                 geometry_type=geom.get("type", ""),
                 coordinates=geom.get("coordinates", []),

@@ -168,7 +168,7 @@ model AdminArea {
   nameEn            String
   countryCodeIso3   String
   country           Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
-  parentPlaceCode   String? // soft FK to admin-area.placeCode
+  attributes        Json? // all parent place codes, e.g. { "ADM0_PCODE": "KEN", "ADM1_PCODE": "KE001" }
   geometry          Unsupported("geometry(MultiPolygon, 4326)")?
 
   @@index([countryCodeIso3])

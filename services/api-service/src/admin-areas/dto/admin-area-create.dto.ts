@@ -18,10 +18,13 @@ export class AdminAreaCreateDto {
   @IsString()
   public readonly countryCodeIso3: string;
 
-  @ApiPropertyOptional({ example: 'KE', nullable: true })
+  @ApiPropertyOptional({
+    example: { ADM0_PCODE: 'KEN' },
+    nullable: true,
+  })
   @IsOptional()
-  @IsString()
-  public readonly parentPlaceCode?: string | null;
+  @IsObject()
+  public readonly attributes?: Record<string, string> | null;
 
   @ApiProperty({ example: { type: 'Feature', geometry: {}, properties: {} } })
   @IsObject()

@@ -170,6 +170,11 @@ class DataSubmitter:
         return list(self._alerts.values())
 
     def send_all(self, output_mode: OutputMode, output_path: str) -> list[str]:
+        if self.errors:
+            for err in self.errors.values():
+                logger.error(f"Pipeline error: '{err}'")
+            return list(self.errors.values())
+
         integrity_errors = self._check_integrity()
         if integrity_errors:
             for err in integrity_errors:
