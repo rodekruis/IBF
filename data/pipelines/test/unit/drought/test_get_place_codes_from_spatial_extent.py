@@ -1,4 +1,3 @@
-import pytest
 from pipelines.drought.forecast import _get_place_codes_from_spatial_extent
 from pipelines.infra.data_types.admin_area_types import (
     AdminArea,
