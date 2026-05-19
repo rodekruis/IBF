@@ -86,6 +86,16 @@ describe('/ Alert Configs', () => {
     it('should return empty array for country with no configs of given type', async () => {
       const response = await getServer()
         .get('/alert-configs')
+        .query({ countryCodeIso3: 'ETH', hazardType: HazardType.drought })
+        .set('Cookie', [accessToken]);
+
+      expect(response.status).toBe(HttpStatus.OK);
+      expect(response.body).toEqual([]);
+    });
+
+    it('should reject invalid hazard type query parameter', async () => {
+      const response = await getServer()
+        .get('/alert-configs')
         .query({ countryCodeIso3: 'ETH', hazardType: 'typhoon' })
         .set('Cookie', [accessToken]);
 

@@ -1,5 +1,5 @@
 export enum GeoFeatureType {
   point = 'Point',
-  line = 'Line',
+  lineString = 'LineString',
   polygon = 'Polygon',
 }

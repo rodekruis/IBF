@@ -48,7 +48,7 @@ export class AlertConfigCreateDto {
   })
   @IsArray()
   @IsObject({ each: true })
-  public readonly temporalExtents: Record<string, string[]>[];
+  public readonly temporalExtents: Record<string, string[] | number[]>[];
 
   @ApiProperty({
     type: [ClassLevelDto],

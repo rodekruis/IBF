@@ -28,7 +28,7 @@ export class AlertConfigsRepository {
       spatialExtentPlaceCodes: row.spatialExtentPlaceCodes,
       temporalExtents: row.temporalExtents as unknown as Record<
         string,
-        string[]
+        string[] | number[]
       >[],
       severityClassLevels:
         row.severityClassLevels as unknown as ClassLevelDto[],
