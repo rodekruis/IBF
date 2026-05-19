@@ -12,6 +12,8 @@ from rasterio.io import MemoryFile
 from rasterio.transform import array_bounds
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 
+Image.MAX_IMAGE_PIXELS = None
+
 CRS = rasterio.crs.CRS
 
 # Allow PIL to open large images
@@ -19,21 +21,23 @@ Image.MAX_IMAGE_PIXELS = None
 
 
 def colorize_image_from_file(
-    png_in_bytes: bytes, color1: tuple, color2: tuple, log_scale: bool
+    png_in_bytes: bytes, color1: tuple, color2: tuple, steps: int, log_scale: bool
 ):
     """
     Wrapper for colorize_image_array that takes in PNG bytes instead of an array.
     """
     img = Image.open(io.BytesIO(png_in_bytes))
     img_bw = np.array(img, dtype=np.float32)
-    return colorize_image_array(img_bw, color1, color2, log_scale)
+    return colorize_image_array(img_bw, color1, color2, steps, log_scale)
 
 
 def colorize_image_array(
-    img_bw: np.ndarray, color1: tuple, color2: tuple, log_scale: bool
+    img_bw: np.ndarray, color1: tuple, color2: tuple, steps: int, log_scale: bool
 ):
     """
     Colorize a grayscale image between two colors.
+    steps: the number of distinct color steps to use. If 0, a smooth gradient is used.
+           Using color steps reduces files size, but can also help visual clarity.
     log_scale: whether or not to convert to a logarithmic scale.
     """
 
@@ -48,6 +52,16 @@ def colorize_image_array(
     if img_max == 0:
         img_max = 1  # prevent division by zero
     normalized = img_bw / img_max
+
+    # Set the color gradient to distinct steps
+    if steps > 0:
+        # Scale the number between 0 and the steps value, then round to an integer.
+        # this will group all values into n number of steps.
+        step_indices = np.round(normalized * steps).astype(np.int32)
+        # Assure values are between 0 and the steps value.
+        step_indices = np.clip(step_indices, 0, steps)
+        # Make a normalized value again.
+        normalized = step_indices / steps
 
     # Create RGBA array - lerp between color1 and color2
     height, width = img_bw.shape
