@@ -7,8 +7,7 @@ run_targets:
         target_admin_level: 3
         data_sources:
           - source: alert_configs_ibf_api
-          - source: geo_features_ibf_api
-            layer: glofas_stations
+          - source: glofas_stations_ibf_api
           - source: admin_area_ibf_api
           - source: population_seed_repo
           - source: todo_glofas_discharge

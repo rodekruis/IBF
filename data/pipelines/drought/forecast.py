@@ -8,22 +8,6 @@ from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 
 
-def _get_place_codes_from_spatial_extent(
-    config: AlertConfig,
-    target_admin_areas: AdminAreasSet,
-    target_admin_level: int,
-) -> list[str]:
-    """Return place codes for this config.
-    An empty spatialExtentPlaceCodes list means 'all admin areas at target level'."""
-    if config.spatial_extent_place_codes:
-        return config.spatial_extent_place_codes
-    return [
-        pcode
-        for pcode, area in target_admin_areas.admin_areas.items()
-        if area.properties.admin_level == target_admin_level
-    ]
-
-
 def calculate_drought_forecasts(
     data_provider: DataProvider,
     data_submitter: DataSubmitter,
@@ -111,3 +95,19 @@ def calculate_drought_forecasts(
                 value=f"alert_extent_{config.spatial_extent_name}.tif",
                 extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
             )
+
+
+def _get_place_codes_from_spatial_extent(
+    config: AlertConfig,
+    target_admin_areas: AdminAreasSet,
+    target_admin_level: int,
+) -> list[str]:
+    """Return place codes for this config.
+    An empty spatialExtentPlaceCodes list means 'all admin areas at target level'."""
+    if config.spatial_extent_place_codes:
+        return config.spatial_extent_place_codes
+    return [
+        pcode
+        for pcode, area in target_admin_areas.admin_areas.items()
+        if area.properties.admin_level == target_admin_level
+    ]

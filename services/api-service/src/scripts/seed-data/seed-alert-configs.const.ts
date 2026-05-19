@@ -27,6 +27,7 @@ export const FLOOD_LEAD_TIME_SPECTRUM = [
   '7-day',
 ];
 
+// TODO AB#42288 make thresholds station-specific
 export const FLOOD_SEVERITY_CLASS_LEVELS = [
   { label: 'low', threshold: 100 },
   { label: 'med', threshold: 200 },

@@ -8,6 +8,7 @@ import logging
 import os
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
+from pipelines.infra.data_types.alert_types import Layer
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
@@ -57,8 +58,8 @@ def load_data_container(
                 api_client,
                 data_config,
             )
-        case DataSource.GEO_FEATURES_IBF_API:
-            return _load_ibf_api_geo_features(
+        case DataSource.GLOFAS_STATIONS_IBF_API:
+            return _load_ibf_api_glofas_stations(
                 container,
                 api_client,
                 data_config,
@@ -105,23 +106,17 @@ def _load_ibf_api_alert_configs(
     container.data = [AlertConfig.from_api(item) for item in data]
 
 
-def _load_ibf_api_geo_features(
+def _load_ibf_api_glofas_stations(
     container: LoadedDataSource,
     api_client: ApiClient,
     data_config: DataSourceConfig,
 ):
-    # TODO: Currently assumes all geo-features are points (stations). When other
-    # layers/geometry types are added, dispatch parsing logic based on layer/featureType.
     container.data_type = DataType.LOCATION_POINT_DICT
-    if data_config.layer is None:
-        raise ValueError(
-            f"DataSourceConfig for '{data_config.source}' is missing required 'layer' field"
-        )
     data = api_client.get_geo_features(
         data_config.country_code_iso_3,
-        data_config.layer,
+        Layer.GLOFAS_STATIONS,
     )
-    geo_features: dict[str, LocationPoint] = {}
+    stations: dict[str, LocationPoint] = {}
     for item in data:
         station = LocationPoint(
             name=item.get("attributes", {}).get("name", ""),
@@ -129,8 +124,8 @@ def _load_ibf_api_geo_features(
             lon=item["geometry"]["coordinates"][0],
             id=item["referenceId"],
         )
-        geo_features[station.id] = station
-    container.data = geo_features
+        stations[station.id] = station
+    container.data = stations
 
 
 def _load_seed_repo_population_data(
