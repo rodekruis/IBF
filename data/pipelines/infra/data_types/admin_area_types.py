@@ -51,10 +51,14 @@ class AdminAreasSet:
             attributes = props.get("attributes") or {}
 
             parent_pcodes: dict[int, str] = {}
-            for key, value in attributes.items():
-                if key.startswith("ADM") and key.endswith("_PCODE") and value:
-                    level = int(key[3:-6])
-                    parent_pcodes[level] = value
+            if isinstance(attributes, dict):
+                for key, value in attributes.items():
+                    if key.startswith("ADM") and key.endswith("_PCODE") and value:
+                        try:
+                            level = int(key[3:-6])
+                        except ValueError:
+                            continue
+                        parent_pcodes[level] = str(value)
 
             pcode = props.get("placeCode", "")
             admin_areas[pcode] = AdminArea(
