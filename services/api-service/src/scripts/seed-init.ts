@@ -41,7 +41,7 @@ interface StationThresholdEntry {
   readonly thresholds: { return_period: number; threshold_value: number }[];
 }
 
-export const SEED_REPO_RAW_BASE_URL =
+const SEED_REPO_RAW_BASE_URL =
   'https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main';
 
 const ADMIN_AREAS_PATH = '/admin-areas/processed';

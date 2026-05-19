@@ -116,6 +116,7 @@ def calculate_flood_forecasts(
         country_sliced_netcdf_paths.append(country_sliced_path)
 
     ### Step 3 - Loop through alert configs (spatial extents / stations) ###
+    # DO NOT REMOVE: this loop over spatial-extents is obligatory. TODO-infra: enforce this better.
     for config in alert_configs:
         station_code = config.spatial_extent_name
         station = stations.get(station_code)
@@ -123,111 +124,113 @@ def calculate_flood_forecasts(
             logging.warning(f"No station location found for '{station_code}', skipping")
             continue
 
-        discharges = extract_discharge_glofas_station(
-            station_code=station_code,
-            station=station,
-            netcdf_paths=country_sliced_netcdf_paths,
-        )
-
-        ### Step 4 - Determine temporal extent - which time intervals exceed the minimum return period threshold
-        time_interval_severities = determine_temporal_extent(
-            station_code=station_code,
-            time_interval_discharges=discharges.get(station_code, []),
-            thresholds=thresholds,
-        )
-
-        # If no time intervals exceeded the minimum return period threshold, skip to the next station
-        if not time_interval_severities:
-            logging.info(f"No alerts for station {station_code}")
-            continue
-
-        ### Step 5 - Compute alert extent ###
-        flood_extent_path = compute_alert_extent(
-            time_interval_severities=time_interval_severities,
-            flood_extent_paths=flood_extent_paths,
-        )
-
-        ### Step 6 - Determine spatial extent ###
-        clipped_flood_extent_path, place_codes_exposed = determine_spatial_extent(
-            station=station,
-            station_district_mapping=station_district_mapping,
-            admin_areas=target_admin_areas,
-            flood_extent_raster_path=flood_extent_path,
-        )
-
-        if not place_codes_exposed:
-            logging.info(f"No place codes for station {station_code}")
-            continue
-
-        ### Step 7 - Compute exposure within the flood extent ###
-        # Compute population exposed using the clipped flood extent
-        population_exposed_raster_path = compute_population_exposed(
-            population_raster_path,
-            clipped_flood_extent_path,
-        )
-
-        if population_exposed_raster_path is None:
-            data_submitter.add_error(
-                f"Could not compute exposed population raster for station {station_code}"
+        # DO NOT REMOVE: this loop over temporal-extents is obligatory. TODO-infra: enforce this better.
+        for temporal_extent in config.temporal_extents:
+            discharges = extract_discharge_glofas_station(
+                station_code=station_code,
+                station=station,
+                netcdf_paths=country_sliced_netcdf_paths,
+                temporal_extent=temporal_extent,
             )
-            continue
 
-        ### Step 8 - Aggregate population exposed per place_code ###
-        population_exposed = aggregate_population_exposed(
-            population_exposed_raster_path, place_codes_exposed, target_admin_areas
-        )
+            ### Step 4 - Determine temporal extent - which time intervals exceed the minimum return period threshold
+            time_interval_severities = determine_temporal_extent(
+                station_code=station_code,
+                time_interval_discharges=discharges.get(station_code, []),
+                thresholds=thresholds,
+            )
 
-        ### Step 9 - Create alert and submit severity/exposure payloads ###
-        event_name = f"{country}_floods_{station.name if station.name.lower() != 'na' else station_code}"
-        data_submitter.create_alert(
-            event_name=event_name,
-            centroid=Centroid(
-                latitude=station.lat,
-                longitude=station.lon,
-            ),
-        )
+            # If no time intervals exceeded the minimum return period threshold, skip to the next temporal extent
+            if not time_interval_severities:
+                logging.info(f"No alerts for station {station_code}")
+                continue
 
-        for severity in time_interval_severities:
-            for i in range(len(severity.ensemble_discharges)):
+            ### Step 5 - Compute alert extent ###
+            flood_extent_path = compute_alert_extent(
+                time_interval_severities=time_interval_severities,
+                flood_extent_paths=flood_extent_paths,
+            )
+
+            ### Step 6 - Determine spatial extent ###
+            clipped_flood_extent_path, place_codes_exposed = determine_spatial_extent(
+                station=station,
+                station_district_mapping=station_district_mapping,
+                admin_areas=target_admin_areas,
+                flood_extent_raster_path=flood_extent_path,
+            )
+
+            if not place_codes_exposed:
+                logging.info(f"No place codes for station {station_code}")
+                continue
+
+            ### Step 7 - Compute exposure within the flood extent ###
+            population_exposed_raster_path = compute_population_exposed(
+                population_raster_path,
+                clipped_flood_extent_path,
+            )
+
+            if population_exposed_raster_path is None:
+                data_submitter.add_error(
+                    f"Could not compute exposed population raster for station {station_code}"
+                )
+                continue
+
+            ### Step 8 - Aggregate population exposed per place_code ###
+            population_exposed = aggregate_population_exposed(
+                population_exposed_raster_path, place_codes_exposed, target_admin_areas
+            )
+
+            ### Step 9 - Create alert and submit severity/exposure payloads ###
+            event_name = f"{country}_floods_{station.name if station.name.lower() != 'na' else station_code}"
+            data_submitter.create_alert(
+                event_name=event_name,
+                centroid=Centroid(
+                    latitude=station.lat,
+                    longitude=station.lon,
+                ),
+            )
+
+            for severity in time_interval_severities:
+                for i in range(len(severity.ensemble_discharges)):
+                    data_submitter.add_severity_data(
+                        event_name=event_name,
+                        time_interval_start=severity.time_interval_start,
+                        time_interval_end=severity.time_interval_end,
+                        ensemble_member_type=EnsembleMemberType.RUN,
+                        severity_key="water_discharge",
+                        severity_value=severity.ensemble_discharges[i],
+                    )
                 data_submitter.add_severity_data(
                     event_name=event_name,
                     time_interval_start=severity.time_interval_start,
                     time_interval_end=severity.time_interval_end,
-                    ensemble_member_type=EnsembleMemberType.RUN,
+                    ensemble_member_type=EnsembleMemberType.MEDIAN,
                     severity_key="water_discharge",
-                    severity_value=severity.ensemble_discharges[i],
+                    severity_value=severity.median_discharge,
                 )
-            data_submitter.add_severity_data(
+
+            # TODO: determine place codes by looking at the admin areas in a catchment area.
+            # TODO-infra: actually, do not call add_admin_area_exposure per place_code, but just once (per layer)
+            for place_code in config.spatial_extent_place_codes:
+                data_submitter.add_admin_area_exposure(
+                    event_name=event_name,
+                    place_code=place_code,
+                    admin_level=target_admin_level,
+                    layer=Layer.POPULATION_EXPOSED,
+                    value=population_exposed.get(place_code, 0),
+                )
+
+            # TODO: use this in the future to (A) add water-discharege/return-period for glofas-station-popup and (B) add exposure status of points/roads/buildings.
+            # data_submitter.add_geo_feature_exposure(
+            #     event_name=event_name,
+            #     geo_feature_id=station_code,
+            #     layer="glofas_stations",
+            #     value={"river_discharge": 0},
+            # )
+
+            data_submitter.add_raster_exposure(
                 event_name=event_name,
-                time_interval_start=severity.time_interval_start,
-                time_interval_end=severity.time_interval_end,
-                ensemble_member_type=EnsembleMemberType.MEDIAN,
-                severity_key="water_discharge",
-                severity_value=severity.median_discharge,
+                layer="alert_extent",
+                value=clipped_flood_extent_path,
+                extent=get_raster_extent(clipped_flood_extent_path),
             )
-
-        # TODO: determine place codes by looking at the admin areas in a catchment area.
-        # TODO-infra: actually, do not call add_admin_area_exposure per place_code, but just once (per layer)
-        for place_code in config.spatial_extent_place_codes:
-            data_submitter.add_admin_area_exposure(
-                event_name=event_name,
-                place_code=place_code,
-                admin_level=target_admin_level,
-                layer=Layer.POPULATION_EXPOSED,
-                value=population_exposed.get(place_code, 0),
-            )
-
-        # TODO: use this in the future to (A) add water-discharge/return-period for glofas-station-popup and (B) add exposure status of points/roads/buildings.
-        # data_submitter.add_geo_feature_exposure(
-        #     event_name=event_name,
-        #     geo_feature_id=station_code,
-        #     layer="glofas_stations",
-        #     value={"river_discharge": 0},
-        # )
-
-        data_submitter.add_raster_exposure(
-            event_name=event_name,
-            layer="alert_extent",
-            value=clipped_flood_extent_path,
-            extent=get_raster_extent(clipped_flood_extent_path),
-        )

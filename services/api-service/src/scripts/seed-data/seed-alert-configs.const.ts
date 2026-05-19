@@ -121,7 +121,7 @@ const ETH_DROUGHT_CONFIGS: SeedAlertConfig[] = [
       'ET1301',
       'ET1600',
     ],
-    [{ 'Belg MAM': [2, 3, 4, 5] }, { 'Belg JAS': [6, 7, 8, 9] }],
+    [{ MAM: [2, 3, 4, 5] }, { JAS: [6, 7, 8, 9] }],
   ),
   createDroughtAlertConfig(
     'ETH',
@@ -164,7 +164,7 @@ const ETH_DROUGHT_CONFIGS: SeedAlertConfig[] = [
       'ET1204',
       'ET1401',
     ],
-    [{ 'Meher JAS': [6, 7, 8, 9] }],
+    [{ JAS: [6, 7, 8, 9] }],
   ),
   createDroughtAlertConfig(
     'ETH',
@@ -180,7 +180,7 @@ const ETH_DROUGHT_CONFIGS: SeedAlertConfig[] = [
       'ET1501',
       'ET1502',
     ],
-    [{ 'Northern MAM': [3, 4, 5] }, { 'Northern JAS': [7, 8, 9] }],
+    [{ MAM: [3, 4, 5] }, { JAS: [7, 8, 9] }],
   ),
   createDroughtAlertConfig(
     'ETH',
@@ -202,7 +202,7 @@ const ETH_DROUGHT_CONFIGS: SeedAlertConfig[] = [
       'ET0511',
       'ET0712',
     ],
-    [{ 'Southern MAM': [3, 4, 5] }, { 'Southern OND': [10, 11, 12] }],
+    [{ MAM: [3, 4, 5] }, { OND: [10, 11, 12] }],
   ),
 ];
 

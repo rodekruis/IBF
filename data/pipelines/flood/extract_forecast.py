@@ -20,17 +20,12 @@ class TimeIntervalDischarge:
 
 StationDischarges = dict[str, list[TimeIntervalDischarge]]
 
-# TODO-infra: where to put this?
-LEAD_TIME_MIN = 0
-LEAD_TIME_MAX = 7
-
 
 def extract_discharge_glofas_station(
     station_code: str,
     station: LocationPoint,
     netcdf_paths: list[str],
-    lead_time_min: int = LEAD_TIME_MIN,
-    lead_time_max: int = LEAD_TIME_MAX,
+    temporal_extent: dict[str, list],
 ) -> StationDischarges:
     """
     Sample discharge from pre-sliced GloFAS NetCDF files at station coordinates.
@@ -42,6 +37,7 @@ def extract_discharge_glofas_station(
     objects. Each lead-time object contains the time interval and one discharge per
     ensemble.
     """
+    lead_time_min, lead_time_max = _parse_lead_time_range(temporal_extent)
     discharges: StationDischarges = {station_code: []}
 
     forecast_base_datetime: datetime | None = None
@@ -82,6 +78,21 @@ def extract_discharge_glofas_station(
                 )
 
     return discharges
+
+
+def _parse_lead_time_range(temporal_extent: dict[str, list]) -> tuple[int, int]:
+    """Parse a flood temporal extent into (lead_time_min, lead_time_max).
+
+    Expects {"lead-time-spectrum": ["0-day", "1-day", ..., "7-day"]}.
+    Returns (0, 7) for that example.
+    """
+    spectrum = temporal_extent.get("lead-time-spectrum")
+    if not spectrum:
+        raise ValueError(
+            f"Temporal extent missing 'lead-time-spectrum': {temporal_extent}"
+        )
+    days = [int(entry.split("-")[0]) for entry in spectrum]
+    return (min(days), max(days))
 
 
 def _extract_forecast_base_datetime(netcdf_path: str) -> datetime:

@@ -8,7 +8,7 @@ from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 
 
-def _resolve_place_codes(
+def _get_place_codes_from_spatial_extent(
     config: AlertConfig,
     target_admin_areas: AdminAreasSet,
     target_admin_level: int,
@@ -62,18 +62,15 @@ def calculate_drought_forecasts(
     # - Compute population exposure from population raster + drought extent
     # - Compute geo-feature exposure (hospitals, roads, etc.)
 
+    # DO NOT REMOVE: this loop over spatial-extents is obligatory. TODO-infra: enforce this better.
     for config in alert_configs:
-        place_codes = _resolve_place_codes(
+        spatial_extent_place_codes = _get_place_codes_from_spatial_extent(
             config, target_admin_areas, target_admin_level
         )
-        seasons = [
-            extent.get("name", config.spatial_extent_name)
-            for extent in config.temporal_extents
-        ]
-        if not seasons:
-            seasons = [config.spatial_extent_name]
 
-        for season in seasons:
+        # DO NOT REMOVE: this loop over temporal-extents is obligatory. TODO-infra: enforce this better.
+        for temporal_extent in config.temporal_extents:
+            season = next(iter(temporal_extent.keys()), config.spatial_extent_name)
             event_name = f"{country}_drought_{config.spatial_extent_name}_{season}"
 
             data_submitter.create_alert(
@@ -99,7 +96,7 @@ def calculate_drought_forecasts(
                 severity_value=0,
             )
 
-            for place_code in place_codes:
+            for place_code in spatial_extent_place_codes:
                 data_submitter.add_admin_area_exposure(
                     event_name=event_name,
                     place_code=place_code,
