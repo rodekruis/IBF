@@ -6,7 +6,7 @@ Since GeoTIFFs are too large for us to store directly, we convert them to PNGs i
   1) Greyscale PNGs in EPSG:3857 for the front end.
     Pixel values are clamped 0-255.
   2) Data PNGs to capture the full value range (for use for the pipeline and for population calculations).
-    Pixel values are encoded across the RGB channels and are clamped between 0 and about 16.8 million (256^3).
+    Pixel values are encoded across the RGBA. See the encoding function for more details.
 
 The geo metadata for each format is saved as JSON.
 """
@@ -17,7 +17,7 @@ from pathlib import Path
 from PIL import Image
 from shared.data_helpers import get_seed_data_repo_path, target_countries_iso_a3
 from shared.download_helpers import download_object
-from shared.image_helpers import geotiff_to_array, geotiff_to_rgb_data_array
+from shared.image_helpers import geotiff_to_array, geotiff_to_rgba_data_array
 
 # URL for the population data
 # If a new model comes out, update this.
@@ -37,6 +37,10 @@ BASE_URL = (
 BASE_REPO_DIR = get_seed_data_repo_path()
 GREYSCALE_OUTPUT_DIR = Path(BASE_REPO_DIR) / "raster-data/population/greyscale/"
 DATA_PNG_OUTPUT_DIR = Path(BASE_REPO_DIR) / "raster-data/population/data-png/"
+
+# Option to save the original GeoTIFF files for debug.
+# NOTE: Do not check GeoTiffs into any repo since they are too large.
+SAVE_GEOTIFF = False
 
 
 def get_url(country_iso_a3):
@@ -62,10 +66,10 @@ if __name__ == "__main__":
 
         # Convert and save it to PNG
         if bin_object:
-            # NOTE: uncomment to save the original tiff file as well (used for updating v1 source data). These .tif's are too big to upload to seed-data repo.
-            # tiff_path = GREYSCALE_OUTPUT_DIR / f"{name}.tif"
-            # with open(tiff_path, "wb") as f:
-            #      f.write(bin_object)
+            if SAVE_GEOTIFF:
+                tiff_path = GREYSCALE_OUTPUT_DIR / f"{name}.tif"
+                with open(tiff_path, "wb") as f:
+                    f.write(bin_object)
 
             # Format 1) Make the greyscale png and metadata for the front end.
             meta_data, img_data = geotiff_to_array(bin_object)
@@ -81,14 +85,14 @@ if __name__ == "__main__":
             bw_img.save(bw_path, optimize=True)
 
             # Format 2) Make the data png and metadata.
-            data_png_metadata, data_png_array = geotiff_to_rgb_data_array(bin_object)
+            data_png_metadata, data_png_array = geotiff_to_rgba_data_array(bin_object)
 
             data_png_json_path = DATA_PNG_OUTPUT_DIR / f"{name}_metadata.json"
             with open(data_png_json_path, "w", encoding="utf-8") as f:
                 json.dump(data_png_metadata, f, indent=2)
 
             data_png_path = DATA_PNG_OUTPUT_DIR / f"{name}.png"
-            data_png_img = Image.fromarray(data_png_array, mode="RGB")
+            data_png_img = Image.fromarray(data_png_array, mode="RGBA")
             data_png_img.save(data_png_path, optimize=True)
 
             print(f"Completed: {name}")
