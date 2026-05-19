@@ -80,6 +80,12 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
         level_layers = levels.setdefault(entry.admin_level, {})
         level_layers[entry.layer] = level_layers.get(entry.layer, 0) + 1
 
+        if isinstance(entry.value, (int, float)) and entry.value < 0:
+            errors.append(
+                f"Alert '{event_name}' admin-area '{entry.place_code}': "
+                f"layer '{entry.layer}' must be non-negative, got {entry.value}"
+            )
+
     admin_area_required = (Layer.POPULATION_EXPOSED,)
     for level, layer_counts in sorted(levels.items()):
         for required in admin_area_required:

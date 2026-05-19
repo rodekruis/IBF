@@ -319,3 +319,21 @@ def test_empty_forecast_sources_is_rejected(tmp_output: Path):
         for e in errors
     )
     assert not (tmp_output / "forecast.json").exists()
+
+
+def test_negative_population_exposed_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """An admin-area record with negative population_exposed value is rejected."""
+    valid_submitter.add_admin_area_exposure(
+        event_name=EVENT_NAME,
+        place_code="PC002",
+        admin_level=3,
+        layer=Layer.POPULATION_EXPOSED,
+        value=-100,
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("must be non-negative" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
