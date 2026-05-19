@@ -4,8 +4,6 @@ When a new data source is added, this is the main file that needs to be updated.
 See the readme for more details on adding new data sources.
 """
 
-import csv
-import io
 import logging
 import os
 
@@ -28,7 +26,6 @@ from shared.download_helpers import download_json_source, download_object
 logger = logging.getLogger(__name__)
 
 SEED_REPO_POPULATION_DATA_PNG_PATH = "/raster-data/population/data-png/"
-SEED_REPO_GLOFAS_STATIONS_PATH = "/country-data/glofas-loc/"
 
 
 def _get_seed_repo_uri() -> str:
@@ -60,8 +57,12 @@ def load_data_container(
                 api_client,
                 data_config,
             )
-        case DataSource.GLOFAS_STATIONS_SEED_REPO:
-            return _load_seed_repo_glofas_stations(data_config, container)
+        case DataSource.GEO_FEATURES_IBF_API:
+            return _load_ibf_api_geo_features(
+                container,
+                api_client,
+                data_config,
+            )
         case DataSource.POPULATION_SEED_REPO:
             return _load_seed_repo_population_data(data_config, container)
         case DataSource.TODO_ECMWF_FORECAST:
@@ -104,31 +105,32 @@ def _load_ibf_api_alert_configs(
     container.data = [AlertConfig.from_api(item) for item in data]
 
 
-def _load_seed_repo_glofas_stations(
-    config: DataSourceConfig, container: LoadedDataSource
+def _load_ibf_api_geo_features(
+    container: LoadedDataSource,
+    api_client: ApiClient,
+    data_config: DataSourceConfig,
 ):
+    # TODO: Currently assumes all geo-features are points (stations). When other
+    # layers/geometry types are added, dispatch parsing logic based on layer/featureType.
     container.data_type = DataType.LOCATION_POINT_DICT
-
-    filename = f"glofas_stations_{config.country_code_iso_3}.csv"
-    csv_uri = _get_seed_repo_uri() + SEED_REPO_GLOFAS_STATIONS_PATH + filename
-    csv_data = download_object(csv_uri)
-    if csv_data is None:
-        container.error = (
-            f"Failed to download Glofas stations CSV data from '{csv_uri}'"
+    if data_config.layer is None:
+        raise ValueError(
+            f"DataSourceConfig for '{data_config.source}' is missing required 'layer' field"
         )
-        raise ValueError(container.error)
-
-    reader = csv.DictReader(io.StringIO(csv_data.decode("utf-8")))
-    stations: dict[str, LocationPoint] = {}
-    for row in reader:
+    data = api_client.get_geo_features(
+        data_config.country_code_iso_3,
+        data_config.layer,
+    )
+    geo_features: dict[str, LocationPoint] = {}
+    for item in data:
         station = LocationPoint(
-            name=row["stationName"],
-            lat=float(row["lat"]),
-            lon=float(row["lon"]),
-            id=row["fid"],
+            name=item.get("attributes", {}).get("name", ""),
+            lat=item["geometry"]["coordinates"][1],
+            lon=item["geometry"]["coordinates"][0],
+            id=item["referenceId"],
         )
-        stations[station.id] = station
-    container.data = stations
+        geo_features[station.id] = station
+    container.data = geo_features
 
 
 def _load_seed_repo_population_data(

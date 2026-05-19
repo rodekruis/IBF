@@ -44,7 +44,7 @@ def calculate_flood_forecasts(
         DataSource.ALERT_CONFIGS_IBF_API, list
     )
     stations: dict[str, LocationPoint] = data_provider.get_data(
-        DataSource.GLOFAS_STATIONS_SEED_REPO, dict
+        DataSource.GEO_FEATURES_IBF_API, dict
     )
     target_admin_areas = data_provider.get_data(
         DataSource.ADMIN_AREA_IBF_API, AdminAreasSet

@@ -2,7 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
+import { Layer } from '@api-service/src/alerts/enum/layer.enum';
 import { env } from '@api-service/src/env';
+import { GeoFeatureType } from '@api-service/src/geo-features/enum/geo-feature-type.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import {
   FLOOD_ALERT_CLASS_MATRIX,
@@ -76,7 +78,8 @@ export class SeedInit {
 
     await this.seedCountries(countries);
     await this.seedAdminAreas(countries);
-    await this.seedAlertConfigs(countryCodes);
+    await this.seedAlertConfigs(countries);
+    await this.seedGeoFeatures(countries);
   }
 
   private async createAdminUser(): Promise<void> {
@@ -248,20 +251,17 @@ export class SeedInit {
     return geometry;
   }
 
-  private async seedAlertConfigs(countryCodes?: string[]): Promise<void> {
+  private async seedAlertConfigs(countries: SeedCountry[]): Promise<void> {
     // Drought: spatial extents are climate regions defined in code (seed-alert-configs.const.ts)
     // TODO: move drought alert configs to an external source (seed-data repo or similar)
-    const droughtConfigs = countryCodes
-      ? SEED_DROUGHT_ALERT_CONFIGS.filter((c) =>
-          countryCodes.includes(c.countryCodeIso3),
-        )
-      : SEED_DROUGHT_ALERT_CONFIGS;
+    const countryCodes = countries.map((c) => c.countryCodeIso3);
+    const droughtConfigs = SEED_DROUGHT_ALERT_CONFIGS.filter((c) =>
+      countryCodes.includes(c.countryCodeIso3),
+    );
 
     // Floods: spatial extents are GloFAS stations, fetched from the seed-data repo
-    const floodCountries = SEED_COUNTRIES.filter(
-      (c) =>
-        c.hazardTypes.includes(HazardType.floods) &&
-        (!countryCodes || countryCodes.includes(c.countryCodeIso3)),
+    const floodCountries = countries.filter((c) =>
+      c.hazardTypes.includes(HazardType.floods),
     );
 
     const floodConfigs = (
@@ -335,6 +335,69 @@ export class SeedInit {
       `Loaded ${configs.length} flood alert configs for ${country.countryCodeIso3}`,
     );
     return configs;
+  }
+
+  private async seedGeoFeatures(countries: SeedCountry[]): Promise<void> {
+    const floodCountries = countries.filter((c) =>
+      c.hazardTypes.includes(HazardType.floods),
+    );
+
+    for (const country of floodCountries) {
+      await this.seedGloFasStations(country.countryCodeIso3);
+    }
+  }
+
+  private async seedGloFasStations(countryCodeIso3: string): Promise<void> {
+    const url = getStationThresholdsFileUrl(countryCodeIso3);
+    const response = await fetch(url);
+    if (!response.ok) {
+      this.logger.warn(
+        `No station thresholds for ${countryCodeIso3}: ${response.status} — skipping geo-feature seeding`,
+      );
+      return;
+    }
+
+    const entries = (await response.json()) as StationThresholdEntry[];
+    const seenStations = new Map<
+      string,
+      { name: string; lat: number; lon: number }
+    >();
+    for (const entry of entries) {
+      if (!seenStations.has(entry.station_code)) {
+        seenStations.set(entry.station_code, {
+          name: entry.station_name,
+          lat: entry.lat,
+          lon: entry.lon,
+        });
+      }
+    }
+
+    const geoFeatures = [...seenStations.entries()].map(
+      ([stationCode, station]) => ({
+        countryCodeIso3,
+        featureType: GeoFeatureType.point,
+        layer: Layer.glofasStations,
+        referenceId: stationCode,
+        geometry: {
+          type: 'Point',
+          coordinates: [station.lon, station.lat],
+        } as Prisma.InputJsonValue,
+        attributes: { name: station.name } as Prisma.InputJsonValue,
+      }),
+    );
+
+    if (geoFeatures.length === 0) {
+      return;
+    }
+
+    await this.prisma.geoFeature.createMany({
+      data: geoFeatures,
+      skipDuplicates: true,
+    });
+
+    this.logger.log(
+      `Seeded ${geoFeatures.length} GloFAS station geo-features for ${countryCodeIso3}`,
+    );
   }
 
   public async truncateAll(): Promise<void> {

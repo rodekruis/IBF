@@ -11,7 +11,7 @@ from pathlib import Path
 
 import yaml
 
-from pipelines.infra.data_types.alert_types import HazardType
+from pipelines.infra.data_types.alert_types import HazardType, Layer
 from pipelines.infra.data_types.data_config_types import (
     CountryCodeIso3,
     CountryRunConfig,
@@ -249,6 +249,7 @@ class ConfigReader:
                     country_code_iso_3=iso_3_code,
                     source=data_source,
                     hazard_type=hazard_type,
+                    layer=Layer(src["layer"]) if "layer" in src else None,
                 )
             )
 

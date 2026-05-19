@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 ALERTS_PATH = "/api/alerts"
 ADMIN_AREAS_PATH = "/api/admin-areas"
 ALERT_CONFIGS_PATH = "/api/alert-configs"
+GEO_FEATURES_PATH = "/api/geo-features"
 
 
 class ApiClient:
@@ -90,5 +91,25 @@ class ApiClient:
             return configs
         logger.error(
             f"Failed to download alert configs for {country_code_iso_3}/{hazard_type}: {response.status_code} {response.text}"
+        )
+        return []
+
+    def get_geo_features(self, country_code_iso_3: str, layer: str) -> list[dict]:
+        url = f"{self._base_url}{GEO_FEATURES_PATH}"
+        params: dict = {
+            "countryCodeIso3": country_code_iso_3,
+            "layer": layer,
+        }
+        logger.info(f"Download '{url}?{urlencode(params)}'")
+        response = self._session.get(url, params=params, timeout=30)
+        if response.status_code == 200:
+            features = response.json()
+            if not features:
+                logger.warning(
+                    f"Downloaded 0 geo-features for {country_code_iso_3}/{layer}"
+                )
+            return features
+        logger.error(
+            f"Failed to download geo-features for {country_code_iso_3}/{layer}: {response.status_code} {response.text}"
         )
         return []

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
-from pipelines.infra.data_types.alert_types import HazardType
+from pipelines.infra.data_types.alert_types import HazardType, Layer
 from shared.country_data import CountryCodeIso3
 
 
@@ -46,7 +46,7 @@ class DataSource(StrEnum):
 
     ADMIN_AREA_IBF_API = "admin_area_ibf_api"
     ALERT_CONFIGS_IBF_API = "alert_configs_ibf_api"
-    GLOFAS_STATIONS_SEED_REPO = "glofas_stations_seed_repo"
+    GEO_FEATURES_IBF_API = "geo_features_ibf_api"
     POPULATION_SEED_REPO = "population_seed_repo"
     TODO_ECMWF_FORECAST = "todo_ecmwf_forecast"
     TODO_GLOFAS_DISCHARGE = "todo_glofas_discharge"
@@ -71,6 +71,7 @@ class DataSourceConfig:
     country_code_iso_3: CountryCodeIso3
     source: DataSource
     hazard_type: HazardType
+    layer: Layer | None = None
 
 
 @dataclass
