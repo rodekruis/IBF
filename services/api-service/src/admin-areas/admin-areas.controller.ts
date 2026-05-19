@@ -17,6 +17,8 @@ import type { Feature, FeatureCollection } from 'geojson';
 import { AdminAreasService } from '@api-service/src/admin-areas/admin-areas.service';
 import { AdminAreaCreateDto } from '@api-service/src/admin-areas/dto/admin-area-create.dto';
 import { AdminAreaUpdateDto } from '@api-service/src/admin-areas/dto/admin-area-update.dto';
+import { GeoJsonFeatureDto } from '@api-service/src/admin-areas/dto/geojson-feature.dto';
+import { GeoJsonFeatureCollectionDto } from '@api-service/src/admin-areas/dto/geojson-feature-collection.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 
@@ -35,6 +37,7 @@ export class AdminAreasController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'GeoJSON FeatureCollection of admin areas',
+    type: GeoJsonFeatureCollectionDto,
   })
   public async getAdminAreas(
     @Query() query: Record<string, string>,
@@ -48,14 +51,7 @@ export class AdminAreasController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Admin area created successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        type: { type: 'string', example: 'Feature' },
-        geometry: { type: 'object' },
-        properties: { type: 'object' },
-      },
-    },
+    type: GeoJsonFeatureDto,
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
@@ -77,14 +73,7 @@ export class AdminAreasController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Admin area updated successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        type: { type: 'string', example: 'Feature' },
-        geometry: { type: 'object' },
-        properties: { type: 'object' },
-      },
-    },
+    type: GeoJsonFeatureDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
