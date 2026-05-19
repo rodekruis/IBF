@@ -32,7 +32,7 @@ export class AdminAreasController {
   @Get()
   @ApiOperation({
     summary:
-      'Get admin areas; all query pg_featureserv parameters are supported',
+      'Get admin areas; all query pg_featureserv parameters are supported (not shown in Swagger UI, so calling via Swagger is limited)',
   })
   @ApiResponse({
     status: HttpStatus.OK,

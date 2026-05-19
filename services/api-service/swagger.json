@@ -94,19 +94,22 @@
   {
     "method": "get",
     "path": "/api/admin-areas",
-    "params": []
+    "params": [],
+    "returnType": "GeoJsonFeatureCollectionDto"
   },
   {
     "method": "post",
     "path": "/api/admin-areas",
-    "params": []
+    "params": [],
+    "returnType": "GeoJsonFeatureDto"
   },
   {
     "method": "patch",
     "path": "/api/admin-areas/{placeCode}",
     "params": [
       "placeCode"
-    ]
+    ],
+    "returnType": "GeoJsonFeatureDto"
   },
   {
     "method": "delete",
