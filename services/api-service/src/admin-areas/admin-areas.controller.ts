@@ -6,18 +6,19 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import type { Feature, FeatureCollection } from 'geojson';
 
 import { AdminAreasService } from '@api-service/src/admin-areas/admin-areas.service';
 import { AdminAreaCreateDto } from '@api-service/src/admin-areas/dto/admin-area-create.dto';
-import { AdminAreaResponseDto } from '@api-service/src/admin-areas/dto/admin-area-response.dto';
 import { AdminAreaUpdateDto } from '@api-service/src/admin-areas/dto/admin-area-update.dto';
+import { GeoJsonFeatureDto } from '@api-service/src/admin-areas/dto/geojson-feature.dto';
+import { GeoJsonFeatureCollectionDto } from '@api-service/src/admin-areas/dto/geojson-feature-collection.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 
@@ -30,42 +31,18 @@ export class AdminAreasController {
   @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get()
   @ApiOperation({
-    summary: 'Get admin areas by country, optionally filtered by admin level',
+    summary:
+      'Get admin areas; all query pg_featureserv parameters are supported (not shown in Swagger UI, so calling via Swagger is limited)',
   })
-  @ApiQuery({ name: 'countryCodeIso3', required: true, example: 'KEN' })
-  @ApiQuery({ name: 'adminLevel', required: false, example: 1 })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Admin areas returned successfully',
-    type: [AdminAreaResponseDto],
+    description: 'GeoJSON FeatureCollection of admin areas',
+    type: GeoJsonFeatureCollectionDto,
   })
   public async getAdminAreas(
-    @Query('countryCodeIso3') countryCodeIso3: string,
-    @Query('adminLevel', new ParseIntPipe({ optional: true }))
-    adminLevel?: number,
-  ): Promise<AdminAreaResponseDto[]> {
-    return this.adminAreasService.getAdminAreas({
-      countryCodeIso3,
-      adminLevel,
-    });
-  }
-
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
-  @Get(':placeCode')
-  @ApiOperation({ summary: 'Get admin area by place code' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Admin area returned successfully',
-    type: AdminAreaResponseDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Admin area not found',
-  })
-  public async getAdminArea(
-    @Param('placeCode') placeCode: string,
-  ): Promise<AdminAreaResponseDto> {
-    return this.adminAreasService.getAdminAreaOrThrow(placeCode);
+    @Query() query: Record<string, string>,
+  ): Promise<FeatureCollection> {
+    return this.adminAreasService.getAdminAreas(query);
   }
 
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
@@ -74,7 +51,7 @@ export class AdminAreasController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Admin area created successfully',
-    type: AdminAreaResponseDto,
+    type: GeoJsonFeatureDto,
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
@@ -86,7 +63,7 @@ export class AdminAreasController {
   })
   public async createAdminArea(
     @Body() adminAreaCreateDto: AdminAreaCreateDto,
-  ): Promise<AdminAreaResponseDto> {
+  ): Promise<Feature> {
     return this.adminAreasService.createAdminArea(adminAreaCreateDto);
   }
 
@@ -96,7 +73,7 @@ export class AdminAreasController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Admin area updated successfully',
-    type: AdminAreaResponseDto,
+    type: GeoJsonFeatureDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -109,7 +86,7 @@ export class AdminAreasController {
   public async updateAdminArea(
     @Param('placeCode') placeCode: string,
     @Body() adminAreaUpdateDto: AdminAreaUpdateDto,
-  ): Promise<AdminAreaResponseDto> {
+  ): Promise<Feature> {
     return this.adminAreasService.updateAdminAreaOrThrow(
       placeCode,
       adminAreaUpdateDto,

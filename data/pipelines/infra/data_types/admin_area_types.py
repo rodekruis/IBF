@@ -41,24 +41,21 @@ class AdminAreasSet:
         return bool(self.admin_areas)
 
     @staticmethod
-    def from_api(rows: list) -> AdminAreasSet:
+    def from_api(feature_collection: dict) -> AdminAreasSet:
         admin_areas: dict[str, AdminArea] = {}
 
-        for row in rows:
-            pcode = row.get("placeCode", "")
-            name = row.get("nameEn", "")
-            admin_level = row.get("adminLevel", 0)
-            country_code = row.get("countryCodeIso3", "")
-            parent_pcode = row.get("parentPlaceCode") or None
-            geom = row.get("geometry", {})
+        for feature in feature_collection.get("features", []):
+            props = feature.get("properties", {})
+            geom = feature.get("geometry") or {}
 
+            pcode = props.get("placeCode", "")
             admin_areas[pcode] = AdminArea(
                 properties=AdminAreaProperties(
                     pcode=pcode,
-                    name=name,
-                    admin_level=admin_level,
-                    country_code=country_code,
-                    parent_pcode=parent_pcode,
+                    name=props.get("nameEn", ""),
+                    admin_level=props.get("adminLevel", 0),
+                    country_code=props.get("countryCodeIso3", ""),
+                    parent_pcode=props.get("parentPlaceCode") or None,
                 ),
                 geometry_type=geom.get("type", ""),
                 coordinates=geom.get("coordinates", []),

@@ -94,24 +94,14 @@
   {
     "method": "get",
     "path": "/api/admin-areas",
-    "params": [
-      "countryCodeIso3",
-      "adminLevel"
-    ]
+    "params": [],
+    "returnType": "GeoJsonFeatureCollectionDto"
   },
   {
     "method": "post",
     "path": "/api/admin-areas",
     "params": [],
-    "returnType": "AdminAreaResponseDto"
-  },
-  {
-    "method": "get",
-    "path": "/api/admin-areas/{placeCode}",
-    "params": [
-      "placeCode"
-    ],
-    "returnType": "AdminAreaResponseDto"
+    "returnType": "GeoJsonFeatureDto"
   },
   {
     "method": "patch",
@@ -119,7 +109,7 @@
     "params": [
       "placeCode"
     ],
-    "returnType": "AdminAreaResponseDto"
+    "returnType": "GeoJsonFeatureDto"
   },
   {
     "method": "delete",

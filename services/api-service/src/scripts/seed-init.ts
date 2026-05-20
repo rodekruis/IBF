@@ -121,7 +121,23 @@ export class SeedInit {
     await this.prisma.$transaction(async (tx) => {
       for (let i = 0; i < adminAreas.length; i += BATCH_SIZE) {
         const batch = adminAreas.slice(i, i + BATCH_SIZE);
-        await tx.adminArea.createMany({ data: batch });
+        const values = batch.map((area) => {
+          const geojson = JSON.stringify(area.geometry);
+          return Prisma.sql`(
+            ${area.placeCode},
+            ${area.adminLevel},
+            ${area.nameEn},
+            ${area.countryCodeIso3},
+            ${area.parentPlaceCode ?? null},
+            NOW(),
+            NOW(),
+            public.ST_Force2D(public.ST_GeomFromGeoJSON(${geojson}))
+          )`;
+        });
+        await tx.$executeRaw`
+          INSERT INTO "api-service"."admin-area"
+            ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", "parentPlaceCode", created, updated, geometry)
+          VALUES ${Prisma.join(values)}`;
       }
     });
 
@@ -138,7 +154,7 @@ export class SeedInit {
         nameEn: string;
         countryCodeIso3: string;
         parentPlaceCode: string | null;
-        geometry: Prisma.InputJsonValue;
+        geometry: Record<string, unknown>;
       }
     | undefined {
     const props = feature.properties;
@@ -172,15 +188,13 @@ export class SeedInit {
         ? (props[`ADM${file.adminLevel - 1}_PCODE`] ?? null)
         : null;
 
-    const geometry = this.normalizeToMultiPolygon(feature.geometry);
-
     return {
       placeCode,
       adminLevel: file.adminLevel,
       nameEn,
       countryCodeIso3: file.countryCodeIso3,
       parentPlaceCode,
-      geometry: geometry as Prisma.InputJsonValue,
+      geometry: this.normalizeToMultiPolygon(feature.geometry),
     };
   }
 

@@ -169,9 +169,7 @@ model AdminArea {
   countryCodeIso3   String
   country           Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
   parentPlaceCode   String? // soft FK to admin-area.placeCode
-  // TODO: pg_featureserv cannot discover this table yet because it stores geometry as JSONB and/or because it cannot read the 'api-service' schema it seems.
-  // To fix, either change to a real PostGIS geometry column or create a SQL view that casts JSONB to geometry.
-  geometry          Json
+  geometry          Unsupported("geometry(MultiPolygon, 4326)")?
 
   @@index([countryCodeIso3])
   @@index([countryCodeIso3, adminLevel])
