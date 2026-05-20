@@ -5,7 +5,7 @@ import { IsArray, IsOptional, ValidateNested } from 'class-validator';
 import { ExposureAdminAreaDto } from '@api-service/src/alerts/dto/exposure-admin-area.dto';
 import { ExposureGeoFeatureDto } from '@api-service/src/alerts/dto/exposure-geo-feature.dto';
 import { ExposureRasterDto } from '@api-service/src/alerts/dto/exposure-raster.dto';
-import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import { Layer } from '@api-service/src/alerts/enum/shared-enums';
 
 export class ExposureDto {
   @ApiProperty({

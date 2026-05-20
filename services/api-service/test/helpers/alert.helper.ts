@@ -4,10 +4,12 @@ import * as request from 'supertest';
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
-import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
-import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
-import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
-import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import {
+  EnsembleMemberType,
+  ForecastSource,
+  HazardType,
+  Layer,
+} from '@api-service/src/alerts/enum/shared-enums';
 import { env } from '@api-service/src/env';
 import { getServer } from '@api-service/test/helpers/utility.helper';
 

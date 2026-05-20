@@ -5,7 +5,7 @@ import { IsArray, IsString, ValidateNested } from 'class-validator';
 import { CentroidDto } from '@api-service/src/alerts/dto/centroid.dto';
 import { ExposureDto } from '@api-service/src/alerts/dto/exposure.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
-import { EnsembleMemberType } from '@api-service/src/alerts/enum/ensemble-member-type.enum';
+import { EnsembleMemberType } from '@api-service/src/alerts/enum/shared-enums';
 
 export class AlertCreateDto {
   @ApiProperty({ example: 'KEN_floods_station-A' })

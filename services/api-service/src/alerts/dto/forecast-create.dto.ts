@@ -9,8 +9,10 @@ import {
 } from 'class-validator';
 
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
-import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
-import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
+import {
+  ForecastSource,
+  HazardType,
+} from '@api-service/src/alerts/enum/shared-enums';
 
 export class ForecastCreateDto {
   @ApiProperty({ example: '2026-03-20T12:00:00Z' })

@@ -1,8 +1,10 @@
 import { Test } from '@nestjs/testing';
 import { Event } from '@prisma/client';
 
-import { ForecastSource } from '@api-service/src/alerts/enum/forecast-source.enum';
-import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
+import {
+  ForecastSource,
+  HazardType,
+} from '@api-service/src/alerts/enum/shared-enums';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
 import {
   AlertToEventService,

@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client';
 import { AlertConfigCreateDto } from '@api-service/src/alert-configs/dto/alert-config-create.dto';
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
-import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
+import { HazardType } from '@api-service/src/alerts/enum/shared-enums';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
 type AlertConfigRow = Prisma.AlertConfigGetPayload<null>;
