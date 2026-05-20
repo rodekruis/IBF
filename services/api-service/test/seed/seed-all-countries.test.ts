@@ -30,12 +30,13 @@ describe('Seed – all countries', () => {
           .set('Cookie', [accessToken]);
 
         expect(response.status).toBe(HttpStatus.OK);
-        expect(response.body.length).toBeGreaterThan(0);
+        expect(response.body.features.length).toBeGreaterThan(0);
 
         const adminLevels = [
           ...new Set(
-            response.body.map(
-              (area: { adminLevel: number }) => area.adminLevel,
+            response.body.features.map(
+              (feature: { properties: { adminLevel: number } }) =>
+                feature.properties.adminLevel,
             ),
           ),
         ];
