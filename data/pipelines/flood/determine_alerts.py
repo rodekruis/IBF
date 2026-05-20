@@ -9,6 +9,7 @@ import numpy as np
 from pipelines.flood.extract_forecast import TimeIntervalDischarge
 from pipelines.infra.data_types.location_point import LocationPoint
 
+# TODO-infra: where to put this important setting
 MINIMUM_RETURN_PERIOD = "1.5yr"
 
 
@@ -16,9 +17,8 @@ MINIMUM_RETURN_PERIOD = "1.5yr"
 class TimeIntervalSeverity:
     time_interval_start: str
     time_interval_end: str
-    median_discharge: float
-    ensemble_discharges: list[float]
-    return_period: str
+    median_return_period: float
+    ensemble_return_periods: list[float]
 
 
 @dataclass
@@ -64,15 +64,20 @@ def determine_temporal_extent(
         if np.isnan(ensemble_array).all():
             continue
         median_discharge = float(np.nanmedian(ensemble_array))
-        return_period = _match_return_period(median_discharge, station_thresholds)
-        if return_period is not None:
+        median_return_period = _match_return_period_numeric(
+            median_discharge, station_thresholds
+        )
+        if median_return_period > 0:
+            ensemble_return_periods = [
+                _match_return_period_numeric(d, station_thresholds)
+                for d in time_interval_discharge.ensemble_discharges
+            ]
             time_interval_severities.append(
                 TimeIntervalSeverity(
                     time_interval_start=time_interval_discharge.time_interval_start,
                     time_interval_end=time_interval_discharge.time_interval_end,
-                    median_discharge=median_discharge,
-                    ensemble_discharges=time_interval_discharge.ensemble_discharges,
-                    return_period=return_period,
+                    median_return_period=median_return_period,
+                    ensemble_return_periods=ensemble_return_periods,
                 )
             )
 
@@ -101,22 +106,25 @@ def _get_station_return_period_thresholds(
     return None
 
 
-def _match_return_period(
+def _match_return_period_numeric(
     discharge: float,
     station_thresholds: dict[str, float],
-) -> str | None:
+) -> float:
     """
     Find the highest return period whose threshold the discharge exceeds.
-    Thresholds are expected as e.g. {"2yr": 100, "5yr": 200, "10yr": 350, ...}.
-    Returns the label of the highest exceeded return period, or None if none exceeded.
+    Returns the numeric return period value (e.g. 5.0, 20.0), or 0.0 if none exceeded.
     """
-    # sort thresholds descending by value to find the highest exceeded efficiently
-    for return_period, threshold_value in sorted(
+    for label, threshold_value in sorted(
         station_thresholds.items(), key=lambda item: item[1], reverse=True
     ):
         if discharge > threshold_value:
-            return return_period
-    return None
+            return _parse_return_period_label(label)
+    return 0.0
+
+
+def _parse_return_period_label(label: str) -> float:
+    """Parse a return period label like '5yr' or '1.5yr' into its numeric value."""
+    return float(label.replace("yr", ""))
 
 
 def _prepare_station_threshold(
@@ -142,4 +150,3 @@ def _prepare_station_threshold(
         return None
 
     return station_thresholds
-

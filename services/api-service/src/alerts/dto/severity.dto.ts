@@ -15,7 +15,7 @@ export class SeverityDto {
   @IsEnum(EnsembleMemberType)
   public readonly ensembleMemberType: EnsembleMemberType;
 
-  @ApiProperty({ example: 'water_discharge' })
+  @ApiProperty({ example: 'return_period' })
   @IsString()
   public readonly severityKey: string;
 

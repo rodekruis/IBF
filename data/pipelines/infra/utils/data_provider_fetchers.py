@@ -118,11 +118,13 @@ def _load_ibf_api_glofas_stations(
     )
     stations: dict[str, LocationPoint] = {}
     for item in data:
+        attributes = item.get("attributes", {})
         station = LocationPoint(
-            name=item.get("attributes", {}).get("name", ""),
+            name=attributes.get("name", ""),
             lat=item["geometry"]["coordinates"][1],
             lon=item["geometry"]["coordinates"][0],
             id=item["referenceId"],
+            attributes=attributes,
         )
         stations[station.id] = station
     container.data = stations

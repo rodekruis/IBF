@@ -44,8 +44,8 @@ describe('POST /alerts', () => {
               end: new Date('2026-03-22T00:00:00Z'),
             },
             ensembleMemberType: EnsembleMemberType.median,
-            severityKey: 'water_discharge',
-            severityValue: 1, // too low to trigger event
+            severityKey: 'return_period',
+            severityValue: 0,
           },
           {
             timeInterval: {
@@ -53,8 +53,8 @@ describe('POST /alerts', () => {
               end: new Date('2026-03-22T00:00:00Z'),
             },
             ensembleMemberType: EnsembleMemberType.run,
-            severityKey: 'water_discharge',
-            severityValue: 1, // too low to trigger event
+            severityKey: 'return_period',
+            severityValue: 0,
           },
         ],
       });
@@ -110,7 +110,7 @@ describe('POST /alerts', () => {
               end: new Date('2026-03-20T00:00:00Z'),
             },
             ensembleMemberType: EnsembleMemberType.median,
-            severityKey: 'water_discharge',
+            severityKey: 'return_period',
             severityValue: 1,
           },
           {
@@ -119,7 +119,7 @@ describe('POST /alerts', () => {
               end: new Date('2026-03-20T00:00:00Z'),
             },
             ensembleMemberType: EnsembleMemberType.run,
-            severityKey: 'water_discharge',
+            severityKey: 'return_period',
             severityValue: 1,
           },
         ],

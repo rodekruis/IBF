@@ -55,8 +55,8 @@ export function buildAlert(
           end: tomorrow,
         },
         ensembleMemberType: EnsembleMemberType.median,
-        severityKey: 'water_discharge',
-        severityValue: 120.5,
+        severityKey: 'return_period',
+        severityValue: 5,
       },
       {
         timeInterval: {
@@ -64,8 +64,8 @@ export function buildAlert(
           end: tomorrow,
         },
         ensembleMemberType: EnsembleMemberType.run,
-        severityKey: 'water_discharge',
-        severityValue: 135.0,
+        severityKey: 'return_period',
+        severityValue: 10,
       },
     ],
     exposure: {
@@ -117,13 +117,13 @@ export function buildSeverityData({
     {
       timeInterval: { start, end },
       ensembleMemberType: EnsembleMemberType.median,
-      severityKey: 'water_discharge',
+      severityKey: 'return_period',
       severityValue: medianValue,
     },
     ...runValues.map((value) => ({
       timeInterval: { start, end },
       ensembleMemberType: EnsembleMemberType.run as const,
-      severityKey: 'water_discharge',
+      severityKey: 'return_period',
       severityValue: value,
     })),
   ];

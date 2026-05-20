@@ -27,11 +27,11 @@ export const FLOOD_LEAD_TIME_SPECTRUM = [
   '7-day',
 ];
 
-// TODO AB#42288 make thresholds station-specific
+// TODO: move severity/probability thresholds out of alert-config into a country*hazardType-config
 export const FLOOD_SEVERITY_CLASS_LEVELS = [
-  { label: 'low', threshold: 100 },
-  { label: 'med', threshold: 200 },
-  { label: 'high', threshold: 400 },
+  { label: 'low', threshold: 1.5 },
+  { label: 'med', threshold: 5 },
+  { label: 'high', threshold: 20 },
 ];
 
 export const FLOOD_PROBABILITY_CLASS_LEVELS = [
