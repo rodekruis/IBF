@@ -28,10 +28,6 @@ from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.data_types.location_point import LocationPoint
 
-GLOFAS_MIN_RP_THRESHOLDS = (
-    1.5  # GloFAS minimum return period thresholds # TODO-infra: where to put this?
-)
-
 
 def calculate_flood_forecasts(
     data_provider: DataProvider,
@@ -58,9 +54,6 @@ def calculate_flood_forecasts(
         return
 
     # TODO AB#41454: load these through the data provider once the data sources are registered
-    # thresholds: dict[str, dict[str, float]] = data_provider.get_data(
-    #     DataSource.GLOFAS_MIN_RP_THRESHOLDS
-    # ).data
     # basins_geojson: dict = data_provider.get_data(
     #     DataSource.HYDROSHEDS_BASINS
     # ).data
@@ -75,15 +68,6 @@ def calculate_flood_forecasts(
     glofas_netcdf_paths: list[str] = [
         "./pipelines/flood/bronze/glofas/dis_00_2026040800.nc"
     ]
-    # thresholds for stations json files
-    thresholds_path: list[str] = [
-        f for f in glob.glob(f"./pipelines/flood/bronze/thresholds/*_{country}.json")
-    ]
-    thresholds: list[ReturnPeriodThresholds] = []
-    for path in thresholds_path:
-        with open(path) as f:
-            loaded_thresholds = json.load(f)
-        thresholds.append(loaded_thresholds)
     # station-district mapping json file (or basins_geojson if mapping with basin instead)
     station_district_mapping_path: str = (
         f"./pipelines/flood/bronze/station-district/{country}_station_district_mapping.json"
@@ -114,6 +98,12 @@ def calculate_flood_forecasts(
     for netcdf_path in glofas_netcdf_paths:
         country_sliced_path = slice_netcdf_to_bounds(netcdf_path, country_bounds)
         country_sliced_netcdf_paths.append(country_sliced_path)
+
+    thresholds: list[ReturnPeriodThresholds] = [
+        {"station_code": s.id, "thresholds": s.attributes.get("thresholds", [])}
+        for s in stations.values()
+        if s.attributes.get("thresholds")
+    ]
 
     ### Step 3 - Loop through alert configs (spatial extents / stations) ###
     # DO NOT REMOVE: this loop over spatial-extents is obligatory. TODO-infra: enforce this better.
@@ -191,22 +181,22 @@ def calculate_flood_forecasts(
             )
 
             for severity in time_interval_severities:
-                for i in range(len(severity.ensemble_discharges)):
+                for i in range(len(severity.ensemble_return_periods)):
                     data_submitter.add_severity_data(
                         event_name=event_name,
                         time_interval_start=severity.time_interval_start,
                         time_interval_end=severity.time_interval_end,
                         ensemble_member_type=EnsembleMemberType.RUN,
-                        severity_key="water_discharge",
-                        severity_value=severity.ensemble_discharges[i],
+                        severity_key="return_period",
+                        severity_value=severity.ensemble_return_periods[i],
                     )
                 data_submitter.add_severity_data(
                     event_name=event_name,
                     time_interval_start=severity.time_interval_start,
                     time_interval_end=severity.time_interval_end,
                     ensemble_member_type=EnsembleMemberType.MEDIAN,
-                    severity_key="water_discharge",
-                    severity_value=severity.median_discharge,
+                    severity_key="return_period",
+                    severity_value=severity.median_return_period,
                 )
 
             # TODO: determine place codes by looking at the admin areas in a catchment area.

@@ -1,18 +1,6 @@
 from __future__ import annotations
 
-import logging
 import os
-
-# Supported return period labels used by flood alerts.
-
-RETURN_PERIODS: dict[str, int] = {
-    "5yr": 5,
-    "10yr": 10,
-    "20yr": 20,
-    "25yr": 25,
-    "50yr": 50,
-    "100yr": 100
-}
 
 
 def compute_alert_extent(
@@ -52,21 +40,6 @@ def _extract_return_period_value(path: str) -> int | None:
 
     return None
 
-def _extract_return_period_label_value(return_period_label: str) -> int | None:
-    """
-    Extract the return period value from a return period label.
-    Expected label format: "Xyr", e.g. "5yr", "20yr".
-    Returns the return period value as an integer, or None if it cannot be extracted.
-    """
-    normalized_label = return_period_label.strip().lower()
-
-    if normalized_label.endswith("yr"):
-        value_text = normalized_label[:-2].strip()
-        if value_text.isdigit():
-            return int(value_text)
-
-    return None
-
 
 def _resolve_empty_flood_extent_path(flood_extent_paths: list[str]) -> str | None:
     for flood_extent_path in flood_extent_paths:
@@ -88,26 +61,19 @@ def _resolve_empty_flood_extent_path(flood_extent_paths: list[str]) -> str | Non
 
     return None
 
-def _resolve_requested_return_period_value(time_interval_severities: list) -> int | None:
+
+def _resolve_requested_return_period_value(
+    time_interval_severities: list,
+) -> int | None:
     """
     Resolve flood extent raster for the highest matched return period
     """
     highest_return_period = max(
         time_interval_severities,
-        key=lambda s: s.median_discharge,
-    ).return_period
+        key=lambda s: s.median_return_period,
+    ).median_return_period
 
-    return_period = RETURN_PERIODS.get(highest_return_period)
-    if return_period is not None:
-        return return_period
-
-    parsed_return_period = _extract_return_period_label_value(highest_return_period)
-    if parsed_return_period is None:
-        logging.warning(
-            f"Unknown return period '{highest_return_period}', using empty fallback"
-        )
-
-    return parsed_return_period
+    return int(highest_return_period) if highest_return_period > 0 else None
 
 
 def _resolve_flood_extent(
@@ -134,7 +100,11 @@ def _resolve_flood_extent(
 
     if return_period is not None:
         fallback_value = max(
-            (value for value in available_paths_by_value.keys() if value <= return_period),
+            (
+                value
+                for value in available_paths_by_value.keys()
+                if value <= return_period
+            ),
             default=None,
         )
         if fallback_value is not None:
@@ -149,4 +119,3 @@ def _resolve_flood_extent(
         )
 
     return empty_path
-

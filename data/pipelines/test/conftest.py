@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.alert_types import (
     Centroid,
@@ -34,7 +35,7 @@ def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
-        severity_key="water_discharge",
+        severity_key="return_period",
         severity_value=0,
     )
     submitter.add_severity_data(
@@ -42,7 +43,7 @@ def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.MEDIAN,
-        severity_key="water_discharge",
+        severity_key="return_period",
         severity_value=0,
     )
     submitter.add_admin_area_exposure(

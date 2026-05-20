@@ -44,7 +44,7 @@ def test_severity_missing_median_is_rejected(
         time_interval_start="2026-03-21T00:00:00Z",
         time_interval_end="2026-03-21T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
-        severity_key="water_discharge",
+        severity_key="return_period",
         severity_value=0,
     )
 
@@ -63,7 +63,7 @@ def test_severity_missing_ensemble_is_rejected(
         time_interval_start="2026-03-21T00:00:00Z",
         time_interval_end="2026-03-21T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.MEDIAN,
-        severity_key="water_discharge",
+        severity_key="return_period",
         severity_value=0,
     )
 
@@ -116,7 +116,7 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
-        severity_key="water_discharge",
+        severity_key="return_period",
         severity_value=0,
     )
     submitter.add_severity_data(
@@ -124,7 +124,7 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.MEDIAN,
-        severity_key="water_discharge",
+        severity_key="return_period",
         severity_value=0,
     )
     submitter.add_admin_area_exposure(
@@ -164,7 +164,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
-        severity_key="water_discharge",
+        severity_key="return_period",
         severity_value=0,
     )
     submitter.add_severity_data(
@@ -172,7 +172,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.MEDIAN,
-        severity_key="water_discharge",
+        severity_key="return_period",
         severity_value=0,
     )
     submitter.add_admin_area_exposure(
@@ -222,7 +222,7 @@ def test_time_interval_start_after_end_is_rejected(
         time_interval_start="2026-03-22T00:00:00Z",
         time_interval_end="2026-03-21T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
-        severity_key="water_discharge",
+        severity_key="return_period",
         severity_value=0,
     )
 
@@ -249,7 +249,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
-        severity_key="water_discharge",
+        severity_key="return_period",
         severity_value=0,
     )
     submitter.add_severity_data(
@@ -257,7 +257,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.MEDIAN,
-        severity_key="water_discharge",
+        severity_key="return_period",
         severity_value=0,
     )
     submitter.add_raster_exposure(

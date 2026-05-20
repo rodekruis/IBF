@@ -4,9 +4,10 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
-from pipelines.flood.compute_alert_extent import compute_alert_extent
-from pipelines.flood.compute_alert_extent import _resolve_flood_extent
+from pipelines.flood.compute_alert_extent import (
+    _resolve_flood_extent,
+    compute_alert_extent,
+)
 
 
 def _touch_file(path: Path) -> str:
@@ -15,10 +16,9 @@ def _touch_file(path: Path) -> str:
     return str(path)
 
 
-def _build_time_interval_severities(return_period: str):
+def _build_time_interval_severities(return_period: float):
     severity = SimpleNamespace(
-        median_discharge=1.0,
-        return_period=return_period,
+        median_return_period=return_period,
     )
     return [severity]
 
@@ -26,7 +26,7 @@ def _build_time_interval_severities(return_period: str):
 def test_returns_exact_matching_return_period(tmp_path: Path):
     path_10yr = _touch_file(tmp_path / "flood_map_uga_RP10.tif")
     path_50yr = _touch_file(tmp_path / "flood_map_uga_RP50.tif")
-    time_interval_severities = _build_time_interval_severities("50yr")
+    time_interval_severities = _build_time_interval_severities(50)
 
     selected = compute_alert_extent(
         time_interval_severities=time_interval_severities,
@@ -39,7 +39,7 @@ def test_returns_exact_matching_return_period(tmp_path: Path):
 def test_falls_back_to_closest_lower_return_period(tmp_path: Path):
     path_5yr = _touch_file(tmp_path / "flood_map_uga_RP5.tif")
     path_25yr = _touch_file(tmp_path / "flood_map_uga_RP25.tif")
-    time_interval_severities = _build_time_interval_severities("50yr")
+    time_interval_severities = _build_time_interval_severities(50)
 
     selected = compute_alert_extent(
         time_interval_severities=time_interval_severities,
@@ -52,7 +52,7 @@ def test_falls_back_to_closest_lower_return_period(tmp_path: Path):
 def test_falls_back_to_empty_when_no_lower_return_period_exists(tmp_path: Path):
     path_50yr = _touch_file(tmp_path / "flood_map_uga_RP50.tif")
     path_empty = _touch_file(tmp_path / "flood_map_uga_empty.tif")
-    time_interval_severities = _build_time_interval_severities("10yr")
+    time_interval_severities = _build_time_interval_severities(10)
 
     selected = compute_alert_extent(
         time_interval_severities=time_interval_severities,
@@ -65,7 +65,7 @@ def test_falls_back_to_empty_when_no_lower_return_period_exists(tmp_path: Path):
 def test_ignores_missing_files_and_uses_existing_lower(tmp_path: Path):
     missing_50yr = str(tmp_path / "flood_map_uga_RP50.tif")
     path_10yr = _touch_file(tmp_path / "flood_map_uga_RP10.tif")
-    time_interval_severities = _build_time_interval_severities("25yr")
+    time_interval_severities = _build_time_interval_severities(25)
 
     selected = compute_alert_extent(
         time_interval_severities=time_interval_severities,
@@ -76,7 +76,7 @@ def test_ignores_missing_files_and_uses_existing_lower(tmp_path: Path):
 
 
 def test_raises_when_no_raster_and_no_empty_fallback(tmp_path: Path):
-    time_interval_severities = _build_time_interval_severities("10yr")
+    time_interval_severities = _build_time_interval_severities(10)
 
     with pytest.raises(FileNotFoundError, match="no empty fallback raster was found"):
         compute_alert_extent(

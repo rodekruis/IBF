@@ -23,9 +23,9 @@ function toClassificationInput(
 const testFloodConfig: Partial<AlertConfigResponseDto> = {
   hazardType: HazardType.floods,
   severityClassLevels: [
-    { label: 'low', threshold: 100 },
-    { label: 'med', threshold: 200 },
-    { label: 'high', threshold: 400 },
+    { label: 'low', threshold: 1.5 },
+    { label: 'med', threshold: 5 },
+    { label: 'high', threshold: 20 },
   ],
   probabilityClassLevels: [
     { label: 'low', threshold: 0.5 },
@@ -94,8 +94,8 @@ describe('AlertClassificationService', () => {
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
             end: new Date('2026-04-02T00:00:00Z'),
-            medianValue: 50,
-            runValues: [30, 40],
+            medianValue: 1.0,
+            runValues: [0.5, 1.0],
           }),
         });
 
@@ -110,8 +110,8 @@ describe('AlertClassificationService', () => {
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
             end: new Date('2026-04-02T00:00:00Z'),
-            medianValue: 120,
-            runValues: [150, 150, 150, 150, 150, 150, 150, 150, 150, 150],
+            medianValue: 2,
+            runValues: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
           }),
         });
 
@@ -122,14 +122,14 @@ describe('AlertClassificationService', () => {
       });
 
       it('should return high alertClass for high severity with high probability', async () => {
-        // median=500 → severity 'high' (≥400), all runs exceed 400 → prob=1.0 → 'high'
+        // median=25 → severity 'high' (≥20), all runs exceed 20 → prob=1.0 → 'high'
         // matrix[high][high] = 'high'
         const alert = buildAlert({
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
             end: new Date('2026-04-02T00:00:00Z'),
-            medianValue: 500,
-            runValues: [500, 500, 500, 500, 500, 500, 500, 500, 500, 500],
+            medianValue: 25,
+            runValues: [25, 25, 25, 25, 25, 25, 25, 25, 25, 25],
           }),
         });
 
@@ -140,21 +140,21 @@ describe('AlertClassificationService', () => {
       });
 
       it('should pick highest alertClass across multiple lead times and compute correct dates', async () => {
-        // LT1: Apr 1–2, median=120, all runs=150 → 'low'
-        // LT2: Apr 3–5, median=500, all runs=500 → 'high'
+        // LT1: Apr 1–2, median=2, all runs=2 → 'low'
+        // LT2: Apr 3–5, median=25, all runs=25 → 'high'
         const alert = buildAlert({
           severity: [
             ...buildSeverityData({
               start: new Date('2026-04-01T00:00:00Z'),
               end: new Date('2026-04-02T00:00:00Z'),
-              medianValue: 120,
-              runValues: [150, 150, 150],
+              medianValue: 2,
+              runValues: [2, 2, 2],
             }),
             ...buildSeverityData({
               start: new Date('2026-04-03T00:00:00Z'),
               end: new Date('2026-04-05T00:00:00Z'),
-              medianValue: 500,
-              runValues: [500, 500, 500],
+              medianValue: 25,
+              runValues: [25, 25, 25],
             }),
           ],
         });
@@ -176,8 +176,8 @@ describe('AlertClassificationService', () => {
             severity: buildSeverityData({
               start: new Date('2026-04-01T00:00:00Z'),
               end: new Date('2026-04-02T00:00:00Z'),
-              medianValue: 500,
-              runValues: [500, 500, 500],
+              medianValue: 25,
+              runValues: [25, 25, 25],
             }),
           });
 
@@ -196,8 +196,8 @@ describe('AlertClassificationService', () => {
             severity: buildSeverityData({
               start: new Date('2026-04-10T00:00:00Z'),
               end: new Date('2026-04-11T00:00:00Z'),
-              medianValue: 500,
-              runValues: [500, 500, 500],
+              medianValue: 25,
+              runValues: [25, 25, 25],
             }),
           });
 
@@ -217,8 +217,8 @@ describe('AlertClassificationService', () => {
             severity: buildSeverityData({
               start: new Date('2026-04-01T00:00:00Z'),
               end: new Date('2026-04-02T00:00:00Z'),
-              medianValue: 120,
-              runValues: [150, 150, 150],
+              medianValue: 2,
+              runValues: [2, 2, 2],
             }),
           });
 
