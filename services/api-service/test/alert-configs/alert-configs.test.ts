@@ -86,7 +86,7 @@ describe('/ Alert Configs', () => {
     it('should return empty array for country with no configs of given type', async () => {
       const response = await getServer()
         .get('/alert-configs')
-        .query({ countryCodeIso3: 'ETH', hazardType: HazardType.drought })
+        .query({ countryCodeIso3: 'XXX', hazardType: HazardType.drought })
         .set('Cookie', [accessToken]);
 
       expect(response.status).toBe(HttpStatus.OK);
