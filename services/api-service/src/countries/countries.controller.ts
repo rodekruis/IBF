@@ -55,9 +55,14 @@ export class CountriesController {
     return this.countriesService.getCountryOrThrow(countryCodeIso3);
   }
 
+  // TODO: Consider adding a batch endpoint (POST with array body) for bulk imports
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
-  @ApiOperation({ summary: 'Create a country' })
+  @ApiOperation({
+    summary: 'Create a country',
+    description:
+      'Not part of the current operational flow. Countries are currently seeded via /reset endpoint. This endpoint enables future manual data management by admins.',
+  })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Country created successfully',
@@ -75,7 +80,11 @@ export class CountriesController {
 
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Patch(':countryCodeIso3')
-  @ApiOperation({ summary: 'Update a country' })
+  @ApiOperation({
+    summary: 'Update a country',
+    description:
+      'Not part of the current operational flow. Countries are currently seeded via /reset endpoint. This endpoint enables future manual data management by admins.',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Country updated successfully',
@@ -98,7 +107,11 @@ export class CountriesController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':countryCodeIso3')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a country' })
+  @ApiOperation({
+    summary: 'Delete a country',
+    description:
+      'Not part of the current operational flow. Countries are currently seeded via /reset endpoint. This endpoint enables future manual data management by admins.',
+  })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Country deleted successfully',

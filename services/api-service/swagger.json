@@ -159,5 +159,26 @@
       "countryCodeIso3",
       "layer"
     ]
+  },
+  {
+    "method": "post",
+    "path": "/api/geo-features",
+    "params": [],
+    "returnType": "GeoFeatureResponseDto"
+  },
+  {
+    "method": "patch",
+    "path": "/api/geo-features/{id}",
+    "params": [
+      "id"
+    ],
+    "returnType": "GeoFeatureResponseDto"
+  },
+  {
+    "method": "delete",
+    "path": "/api/geo-features/{id}",
+    "params": [
+      "id"
+    ]
   }
 ]

@@ -45,9 +45,14 @@ export class AdminAreasController {
     return this.adminAreasService.getAdminAreas(query);
   }
 
+  // TODO: Consider adding a batch endpoint (POST with array body) for bulk imports
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
-  @ApiOperation({ summary: 'Create an admin area' })
+  @ApiOperation({
+    summary: 'Create an admin area',
+    description:
+      'Not part of the current operational flow. Admin areas are currently seeded via /reset endpoint. This endpoint enables future manual data management by admins.',
+  })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Admin area created successfully',
@@ -69,7 +74,11 @@ export class AdminAreasController {
 
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Patch(':placeCode')
-  @ApiOperation({ summary: 'Update an admin area' })
+  @ApiOperation({
+    summary: 'Update an admin area',
+    description:
+      'Not part of the current operational flow. Admin areas are currently seeded via /reset endpoint. This endpoint enables future manual data management by admins.',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Admin area updated successfully',
@@ -96,7 +105,11 @@ export class AdminAreasController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':placeCode')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete an admin area' })
+  @ApiOperation({
+    summary: 'Delete an admin area',
+    description:
+      'Not part of the current operational flow. Admin areas are currently seeded via /reset endpoint. This endpoint enables future manual data management by admins.',
+  })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Admin area deleted successfully',
