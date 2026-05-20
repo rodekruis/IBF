@@ -1,0 +1,150 @@
+bundle:
+  name: ibf-pipelines
+
+# This bundle deploys the hazard pipelines, and defines what runs and when.
+#
+# The bundle is packaged as a Python wheel (built via `uv build --wheel`)
+# and executed via the `pipeline` entry point declared in pyproject.toml.
+#
+# Source files (including infra/configs/*.yaml) are also synced to the
+# workspace by `databricks bundle deploy`, so the YAML configs can be
+# referenced via ${workspace.file_path}.
+#
+# Since this is a bundle file, it needs to be in the data/ directory.
+
+variables:
+  notification_email:
+    description: Email address to notify on job failure.
+    default: ehill@redcross.nl
+  node_type_id:
+    description: Azure VM type for the job cluster.
+    default: Standard_DS3_v2
+  spark_version:
+    description: Databricks Runtime version (must include Python 3.12+).
+    default: 16.4.x-scala2.12
+
+artifacts:
+  pipelines_wheel:
+    type: whl
+    build: uv build --wheel
+    path: .
+
+targets:
+  # Per-user sandbox. `mode: development` auto-prefixes job names with
+  # `[dev <user>]`, pauses all schedules, and isolates artifacts under a
+  # per-user path. Use this for local `databricks bundle deploy --target dev`
+  # iteration. Not deployed by CI.
+  #
+  # NOTE: `workspace.host` is intentionally omitted on every target. The
+  # Databricks CLI does not support variable interpolation in that field, so
+  # the host is taken from the `DATABRICKS_HOST` environment variable (set
+  # locally via data/.env or in the GitHub Actions workflow).
+  dev:
+    mode: development
+    workspace:
+      root_path: /Workspace/ibf/dev/${workspace.current_user.short_name}
+
+  # Shared pre-prod target. Same shape as `prod` but deployed to a separate
+  # workspace path and with schedules paused, so jobs only run when triggered
+  # manually (via `databricks bundle run --target test <job>` or the UI).
+  # Not deployed by CI; deploy from a developer machine.
+  test:
+    mode: production
+    workspace:
+      root_path: /Workspace/ibf/test
+    resources:
+      jobs:
+        ibf_drought_forecast:
+          schedule:
+            pause_status: PAUSED
+        ibf_floods_forecast:
+          schedule:
+            pause_status: PAUSED
+
+  # Production target. PRs do not deploy; only pushes to `main` deploy this
+  # target via the GitHub Actions workflow.
+  prod:
+    mode: production
+    default: true
+    workspace:
+      root_path: /Workspace/ibf/prod
+
+resources:
+  jobs:
+    ibf_drought_forecast:
+      name: 'IBF - Drought forecast'
+      description: 'Daily drought forecast pipeline (currently runs on test data).'
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      schedule:
+        # Daily at 06:00 UTC.
+        quartz_cron_expression: '0 0 6 * * ?'
+        timezone_id: UTC
+        pause_status: UNPAUSED
+      email_notifications:
+        on_failure:
+          - ${var.notification_email}
+      tasks:
+        - task_key: run_drought
+          job_cluster_key: ibf_cluster
+          python_wheel_task:
+            package_name: pipelines
+            entry_point: pipeline
+            parameters:
+              - --config
+              - ${workspace.file_path}/pipelines/infra/configs/drought.yaml
+              - --run-target
+              - DEBUG
+          libraries:
+            - whl: ./dist/*.whl
+      job_clusters:
+        - job_cluster_key: ibf_cluster
+          new_cluster:
+            spark_version: ${var.spark_version}
+            node_type_id: ${var.node_type_id}
+            num_workers: 0
+            data_security_mode: SINGLE_USER
+            custom_tags:
+              ibf-pipeline: drought
+            spark_env_vars:
+              IBF_API_URL: '{{secrets/nrw/IBF_API_URL}}'
+              IBF_PIPELINE_API_KEY: '{{secrets/nrw/IBF_PIPELINE_API_KEY}}'
+
+    ibf_floods_forecast:
+      name: 'IBF - Floods forecast'
+      description: 'Daily floods forecast pipeline (currently runs on test data).'
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      schedule:
+        # Daily at 06:30 UTC (staggered from drought).
+        quartz_cron_expression: '0 30 6 * * ?'
+        timezone_id: UTC
+        pause_status: UNPAUSED
+      email_notifications:
+        on_failure:
+          - ${var.notification_email}
+      tasks:
+        - task_key: run_floods
+          job_cluster_key: ibf_cluster
+          python_wheel_task:
+            package_name: pipelines
+            entry_point: pipeline
+            parameters:
+              - --config
+              - ${workspace.file_path}/pipelines/infra/configs/floods.yaml
+              - --run-target
+              - DEBUG
+          libraries:
+            - whl: ./dist/*.whl
+      job_clusters:
+        - job_cluster_key: ibf_cluster
+          new_cluster:
+            spark_version: ${var.spark_version}
+            node_type_id: ${var.node_type_id}
+            num_workers: 0
+            data_security_mode: SINGLE_USER
+            custom_tags:
+              ibf-pipeline: floods
+            spark_env_vars:
+              IBF_API_URL: '{{secrets/nrw/IBF_API_URL}}'
+              IBF_PIPELINE_API_KEY: '{{secrets/nrw/IBF_PIPELINE_API_KEY}}'

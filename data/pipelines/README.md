@@ -8,7 +8,7 @@ Hazard-specific forecast implementations that use the pipeline infrastructure fr
 
 See the [data README](../README.md) for general Python/UV setup and dependency management.
 
-### Running a pipeline
+### Running a pipeline locally
 
 From the `<repo root>/data/` directory:
 
@@ -22,6 +22,77 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG
 | `--run-target` | Run target defined in the config (e.g. `DEBUG`, `TEST`)                          |
 | `--scenario`   | _(optional)_ Infra-level override: `no-alert` or `alert`. Bypasses forecast.py   |
 | `--issued-at`  | _(optional)_ Override the issued-at timestamp (ISO 8601). Requires `--scenario`  |
+
+## Deploying pipelines to Azure
+
+### Setting up Azure Databricks (one time per environment)
+
+#### Create the resource
+
+1. Go to https://portal.azure.com/#home
+1. Create the Resource Azure Databricksfor the `510 Anticipatory Action` subscription.
+1. Create with the tags: owner: <your email> , environment: <dev, test, etc>
+
+#### Create a ’Service Principal’ account
+
+These steps are to create a service principal that is managed inside Databricks. You can also create an Entra ID (subscription scope) to use as the service principal, but this requires admin permissions for the Azure subscription.
+
+1. Go to the Databricks **workspace**. From the overview page, you can get there by clicking on the resource url, or just by going to https://accounts.azuredatabricks.net.
+1. Click on **Settings** (top right user menu) → **Identity and access → Service principals → Add service principal → Add new**.
+1. Give it any name, such as `nrw-test-bot`. Click **Add**. Default settings give it permissions to run jobs, but if more access is needed, you can create a group with higher permissions, and assign it to that.
+1. In the service principal management panel (this should be open if you just made it, but if not, **Identity and access → Service principals → manage** for the principal you want) → **Secrets tab → Generate secret**. Copy the Client ID and Secret (i.e. to your .env file for DATABRICKS_CLIENT_ID and DATABRICKS_CLIENT_SECRET) since the secret is shown only once. (Question: should each user have their own secret, or do we share one for local testing?)
+
+#### Create the `nrw` secret scope and populate it
+
+The pipelines read runtime configuration (the IBF API URL and pipeline API key) from a Databricks secret scope at job runtime. These are referenced from `databricks.yml` as `{{secrets/nrw/<NAME>}}` and injected into the job cluster as environment variables. This step creates that scope and populates it. Do this once per Databricks workspace (i.e. per environment).
+
+1. Authenticate once: `databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net` (browser flow; one-time, for setup only). In the command line, you’ll have a prompt like `Databricks profile name [adb-7405XXXXXXX]:`. Just hit enter, your browser will open, and you can authenticate via SSO.
+1. Create the `nrw` secret scope and add the secrets the pipelines need:
+   ```
+   databricks secrets create-scope nrw
+   databricks secrets put-secret nrw IBF_API_URL
+   databricks secrets put-secret nrw IBF_PIPELINE_API_KEY
+   ```
+   Each `put-secret` call opens an editor; paste the value, save, and close.
+1. Grant the service principal read access to the scope so its jobs can resolve the secrets:
+   ```
+   databricks secrets put-acl nrw <service-principal-application-id> READ
+   ```
+
+### Running from Github
+
+Deploys are handled by `.github/workflows/deploy_databricks_pipelines.yml`, which runs `databricks bundle deploy` from the `data/` directory using the bundle defined in `databricks.yml`. [As of May 2026] The workflow only deploys to the `test` target.
+
+- Any push to `main` that touches `data/**` (or the workflow file itself) auto-deploys to the specified branch.
+- You can also manually trigger it from the Actions tab with `workflow_dispatch`.
+
+To enable the workflow, add the following as **GitHub Actions secrets** (repo **→ Settings → Secrets and variables → Actions → New repository secret**):
+
+- `DATABRICKS_HOST`
+- `DATABRICKS_CLIENT_ID`
+- `DATABRICKS_CLIENT_SECRET`
+
+Note: these are the only secrets that go here. Other secrets are needed for the job at runtime and go in the above Databricks `nrw` secret scope.
+
+#### Deploying from your system
+
+Use this when you want to deploy a change from your local system without going through GitHub. One-time setup:
+
+1. Install the Databricks CLI:
+   ```
+   brew tap databricks/tap
+   brew install databricks
+   ```
+1. Set `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, and `DATABRICKS_CLIENT_SECRET` in your `data/.env` (see `data/.env.example`), or authenticate interactively: `databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net` (which logs in via SSO in the browser).
+
+From the `data/` directory, run these to validate and deploy:
+
+```
+databricks bundle validate --target <target_env>
+databricks bundle deploy   --target <target_env>
+```
+
+You can see the test run in the [Databricks UI](https://accounts.azuredatabricks.net.) under **Workflows → Job runs**.
 
 ## Structure
 

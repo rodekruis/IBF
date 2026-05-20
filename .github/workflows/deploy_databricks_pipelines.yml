@@ -1,0 +1,59 @@
+name: Deploy Databricks pipelines
+
+# Deploys the IBF pipelines bundle (see data/databricks.yml) to Azure Databricks.
+# A deploy is triggered:
+#   - Automatically when changes are pushed to `main`.
+#   - Manually via the `workflow_dispatch` trigger (Actions UI).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/**'
+      - '.github/workflows/deploy_databricks_pipelines.yml'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Bundle target to deploy (prod is intentionally not selectable here).'
+        type: choice
+        required: true
+        default: test
+        # List acceptable target envs here for this command
+        options:
+          - test
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # This deploys to test for pushes to main.
+    # Change this as needed.
+    name: "Deploy bundle to Databricks (${{ github.event_name == 'push' && 'test' || inputs.target }})"
+    runs-on: ubuntu-latest
+    env:
+      # Service principal (Entra ID app) credentials with workspace admin
+      # access. Configure these in the repo's GitHub Actions secrets.
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+      TARGET: ${{ github.event_name == 'push' && 'test' || inputs.target }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          python-version: '3.12'
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Validate bundle
+        working-directory: data
+        run: databricks bundle validate --target "$TARGET"
+
+      - name: Deploy bundle
+        working-directory: data
+        run: databricks bundle deploy --target "$TARGET"
