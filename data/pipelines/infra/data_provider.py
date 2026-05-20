@@ -129,7 +129,7 @@ if __name__ == "__main__":
                         f"{first_item.properties.name}, {first_item.properties.pcode}, "
                         f"level: {first_item.properties.admin_level}, "
                         f"country: {first_item.properties.country_code}, "
-                        f"parent: {first_item.properties.parent_pcode}, ",
+                        f"parents: {first_item.properties.parent_pcodes}, ",
                     )
                 else:
                     print(

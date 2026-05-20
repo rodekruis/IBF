@@ -123,12 +123,13 @@ export class SeedInit {
         const batch = adminAreas.slice(i, i + BATCH_SIZE);
         const values = batch.map((area) => {
           const geojson = JSON.stringify(area.geometry);
+          const attrs = JSON.stringify(area.attributes);
           return Prisma.sql`(
             ${area.placeCode},
             ${area.adminLevel},
             ${area.nameEn},
             ${area.countryCodeIso3},
-            ${area.parentPlaceCode ?? null},
+            ${attrs}::jsonb,
             NOW(),
             NOW(),
             public.ST_Force2D(public.ST_GeomFromGeoJSON(${geojson}))
@@ -136,7 +137,7 @@ export class SeedInit {
         });
         await tx.$executeRaw`
           INSERT INTO "api-service"."admin-area"
-            ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", "parentPlaceCode", created, updated, geometry)
+            ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", attributes, created, updated, geometry)
           VALUES ${Prisma.join(values)}`;
       }
     });
@@ -153,7 +154,7 @@ export class SeedInit {
         adminLevel: number;
         nameEn: string;
         countryCodeIso3: string;
-        parentPlaceCode: string | null;
+        attributes: Prisma.InputJsonValue;
         geometry: Record<string, unknown>;
       }
     | undefined {
@@ -182,18 +183,21 @@ export class SeedInit {
       return undefined;
     }
 
-    // Parent place code is one level up
-    const parentPlaceCode =
-      file.adminLevel > 0
-        ? (props[`ADM${file.adminLevel - 1}_PCODE`] ?? null)
-        : null;
+    // Collect all parent place codes into attributes
+    const attributes: Record<string, string> = {};
+    for (let level = 0; level < file.adminLevel; level++) {
+      const parentPcode = props[`ADM${level}_PCODE`];
+      if (parentPcode) {
+        attributes[`ADM${level}_PCODE`] = parentPcode;
+      }
+    }
 
     return {
       placeCode,
       adminLevel: file.adminLevel,
       nameEn,
       countryCodeIso3: file.countryCodeIso3,
-      parentPlaceCode,
+      attributes: attributes as unknown as Prisma.InputJsonValue,
       geometry: this.normalizeToMultiPolygon(feature.geometry),
     };
   }

@@ -199,14 +199,9 @@ def calculate_flood_forecasts(
             )
 
         # TODO: determine place codes by looking at the admin areas in a catchment area.
-        # TODO AB#42204: Move the admin-level filtering back to infra, instead of here
-        alert_place_codes: list[str] = [
-            pcode
-            for pcode, area in target_admin_areas.admin_areas.items()
-            if area.properties.admin_level == target_admin_level
-        ]
+        alert_place_codes: list[str] = list(target_admin_areas.admin_areas.keys())
 
-        # TODO: actually, do not call add_admin_area_exposure per place_code, but just once (per layer)
+        # TODO-infra: actually, do not call add_admin_area_exposure per place_code, but just once (per layer)
         for place_code in alert_place_codes:
             data_submitter.add_admin_area_exposure(
                 event_name=event_name,
@@ -215,7 +210,8 @@ def calculate_flood_forecasts(
                 layer=Layer.POPULATION_EXPOSED,
                 value=population_exposed.get(place_code, 0),
             )
-        # TODO: use this in the future to (A) add water-discharege/return-period for glofas-station-popup and (B) add exposure status of points/roads/buildings.
+
+        # TODO: use this in the future to (A) add water-discharge/return-period for glofas-station-popup and (B) add exposure status of points/roads/buildings.
         # data_submitter.add_geo_feature_exposure(
         #     event_name=event_name,
         #     geo_feature_id=station_code,

@@ -52,11 +52,9 @@ def calculate_drought_forecasts(
         seasons = region.seasons
         # TODO: determine place codes by looking at the admin areas in a climate region
         # For now, just get the first two place codes from the admin areas for debug.
-        debug_alert_place_codes: list[str] = [
-            pcode
-            for pcode, area in target_admin_areas.admin_areas.items()
-            if area.properties.admin_level == target_admin_level
-        ][:2]
+        debug_alert_place_codes: list[str] = list(
+            target_admin_areas.admin_areas.keys()
+        )[:2]
 
         for season in seasons:
             event_name = f"{country}_drought_{region.name}_{season}"

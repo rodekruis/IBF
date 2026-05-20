@@ -9,7 +9,6 @@ import io
 import logging
 import os
 
-from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
@@ -22,6 +21,7 @@ from pipelines.infra.data_types.loaded_data_types import (
     LoadedDataSource,
 )
 from pipelines.infra.data_types.location_point import LocationPoint
+from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.dummy_data import DUMMY_DATA
 from shared.download_helpers import download_json_source, download_object
 
@@ -55,6 +55,7 @@ def load_data_container(
                 container,
                 api_client,
                 data_config.country_code_iso_3,
+                country_config.target_admin_level,
             )
         case DataSource.POPULATION_SEED_REPO:
             return _load_seed_repo_population_data(data_config, container)
@@ -78,9 +79,14 @@ def _load_ibf_api_admin_areas(
     container: LoadedDataSource,
     api_client: ApiClient,
     country_code_iso_3: str,
+    target_admin_level: int,
 ):
     container.data_type = DataType.ADMIN_AREA_SET
-    data = api_client.get_admin_areas(country_code_iso_3)
+    data = api_client.get_admin_areas(country_code_iso_3, target_admin_level)
+    if not data:
+        raise ValueError(
+            f"No admin areas returned from API for {country_code_iso_3} at level {target_admin_level}"
+        )
     container.data = AdminAreasSet.from_api(data)
 
 

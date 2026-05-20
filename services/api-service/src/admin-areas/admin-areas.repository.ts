@@ -81,7 +81,9 @@ export class AdminAreasRepository {
             adminLevel: adminAreaCreateDto.adminLevel,
             nameEn: adminAreaCreateDto.nameEn,
             countryCodeIso3: adminAreaCreateDto.countryCodeIso3,
-            parentPlaceCode: adminAreaCreateDto.parentPlaceCode ?? null,
+            attributes:
+              (adminAreaCreateDto.attributes as Prisma.InputJsonValue) ??
+              undefined,
           },
         });
         await tx.$executeRaw`
@@ -127,7 +129,10 @@ export class AdminAreasRepository {
             adminLevel: adminAreaUpdateDto.adminLevel,
             nameEn: adminAreaUpdateDto.nameEn,
             countryCodeIso3: adminAreaUpdateDto.countryCodeIso3,
-            parentPlaceCode: adminAreaUpdateDto.parentPlaceCode,
+            ...(adminAreaUpdateDto.attributes !== undefined && {
+              attributes:
+                adminAreaUpdateDto.attributes as unknown as Prisma.InputJsonValue,
+            }),
           },
         });
         if (adminAreaUpdateDto.geometry !== undefined) {
