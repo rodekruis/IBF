@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
+import { HazardType } from '@api-service/src/alerts/enum/shared-enums';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { SEED_COUNTRIES } from '@api-service/src/scripts/seed-data/seed-countries.const';
 import {

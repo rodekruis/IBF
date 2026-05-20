@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
-import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import { Layer } from '@api-service/src/alerts/enum/shared-enums';
 import { GeoFeatureResponseDto } from '@api-service/src/geo-features/dto/geo-feature-response.dto';
 import { GeoFeatureType } from '@api-service/src/geo-features/enum/geo-feature-type.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';

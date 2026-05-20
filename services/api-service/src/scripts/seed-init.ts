@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
-import { HazardType } from '@api-service/src/alerts/enum/hazard-type.enum';
-import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import { HazardType, Layer } from '@api-service/src/alerts/enum/shared-enums';
 import { env } from '@api-service/src/env';
 import { GeoFeatureType } from '@api-service/src/geo-features/enum/geo-feature-type.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';

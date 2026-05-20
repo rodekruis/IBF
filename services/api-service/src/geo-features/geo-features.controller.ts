@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { Layer } from '@api-service/src/alerts/enum/layer.enum';
+import { Layer } from '@api-service/src/alerts/enum/shared-enums';
 import { GeoFeatureResponseDto } from '@api-service/src/geo-features/dto/geo-feature-response.dto';
 import { GeoFeaturesService } from '@api-service/src/geo-features/geo-features.service';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
