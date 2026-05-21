@@ -23,7 +23,23 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG
 | `--scenario`   | _(optional)_ Infra-level override: `no-alert` or `alert`. Bypasses forecast.py   |
 | `--issued-at`  | _(optional)_ Override the issued-at timestamp (ISO 8601). Requires `--scenario`  |
 
-## Deploying pipelines to Azure
+## Deploying pipelines to Azure Databricks
+
+Note: Logging in to Azure Databricks locally via the CLI can be troublesome with login caching. Use these commands for managing your login:
+
+Clearing the env vars. You'll see this is part of some of the commands for setting up the env and service principal.
+`rm ~/.databrickscfg`
+`unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE`
+
+Clearing login (delete the CLI config), and then clear the env vars:
+`rm ~/.databrickscfg`
+`unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE`
+
+Logging in. In the command line, you’ll get a prompt like `Databricks profile name [adb-7405XXXXXXX]:`. Just hit enter, your browser will open, and you can authenticate via SSO.
+`databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net`
+
+Confirming your login:
+`databricks auth describe`
 
 ### Setting up Azure Databricks (one time per environment)
 
@@ -31,6 +47,7 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG
 
 1. Go to https://portal.azure.com/#home
 1. Create the Resource Azure Databricksfor the `510 Anticipatory Action` subscription.
+1. Select **Serverless** compute.
 1. Create with the tags: owner: <your email> , environment: <dev, test, etc>
 
 #### Create a ’Service Principal’ account
@@ -46,34 +63,31 @@ These steps are to create a service principal that is managed inside Databricks.
 
 The pipelines read runtime configuration (the IBF API URL and pipeline API key) from a Databricks secret scope. Do this scope setup once per Databricks workspace (i.e. per environment).
 
-1. rm ~/.databrickscfg
-   unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
-
-Authenticate once: `databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net` (browser flow; one-time, for setup only). In the command line, you’ll have a prompt like `Databricks profile name [adb-7405XXXXXXX]:`. Just hit enter, your browser will open, and you can authenticate via SSO.
-
+1. Login to the CLI (see above).
 1. Create the `nrw` secret scope and add the secrets the pipelines need. The commands below read `IBF_API_URL` and `IBF_PIPELINE_API_KEY` from your `data/.env` file and pipe them into `put-secret` via stdin (so the values don't end up in your shell history). The following command is slightly so it can just read the values from the .env file without needing you to copy paste them into the shell. Run the following from the `data/` directory:
+
    ```bash
    set -a && source <(tr -d '\r' < .env) && set +a
+   (
+   unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
+   databricks secrets create-scope nrw
+   printf %s "$IBF_API_URL"          | databricks secrets put-secret nrw IBF_API_URL
+       printf %s "$IBF_PIPELINE_API_KEY" | databricks secrets put-secret nrw IBF_PIPELINE_API_KEY
+   )
+
    ```
 
-(
-unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
-databricks secrets create-scope nrw
-printf %s "$IBF_API_URL"          | databricks secrets put-secret nrw IBF_API_URL
-    printf %s "$IBF_PIPELINE_API_KEY" | databricks secrets put-secret nrw IBF_PIPELINE_API_KEY
-)
-
-````
 1. Grant the service principal read access to the scope so its jobs can resolve the secrets. For a Databricks-managed service principal, its application ID is the same as its client ID, so the command below reads `DATABRICKS_CLIENT_ID` from your `data/.env` file. Run it from the `data/` directory:
-```bash
-set -a && source <(tr -d '\r' < .env) && set +a
 
-(
-  SP_APPLICATION_ID="$DATABRICKS_CLIENT_ID"
-  unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
-  databricks secrets put-acl nrw "$SP_APPLICATION_ID" READ
-)
-````
+   ```bash
+   set -a && source <(tr -d '\r' < .env) && set +a
+
+   (
+     SP_APPLICATION_ID="$DATABRICKS_CLIENT_ID"
+     unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
+     databricks secrets put-acl nrw "$SP_APPLICATION_ID" READ
+   )
+   ```
 
 ### Running from Github
 
@@ -99,35 +113,30 @@ Use this when you want to deploy a change from your local system without going t
    brew tap databricks/tap
    brew install databricks
    ```
-2. Set `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, and `DATABRICKS_CLIENT_SECRET` in your `data/.env` (see `data/.env.example`), or authenticate interactively: `databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net` (which logs in via SSO in the browser).
+2. Login via the CLI with `databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net`. See the login section above for more details.
+3. Set `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, and `DATABRICKS_CLIENT_SECRET` in your `data/.env` file (see `data/.env.example`)
+4. From the `data/` directory, run these to validate and deploy:
 
-From the `data/` directory, run these to validate and deploy:
-
-```
-databricks bundle validate --target <target_env>
-databricks bundle deploy   --target <target_env>
-```
+   ```bash
+   (
+     unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
+     databricks bundle validate --target <target_env>
+     databricks bundle deploy   --target <target_env>
+   )
+   ```
 
 For example:
 
-```
-databricks bundle validate --target test
-databricks bundle deploy   --target test
-```
+    ```bash
+    (
+      unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
+      databricks bundle validate --target test
+      databricks bundle deploy   --target test
+    )
+    ```
 
-> **Note on auth when running locally.** The Databricks CLI auth precedence is **env vars > `~/.databrickscfg` profile**. If you have sourced `data/.env` in your shell, the service-principal `DATABRICKS_CLIENT_ID` / `DATABRICKS_CLIENT_SECRET` will be used for every CLI call — including `bundle validate/deploy` — which usually 403s because the SP doesn't have deploy permissions. To run as your SSO admin account instead, either open a fresh shell that has not sourced `.env`, or unset the SP env vars in a subshell:
->
-> ```bash
-> (
->   unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
->   databricks bundle validate --target test
->   databricks bundle deploy   --target test
-> )
-> ```
->
-> Confirm which identity the CLI is using with `databricks auth describe` (should show `auth_type: databricks-cli` for SSO).
-
-3. Do a manual run. Some environments might not run automatically on schedule. See [data/databricks.yml](../databricks.yml) for which environments have these runs paused (`pause_status: PAUSED`). To run a manual run, do the following:
+4. Do a manual run. Some environments might not run automatically on schedule. See [data/databricks.yml](../databricks.yml) for which environments have these scheduled runs blocked (which is done with `pause_status: PAUSED`).
+   For starting a manual run, do the following:
 
 `databricks bundle run --target <target_env> <job name>`
 
@@ -135,7 +144,9 @@ For example:
 
 `databricks bundle run --target test nrw_drought_forecast`
 
-Also see [data/databricks.yml](../databricks.yml) for the job names. 4. You can see the test run in the [Databricks UI](https://accounts.azuredatabricks.net) under **Workflows → Job runs**.
+Also see [data/databricks.yml](../databricks.yml) for the job names.
+
+5. You can see the test run in the [Databricks UI](https://accounts.azuredatabricks.net) under **Workflows → Job runs**.
 
 ## Structure
 
