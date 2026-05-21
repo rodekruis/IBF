@@ -44,7 +44,8 @@ check_python_version() {
     current_version=$(python --version 2>&1 | cut -d' ' -f2)
     current_major_minor=$(echo "$current_version" | cut -d'.' -f1-2)
 
-    if ! printf '%s\n' "$min_version" "$current_major_minor" | sort -V -C; then
+    # Very ugly, but we can't rely on the macOS (BSD) sort command to reliably compare version numbers, so we do it in Python.
+    if ! python -c 'import sys; min_v = tuple(map(int, sys.argv[1].split("."))); cur_v = tuple(map(int, sys.argv[2].split("."))); sys.exit(0 if cur_v >= min_v else 1)' "$min_version" "$current_major_minor"; then
         echo "Error: Python version $min_version or higher is required. Found version: $current_version"
         exit 1
     fi
