@@ -94,6 +94,8 @@ TARGET_DIR=$(realpath "$1")
 
 print_header "Checking System Requirements"
 
+check_command_availability "git"
+
 # Node stuff
 check_command_availability "node"
 assert_minimal_node_version "22"
