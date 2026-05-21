@@ -27,19 +27,19 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG
 
 Note: Logging in to Azure Databricks locally via the CLI can be troublesome with login caching. Use these commands for managing your login:
 
-Clearing the env vars. You'll see this is part of some of the commands for setting up the env and service principal.
-`rm ~/.databrickscfg`
-`unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE`
+- Clearing the env vars. You'll see this is part of some of the commands for setting up the env and service principal.
+  `rm ~/.databrickscfg`
+  `unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE`
 
-Clearing login (delete the CLI config), and then clear the env vars:
-`rm ~/.databrickscfg`
-`unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE`
+- Clearing login (delete the CLI config), and then clear the env vars:
+  `rm ~/.databrickscfg`
+  `unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE`
 
-Logging in. In the command line, you’ll get a prompt like `Databricks profile name [adb-7405XXXXXXX]:`. Just hit enter, your browser will open, and you can authenticate via SSO.
-`databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net`
+- Logging in. In the command line, you’ll get a prompt like `Databricks profile name [adb-7405XXXXXXX]:`. Just hit enter, your browser will open, and you can authenticate via SSO.
+  `databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net`
 
-Confirming your login:
-`databricks auth describe`
+- Confirming your login:
+  `databricks auth describe`
 
 ### Setting up Azure Databricks (one time per environment)
 
