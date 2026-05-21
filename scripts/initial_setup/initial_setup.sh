@@ -17,6 +17,9 @@ print_header() {
 check_command_availability() {
   if ! command -v "$1" &> /dev/null; then
 	  echo "❌ '$1' is required but not installed"
+    if [ -n "${2:-}" ]; then
+        echo "To install: ${2:-}"
+    fi
 	  exit 1
   fi
   echo "✅ $1 command available"
@@ -57,6 +60,7 @@ check_docker_running() {
 }
 
 check_gdal_installed() {
+    # Separate function from check_command_availability to not confuse gdalinfo with GDAL in general.
     if ! command -v gdalinfo &> /dev/null; then
         echo "Error: GDAL is not installed."
         echo "Please install GDAL using Homebrew:"
@@ -92,12 +96,12 @@ print_header "Checking System Requirements"
 # Node stuff
 check_command_availability "node"
 assert_minimal_node_version "22"
-check_command_availability "pnpm"
+check_command_availability "pnpm" "brew install pnpm"
 
 # Python stuff
 check_command_availability "python"
 check_python_version 3.12
-check_command_availability "uv"
+check_command_availability "uv" "https://docs.astral.sh/uv/getting-started/installation/"
 
 # Docker stuff
 check_command_availability "docker"
