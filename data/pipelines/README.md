@@ -25,30 +25,42 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG
 
 ## Deploying pipelines to Azure Databricks
 
-Note: Logging in to Azure Databricks locally via the CLI can be troublesome with login caching. Use these commands for managing your login:
+Note: logging in to Azure Databricks locally via the CLI can be troublesome with login caching and login precedence since you need to be logged in as the 'service principal' for some steps (using the .env vars), and as your account for others (running the job, etc.).
+Use these commands to manage your login:
 
 - Clearing the env vars. You'll see this is part of some of the commands for setting up the env and service principal.
-  `rm ~/.databrickscfg`
-  `unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE`
 
-- Clearing login (delete the CLI config), and then clear the env vars:
-  `rm ~/.databrickscfg`
-  `unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE`
+  ```bash
+  unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
+  ```
 
-- Logging in. In the command line, you’ll get a prompt like `Databricks profile name [adb-7405XXXXXXX]:`. Just hit enter, your browser will open, and you can authenticate via SSO.
-  `databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net`
+- If the above doesn't work, delete the CLI config, and then clear the env vars:
 
-- Confirming your login:
-  `databricks auth describe`
+  ```bash
+  rm ~/.databrickscfg
+  unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
+  ```
+
+- Log in. You’ll get a prompt like `Databricks profile name [adb-7405XXXXXXX]:`. Just hit enter, your browser will open, and you can authenticate via SSO:
+
+  ```bash
+  databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net
+  ```
+
+- To check what you're logged in as, run this:
+
+  ```bash
+  databricks auth describe
+  ```
 
 ### Setting up Azure Databricks (one time per environment)
 
 #### Create the resource
 
-1. Go to https://portal.azure.com/#home
-1. Create the Resource Azure Databricksfor the `510 Anticipatory Action` subscription.
+1. Go to https://portal.azure.com/#home.
+1. Create the resource **Azure Databricks** for the `510 Anticipatory Action` subscription.
 1. Select **Serverless** compute.
-1. Create with the tags: owner: <your email> , environment: <dev, test, etc>
+1. Create with the tags: `owner: <your email>`, `environment: <dev, test, etc>`.
 
 #### Create a ’Service Principal’ account
 
@@ -61,23 +73,23 @@ These steps are to create a service principal that is managed inside Databricks.
 
 #### Create the `nrw` secret scope and populate it
 
-The pipelines read runtime configuration (the IBF API URL and pipeline API key) from a Databricks secret scope. Do this scope setup once per Databricks workspace (i.e. per environment).
+The pipelines read runtime configuration (the IBF API URL and pipeline API key) from a Databricks secret scope. Do this setup once per Databricks workspace (i.e. per environment).
 
-1. Login to the CLI (see above).
-1. Create the `nrw` secret scope and add the secrets the pipelines need. The commands below read `IBF_API_URL` and `IBF_PIPELINE_API_KEY` from your `data/.env` file and pipe them into `put-secret` via stdin (so the values don't end up in your shell history). The following command is slightly so it can just read the values from the .env file without needing you to copy paste them into the shell. Run the following from the `data/` directory:
+1. Log in to the CLI (see above).
+1. Create the `nrw` secret scope and add the secrets the pipelines need. The commands below read `IBF_API_URL` and `IBF_PIPELINE_API_KEY` from your `data/.env` file and pipe them into `put-secret` via stdin so the values don't end up in your shell history. Run from the `data/` directory:
 
    ```bash
    set -a && source <(tr -d '\r' < .env) && set +a
-   (
-   unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
-   databricks secrets create-scope nrw
-   printf %s "$IBF_API_URL"          | databricks secrets put-secret nrw IBF_API_URL
-       printf %s "$IBF_PIPELINE_API_KEY" | databricks secrets put-secret nrw IBF_PIPELINE_API_KEY
-   )
 
+   (
+     unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
+     databricks secrets create-scope nrw
+     printf %s "$IBF_API_URL"          | databricks secrets put-secret nrw IBF_API_URL
+     printf %s "$IBF_PIPELINE_API_KEY" | databricks secrets put-secret nrw IBF_PIPELINE_API_KEY
+   )
    ```
 
-1. Grant the service principal read access to the scope so its jobs can resolve the secrets. For a Databricks-managed service principal, its application ID is the same as its client ID, so the command below reads `DATABRICKS_CLIENT_ID` from your `data/.env` file. Run it from the `data/` directory:
+1. Grant the service principal read access to the scope so its jobs can resolve the secrets. For a Databricks-managed service principal, its application ID is the same as its client ID, so the command below reads `DATABRICKS_CLIENT_ID` from your `data/.env` file. Run from the `data/` directory:
 
    ```bash
    set -a && source <(tr -d '\r' < .env) && set +a
@@ -89,12 +101,12 @@ The pipelines read runtime configuration (the IBF API URL and pipeline API key) 
    )
    ```
 
-### Running from Github
+### Deploying from GitHub
 
-Deploys are handled by `.github/workflows/deploy_databricks_pipelines.yml`, which runs `databricks bundle deploy` from the `data/` directory using the bundle defined in `databricks.yml`. [As of May 2026] The workflow only deploys to the `test` target.
+Deploys are handled by `.github/workflows/deploy_databricks_pipelines.yml`, which runs `databricks bundle deploy` from the `data/` directory using the bundle defined in `databricks.yml`. As of May 2026 the workflow only deploys to the `test` target.
 
-- Any push to `main` that touches `data/**` (or the workflow file itself) auto-deploys to the specified environment.
-- You can also manually trigger a pipelines deploy from the Actions tab with `workflow_dispatch`.
+- Any push to `main` that touches `data/**` (or the workflow file itself) auto-deploys to the configured environment.
+- You can also manually trigger a deploy from the Actions tab with `workflow_dispatch`.
 
 To enable the workflow, add the following as **GitHub Actions secrets** (repo **→ Settings → Secrets and variables → Actions → New repository secret**):
 
@@ -102,51 +114,46 @@ To enable the workflow, add the following as **GitHub Actions secrets** (repo **
 - `DATABRICKS_CLIENT_ID`
 - `DATABRICKS_CLIENT_SECRET`
 
-Note: these are the only secrets that go here. Other secrets are needed for the job at runtime and go in the above Databricks `nrw` secret scope.
+Note: these are the only secrets that go here. Other secrets needed by the job at runtime go in the Databricks `nrw` secret scope described above.
 
-#### Deploying from your system
+### Deploying from your system
 
-Use this when you want to deploy a change from your local system without going through GitHub. One-time setup:
+Use this when you want to deploy a change from your local system without going through GitHub.
+
+One-time setup:
 
 1. Install the Databricks CLI:
-   ```
+
+   ```bash
    brew tap databricks/tap
    brew install databricks
    ```
-2. Login via the CLI with `databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net`. See the login section above for more details.
-3. Set `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, and `DATABRICKS_CLIENT_SECRET` in your `data/.env` file (see `data/.env.example`)
-4. From the `data/` directory, run these to validate and deploy:
+
+1. Log in via the CLI: `databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net`. See the login section above for more details.
+
+Deploying:
+
+1. From the `data/` directory, validate and deploy. Run inside a subshell that unsets the SP env vars so the CLI uses your SSO identity instead:
 
    ```bash
    (
      unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
-     databricks bundle validate --target <target_env>
-     databricks bundle deploy   --target <target_env>
+     databricks bundle validate --target test
+     databricks bundle deploy   --target test
    )
    ```
 
-For example:
+   Replace `test` with the target environment as needed.
 
-    ```bash
-    (
-      unset DATABRICKS_HOST DATABRICKS_CLIENT_ID DATABRICKS_CLIENT_SECRET DATABRICKS_TOKEN DATABRICKS_CONFIG_PROFILE
-      databricks bundle validate --target test
-      databricks bundle deploy   --target test
-    )
-    ```
+1. Trigger a manual run. Some environments don't run automatically on schedule — see [data/databricks.yml](../databricks.yml) for which have `pause_status: PAUSED`. To start a run:
 
-4. Do a manual run. Some environments might not run automatically on schedule. See [data/databricks.yml](../databricks.yml) for which environments have these scheduled runs blocked (which is done with `pause_status: PAUSED`).
-   For starting a manual run, do the following:
+   ```bash
+   databricks bundle run --target test nrw_drought_forecast
+   ```
 
-`databricks bundle run --target <target_env> <job name>`
+   See [data/databricks.yml](../databricks.yml) for the available job names.
 
-For example:
-
-`databricks bundle run --target test nrw_drought_forecast`
-
-Also see [data/databricks.yml](../databricks.yml) for the job names.
-
-5. You can see the test run in the [Databricks UI](https://accounts.azuredatabricks.net) under **Workflows → Job runs**.
+1. View the run in the [Databricks UI](https://accounts.azuredatabricks.net) under **Workflows → Job runs**.
 
 ## Structure
 
