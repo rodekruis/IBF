@@ -85,7 +85,11 @@ resources:
             node_type_id: ${var.node_type_id}
             num_workers: 0
             data_security_mode: SINGLE_USER
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: 'local[*]'
             custom_tags:
+              ResourceClass: SingleNode
               nrw-pipeline: drought
             spark_env_vars:
               IBF_API_URL: '{{secrets/nrw/IBF_API_URL}}'
@@ -124,7 +128,11 @@ resources:
             node_type_id: ${var.node_type_id}
             num_workers: 0
             data_security_mode: SINGLE_USER
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: 'local[*]'
             custom_tags:
+              ResourceClass: SingleNode
               nrw-pipeline: floods
             spark_env_vars:
               IBF_API_URL: '{{secrets/nrw/IBF_API_URL}}'

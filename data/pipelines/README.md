@@ -63,8 +63,8 @@ The pipelines read runtime configuration (the IBF API URL and pipeline API key) 
 
 Deploys are handled by `.github/workflows/deploy_databricks_pipelines.yml`, which runs `databricks bundle deploy` from the `data/` directory using the bundle defined in `databricks.yml`. [As of May 2026] The workflow only deploys to the `test` target.
 
-- Any push to `main` that touches `data/**` (or the workflow file itself) auto-deploys to the specified branch.
-- You can also manually trigger it from the Actions tab with `workflow_dispatch`.
+- Any push to `main` that touches `data/**` (or the workflow file itself) auto-deploys to the specified environment.
+- You can also manually trigger a pipelines deploy from the Actions tab with `workflow_dispatch`.
 
 To enable the workflow, add the following as **GitHub Actions secrets** (repo **→ Settings → Secrets and variables → Actions → New repository secret**):
 
@@ -83,7 +83,7 @@ Use this when you want to deploy a change from your local system without going t
    brew tap databricks/tap
    brew install databricks
    ```
-1. Set `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, and `DATABRICKS_CLIENT_SECRET` in your `data/.env` (see `data/.env.example`), or authenticate interactively: `databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net` (which logs in via SSO in the browser).
+2. Set `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, and `DATABRICKS_CLIENT_SECRET` in your `data/.env` (see `data/.env.example`), or authenticate interactively: `databricks auth login --host https://adb-XXXX.XX.azuredatabricks.net` (which logs in via SSO in the browser).
 
 From the `data/` directory, run these to validate and deploy:
 
@@ -92,7 +92,22 @@ databricks bundle validate --target <target_env>
 databricks bundle deploy   --target <target_env>
 ```
 
-You can see the test run in the [Databricks UI](https://accounts.azuredatabricks.net.) under **Workflows → Job runs**.
+For example:
+
+```
+databricks bundle validate --target test
+databricks bundle deploy   --target test
+```
+
+3. Do a manual run. Some environments might not run automatically on schedule. See [data/databricks.yml](../databricks.yml) for which environments have these runs paused (`pause_status: PAUSED`). To run a manual run, do the following:
+
+`databricks bundle run --target <target_env> <job name>`
+
+For example:
+
+`databricks bundle run --target test nrw_drought_forecast`
+
+Also see [data/databricks.yml](../databricks.yml) for the job names. 4. You can see the test run in the [Databricks UI](https://accounts.azuredatabricks.net) under **Workflows → Job runs**.
 
 ## Structure
 
