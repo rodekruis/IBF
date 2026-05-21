@@ -17,12 +17,6 @@ variables:
   notification_email:
     description: Email address to notify on job failure.
     default: ehill@redcross.nl # TODO: change this with a shared alias
-  node_type_id:
-    description: Azure VM type for the job cluster.
-    default: Standard_DS3_v2
-  spark_version:
-    description: Databricks Runtime version (must include Python 3.12+).
-    default: 16.4.x-scala2.12
 
 artifacts:
   pipelines_wheel:
@@ -67,33 +61,19 @@ resources:
           - ${var.notification_email}
       tasks:
         - task_key: run_drought
-          job_cluster_key: nrw_cluster
-          python_wheel_task:
-            package_name: pipelines
-            entry_point: pipeline
-            parameters:
-              - --config
-              - ${workspace.file_path}/pipelines/infra/configs/drought.yaml
-              - --run-target
-              - DEBUG
-          libraries:
-            - whl: ./dist/*.whl
-      job_clusters:
-        - job_cluster_key: nrw_cluster
-          new_cluster:
-            spark_version: ${var.spark_version}
-            node_type_id: ${var.node_type_id}
-            num_workers: 0
-            data_security_mode: SINGLE_USER
-            spark_conf:
-              spark.databricks.cluster.profile: singleNode
-              spark.master: 'local[*]'
-            custom_tags:
-              ResourceClass: SingleNode
-              nrw-pipeline: drought
-            spark_env_vars:
-              IBF_API_URL: '{{secrets/nrw/IBF_API_URL}}'
-              IBF_PIPELINE_API_KEY: '{{secrets/nrw/IBF_PIPELINE_API_KEY}}'
+          environment_key: default
+          notebook_task:
+            notebook_path: ${workspace.file_path}/pipelines/infra/databricks_entry
+            base_parameters:
+              config_path: ${workspace.file_path}/pipelines/infra/configs/drought.yaml
+              run_target: DEBUG
+              secret_scope: nrw
+      environments:
+        - environment_key: default
+          spec:
+            client: '5'
+            dependencies:
+              - ./dist/*.whl
 
     nrw_floods_forecast:
       name: 'NRW - Floods forecast'
@@ -110,30 +90,16 @@ resources:
           - ${var.notification_email}
       tasks:
         - task_key: run_floods
-          job_cluster_key: nrw_cluster
-          python_wheel_task:
-            package_name: pipelines
-            entry_point: pipeline
-            parameters:
-              - --config
-              - ${workspace.file_path}/pipelines/infra/configs/floods.yaml
-              - --run-target
-              - DEBUG
-          libraries:
-            - whl: ./dist/*.whl
-      job_clusters:
-        - job_cluster_key: nrw_cluster
-          new_cluster:
-            spark_version: ${var.spark_version}
-            node_type_id: ${var.node_type_id}
-            num_workers: 0
-            data_security_mode: SINGLE_USER
-            spark_conf:
-              spark.databricks.cluster.profile: singleNode
-              spark.master: 'local[*]'
-            custom_tags:
-              ResourceClass: SingleNode
-              nrw-pipeline: floods
-            spark_env_vars:
-              IBF_API_URL: '{{secrets/nrw/IBF_API_URL}}'
-              IBF_PIPELINE_API_KEY: '{{secrets/nrw/IBF_PIPELINE_API_KEY}}'
+          environment_key: default
+          notebook_task:
+            notebook_path: ${workspace.file_path}/pipelines/infra/databricks_entry
+            base_parameters:
+              config_path: ${workspace.file_path}/pipelines/infra/configs/floods.yaml
+              run_target: DEBUG
+              secret_scope: nrw
+      environments:
+        - environment_key: default
+          spec:
+            client: '5'
+            dependencies:
+              - ./dist/*.whl
