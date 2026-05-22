@@ -389,21 +389,30 @@ export class SeedInit {
       return;
     }
 
-    for (const gf of geoFeatures) {
-      await this.prisma.$executeRaw`
-        INSERT INTO "api-service"."geo-feature" ("countryCodeIso3", "featureType", "layer", "referenceId", "geometry", "attributes", "updated")
-        VALUES (
-          ${gf.countryCodeIso3},
-          ${gf.featureType},
-          ${gf.layer},
-          ${gf.referenceId},
-          ST_SetSRID(ST_GeomFromGeoJSON(${JSON.stringify(gf.geometry)}), 4326),
-          ${JSON.stringify(gf.attributes)}::jsonb,
-          NOW()
-        )
-        ON CONFLICT ("countryCodeIso3", "layer", "referenceId") DO NOTHING
-      `;
-    }
+    const BATCH_SIZE = 100;
+    await this.prisma.$transaction(async (tx) => {
+      for (let i = 0; i < geoFeatures.length; i += BATCH_SIZE) {
+        const batch = geoFeatures.slice(i, i + BATCH_SIZE);
+        const values = batch.map((gf) => {
+          const geojson = JSON.stringify(gf.geometry);
+          const attrs = JSON.stringify(gf.attributes);
+          return Prisma.sql`(
+            ${gf.countryCodeIso3},
+            ${gf.featureType},
+            ${gf.layer},
+            ${gf.referenceId},
+            public.ST_SetSRID(public.ST_GeomFromGeoJSON(${geojson}), 4326),
+            ${attrs}::jsonb,
+            NOW()
+          )`;
+        });
+        await tx.$executeRaw`
+          INSERT INTO "api-service"."geo-feature"
+            ("countryCodeIso3", "featureType", "layer", "referenceId", "geometry", "attributes", "updated")
+          VALUES ${Prisma.join(values)}
+          ON CONFLICT ("countryCodeIso3", "layer", "referenceId") DO NOTHING`;
+      }
+    });
 
     this.logger.log(
       `Seeded ${geoFeatures.length} GloFAS station geo-features for ${countryCodeIso3}`,

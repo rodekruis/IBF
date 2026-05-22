@@ -21,7 +21,9 @@ describe('/ Geo Features', () => {
     it('should return a GeoJSON FeatureCollection', async () => {
       const response = await getServer()
         .get('/geo-features')
-        .query({ countryCodeIso3: 'ETH', layer: Layer.glofasStations })
+        .query({
+          filter: `countryCodeIso3='ETH' AND layer='${Layer.glofasStations}'`,
+        })
         .set('Cookie', [accessToken]);
 
       expect(response.status).toBe(HttpStatus.OK);
