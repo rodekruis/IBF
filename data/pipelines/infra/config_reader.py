@@ -110,7 +110,9 @@ class ConfigReader:
                 continue
 
             countries: dict[CountryCodeIso3, CountryRunConfig] = {}
-            if not self._parse_countries(countries, target_config, target_name):
+            if not self._parse_countries(
+                countries, target_config, target_name, hazard_type
+            ):
                 success = False
                 # Continue processing - still add run target with whatever countries parsed
 
@@ -127,6 +129,7 @@ class ConfigReader:
         countries: dict[CountryCodeIso3, CountryRunConfig],
         target_config: dict,
         target: RunTargetType,
+        hazard_type: HazardType,
     ) -> bool:
         """Parse countries from run target config and add to provided dict."""
         success = True
@@ -166,7 +169,7 @@ class ConfigReader:
             # Parse data sources
             data_sources: list[DataSourceConfig] = []
             if not self._parse_data_sources(
-                data_sources, iso_3_code, country_raw, target
+                data_sources, iso_3_code, country_raw, target, hazard_type
             ):
                 success = False
                 # Continue processing - still validate rest of country config
@@ -225,6 +228,7 @@ class ConfigReader:
         iso_3_code: CountryCodeIso3,
         country_raw: dict,
         target: RunTargetType,
+        hazard_type: HazardType,
     ) -> bool:
         """Parse data sources from country config and append to provided list."""
         success = True
@@ -244,6 +248,7 @@ class ConfigReader:
                 DataSourceConfig(
                     country_code_iso_3=iso_3_code,
                     source=data_source,
+                    hazard_type=hazard_type,
                 )
             )
 

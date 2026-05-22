@@ -11,6 +11,7 @@ import { AuthModule } from '@api-service/src/auth/auth.module';
 import { THROTTLING_LIMIT_GENERIC } from '@api-service/src/config';
 import { CountriesModule } from '@api-service/src/countries/countries.module';
 import { EventsModule } from '@api-service/src/events/events.module';
+import { GeoFeaturesModule } from '@api-service/src/geo-features/geo-features.module';
 import { HealthModule } from '@api-service/src/health/health.module';
 import { ScriptsModule } from '@api-service/src/scripts/scripts.module';
 
@@ -34,6 +35,7 @@ import { ScriptsModule } from '@api-service/src/scripts/scripts.module';
     AdminAreasModule,
     CountriesModule,
     EventsModule,
+    GeoFeaturesModule,
   ],
   controllers: [AppController],
   providers: [

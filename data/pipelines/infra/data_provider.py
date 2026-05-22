@@ -135,12 +135,11 @@ if __name__ == "__main__":
                     print(
                         f"  ERROR: [{container.data_source}] ({container.data_type}): <no data>"
                     )
-            elif container.data_type == DataType.LOCATION_POINT_DICT:
-                if isinstance(container.data, dict):
-                    for code, point in container.data.items():
-                        print(
-                            f"  [{container.data_source}] {code}: {point.name} ({point.lat}, {point.lon})"
-                        )
+            elif container.data_type == DataType.ALERT_CONFIG_LIST:
+                if isinstance(container.data, list):
+                    print(
+                        f"  [{container.data_source}] ({container.data_type}): {len(container.data)} alert configs"
+                    )
                 else:
                     print(
                         f"  ERROR: [{container.data_source}] ({container.data_type}): <no data>"

@@ -151,5 +151,13 @@
     "params": [
       "countryCodeIso3"
     ]
+  },
+  {
+    "method": "get",
+    "path": "/api/geo-features",
+    "params": [
+      "countryCodeIso3",
+      "layer"
+    ]
   }
 ]

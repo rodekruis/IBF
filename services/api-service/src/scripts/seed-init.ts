@@ -1,10 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
+import { HazardType, Layer } from '@api-service/src/alerts/enum/shared-enums';
 import { env } from '@api-service/src/env';
+import { GeoFeatureType } from '@api-service/src/geo-features/enum/geo-feature-type.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
-import { getAdminAreaFileUrl } from '@api-service/src/scripts/seed-data/seed-admin-areas.const';
-import { SEED_ALERT_CONFIGS } from '@api-service/src/scripts/seed-data/seed-alert-configs.const';
+import {
+  FLOOD_ALERT_CLASS_MATRIX,
+  FLOOD_ALERT_CLASS_ORDER,
+  FLOOD_LEAD_TIME_SPECTRUM,
+  FLOOD_PROBABILITY_CLASS_LEVELS,
+  FLOOD_SEVERITY_CLASS_LEVELS,
+  SEED_DROUGHT_ALERT_CONFIGS,
+  SeedAlertConfig,
+} from '@api-service/src/scripts/seed-data/seed-alert-configs.const';
 import {
   SEED_COUNTRIES,
   SeedCountry,
@@ -20,6 +29,32 @@ interface GeoJsonFeature {
 interface GeoJsonFeatureCollection {
   readonly type: string;
   readonly features: GeoJsonFeature[];
+}
+
+interface StationThresholdEntry {
+  readonly station_code: string;
+  readonly station_name: string;
+  readonly lat: number;
+  readonly lon: number;
+  readonly pcodes: Record<string, string[]>;
+  readonly thresholds: { return_period: number; threshold_value: number }[];
+}
+
+const SEED_REPO_RAW_BASE_URL =
+  'https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main';
+
+const ADMIN_AREAS_PATH = '/admin-areas/processed';
+const STATION_THRESHOLDS_PATH = '/pipelines';
+
+function getAdminAreaFileUrl(
+  countryCodeIso3: string,
+  adminLevel: number,
+): string {
+  return `${SEED_REPO_RAW_BASE_URL}${ADMIN_AREAS_PATH}/${countryCodeIso3}_adm${adminLevel}.json`;
+}
+
+function getStationThresholdsFileUrl(countryCodeIso3: string): string {
+  return `${SEED_REPO_RAW_BASE_URL}${STATION_THRESHOLDS_PATH}/${countryCodeIso3}_station_thresholds.json`;
 }
 
 @Injectable()
@@ -42,7 +77,8 @@ export class SeedInit {
 
     await this.seedCountries(countries);
     await this.seedAdminAreas(countries);
-    await this.seedAlertConfigs(countryCodes);
+    await this.seedAlertConfigs(countries);
+    await this.seedGeoFeatures(countries);
   }
 
   private async createAdminUser(): Promise<void> {
@@ -214,19 +250,153 @@ export class SeedInit {
     return geometry;
   }
 
-  private async seedAlertConfigs(countryCodes?: string[]): Promise<void> {
-    const alertConfigs = countryCodes
-      ? SEED_ALERT_CONFIGS.filter((c) =>
-          countryCodes.includes(c.countryCodeIso3),
-        )
-      : SEED_ALERT_CONFIGS;
+  private async seedAlertConfigs(countries: SeedCountry[]): Promise<void> {
+    // Drought: spatial extents are climate regions defined in code (seed-alert-configs.const.ts)
+    // TODO: move drought alert configs to an external source (seed-data repo or similar)
+    const countryCodes = countries.map((c) => c.countryCodeIso3);
+    const droughtConfigs = SEED_DROUGHT_ALERT_CONFIGS.filter((c) =>
+      countryCodes.includes(c.countryCodeIso3),
+    );
+
+    // Floods: spatial extents are GloFAS stations, fetched from the seed-data repo
+    const floodCountries = countries.filter((c) =>
+      c.hazardTypes.includes(HazardType.floods),
+    );
+
+    const floodConfigs = (
+      await Promise.all(
+        floodCountries.map((country) =>
+          this.loadFloodAlertConfigsFromSeedRepo(country),
+        ),
+      )
+    ).flat();
+
+    const allConfigs: SeedAlertConfig[] = [...floodConfigs, ...droughtConfigs];
 
     await this.prisma.$transaction(
-      alertConfigs.map((alertConfig) =>
+      allConfigs.map((alertConfig) =>
         this.prisma.alertConfig.create({ data: alertConfig }),
       ),
     );
-    this.logger.log(`Seeded ${alertConfigs.length} alert configs`);
+    this.logger.log(`Seeded ${allConfigs.length} alert configs`);
+  }
+
+  private async loadFloodAlertConfigsFromSeedRepo(
+    country: SeedCountry,
+  ): Promise<SeedAlertConfig[]> {
+    // Each GloFAS station becomes one alert-config spatial extent.
+    // The station_thresholds.json maps stations to downstream admin-area place codes.
+    const url = getStationThresholdsFileUrl(country.countryCodeIso3);
+    this.logger.log(
+      `Download GloFAS station thresholds for ${country.countryCodeIso3}...`,
+    );
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      this.logger.warn(
+        `No station thresholds for ${country.countryCodeIso3}: ${response.status}`,
+      );
+      return [];
+    }
+
+    const entries = (await response.json()) as StationThresholdEntry[];
+    const targetAdminLevel = String(country.deepestAdminLevel);
+
+    const stationMap = new Map<string, string[]>();
+    for (const entry of entries) {
+      if (!stationMap.has(entry.station_code)) {
+        const placeCodes = entry.pcodes[targetAdminLevel] ?? [];
+        stationMap.set(entry.station_code, placeCodes);
+      }
+    }
+
+    const configs: SeedAlertConfig[] = [];
+    for (const [stationCode, placeCodes] of stationMap) {
+      if (placeCodes.length === 0) {
+        continue;
+      }
+      configs.push({
+        countryCodeIso3: country.countryCodeIso3,
+        hazardType: HazardType.floods,
+        spatialExtentName: stationCode,
+        spatialExtentPlaceCodes: placeCodes,
+        temporalExtents: [{ 'lead-time-spectrum': FLOOD_LEAD_TIME_SPECTRUM }],
+        severityClassLevels: FLOOD_SEVERITY_CLASS_LEVELS,
+        probabilityClassLevels: FLOOD_PROBABILITY_CLASS_LEVELS,
+        alertClassMatrix: FLOOD_ALERT_CLASS_MATRIX,
+        alertClassOrder: FLOOD_ALERT_CLASS_ORDER,
+        triggerAlertClass: 'high',
+        triggerLeadTimeDuration: 'P7D',
+      });
+    }
+
+    this.logger.log(
+      `Loaded ${configs.length} flood alert configs for ${country.countryCodeIso3}`,
+    );
+    return configs;
+  }
+
+  private async seedGeoFeatures(countries: SeedCountry[]): Promise<void> {
+    const floodCountries = countries.filter((c) =>
+      c.hazardTypes.includes(HazardType.floods),
+    );
+
+    for (const country of floodCountries) {
+      await this.seedGloFasStations(country.countryCodeIso3);
+    }
+  }
+
+  private async seedGloFasStations(countryCodeIso3: string): Promise<void> {
+    const url = getStationThresholdsFileUrl(countryCodeIso3);
+    const response = await fetch(url);
+    if (!response.ok) {
+      this.logger.warn(
+        `No station thresholds for ${countryCodeIso3}: ${response.status} — skipping geo-feature seeding`,
+      );
+      return;
+    }
+
+    const entries = (await response.json()) as StationThresholdEntry[];
+    const seenStations = new Map<
+      string,
+      { name: string; lat: number; lon: number }
+    >();
+    for (const entry of entries) {
+      if (!seenStations.has(entry.station_code)) {
+        seenStations.set(entry.station_code, {
+          name: entry.station_name,
+          lat: entry.lat,
+          lon: entry.lon,
+        });
+      }
+    }
+
+    const geoFeatures = [...seenStations.entries()].map(
+      ([stationCode, station]) => ({
+        countryCodeIso3,
+        featureType: GeoFeatureType.point,
+        layer: Layer.glofasStations,
+        referenceId: stationCode,
+        geometry: {
+          type: 'Point',
+          coordinates: [station.lon, station.lat],
+        } as Prisma.InputJsonValue,
+        attributes: { name: station.name } as Prisma.InputJsonValue,
+      }),
+    );
+
+    if (geoFeatures.length === 0) {
+      return;
+    }
+
+    await this.prisma.geoFeature.createMany({
+      data: geoFeatures,
+      skipDuplicates: true,
+    });
+
+    this.logger.log(
+      `Seeded ${geoFeatures.length} GloFAS station geo-features for ${countryCodeIso3}`,
+    );
   }
 
   public async truncateAll(): Promise<void> {

@@ -68,7 +68,7 @@ def _generate_alert_scenario(
             time_interval_end="2026-01-01T23:59:59Z",
             ensemble_member_type=EnsembleMemberType.RUN,
             severity_key="scenario_severity",
-            severity_value=1,
+            severity_value=500,
         )
     data_submitter.add_severity_data(
         event_name=event_name,
@@ -76,7 +76,7 @@ def _generate_alert_scenario(
         time_interval_end="2026-01-01T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.MEDIAN,
         severity_key="scenario_severity",
-        severity_value=1,
+        severity_value=500,
     )
 
     place_codes = list(target_admin_areas.admin_areas.keys())[:2]

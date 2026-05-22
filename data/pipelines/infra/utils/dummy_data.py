@@ -61,12 +61,4 @@ DUMMY_DATA: dict[DataSource, object] = {
             "unit": "mm/month",
         },
     },
-    DataSource.CLIMATE_REGIONS_IBF_API: [
-        {
-            "id": "climate-region-B",
-            "name": "Region B",
-            "seasons": ["MAM"],
-            "place_codes": ["ET0508"],
-        },
-    ],
 }
