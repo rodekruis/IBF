@@ -50,7 +50,7 @@ Make sure to update any dependencies from _within_ the Docker-container, with:
 
 #### Updating shared enums and DTOs
 
-Enums in `services/api-service/src/alerts/enum/shared-enums.ts` and some of the DTOs in `services/api-service/src/alerts/dto/*.dto.ts` are needed by either the frontend, the data pipelines or both. If there are changes in these files, do the following to propogate the changes:
+Enums in `services/api-service/src/alerts/enum/shared-enums.ts` and some of the DTOs in `services/api-service/src/alerts/dto/*.dto.ts` are needed by either the frontend, the data pipelines or both. If there are changes in these files, do the following to propagate the changes:
 
 1. If you added new enums (not just new values to an existing enum), and these new enums must be shared,add the enum to `api-service/src/scripts/generate-python-enums.ts`
 2. If you add or change a DTO, edit the matching entry. For the pipelines, edit it here: `api-service/src/scripts/generate-python-dtos.ts`. If it's shared with the front end, edit it here: <TODO in task #42361 (https://dev.azure.com/redcrossnl/IBF/_workitems/edit/42361)>.
