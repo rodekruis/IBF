@@ -8,18 +8,12 @@ import logging
 import os
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import Layer
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
     DataSourceConfig,
 )
-from pipelines.infra.data_types.loaded_data_types import (
-    AlertConfig,
-    DataType,
-    LoadedDataSource,
-)
-from pipelines.infra.data_types.location_point import LocationPoint
+from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.dummy_data import DUMMY_DATA
 from shared.download_helpers import download_json_source, download_object
@@ -99,11 +93,10 @@ def _load_ibf_api_alert_configs(
     data_config: DataSourceConfig,
 ):
     container.data_type = DataType.ALERT_CONFIG_LIST
-    data = api_client.get_alert_configs(
+    container.data = api_client.get_alert_configs(
         data_config.country_code_iso_3,
         data_config.hazard_type.value,
     )
-    container.data = [AlertConfig.from_api(item) for item in data]
 
 
 def _load_ibf_api_glofas_stations(
@@ -112,20 +105,9 @@ def _load_ibf_api_glofas_stations(
     data_config: DataSourceConfig,
 ):
     container.data_type = DataType.LOCATION_POINT_DICT
-    data = api_client.get_geo_features(
+    container.data = api_client.get_glofas_stations(
         data_config.country_code_iso_3,
-        Layer.GLOFAS_STATIONS,
     )
-    stations: dict[str, LocationPoint] = {}
-    for item in data:
-        station = LocationPoint(
-            name=item.get("attributes", {}).get("name", ""),
-            lat=item["geometry"]["coordinates"][1],
-            lon=item["geometry"]["coordinates"][0],
-            id=item["referenceId"],
-        )
-        stations[station.id] = station
-    container.data = stations
 
 
 def _load_seed_repo_population_data(

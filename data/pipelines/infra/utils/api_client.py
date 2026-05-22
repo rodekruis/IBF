@@ -5,6 +5,9 @@ import os
 from urllib.parse import urlencode
 
 import requests
+from pipelines.infra.data_types.alert_types import Layer
+from pipelines.infra.data_types.loaded_data_types import AlertConfig
+from pipelines.infra.data_types.location_point import LocationPoint
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +77,7 @@ class ApiClient:
 
     def get_alert_configs(
         self, country_code_iso_3: str, hazard_type: str
-    ) -> list[dict]:
+    ) -> list[AlertConfig]:
         url = f"{self._base_url}{ALERT_CONFIGS_PATH}"
         params: dict = {
             "countryCodeIso3": country_code_iso_3,
@@ -88,7 +91,7 @@ class ApiClient:
                 logger.warning(
                     f"Downloaded 0 alert configs for {country_code_iso_3}/{hazard_type}"
                 )
-            return configs
+            return [AlertConfig.from_api(item) for item in configs]
         logger.error(
             f"Failed to download alert configs for {country_code_iso_3}/{hazard_type}: {response.status_code} {response.text}"
         )
@@ -113,3 +116,16 @@ class ApiClient:
             f"Failed to download geo-features for {country_code_iso_3}/{layer}: {response.status_code} {response.text}"
         )
         return []
+
+    def get_glofas_stations(self, country_code_iso_3: str) -> dict[str, LocationPoint]:
+        data = self.get_geo_features(country_code_iso_3, Layer.GLOFAS_STATIONS)
+        stations: dict[str, LocationPoint] = {}
+        for item in data:
+            station = LocationPoint(
+                name=item.get("attributes", {}).get("name", ""),
+                lat=item["geometry"]["coordinates"][1],
+                lon=item["geometry"]["coordinates"][0],
+                id=item["referenceId"],
+            )
+            stations[station.id] = station
+        return stations

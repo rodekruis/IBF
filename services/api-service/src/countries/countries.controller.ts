@@ -55,6 +55,7 @@ export class CountriesController {
     return this.countriesService.getCountryOrThrow(countryCodeIso3);
   }
 
+  // TODO: Consider adding a batch endpoint (POST with array body) for bulk imports
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
   @ApiOperation({ summary: 'Create a country' })
