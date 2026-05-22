@@ -16,24 +16,16 @@ def _make_container() -> LoadedDataSource:
     )
 
 
-def _make_api_response() -> list[dict]:
-    return [
-        {
-            "referenceId": "G5142",
-            "geometry": {"type": "Point", "coordinates": [37.5, 8.2]},
-            "attributes": {"name": "Awash"},
-        },
-        {
-            "referenceId": "G5200",
-            "geometry": {"type": "Point", "coordinates": [38.1, 9.0]},
-            "attributes": {"name": "Borkena"},
-        },
-    ]
+def _make_stations() -> dict[str, LocationPoint]:
+    return {
+        "G5142": LocationPoint(name="Awash", lat=8.2, lon=37.5, id="G5142"),
+        "G5200": LocationPoint(name="Borkena", lat=9.0, lon=38.1, id="G5200"),
+    }
 
 
 def test_parses_geo_features_into_location_points():
     api_client = MagicMock()
-    api_client.get_geo_features.return_value = _make_api_response()
+    api_client.get_glofas_stations.return_value = _make_stations()
 
     config = DataSourceConfig(
         country_code_iso_3=CountryCodeIso3.ETH,
@@ -64,15 +56,9 @@ def test_parses_geo_features_into_location_points():
     assert borkena.lon == 38.1
 
 
-def test_handles_missing_attributes_name():
+def test_handles_empty_stations():
     api_client = MagicMock()
-    api_client.get_geo_features.return_value = [
-        {
-            "referenceId": "G9999",
-            "geometry": {"type": "Point", "coordinates": [36.0, 7.0]},
-            "attributes": {},
-        },
-    ]
+    api_client.get_glofas_stations.return_value = {}
 
     config = DataSourceConfig(
         country_code_iso_3=CountryCodeIso3.ETH,
@@ -84,6 +70,4 @@ def test_handles_missing_attributes_name():
     _load_ibf_api_glofas_stations(container, api_client, config)
 
     assert isinstance(container.data, dict)
-    station = container.data["G9999"]
-    assert station.name == ""
-    assert station.id == "G9999"
+    assert len(container.data) == 0
