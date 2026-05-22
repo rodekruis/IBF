@@ -43,7 +43,7 @@ It's recommended to clone the repo into the same parent dir as the IBF/ repo. If
 If you add a python dependency with `pip`, the project dependencies may become out of date. The ideal flow to add dependencies is:
 
 1. Add the package name to `dependencies` in `pyproject.toml`
-2. Navigate to <repo root>/data in terminal and call `uv sync` to sync both your environment and the `uv.lock` file.
+2. Navigate to <repo root>/data in terminal and call `./uv-sync.sh` to sync both your environment and the `uv.lock` file.
 
 There is a scan when you PR to check `pyproject.toml` for missing dependencies, but it doesn't scan the `uv.lock` file.
 
