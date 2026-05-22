@@ -132,14 +132,16 @@ class DataSubmitter:
         event_name: str,
         geo_feature_id: str,
         layer: str,
-        value: dict[str, bool | str | int | float],
+        attributes: dict[str, bool | str | int | float],
     ) -> None:
         alert = self._get_alert(event_name, "add_geo_feature_exposure")
         if alert is None:
             return
 
         alert.exposure.geo_features.append(
-            ExposureGeoFeature(geo_feature_id=geo_feature_id, layer=layer, value=value)
+            ExposureGeoFeature(
+                geo_feature_id=geo_feature_id, layer=layer, attributes=attributes
+            )
         )
 
     def add_raster_exposure(

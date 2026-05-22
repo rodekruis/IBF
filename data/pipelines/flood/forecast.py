@@ -216,7 +216,7 @@ def calculate_flood_forecasts(
         #     event_name=event_name,
         #     geo_feature_id=station_code,
         #     layer="glofas_stations",
-        #     value={"river_discharge": 0},
+        #     attributes={"river_discharge": 0},
         # )
 
         data_submitter.add_raster_exposure(

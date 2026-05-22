@@ -50,7 +50,7 @@ const header = `"""
 AUTO-GENERATED code from ${SOURCE_PATH}
 
 These are the enums shared between the API service and the pipeline code.
-Run \`npm run gen:enums\` (from the repo root) to regenerate.
+Run \`npm run gen:python\` (from the repo root) to regenerate.
 """
 
 from enum import StrEnum

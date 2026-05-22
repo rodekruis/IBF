@@ -21,7 +21,7 @@
     "prestart:dev": "npm install --no-save && npm run prisma:generate && npm run prisma:migrate:deploy",
     "prestart:dev:collect-coverage": "npm install --no-save && npm run prisma:generate && npm run prisma:migrate:deploy",
     "seed:dev": "ts-node --require=tsconfig-paths/register src/scripts seed-dev",
-    "gen:enums": "ts-node --compiler-options '{\"module\":\"commonjs\"}' --require=tsconfig-paths/register src/scripts/generate-python-enums.ts",
+    "gen:python": "ts-node --compiler-options '{\"module\":\"commonjs\"}' --require=tsconfig-paths/register src/scripts/generate-python-enums.ts && ts-node --compiler-options '{\"module\":\"commonjs\"}' --require=tsconfig-paths/register src/scripts/generate-python-dtos.ts",
     "test": "echo 'No automated tests. Run `npm run test:integration:all` to run API-tests locally. Run `npm run test:unit:all` to run unit-tests locally.' && exit 0",
     "test:unit:all": "jest --runInBand --config=jest.unit.config.mjs",
     "test:unit:watch": "npm run test:unit:all -- --watchAll",
