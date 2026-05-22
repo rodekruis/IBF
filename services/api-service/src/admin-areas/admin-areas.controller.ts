@@ -49,9 +49,7 @@ export class AdminAreasController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
   @ApiOperation({
-    summary: 'Create an admin area',
-    description:
-      'Not part of the current operational flow. Admin areas are currently seeded via /reset endpoint. This endpoint enables future manual data management by admins.',
+    summary: 'Create an admin area.',
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -76,8 +74,6 @@ export class AdminAreasController {
   @Patch(':placeCode')
   @ApiOperation({
     summary: 'Update an admin area',
-    description:
-      'Not part of the current operational flow. Admin areas are currently seeded via /reset endpoint. This endpoint enables future manual data management by admins.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -107,8 +103,6 @@ export class AdminAreasController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete an admin area',
-    description:
-      'Not part of the current operational flow. Admin areas are currently seeded via /reset endpoint. This endpoint enables future manual data management by admins.',
   })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,

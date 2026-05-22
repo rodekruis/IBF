@@ -69,11 +69,7 @@ export class GeoFeaturesController {
   // TODO: Consider adding a batch endpoint (POST with array body) for bulk imports
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
-  @ApiOperation({
-    summary: 'Create a geo-feature',
-    description:
-      'Not part of the current operational flow. Geo-features are currently seeded via /reset endpoint. This endpoint enables future manual data management by admins.',
-  })
+  @ApiOperation({ summary: 'Create a geo-feature' })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Geo-feature created successfully',
@@ -96,11 +92,7 @@ export class GeoFeaturesController {
 
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Patch(':id')
-  @ApiOperation({
-    summary: 'Update a geo-feature',
-    description:
-      'Not part of the current operational flow. Geo-features are currently seeded via /reset endpoint. This endpoint enables future manual data management by admins.',
-  })
+  @ApiOperation({ summary: 'Update a geo-feature' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Geo-feature updated successfully',
@@ -123,11 +115,7 @@ export class GeoFeaturesController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: 'Delete a geo-feature',
-    description:
-      'Not part of the current operational flow. Geo-features are currently seeded via /reset endpoint. This endpoint enables future manual data management by admins.',
-  })
+  @ApiOperation({ summary: 'Delete a geo-feature' })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Geo-feature deleted successfully',

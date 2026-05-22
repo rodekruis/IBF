@@ -95,12 +95,6 @@ export class GeoFeaturesRepository {
           ...(geoFeatureUpdateDto.featureType !== undefined && {
             featureType: geoFeatureUpdateDto.featureType,
           }),
-          ...(geoFeatureUpdateDto.layer !== undefined && {
-            layer: geoFeatureUpdateDto.layer,
-          }),
-          ...(geoFeatureUpdateDto.referenceId !== undefined && {
-            referenceId: geoFeatureUpdateDto.referenceId,
-          }),
           ...(geoFeatureUpdateDto.geometry !== undefined && {
             geometry: geoFeatureUpdateDto.geometry as Prisma.InputJsonValue,
           }),

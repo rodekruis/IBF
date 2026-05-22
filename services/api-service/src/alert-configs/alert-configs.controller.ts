@@ -67,8 +67,6 @@ export class AlertConfigsController {
   @Post()
   @ApiOperation({
     summary: 'Create alert config for country and hazard type',
-    description:
-      'Not part of the current operational flow. Alert configs are currently seeded via /reset endpoint. This endpoint enables future manual management by admins.',
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -84,11 +82,7 @@ export class AlertConfigsController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: 'Delete alert config by id',
-    description:
-      'Not part of the current operational flow. Alert configs are currently seeded via /reset endpoint. This endpoint enables future manual management by admins.',
-  })
+  @ApiOperation({ summary: 'Delete alert config by id' })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Alert config deleted successfully',
