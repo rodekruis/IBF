@@ -5,68 +5,78 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import type { Feature, FeatureCollection } from 'geojson';
 
-import { Layer } from '@api-service/src/alerts/enum/shared-enums';
+import { env } from '@api-service/src/env';
 import { GeoFeatureCreateDto } from '@api-service/src/geo-features/dto/geo-feature-create.dto';
-import { GeoFeatureResponseDto } from '@api-service/src/geo-features/dto/geo-feature-response.dto';
 import { GeoFeatureUpdateDto } from '@api-service/src/geo-features/dto/geo-feature-update.dto';
-import { GeoFeatureType } from '@api-service/src/geo-features/enum/geo-feature-type.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
-type GeoFeatureRow = Prisma.GeoFeatureGetPayload<null>;
+const GEO_FEATURE_COLLECTION = 'api-service.geo-feature';
 
 @Injectable()
 export class GeoFeaturesRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  private toResponseDto(row: GeoFeatureRow): GeoFeatureResponseDto {
-    return {
-      id: row.id,
-      created: row.created,
-      updated: row.updated,
-      countryCodeIso3: row.countryCodeIso3,
-      featureType: row.featureType as GeoFeatureType,
-      layer: row.layer as Layer,
-      referenceId: row.referenceId,
-      geometry: row.geometry as Record<string, unknown>,
-      attributes: row.attributes as Record<string, unknown>,
-    };
+  private async fetchFromFeatureServ(
+    params: Record<string, string>,
+  ): Promise<FeatureCollection> {
+    const url = new URL(
+      `/collections/${GEO_FEATURE_COLLECTION}/items.json`,
+      env.PG_FEATURESERV_URL,
+    );
+    for (const [key, value] of Object.entries(params)) {
+      url.searchParams.set(key, value);
+    }
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(
+        `pg_featureserv request failed: ${response.status} ${response.statusText}`,
+      );
+    }
+    return response.json() as Promise<FeatureCollection>;
   }
 
-  public async getGeoFeatures({
-    countryCodeIso3,
-    layer,
-  }: {
-    countryCodeIso3?: string;
-    layer?: string;
-  }): Promise<GeoFeatureResponseDto[]> {
-    const rows = await this.prisma.geoFeature.findMany({
-      where: {
-        ...(countryCodeIso3 !== undefined && { countryCodeIso3 }),
-        ...(layer !== undefined && { layer }),
-      },
-      orderBy: { referenceId: 'asc' },
+  public async getGeoFeatures(
+    query: Record<string, string>,
+  ): Promise<FeatureCollection> {
+    return this.fetchFromFeatureServ(query);
+  }
+
+  private async getGeoFeatureOrThrow(id: number): Promise<Feature> {
+    const collection = await this.fetchFromFeatureServ({
+      filter: `id=${id}`,
     });
-    return rows.map((row) => this.toResponseDto(row));
+    if (collection.features.length === 0) {
+      throw new NotFoundException(`Geo-feature with id ${id} not found`);
+    }
+    return collection.features[0];
   }
 
   public async createGeoFeature(
     geoFeatureCreateDto: GeoFeatureCreateDto,
-  ): Promise<GeoFeatureResponseDto> {
+  ): Promise<Feature> {
+    const geojson = JSON.stringify(geoFeatureCreateDto.geometry);
     try {
-      const row = await this.prisma.geoFeature.create({
-        data: {
-          countryCodeIso3: geoFeatureCreateDto.countryCodeIso3,
-          featureType: geoFeatureCreateDto.featureType,
-          layer: geoFeatureCreateDto.layer,
-          referenceId: geoFeatureCreateDto.referenceId,
-          geometry: geoFeatureCreateDto.geometry as Prisma.InputJsonValue,
-          attributes:
-            (geoFeatureCreateDto.attributes as Prisma.InputJsonValue) ??
-            undefined,
-        },
+      const row = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.geoFeature.create({
+          data: {
+            countryCodeIso3: geoFeatureCreateDto.countryCodeIso3,
+            featureType: geoFeatureCreateDto.featureType,
+            layer: geoFeatureCreateDto.layer,
+            referenceId: geoFeatureCreateDto.referenceId,
+            attributes:
+              (geoFeatureCreateDto.attributes as Prisma.InputJsonValue) ??
+              undefined,
+          },
+        });
+        await tx.$executeRaw`
+          UPDATE "api-service"."geo-feature"
+          SET geometry = public.ST_Force2D(public.ST_GeomFromGeoJSON(${geojson}))
+          WHERE id = ${created.id}`;
+        return created;
       });
-      return this.toResponseDto(row);
+      return this.getGeoFeatureOrThrow(row.id);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
@@ -79,6 +89,11 @@ export class GeoFeaturesRepository {
             `Country '${geoFeatureCreateDto.countryCodeIso3}' does not exist`,
           );
         }
+        if (error.code === 'P2010') {
+          throw new BadRequestException(
+            'Invalid geometry: could not parse GeoJSON',
+          );
+        }
       }
       throw error;
     }
@@ -87,31 +102,43 @@ export class GeoFeaturesRepository {
   public async updateGeoFeatureOrThrow(
     id: number,
     geoFeatureUpdateDto: GeoFeatureUpdateDto,
-  ): Promise<GeoFeatureResponseDto> {
+  ): Promise<Feature> {
     try {
-      const row = await this.prisma.geoFeature.update({
-        where: { id },
-        data: {
-          ...(geoFeatureUpdateDto.featureType !== undefined && {
-            featureType: geoFeatureUpdateDto.featureType,
-          }),
-          ...(geoFeatureUpdateDto.geometry !== undefined && {
-            geometry: geoFeatureUpdateDto.geometry as Prisma.InputJsonValue,
-          }),
-          ...(geoFeatureUpdateDto.attributes !== undefined && {
-            attributes: geoFeatureUpdateDto.attributes as Prisma.InputJsonValue,
-          }),
-        },
+      await this.prisma.$transaction(async (tx) => {
+        await tx.geoFeature.update({
+          where: { id },
+          data: {
+            ...(geoFeatureUpdateDto.featureType !== undefined && {
+              featureType: geoFeatureUpdateDto.featureType,
+            }),
+            ...(geoFeatureUpdateDto.attributes !== undefined && {
+              attributes:
+                geoFeatureUpdateDto.attributes as Prisma.InputJsonValue,
+            }),
+          },
+        });
+        if (geoFeatureUpdateDto.geometry !== undefined) {
+          const geojson = JSON.stringify(geoFeatureUpdateDto.geometry);
+          await tx.$executeRaw`
+            UPDATE "api-service"."geo-feature"
+            SET geometry = public.ST_Force2D(public.ST_GeomFromGeoJSON(${geojson}))
+            WHERE id = ${id}`;
+        }
       });
-      return this.toResponseDto(row);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
           throw new NotFoundException(`Geo-feature with id ${id} not found`);
         }
+        if (error.code === 'P2010') {
+          throw new BadRequestException(
+            'Invalid geometry: could not parse GeoJSON',
+          );
+        }
       }
       throw error;
     }
+    return this.getGeoFeatureOrThrow(id);
   }
 
   public async deleteGeoFeatureOrThrow(id: number): Promise<void> {

@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { HazardType } from '@api-service/src/alerts/enum/shared-enums';
+import { HazardType, Layer } from '@api-service/src/alerts/enum/shared-enums';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { SEED_COUNTRIES } from '@api-service/src/scripts/seed-data/seed-countries.const';
 import {
@@ -97,6 +97,34 @@ describe('Seed – all countries', () => {
           expect(Array.isArray(config.temporalExtents)).toBe(true);
           expect(config.temporalExtents.length).toBeGreaterThan(0);
         }
+      },
+    );
+  });
+
+  describe('Geo-features – GloFAS stations', () => {
+    const floodCountries = SEED_COUNTRIES.filter((c) =>
+      c.hazardTypes.includes(HazardType.floods),
+    ).map((c) => c.countryCodeIso3);
+
+    it.each(floodCountries)(
+      '%s should have GloFAS station geo-features',
+      async (countryCodeIso3) => {
+        const response = await getServer()
+          .get('/geo-features')
+          .query({
+            filter: `countryCodeIso3='${countryCodeIso3}' AND layer='${Layer.glofasStations}'`,
+          })
+          .set('Cookie', [accessToken]);
+
+        expect(response.status).toBe(HttpStatus.OK);
+        expect(response.body.type).toBe('FeatureCollection');
+        expect(response.body.features.length).toBeGreaterThan(0);
+
+        const feature = response.body.features[0];
+        expect(feature.type).toBe('Feature');
+        expect(feature.geometry).toBeDefined();
+        expect(feature.properties.countryCodeIso3).toBe(countryCodeIso3);
+        expect(feature.properties.layer).toBe(Layer.glofasStations);
       },
     );
   });

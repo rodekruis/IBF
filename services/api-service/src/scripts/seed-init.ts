@@ -380,8 +380,8 @@ export class SeedInit {
         geometry: {
           type: 'Point',
           coordinates: [station.lon, station.lat],
-        } as Prisma.InputJsonValue,
-        attributes: { name: station.name } as Prisma.InputJsonValue,
+        },
+        attributes: { name: station.name },
       }),
     );
 
@@ -389,10 +389,21 @@ export class SeedInit {
       return;
     }
 
-    await this.prisma.geoFeature.createMany({
-      data: geoFeatures,
-      skipDuplicates: true,
-    });
+    for (const gf of geoFeatures) {
+      await this.prisma.$executeRaw`
+        INSERT INTO "api-service"."geo-feature" ("countryCodeIso3", "featureType", "layer", "referenceId", "geometry", "attributes", "updated")
+        VALUES (
+          ${gf.countryCodeIso3},
+          ${gf.featureType},
+          ${gf.layer},
+          ${gf.referenceId},
+          ST_SetSRID(ST_GeomFromGeoJSON(${JSON.stringify(gf.geometry)}), 4326),
+          ${JSON.stringify(gf.attributes)}::jsonb,
+          NOW()
+        )
+        ON CONFLICT ("countryCodeIso3", "layer", "referenceId") DO NOTHING
+      `;
+    }
 
     this.logger.log(
       `Seeded ${geoFeatures.length} GloFAS station geo-features for ${countryCodeIso3}`,
