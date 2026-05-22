@@ -1,6 +1,6 @@
 /**
  * Generates Python dataclasses from TypeScript DTOs that are also used by
- * the pipelines. See the [api-service README"](../../README.md#updating-shared-enums-and-dtos) for details.
+ * the pipelines. See the [api-service README](../../README.md#updating-shared-enums-and-dtos) for details.
  */
 
 import { writeFileSync } from 'node:fs';
