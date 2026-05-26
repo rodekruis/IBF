@@ -99,14 +99,13 @@ class ApiClient:
 
     def get_geo_features(self, country_code_iso_3: str, layer: str) -> list[dict]:
         url = f"{self._base_url}{GEO_FEATURES_PATH}"
-        params: dict = {
-            "countryCodeIso3": country_code_iso_3,
-            "layer": layer,
-        }
+        cql_filter = f"countryCodeIso3='{country_code_iso_3}' AND layer='{layer}'"
+        params = {"filter": cql_filter}
         logger.info(f"Download '{url}?{urlencode(params)}'")
         response = self._session.get(url, params=params, timeout=30)
         if response.status_code == 200:
-            features = response.json()
+            feature_collection = response.json()
+            features = feature_collection.get("features", [])
             if not features:
                 logger.warning(
                     f"Downloaded 0 geo-features for {country_code_iso_3}/{layer}"
@@ -120,12 +119,14 @@ class ApiClient:
     def get_glofas_stations(self, country_code_iso_3: str) -> dict[str, LocationPoint]:
         data = self.get_geo_features(country_code_iso_3, Layer.GLOFAS_STATIONS)
         stations: dict[str, LocationPoint] = {}
-        for item in data:
+        for feature in data:
+            properties = feature.get("properties", {})
+            geometry = feature.get("geometry", {})
             station = LocationPoint(
-                name=item.get("attributes", {}).get("name", ""),
-                lat=item["geometry"]["coordinates"][1],
-                lon=item["geometry"]["coordinates"][0],
-                id=item["referenceId"],
+                name=properties.get("attributes", {}).get("name", ""),
+                lat=geometry["coordinates"][1],
+                lon=geometry["coordinates"][0],
+                id=properties["referenceId"],
             )
             stations[station.id] = station
         return stations

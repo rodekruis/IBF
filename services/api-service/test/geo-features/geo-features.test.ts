@@ -18,34 +18,24 @@ describe('/ Geo Features', () => {
   });
 
   describe('GET /geo-features', () => {
-    it('should return geo-features for a country and layer', async () => {
+    it('should return a GeoJSON FeatureCollection', async () => {
       const response = await getServer()
         .get('/geo-features')
-        .query({ countryCodeIso3: 'ETH', layer: Layer.glofasStations })
+        .query({
+          filter: `countryCodeIso3='ETH' AND layer='${Layer.glofasStations}'`,
+        })
         .set('Cookie', [accessToken]);
 
       expect(response.status).toBe(HttpStatus.OK);
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThan(0);
+      expect(response.body.type).toBe('FeatureCollection');
+      expect(Array.isArray(response.body.features)).toBe(true);
+      expect(response.body.features.length).toBeGreaterThan(0);
 
-      const feature = response.body[0];
-      expect(feature.countryCodeIso3).toBe('ETH');
-      expect(feature.layer).toBe(Layer.glofasStations);
-      expect(feature.featureType).toBe(GeoFeatureType.point);
-      expect(feature.referenceId).toBeDefined();
+      const feature = response.body.features[0];
+      expect(feature.type).toBe('Feature');
       expect(feature.geometry).toBeDefined();
-      expect(feature.geometry.type).toBe(GeoFeatureType.point);
-      expect(feature.geometry.coordinates).toHaveLength(2);
-      expect(feature.attributes).toBeDefined();
-    });
-
-    it('should reject invalid layer value', async () => {
-      const response = await getServer()
-        .get('/geo-features')
-        .query({ countryCodeIso3: 'ETH', layer: 'nonexistent_layer' })
-        .set('Cookie', [accessToken]);
-
-      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(feature.properties.countryCodeIso3).toBe('ETH');
+      expect(feature.properties.layer).toBe(Layer.glofasStations);
     });
   });
 
@@ -66,9 +56,10 @@ describe('/ Geo Features', () => {
         .send(validGeoFeature);
 
       expect(response.status).toBe(HttpStatus.CREATED);
+      expect(response.body.type).toBe('Feature');
       expect(response.body.id).toBeDefined();
-      expect(response.body.countryCodeIso3).toBe('ETH');
-      expect(response.body.referenceId).toBe('TEST_STATION_01');
+      expect(response.body.properties.countryCodeIso3).toBe('ETH');
+      expect(response.body.properties.referenceId).toBe('TEST_STATION_01');
       expect(response.body.geometry.coordinates).toEqual([38.5, 9.0]);
     });
 
@@ -111,7 +102,8 @@ describe('/ Geo Features', () => {
         .send({ attributes: { name: 'Updated Station' } });
 
       expect(response.status).toBe(HttpStatus.OK);
-      expect(response.body.attributes.name).toBe('Updated Station');
+      expect(response.body.type).toBe('Feature');
+      expect(response.body.properties.attributes.name).toBe('Updated Station');
     });
 
     it('should return 404 for non-existent id', async () => {

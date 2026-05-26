@@ -380,8 +380,8 @@ export class SeedInit {
         geometry: {
           type: 'Point',
           coordinates: [station.lon, station.lat],
-        } as Prisma.InputJsonValue,
-        attributes: { name: station.name } as Prisma.InputJsonValue,
+        },
+        attributes: { name: station.name },
       }),
     );
 
@@ -389,9 +389,29 @@ export class SeedInit {
       return;
     }
 
-    await this.prisma.geoFeature.createMany({
-      data: geoFeatures,
-      skipDuplicates: true,
+    const BATCH_SIZE = 100;
+    await this.prisma.$transaction(async (tx) => {
+      for (let i = 0; i < geoFeatures.length; i += BATCH_SIZE) {
+        const batch = geoFeatures.slice(i, i + BATCH_SIZE);
+        const values = batch.map((gf) => {
+          const geojson = JSON.stringify(gf.geometry);
+          const attrs = JSON.stringify(gf.attributes);
+          return Prisma.sql`(
+            ${gf.countryCodeIso3},
+            ${gf.featureType},
+            ${gf.layer},
+            ${gf.referenceId},
+            public.ST_SetSRID(public.ST_GeomFromGeoJSON(${geojson}), 4326),
+            ${attrs}::jsonb,
+            NOW()
+          )`;
+        });
+        await tx.$executeRaw`
+          INSERT INTO "api-service"."geo-feature"
+            ("countryCodeIso3", "featureType", "layer", "referenceId", "geometry", "attributes", "updated")
+          VALUES ${Prisma.join(values)}
+          ON CONFLICT ("countryCodeIso3", "layer", "referenceId") DO NOTHING`;
+      }
     });
 
     this.logger.log(

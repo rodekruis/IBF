@@ -188,7 +188,7 @@ model GeoFeature {
   featureType     String // Point, LineString, Polygon, MultiPolygon
   layer           String // e.g. "glofas_stations"
   referenceId     String // external identifier, e.g. station code
-  geometry        Json
+  geometry        Unsupported("geometry(Geometry, 4326)")?
   attributes      Json   @default("{}")
 
   @@unique([countryCodeIso3, layer, referenceId])
