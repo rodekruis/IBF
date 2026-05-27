@@ -14,7 +14,7 @@ class SecretDto {
   public readonly secret: string;
 }
 
-@ApiTags('instance')
+@ApiTags('--- instance ---')
 @Controller('instance')
 export class ScriptsController {
   public constructor(private readonly scriptsService: ScriptsService) {}

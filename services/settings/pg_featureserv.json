@@ -1,6 +1,6 @@
 {
   "Paging": {
-    "LimitDefault": 1000,
+    "LimitDefault": 10000,
     "LimitMax": 100000
   },
   "Server": {

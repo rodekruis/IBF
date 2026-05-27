@@ -154,6 +154,7 @@ model Country {
 
   adminAreas       AdminArea[]
   alertConfigs     AlertConfig[]
+  geoFeatures      GeoFeature[]
 }
 
 model AdminArea {
@@ -173,6 +174,25 @@ model AdminArea {
 
   @@index([countryCodeIso3])
   @@index([countryCodeIso3, adminLevel])
+}
+
+model GeoFeature {
+  @@schema("api-service")
+  @@map("geo-feature")
+
+  id              Int      @id @default(autoincrement())
+  created         DateTime @default(now())
+  updated         DateTime @updatedAt
+  countryCodeIso3 String
+  country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
+  featureType     String // Point, LineString, Polygon, MultiPolygon
+  layer           String // e.g. "glofas_stations"
+  referenceId     String // external identifier, e.g. station code
+  geometry        Unsupported("geometry(Geometry, 4326)")?
+  attributes      Json   @default("{}")
+
+  @@unique([countryCodeIso3, layer, referenceId])
+  @@index([countryCodeIso3, layer])
 }
 
 model AlertConfig {

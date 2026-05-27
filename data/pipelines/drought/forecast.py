@@ -5,7 +5,7 @@ from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.alert_types import Centroid, EnsembleMemberType, Layer
 from pipelines.infra.data_types.data_config_types import DataSource
-from pipelines.infra.data_types.loaded_data_types import ClimateRegion
+from pipelines.infra.data_types.loaded_data_types import AlertConfig
 
 
 def calculate_drought_forecasts(
@@ -24,40 +24,38 @@ def calculate_drought_forecasts(
     # For early prototyping, just fetch a new data source here directly.
     # As soon as the source is stable enough, inform software-dev to fetch it through the data provider instead.
 
-    climate_regions: list[ClimateRegion] = data_provider.get_data(
-        DataSource.CLIMATE_REGIONS_IBF_API, list
+    alert_configs: list[AlertConfig] = data_provider.get_data(
+        DataSource.ALERT_CONFIGS_IBF_API, list
     )
     target_admin_areas = data_provider.get_data(
         DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
     )
 
-    # Make sure your data loaded
-    if not climate_regions or not target_admin_areas:
+    if not alert_configs or not target_admin_areas:
         data_submitter.add_error(
-            f"Missing input data: climate_regions={bool(climate_regions)}, admin_areas={bool(target_admin_areas)}"
+            f"Missing input data: alert_configs={bool(alert_configs)}, admin_areas={bool(target_admin_areas)}"
         )
         return
 
     # Step 2 - Calculate the forecast
     # NOTE: the code in here is purely for demonstration purposes and should be replaced with actual logic, which should include:
-    # - Loop over potential spatial extents (climate regions) and temporal extents (seasons)
+    # - Loop over alert configs (spatial extents / climate regions) and temporal extents (seasons)
     # - Compute aggregate severity per season
     # - If minimum severity threshold is passed, create an alert
     # - Generate drought extent rasters
     # - Compute population exposure from population raster + drought extent
     # - Compute geo-feature exposure (hospitals, roads, etc.)
 
-    for region in climate_regions:
-        region_id = region.id
-        seasons = region.seasons
-        # TODO: determine place codes by looking at the admin areas in a climate region
-        # For now, just get the first two place codes from the admin areas for debug.
-        debug_alert_place_codes: list[str] = list(
-            target_admin_areas.admin_areas.keys()
-        )[:2]
+    # DO NOT REMOVE: this loop over spatial-extents is obligatory. TODO-infra: enforce this better.
+    for config in alert_configs:
+        spatial_extent_place_codes = _get_place_codes_from_spatial_extent(
+            config, target_admin_areas, target_admin_level
+        )
 
-        for season in seasons:
-            event_name = f"{country}_drought_{region.name}_{season}"
+        # DO NOT REMOVE: this loop over temporal-extents is obligatory. TODO-infra: enforce this better.
+        for temporal_extent in config.temporal_extents:
+            season = next(iter(temporal_extent.keys()), config.spatial_extent_name)
+            event_name = f"{country}_drought_{config.spatial_extent_name}_{season}"
 
             data_submitter.create_alert(
                 event_name=event_name,
@@ -82,7 +80,7 @@ def calculate_drought_forecasts(
                 severity_value=0,
             )
 
-            for place_code in debug_alert_place_codes:
+            for place_code in spatial_extent_place_codes:
                 data_submitter.add_admin_area_exposure(
                     event_name=event_name,
                     place_code=place_code,
@@ -94,6 +92,22 @@ def calculate_drought_forecasts(
             data_submitter.add_raster_exposure(
                 event_name=event_name,
                 layer=Layer.ALERT_EXTENT,
-                value=f"alert_extent_{region_id}.tif",
+                value=f"alert_extent_{config.spatial_extent_name}.tif",
                 extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
             )
+
+
+def _get_place_codes_from_spatial_extent(
+    config: AlertConfig,
+    target_admin_areas: AdminAreasSet,
+    target_admin_level: int,
+) -> list[str]:
+    """Return place codes for this config.
+    An empty spatialExtentPlaceCodes list means 'all admin areas at target level'."""
+    if config.spatial_extent_place_codes:
+        return config.spatial_extent_place_codes
+    return [
+        pcode
+        for pcode, area in target_admin_areas.admin_areas.items()
+        if area.properties.admin_level == target_admin_level
+    ]

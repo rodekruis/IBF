@@ -5,11 +5,16 @@ import os
 from urllib.parse import urlencode
 
 import requests
+from pipelines.infra.data_types.alert_types import Layer
+from pipelines.infra.data_types.loaded_data_types import AlertConfig
+from pipelines.infra.data_types.location_point import LocationPoint
 
 logger = logging.getLogger(__name__)
 
 ALERTS_PATH = "/api/alerts"
 ADMIN_AREAS_PATH = "/api/admin-areas"
+ALERT_CONFIGS_PATH = "/api/alert-configs"
+GEO_FEATURES_PATH = "/api/geo-features"
 
 
 class ApiClient:
@@ -69,3 +74,59 @@ class ApiClient:
             f"Failed to download admin areas for {country_code_iso_3}: {response.status_code} {response.text}"
         )
         return {}
+
+    def get_alert_configs(
+        self, country_code_iso_3: str, hazard_type: str
+    ) -> list[AlertConfig]:
+        url = f"{self._base_url}{ALERT_CONFIGS_PATH}"
+        params: dict = {
+            "countryCodeIso3": country_code_iso_3,
+            "hazardType": hazard_type,
+        }
+        logger.info(f"Download '{url}?{urlencode(params)}'")
+        response = self._session.get(url, params=params, timeout=30)
+        if response.status_code == 200:
+            configs = response.json()
+            if not configs:
+                logger.warning(
+                    f"Downloaded 0 alert configs for {country_code_iso_3}/{hazard_type}"
+                )
+            return [AlertConfig.from_api(item) for item in configs]
+        logger.error(
+            f"Failed to download alert configs for {country_code_iso_3}/{hazard_type}: {response.status_code} {response.text}"
+        )
+        return []
+
+    def get_geo_features(self, country_code_iso_3: str, layer: str) -> list[dict]:
+        url = f"{self._base_url}{GEO_FEATURES_PATH}"
+        cql_filter = f"countryCodeIso3='{country_code_iso_3}' AND layer='{layer}'"
+        params = {"filter": cql_filter}
+        logger.info(f"Download '{url}?{urlencode(params)}'")
+        response = self._session.get(url, params=params, timeout=30)
+        if response.status_code == 200:
+            feature_collection = response.json()
+            features = feature_collection.get("features", [])
+            if not features:
+                logger.warning(
+                    f"Downloaded 0 geo-features for {country_code_iso_3}/{layer}"
+                )
+            return features
+        logger.error(
+            f"Failed to download geo-features for {country_code_iso_3}/{layer}: {response.status_code} {response.text}"
+        )
+        return []
+
+    def get_glofas_stations(self, country_code_iso_3: str) -> dict[str, LocationPoint]:
+        data = self.get_geo_features(country_code_iso_3, Layer.GLOFAS_STATIONS)
+        stations: dict[str, LocationPoint] = {}
+        for feature in data:
+            properties = feature.get("properties", {})
+            geometry = feature.get("geometry", {})
+            station = LocationPoint(
+                name=properties.get("attributes", {}).get("name", ""),
+                lat=geometry["coordinates"][1],
+                lon=geometry["coordinates"][0],
+                id=properties["referenceId"],
+            )
+            stations[station.id] = station
+        return stations

@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -14,110 +15,101 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Feature, FeatureCollection } from 'geojson';
 
-import { AdminAreasService } from '@api-service/src/admin-areas/admin-areas.service';
-import { AdminAreaCreateDto } from '@api-service/src/admin-areas/dto/admin-area-create.dto';
-import { AdminAreaUpdateDto } from '@api-service/src/admin-areas/dto/admin-area-update.dto';
 import { GeoJsonFeatureDto } from '@api-service/src/admin-areas/dto/geojson-feature.dto';
 import { GeoJsonFeatureCollectionDto } from '@api-service/src/admin-areas/dto/geojson-feature-collection.dto';
+import { GeoFeatureCreateDto } from '@api-service/src/geo-features/dto/geo-feature-create.dto';
+import { GeoFeatureUpdateDto } from '@api-service/src/geo-features/dto/geo-feature-update.dto';
+import { GeoFeaturesService } from '@api-service/src/geo-features/geo-features.service';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 
-@ApiTags('admin-areas')
+@ApiTags('geo-features')
 @UseGuards(AuthenticatedUserGuard)
-@Controller('admin-areas')
-export class AdminAreasController {
-  public constructor(private readonly adminAreasService: AdminAreasService) {}
+@Controller('geo-features')
+export class GeoFeaturesController {
+  public constructor(private readonly geoFeaturesService: GeoFeaturesService) {}
 
   // TODO: Re-add @ApiQuery decorators once we have clarity on which pg_featureserv params to expose
   @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get()
   @ApiOperation({
     summary:
-      'Get admin areas; all pg_featureserv query parameters are supported (not shown in Swagger UI, so calling via Swagger is limited)',
+      'Get geo-features; all pg_featureserv query parameters are supported (not shown in Swagger UI, so calling via Swagger is limited)',
     description:
-      "Example current use: GET /admin-areas?filter=countryCodeIso3='ETH' AND adminLevel=2",
+      "Example current use: GET /geo-features?filter=countryCodeIso3='ETH' AND layer='glofas_stations'",
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'GeoJSON FeatureCollection of admin areas',
+    description: 'GeoJSON FeatureCollection of geo-features',
     type: GeoJsonFeatureCollectionDto,
   })
-  public async getAdminAreas(
+  public async getGeoFeatures(
     @Query() query: Record<string, string>,
   ): Promise<FeatureCollection> {
-    return this.adminAreasService.getAdminAreas(query);
+    return this.geoFeaturesService.getGeoFeatures(query);
   }
 
   // TODO: Consider adding a batch endpoint (POST with array body) for bulk imports
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
-  @ApiOperation({
-    summary: 'Create an admin area.',
-  })
+  @ApiOperation({ summary: 'Create a geo-feature' })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Admin area created successfully',
+    description: 'Geo-feature created successfully',
     type: GeoJsonFeatureDto,
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
-    description: 'Admin area already exists',
+    description:
+      'Geo-feature with the same country, layer and referenceId already exists',
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
     description: 'Country does not exist',
   })
-  public async createAdminArea(
-    @Body() adminAreaCreateDto: AdminAreaCreateDto,
+  public async createGeoFeature(
+    @Body() geoFeatureCreateDto: GeoFeatureCreateDto,
   ): Promise<Feature> {
-    return this.adminAreasService.createAdminArea(adminAreaCreateDto);
+    return this.geoFeaturesService.createGeoFeature(geoFeatureCreateDto);
   }
 
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
-  @Patch(':placeCode')
-  @ApiOperation({
-    summary: 'Update an admin area',
-  })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a geo-feature' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Admin area updated successfully',
+    description: 'Geo-feature updated successfully',
     type: GeoJsonFeatureDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Admin area not found',
+    description: 'Geo-feature not found',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Country does not exist',
-  })
-  public async updateAdminArea(
-    @Param('placeCode') placeCode: string,
-    @Body() adminAreaUpdateDto: AdminAreaUpdateDto,
+  public async updateGeoFeature(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() geoFeatureUpdateDto: GeoFeatureUpdateDto,
   ): Promise<Feature> {
-    return this.adminAreasService.updateAdminAreaOrThrow(
-      placeCode,
-      adminAreaUpdateDto,
+    return this.geoFeaturesService.updateGeoFeatureOrThrow(
+      id,
+      geoFeatureUpdateDto,
     );
   }
 
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
-  @Delete(':placeCode')
+  @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: 'Delete an admin area',
-  })
+  @ApiOperation({ summary: 'Delete a geo-feature' })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
-    description: 'Admin area deleted successfully',
+    description: 'Geo-feature deleted successfully',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Admin area not found',
+    description: 'Geo-feature not found',
   })
-  public async deleteAdminArea(
-    @Param('placeCode') placeCode: string,
+  public async deleteGeoFeature(
+    @Param('id', ParseIntPipe) id: number,
   ): Promise<void> {
-    await this.adminAreasService.deleteAdminAreaOrThrow(placeCode);
+    await this.geoFeaturesService.deleteGeoFeatureOrThrow(id);
   }
 }

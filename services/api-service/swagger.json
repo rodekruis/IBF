@@ -151,5 +151,32 @@
     "params": [
       "countryCodeIso3"
     ]
+  },
+  {
+    "method": "get",
+    "path": "/api/geo-features",
+    "params": [],
+    "returnType": "GeoJsonFeatureCollectionDto"
+  },
+  {
+    "method": "post",
+    "path": "/api/geo-features",
+    "params": [],
+    "returnType": "GeoJsonFeatureDto"
+  },
+  {
+    "method": "patch",
+    "path": "/api/geo-features/{id}",
+    "params": [
+      "id"
+    ],
+    "returnType": "GeoJsonFeatureDto"
+  },
+  {
+    "method": "delete",
+    "path": "/api/geo-features/{id}",
+    "params": [
+      "id"
+    ]
   }
 ]
