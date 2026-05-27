@@ -59,7 +59,9 @@ Enums in `services/api-service/src/alerts/enum/shared-enums.ts` and some of the 
    ```bash
    npm run gen:python
    ```
-(TODO in task #42361: Add a command that also updates the front end repo.)
+
+   (TODO in task #42361: Add a command that also updates the front end repo.)
+
 4. Let someone know to bring the changes to the frontend. See the [frontend repo readme](https://github.com/rodekruis/go-web-app/blob/ibf-main/app/src/components/NrwMap/readme.md) for more details. (TODO in task #42361: This will be automated more, so instructions will change.)
 
 ### Testing
