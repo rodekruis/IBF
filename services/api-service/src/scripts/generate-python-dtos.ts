@@ -93,8 +93,7 @@ const dataclasses: Dataclass[] = [
       {
         name: 'value',
         py: 'int | float',
-        toDict:
-          'int(self.value) if isinstance(self.value, bool) else self.value',
+        toDict: 'self.value',
       },
     ],
   },

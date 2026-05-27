@@ -13,8 +13,7 @@ def aggregate_to_parent_admin_levels(
 
     Each pass groups the deepest-level entries by a parent at the target level
     and aggregates per layer:
-    - Boolean layers: aggregated via ``any()`` (True if any child is True).
-    - Numeric layers (e.g. population_exposed): aggregated via ``sum()``,
+        - Numeric layers (e.g. population_exposed): aggregated via ``sum()``,
       which is correct for absolute counts.
 
     Note: percentage or rate-based layers are not yet supported. These would
@@ -37,7 +36,7 @@ def aggregate_to_parent_admin_levels(
     # Aggregate upward, for instance level 3 → level 2 → level 1 → level 0
     for target_level in reversed(range(0, deepest_level)):
         # Group deepest-level values by (ancestor_place_code, layer)
-        grouped: dict[tuple[str, Layer], list[bool | int | float]] = {}
+        grouped: dict[tuple[str, Layer], list[int | float]] = {}
 
         for entry in deepest_entries:
             feature = admin_areas.admin_areas.get(entry.place_code)
@@ -52,12 +51,10 @@ def aggregate_to_parent_admin_levels(
             grouped.setdefault(key, []).append(entry.value)
 
         for (place_code, layer), values in grouped.items():
-            if all(isinstance(v, bool) for v in values):
-                aggregated_value: bool | int | float = any(values)
-            elif all(
+            if all(
                 isinstance(v, (int, float)) and not isinstance(v, bool) for v in values
             ):
-                aggregated_value = sum(values)
+                aggregated_value: int | float = sum(values)
             else:
                 raise ValueError(
                     f"Mixed or unsupported value types for layer {layer} at "

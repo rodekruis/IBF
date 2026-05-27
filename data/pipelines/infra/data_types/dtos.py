@@ -94,7 +94,7 @@ class ExposureAdminArea:
             "placeCode": self.place_code,
             "adminLevel": self.admin_level,
             "layer": self.layer,
-            "value": int(self.value) if isinstance(self.value, bool) else self.value,
+            "value": self.value,
         }
 
 

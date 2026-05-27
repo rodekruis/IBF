@@ -112,7 +112,7 @@ class DataSubmitter:
         place_code: str,
         admin_level: int,
         layer: Layer,
-        value: bool | int | float,
+        value: int | float,
     ) -> None:
         alert = self._get_alert(event_name, "add_admin_area_exposure")
         if alert is None:
