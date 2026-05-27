@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 from pipelines.infra.data_types.admin_area_types import (
     AdminArea,
     AdminAreaProperties,
