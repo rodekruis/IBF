@@ -8,12 +8,14 @@ from pipelines.flood.determine_exposure import (
     aggregate_population_exposed,
     clip_flood_extent_to_admin_areas,
     compute_population_exposed,
+    determine_spatial_extent,
 )
 from pipelines.infra.data_types.admin_area_types import (
     AdminArea,
     AdminAreaProperties,
     AdminAreasSet,
 )
+from pipelines.infra.data_types.location_point import LocationPoint
 from rasterio.transform import from_origin
 
 
@@ -163,3 +165,73 @@ def test_clip_flood_extent_to_admin_areas_creates_station_specific_clipped_raste
         clipped_data = clipped_raster.read(1)
         assert clipped_data.shape == (1, 1)
         assert clipped_data[0, 0] == 1
+
+
+def _build_station(station_id: str = "station_001") -> LocationPoint:
+    return LocationPoint(name="Test Station", lat=1.0, lon=1.0, id=station_id)
+
+
+def test_determine_spatial_extent_filters_to_valid_place_codes(
+    tmp_path: Path,
+):
+    flood_extent_path = _create_raster(
+        tmp_path / "flood_extent.tif",
+        np.array([[1, 2], [3, 4]], dtype=np.uint8),
+        nodata=0,
+    )
+
+    admin_areas = _build_admin_areas()
+
+    clipped_path, valid_codes = determine_spatial_extent(
+        station=_build_station(),
+        station_place_codes=["PC001", "INVALID_CODE"],
+        admin_areas=admin_areas,
+        flood_extent_raster_path=flood_extent_path,
+    )
+
+    assert valid_codes == ["PC001"]
+    assert Path(clipped_path).exists()
+
+
+def test_determine_spatial_extent_returns_early_when_all_place_codes_invalid(
+    tmp_path: Path,
+):
+    flood_extent_path = _create_raster(
+        tmp_path / "flood_extent.tif",
+        np.array([[1, 2], [3, 4]], dtype=np.uint8),
+        nodata=0,
+    )
+
+    admin_areas = _build_admin_areas()
+
+    clipped_path, valid_codes = determine_spatial_extent(
+        station=_build_station(),
+        station_place_codes=["INVALID_1", "INVALID_2"],
+        admin_areas=admin_areas,
+        flood_extent_raster_path=flood_extent_path,
+    )
+
+    assert valid_codes == []
+    assert clipped_path == ""
+
+
+def test_determine_spatial_extent_returns_early_when_place_codes_empty(
+    tmp_path: Path,
+):
+    flood_extent_path = _create_raster(
+        tmp_path / "flood_extent.tif",
+        np.array([[1, 2], [3, 4]], dtype=np.uint8),
+        nodata=0,
+    )
+
+    admin_areas = _build_admin_areas()
+
+    clipped_path, valid_codes = determine_spatial_extent(
+        station=_build_station(),
+        station_place_codes=[],
+        admin_areas=admin_areas,
+        flood_extent_raster_path=flood_extent_path,
+    )
+
+    assert valid_codes == []
+    assert clipped_path == ""

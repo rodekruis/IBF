@@ -16,30 +16,31 @@ from pipelines.infra.data_types.location_point import LocationPoint
 
 def determine_spatial_extent(
     station: LocationPoint,
-    station_district_mapping: dict,
+    station_place_codes: list[str],
     admin_areas: AdminAreasSet,
     flood_extent_raster_path: str,
 ) -> tuple[str, list[str]]:
     """
-    Determine spatial extent by finding mapped place codes for a station, clipping the flood extent raster to admin areas.
+    Determine spatial extent by filtering station place codes to valid admin areas, clipping the flood extent raster.
     Return a tuple of (clipped_raster_path, place_codes).
     """
-    mapped_place_codes = station_district_mapping.get(station.id, [])
-
-    place_codes = [
+    valid_place_codes = [
         place_code
-        for place_code in mapped_place_codes
+        for place_code in station_place_codes
         if place_code in admin_areas.admin_areas
     ]
 
+    if not valid_place_codes:
+        return "", []
+
     clipped_flood_extent_raster_path = clip_flood_extent_to_admin_areas(
-        place_codes=place_codes,
+        place_codes=valid_place_codes,
         admin_areas=admin_areas,
         flood_extent_raster_path=flood_extent_raster_path,
         station_code=station.id,
     )
 
-    return clipped_flood_extent_raster_path, place_codes
+    return clipped_flood_extent_raster_path, valid_place_codes
 
 
 def compute_population_exposed(
