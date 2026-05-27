@@ -205,7 +205,7 @@ def calculate_flood_forecasts(
 
             # TODO: determine place codes by looking at the admin areas in a catchment area.
             # TODO-infra: actually, do not call add_admin_area_exposure per place_code, but just once (per layer)
-            for place_code in config.spatial_extent_place_codes:
+            for place_code in place_codes_exposed:
                 data_submitter.add_admin_area_exposure(
                     event_name=event_name,
                     place_code=place_code,

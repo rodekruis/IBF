@@ -30,6 +30,9 @@ def determine_spatial_extent(
         if place_code in admin_areas.admin_areas
     ]
 
+    if not valid_place_codes:
+        return "", []
+
     clipped_flood_extent_raster_path = clip_flood_extent_to_admin_areas(
         place_codes=valid_place_codes,
         admin_areas=admin_areas,
