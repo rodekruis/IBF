@@ -1,7 +1,6 @@
 """
-AUTO-GENERATED code from services/api-service/src/alerts/dto/*.dto.ts
-
-Python dataclasses mirroring the api-service DTOs.
+Dataclasses representing the DTOs defined in services/api-service/src/alerts/dto/
+If the definitions change there, be sure to reflect the changes here.
 """
 
 from __future__ import annotations

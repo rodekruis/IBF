@@ -48,13 +48,12 @@ Make sure to update any dependencies from _within_ the Docker-container, with:
 
 ## Development
 
-#### Updating shared enums and DTOs
+#### Updating shared enums
 
-Enums in `services/api-service/src/alerts/enum/shared-enums.ts` and some of the DTOs in `services/api-service/src/alerts/dto/*.dto.ts` are needed by either the frontend, the data pipelines or both. If there are changes in these files, do the following to propagate the changes:
+Enums in `services/api-service/src/alerts/enum/shared-enums.ts` are needed by either the frontend, the data pipelines or both. If there are changes in this file, do the following to propagate the changes:
 
 1. If you added new enums (not just new values to an existing enum), and these new enums must be shared, add the enum to `api-service/src/scripts/generate-python-enums.ts`
-2. If you add or change a DTO, edit the matching entry. For the pipelines, edit it here: `api-service/src/scripts/generate-python-dtos.ts`. If it's shared with the front end, edit it here: (TODO in task #42361 (https://dev.azure.com/redcrossnl/IBF/_workitems/edit/42361)).
-3. Regenerate the files in `data/pipelines/infra/data_types/` (always regenerates both `enums.py` and `dtos.py`) from the repo root:
+2. Regenerate `data/pipelines/infra/data_types/enums.py` from the repo root:
 
    ```bash
    npm run gen:python
@@ -62,7 +61,7 @@ Enums in `services/api-service/src/alerts/enum/shared-enums.ts` and some of the 
 
    (TODO in task #42361: Add a command that also updates the front end repo.)
 
-4. Let someone know to bring the changes to the frontend. See the [frontend repo readme](https://github.com/rodekruis/go-web-app/blob/ibf-main/app/src/components/NrwMap/readme.md) for more details. (TODO in task #42361: This will be automated more, so instructions will change.)
+3. Let someone know to bring the changes to the frontend. See the [frontend repo readme](https://github.com/rodekruis/go-web-app/blob/ibf-main/app/src/components/NrwMap/readme.md) for more details. (TODO in task #42361: This will be automated more, so instructions will change.)
 
 ### Testing
 
