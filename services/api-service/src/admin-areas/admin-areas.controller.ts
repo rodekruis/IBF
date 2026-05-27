@@ -28,11 +28,14 @@ import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-us
 export class AdminAreasController {
   public constructor(private readonly adminAreasService: AdminAreasService) {}
 
+  // TODO: Re-add @ApiQuery decorators once we have clarity on which pg_featureserv params to expose
   @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get()
   @ApiOperation({
     summary:
-      'Get admin areas; all query pg_featureserv parameters are supported (not shown in Swagger UI, so calling via Swagger is limited)',
+      'Get admin areas; all pg_featureserv query parameters are supported (not shown in Swagger UI, so calling via Swagger is limited)',
+    description:
+      "Example current use: GET /admin-areas?filter=countryCodeIso3='ETH' AND adminLevel=2",
   })
   @ApiResponse({
     status: HttpStatus.OK,

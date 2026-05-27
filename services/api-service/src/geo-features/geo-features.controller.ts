@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -13,11 +12,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import type { Feature, FeatureCollection } from 'geojson';
 
-import { Layer } from '@api-service/src/alerts/enum/shared-enums';
+import { GeoJsonFeatureDto } from '@api-service/src/admin-areas/dto/geojson-feature.dto';
+import { GeoJsonFeatureCollectionDto } from '@api-service/src/admin-areas/dto/geojson-feature-collection.dto';
 import { GeoFeatureCreateDto } from '@api-service/src/geo-features/dto/geo-feature-create.dto';
-import { GeoFeatureResponseDto } from '@api-service/src/geo-features/dto/geo-feature-response.dto';
 import { GeoFeatureUpdateDto } from '@api-service/src/geo-features/dto/geo-feature-update.dto';
 import { GeoFeaturesService } from '@api-service/src/geo-features/geo-features.service';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
@@ -29,41 +29,24 @@ import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-us
 export class GeoFeaturesController {
   public constructor(private readonly geoFeaturesService: GeoFeaturesService) {}
 
+  // TODO: Re-add @ApiQuery decorators once we have clarity on which pg_featureserv params to expose
   @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get()
   @ApiOperation({
-    summary: 'Get geo-features by country and/or layer',
-  })
-  @ApiQuery({ name: 'countryCodeIso3', required: false, example: 'KEN' })
-  @ApiQuery({
-    name: 'layer',
-    required: false,
-    enum: Layer,
+    summary:
+      'Get geo-features; all pg_featureserv query parameters are supported (not shown in Swagger UI, so calling via Swagger is limited)',
+    description:
+      "Example current use: GET /geo-features?filter=countryCodeIso3='ETH' AND layer='glofas_stations'",
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Geo-features returned successfully',
-    type: [GeoFeatureResponseDto],
+    description: 'GeoJSON FeatureCollection of geo-features',
+    type: GeoJsonFeatureCollectionDto,
   })
   public async getGeoFeatures(
-    @Query('countryCodeIso3') countryCodeIso3?: string,
-    @Query('layer') layer?: string,
-  ): Promise<GeoFeatureResponseDto[]> {
-    let layerValue: Layer | undefined = undefined;
-    if (layer !== undefined) {
-      if (Object.values(Layer).includes(layer as Layer)) {
-        layerValue = layer as Layer;
-      } else {
-        throw new BadRequestException(
-          `Invalid layer "${layer}". Valid values: ${Object.values(Layer).join(', ')}`,
-        );
-      }
-    }
-
-    return this.geoFeaturesService.getGeoFeatures({
-      countryCodeIso3,
-      layer: layerValue,
-    });
+    @Query() query: Record<string, string>,
+  ): Promise<FeatureCollection> {
+    return this.geoFeaturesService.getGeoFeatures(query);
   }
 
   // TODO: Consider adding a batch endpoint (POST with array body) for bulk imports
@@ -73,7 +56,7 @@ export class GeoFeaturesController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Geo-feature created successfully',
-    type: GeoFeatureResponseDto,
+    type: GeoJsonFeatureDto,
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
@@ -86,7 +69,7 @@ export class GeoFeaturesController {
   })
   public async createGeoFeature(
     @Body() geoFeatureCreateDto: GeoFeatureCreateDto,
-  ): Promise<GeoFeatureResponseDto> {
+  ): Promise<Feature> {
     return this.geoFeaturesService.createGeoFeature(geoFeatureCreateDto);
   }
 
@@ -96,7 +79,7 @@ export class GeoFeaturesController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Geo-feature updated successfully',
-    type: GeoFeatureResponseDto,
+    type: GeoJsonFeatureDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -105,7 +88,7 @@ export class GeoFeaturesController {
   public async updateGeoFeature(
     @Param('id', ParseIntPipe) id: number,
     @Body() geoFeatureUpdateDto: GeoFeatureUpdateDto,
-  ): Promise<GeoFeatureResponseDto> {
+  ): Promise<Feature> {
     return this.geoFeaturesService.updateGeoFeatureOrThrow(
       id,
       geoFeatureUpdateDto,
