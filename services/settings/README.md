@@ -57,5 +57,12 @@ GET /collections/api-service.admin-area/items.json?countryCodeIso3=KEN&adminLeve
 
 See [pg_featureserv.json](pg_featureserv.json) for the service configuration. Key settings:
 
-- `Paging.LimitDefault`: Default page size (1000)
+- `Paging.LimitDefault`: Default page size (10000)
+- `Paging.LimitMax`: Default page size limit (10000)
 - `Server.TransformFunctions`: Allowed transform functions (`ST_Simplify`)
+
+These configurations must be manually configured in deployments as CI/CD ignores pg_featureserv.json. The deployments are configured using environment variables as shown below,
+
+- PGFS_PAGING_LIMITDEFAULT: 10000
+- PGFS_PAGING_LIMITMAX: 10000
+- PGFS_SERVER_TRANSFORMFUNCTIONS: ST_Simplify (comma-separated list of allowed functions)
