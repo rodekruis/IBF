@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
-from pipelines.infra.data_types.alert_types import HazardType
+from pipelines.infra.data_types.enums import HazardType
 from shared.country_data import CountryCodeIso3
 
 

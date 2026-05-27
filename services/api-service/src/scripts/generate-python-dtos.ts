@@ -92,16 +92,9 @@ const dataclasses: Dataclass[] = [
       { name: 'layer', py: 'Layer' },
       {
         name: 'value',
-        py: 'bool | int | float',
-        // Cast preserved from the previous hand-written `to_dict` so existing
-        // callers passing bool still produce a number in the JSON payload.
+        py: 'int | float',
         toDict:
           'int(self.value) if isinstance(self.value, bool) else self.value',
-        exportNote:
-          'TS DTO declares `value: number` only. Python still accepts ' +
-          '`bool | int | float` and casts bool→int when serialising, so the ' +
-          'JSON payload sent to the API matches the TS contract. ' +
-          'TODO: >>>>>>>>>>>> Remove Bool >>>>> Do before completing this PR.',
       },
     ],
   },

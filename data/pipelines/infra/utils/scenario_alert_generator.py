@@ -5,7 +5,7 @@ from typing import Callable
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import (
+from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
     HazardType,

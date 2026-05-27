@@ -5,7 +5,7 @@ import os
 from urllib.parse import urlencode
 
 import requests
-from pipelines.infra.data_types.alert_types import Layer
+from pipelines.infra.data_types.enums import Layer
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.data_types.location_point import LocationPoint
 

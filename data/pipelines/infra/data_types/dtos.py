@@ -87,11 +87,7 @@ class ExposureAdminArea:
     place_code: str
     admin_level: int
     layer: Layer
-    # Difference with the source DTO: TS DTO declares `value: number` only. Python still
-    # accepts `bool | int | float` and casts bool→int when serialising, so the JSON payload
-    # sent to the API matches the TS contract. TODO: >>>>>>>>>>>> Remove Bool >>>>> Do
-    # before completing this PR.
-    value: bool | int | float
+    value: int | float
 
     def to_dict(self) -> JsonDict:
         return {

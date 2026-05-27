@@ -6,7 +6,7 @@ from pipelines.infra.data_types.admin_area_types import (
     AdminAreaProperties,
     AdminAreasSet,
 )
-from pipelines.infra.data_types.alert_types import (
+from pipelines.infra.data_types.dtos import (
     Alert,
     Centroid,
     Exposure,

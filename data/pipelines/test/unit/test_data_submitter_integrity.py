@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from pipelines.infra.data_submitter import DataSubmitter
-from pipelines.infra.data_types.alert_types import (
+from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
     ForecastSource,

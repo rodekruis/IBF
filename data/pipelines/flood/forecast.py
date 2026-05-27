@@ -23,8 +23,9 @@ from pipelines.flood.utils_raster import (  # TODO-infra: move utils to infra an
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import Centroid, EnsembleMemberType, Layer
+from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.data_config_types import DataSource
+from pipelines.infra.data_types.enums import EnsembleMemberType, Layer
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.data_types.location_point import LocationPoint
 

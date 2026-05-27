@@ -12,7 +12,7 @@ import {
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
 
 // This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
-// Keep in line with definition in alert_types.py
+// Keep in line with definition in alert type definitions
 const EVENT_NAME_PATTERN = new RegExp(
   `^[A-Z]{3}_(${Object.values(HazardType).join('|')})_.+$`,
 );

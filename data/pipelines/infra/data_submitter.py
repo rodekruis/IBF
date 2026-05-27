@@ -6,7 +6,7 @@ import os
 import shutil
 from datetime import datetime, timezone
 
-from pipelines.infra.data_types.alert_types import (
+from pipelines.infra.data_types.dtos import (
     Alert,
     Centroid,
     EnsembleMemberType,
