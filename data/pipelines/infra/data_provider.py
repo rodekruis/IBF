@@ -144,6 +144,10 @@ if __name__ == "__main__":
                     print(
                         f"  ERROR: [{container.data_source}] ({container.data_type}): <no data>"
                     )
+            elif container.data_type == DataType.RASTER_FILE_PATH:
+                print(
+                    f"  [{container.data_source}] ({container.data_type}): {container.data}"
+                )
             elif container.data_type == DataType.STRING:
                 print(
                     f"  [{container.data_source}] ({container.data_type}): {container.data}"

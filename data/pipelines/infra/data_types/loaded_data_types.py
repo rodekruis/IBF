@@ -34,6 +34,9 @@ class DataType(StrEnum):
     # Meta data may be loaded in the data container's metadata field
     PNG = "png"
 
+    # A file path to a raster on disk (e.g. GeoTIFF)
+    RASTER_FILE_PATH = "raster_file_path"
+
     # an AdminAreasSet object
     ADMIN_AREA_SET = "admin_area_set"
 
@@ -45,6 +48,7 @@ class DataType(StrEnum):
     # Generic types
     STRING = "string"
     BINARY = "binary"
+    JSON_LIST = "json_list"
 
     # Default value until the type is set by the loader
     UNSPECIFIED = "unspecified"

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import glob
-import json
 import logging
 
 from pipelines.flood.compute_alert_extent import compute_alert_extent
@@ -29,10 +28,6 @@ from pipelines.infra.data_types.enums import EnsembleMemberType, Layer
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.data_types.location_point import LocationPoint
 
-GLOFAS_MIN_RP_THRESHOLDS = (
-    1.5  # GloFAS minimum return period thresholds # TODO-infra: where to put this?
-)
-
 
 def calculate_flood_forecasts(
     data_provider: DataProvider,
@@ -44,55 +39,37 @@ def calculate_flood_forecasts(
     alert_configs: list[AlertConfig] = data_provider.get_data(
         DataSource.ALERT_CONFIGS_IBF_API, list
     )
-    stations: dict[str, LocationPoint] = data_provider.get_data(
+    glofas_stations: dict[str, LocationPoint] = data_provider.get_data(
         DataSource.GLOFAS_STATIONS_IBF_API, dict
     )
+    glofas_station_thresholds: list[ReturnPeriodThresholds] = data_provider.get_data(
+        DataSource.GLOFAS_STATION_THRESHOLDS_SEED_REPO, list
+    )  # TODO AB#42288: include as part of glofas stations api call
     target_admin_areas = data_provider.get_data(
         DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
-    )  # TODO AB#41454:  load population using data_provider. This is already available, but as png. For now a tiff is used, which is loaded directly below.
+    )
+    population_raster_path: str = data_provider.get_data(
+        DataSource.POPULATION_SEED_REPO, str
+    )  # TODO AB#42339: switch to loading population raster from IBF API (geo-features).
 
-    # TODO: add more data-loaded checks as more sources move to data_provider class
-    if not alert_configs or not stations or not target_admin_areas:
+    if (
+        not alert_configs
+        or not glofas_stations
+        or not glofas_station_thresholds
+        or not target_admin_areas
+        or not population_raster_path
+    ):
         data_submitter.add_error(
-            f"Missing input data: alert_configs={bool(alert_configs)}, stations={bool(stations)}, admin_areas={bool(target_admin_areas)}"
+            f"Missing input data: alert_configs={bool(alert_configs)}, glofas_stations={bool(glofas_stations)}, admin_areas={bool(target_admin_areas)}, thresholds={bool(glofas_station_thresholds)}, population={bool(population_raster_path)}"
         )
         return
 
-    # TODO AB#41454: load these through the data provider once the data sources are registered
-    # thresholds: dict[str, dict[str, float]] = data_provider.get_data(
-    #     DataSource.GLOFAS_MIN_RP_THRESHOLDS
-    # ).data
-    # basins_geojson: dict = data_provider.get_data(
-    #     DataSource.HYDROSHEDS_BASINS
-    # ).data
-    # population_data = data_provider.get_data(DataSource.POPULATION_SEED_REPO)
-    # population_raster_path: str = population_data.metadata.get("file_path", "")
-    # glofas_netcdf_paths: list[str] = data_provider.get_data(
-    #     DataSource.TODO_GLOFAS_DISCHARGE
-    # ).data
-
-    # TODO: (placeholder data) replace with data provider calls above once data sources are wired
+    # TODO: (placeholder data) replace with data provider calls once data sources are wired
     # glofas netcdf files
     glofas_netcdf_paths: list[str] = [
         "./pipelines/flood/bronze/glofas/dis_00_2026040800.nc"
     ]
-    # thresholds for stations json files
-    thresholds_path: list[str] = [
-        f for f in glob.glob(f"./pipelines/flood/bronze/thresholds/*_{country}.json")
-    ]
-    thresholds: list[ReturnPeriodThresholds] = []
-    for path in thresholds_path:
-        with open(path) as f:
-            loaded_thresholds = json.load(f)
-        thresholds.append(loaded_thresholds)
 
-    # population raster tiff file
-    population_raster_paths = glob.glob(
-        f"./pipelines/flood/bronze/population/{country}.tif"
-    )
-    population_raster_path: str = (
-        population_raster_paths[0] if population_raster_paths else ""
-    )
     # flood extent rasters
     flood_extent_paths: list[str] = [
         f
@@ -114,7 +91,7 @@ def calculate_flood_forecasts(
     # DO NOT REMOVE: this loop over spatial-extents is obligatory. TODO-infra: enforce this better.
     for config in alert_configs:
         station_code = config.spatial_extent_name
-        station = stations.get(station_code)
+        station = glofas_stations.get(station_code)
         if station is None:
             logging.warning(f"No station location found for '{station_code}', skipping")
             continue
@@ -132,7 +109,7 @@ def calculate_flood_forecasts(
             time_interval_severities = determine_temporal_extent(
                 station_code=station_code,
                 time_interval_discharges=discharges.get(station_code, []),
-                thresholds=thresholds,
+                thresholds=glofas_station_thresholds,
             )
 
             # If no time intervals exceeded the minimum return period threshold, skip to the next temporal extent
