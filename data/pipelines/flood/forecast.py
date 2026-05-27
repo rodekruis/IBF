@@ -84,13 +84,7 @@ def calculate_flood_forecasts(
         with open(path) as f:
             loaded_thresholds = json.load(f)
         thresholds.append(loaded_thresholds)
-    # station-district mapping json file (or basins_geojson if mapping with basin instead)
-    station_district_mapping_path: str = (
-        f"./pipelines/flood/bronze/station-district/{country}_station_district_mapping.json"
-    )
-    station_district_mapping: dict = {}
-    with open(station_district_mapping_path) as f:
-        station_district_mapping = json.load(f)
+
     # population raster tiff file
     population_raster_paths = glob.glob(
         f"./pipelines/flood/bronze/population/{country}.tif"
@@ -154,7 +148,7 @@ def calculate_flood_forecasts(
             ### Step 6 - Determine spatial extent ###
             clipped_flood_extent_path, place_codes_exposed = determine_spatial_extent(
                 station=station,
-                station_district_mapping=station_district_mapping,
+                station_place_codes=config.spatial_extent_place_codes,
                 admin_areas=target_admin_areas,
                 flood_extent_raster_path=flood_extent_path,
             )
