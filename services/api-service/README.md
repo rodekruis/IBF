@@ -55,11 +55,11 @@ If there are changes that need to be propagated, do the following:
 
 **Enums**
 
-Shared enums are located in `services/api-service/src/shared-enums.ts`. If you add new values, you just need to propagate changes. If you added new enums (not just new values to an existing enum), add the enum to `api-service/src/scripts/generate-python-enums.ts`
+Shared enums are located in `services/api-service/src/shared-enums.ts`. If you add new values, you just need to propagate changes. If you added new enums (not just new values to an existing enum), add the enum to `services/api-service/src/scripts/generate-python-enums.ts`
 
 **DTOs**
 
-DTOs changes needed by Python must be copied/reformatted by hand. All changes are placed in `data/pipelines/infra/data_types/dtos.py`. Changes needed by the front end are automated, but if you need to add new classes, add a reference to them in `SOURCE_DTOS` at the top of `api-service/src/scripts/generate-frontend-dtos.ts`, along with any new DTO dependencies they have.
+DTOs changes needed by Python must be copied/reformatted by hand. All changes are placed in `data/pipelines/infra/data_types/dtos.py`. Changes needed by the front end are automated, but if you need to add new classes, add a reference to them in `SOURCE_DTOS` at the top of `services/api-service/src/scripts/generate-frontend-dtos.ts`, along with any new DTO dependencies they have.
 
 **Propagate changes**
 
