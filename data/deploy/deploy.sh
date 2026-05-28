@@ -134,8 +134,7 @@ create_or_update_job() {
       --registry-server "$ACR_LOGIN_SERVER" \
       --registry-identity system \
       --secrets $SECRETS \
-      --env-vars $ENV_REFS \
-      --args "--config ${config_path} --run-target ${run_target}" \
+      --env-vars $ENV_REFS PIPELINE_CONFIG="${config_path}" PIPELINE_RUN_TARGET="${run_target}" \
       --tags "${TAGS[@]}" \
       -o none
   else
@@ -146,12 +145,14 @@ create_or_update_job() {
       --replica-retry-limit "$REPLICA_RETRY_LIMIT" \
       --image "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${IMAGE_TAG}" \
       --cpu "$CPU" --memory "$MEMORY" \
-      --set-env-vars $ENV_REFS \
-      --args "--config ${config_path} --run-target ${run_target}" \
+      --set-env-vars $ENV_REFS PIPELINE_CONFIG="${config_path}" PIPELINE_RUN_TARGET="${run_target}" \
       -o none
     az containerapp job secret set \
       -g "$RESOURCE_GROUP" -n "$job_name" \
       --secrets $SECRETS -o none
+    az containerapp job registry set \
+      -g "$RESOURCE_GROUP" -n "$job_name" \
+      --server "$ACR_LOGIN_SERVER" --identity system -o none
   fi
 
   # Ensure the job's managed identity can pull from ACR.

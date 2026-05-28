@@ -14,11 +14,11 @@ COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock README.md ./
 COPY pipelines ./pipelines
 COPY shared ./shared
 COPY data_management ./data_management
 
 RUN uv sync --frozen --no-dev
 
-ENTRYPOINT ["pipeline"]
+ENTRYPOINT ["sh", "-c", "pipeline --config $PIPELINE_CONFIG --run-target $PIPELINE_RUN_TARGET"]

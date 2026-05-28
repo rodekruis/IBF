@@ -84,6 +84,50 @@ What it does, in order:
 6. Creates / updates the Action Group with the email recipient.
 7. Creates / updates the failure alert rule querying the workspace.
 
+## Grant ACR pull permissions to each job (one-time, per job)
+
+Each Container Apps Job is created with its own system-assigned managed
+identity. That identity needs the `AcrPull` role on the registry before the job
+can pull its image. `deploy.sh` attempts this automatically but will silently
+skip it if your account lacks `Microsoft.Authorization/roleAssignments/write`
+on the resource group — in that case an admin (Owner or User Access
+Administrator) needs to run the commands below once per job.
+
+Find each job's principal ID:
+
+```bash
+az containerapp job show -g nrw-pipelines-test-rg -n nrw-pipeline-drought \
+  --query identity.principalId -o tsv
+az containerapp job show -g nrw-pipelines-test-rg -n nrw-pipeline-floods \
+  --query identity.principalId -o tsv
+```
+
+Then have the admin assign the role to each principal. The subscription ID
+below is the 510 subscription and shouldn't change:
+
+```bash
+az role assignment create \
+  --assignee <drought-principal-id> \
+  --scope /subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-pipelines-test-rg/providers/Microsoft.ContainerRegistry/registries/nrwpipelinestestacr \
+  --role AcrPull
+
+az role assignment create \
+  --assignee <floods-principal-id> \
+  --scope /subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-pipelines-test-rg/providers/Microsoft.ContainerRegistry/registries/nrwpipelinestestacr \
+  --role AcrPull
+```
+
+Verify both principal IDs appear in the registry's `AcrPull` role assignments:
+
+```bash
+az role assignment list \
+  --scope $(az acr show -n nrwpipelinestestacr --query id -o tsv) \
+  --query "[?roleDefinitionName=='AcrPull'].principalId" -o tsv
+```
+
+Role assignments are persistent — you only need to redo this if a job is
+recreated (which gives it a new managed identity).
+
 ## Trigger a job manually
 
 Useful for smoke-testing after a deploy:
