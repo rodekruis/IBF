@@ -1,4 +1,4 @@
-import { HazardType } from '@api-service/src/alerts/enum/shared-enums';
+import { HazardType } from '@api-service/src/shared-enums';
 
 export interface SeedAlertConfig {
   readonly countryCodeIso3: string;

@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { Event, Prisma } from '@prisma/client';
 
 import {
-  EnsembleMemberType,
-  HazardType,
-  Layer,
-} from '@api-service/src/alerts/enum/shared-enums';
+    EnsembleMemberType,
+    HazardType,
+    Layer,
+} from '@api-service/src/shared-enums';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
 interface EventAlertHistorySeverity {

@@ -1,5 +1,5 @@
 """
-AUTO-GENERATED code from services/api-service/src/alerts/enum/shared-enums.ts
+AUTO-GENERATED code from services/api-service/src/shared-enums.ts
 
 These are the enums shared between the API service and the pipeline code.
 Run `npm run gen:python` (from the repo root) to regenerate.

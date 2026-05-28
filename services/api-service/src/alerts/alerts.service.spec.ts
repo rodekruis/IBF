@@ -6,11 +6,11 @@ import { AlertsService } from '@api-service/src/alerts/alerts.service';
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import {
-  EnsembleMemberType,
-  ForecastSource,
-  HazardType,
-  Layer,
-} from '@api-service/src/alerts/enum/shared-enums';
+    EnsembleMemberType,
+    ForecastSource,
+    HazardType,
+    Layer,
+} from '@api-service/src/shared-enums';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
 
 function createMockValidForecast(

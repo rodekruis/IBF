@@ -2,13 +2,13 @@ import { Test } from '@nestjs/testing';
 import { Event } from '@prisma/client';
 
 import {
-  ForecastSource,
-  HazardType,
-} from '@api-service/src/alerts/enum/shared-enums';
+    ForecastSource,
+    HazardType,
+} from '@api-service/src/shared-enums';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
 import {
-  AlertToEventService,
-  ForecastMetadata,
+    AlertToEventService,
+    ForecastMetadata,
 } from '@api-service/src/events/alert-to-event.service';
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';

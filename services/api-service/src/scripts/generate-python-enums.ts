@@ -6,7 +6,7 @@ import {
   ForecastSource,
   HazardType,
   Layer,
-} from '@api-service/src/alerts/enum/shared-enums';
+} from '@api-service/src/shared-enums';
 
 type EnumObject = Record<string, string | number>;
 
@@ -18,7 +18,7 @@ const enumsToGenerate: { name: string; values: EnumObject }[] = [
   { name: 'Layer', values: Layer },
 ];
 
-const SOURCE_PATH = 'services/api-service/src/alerts/enum/shared-enums.ts';
+const SOURCE_PATH = 'services/api-service/src/shared-enums.ts';
 const OUTPUT_PATH = resolve(
   __dirname,
   '../../../../data/pipelines/infra/data_types/enums.py',

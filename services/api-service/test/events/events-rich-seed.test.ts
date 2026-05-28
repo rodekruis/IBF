@@ -2,18 +2,18 @@ import { HttpStatus } from '@nestjs/common';
 import { addDays } from 'date-fns';
 
 import { ExposureAdminAreaDto } from '@api-service/src/alerts/dto/exposure-admin-area.dto';
-import { Layer } from '@api-service/src/alerts/enum/shared-enums';
+import { Layer } from '@api-service/src/shared-enums';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
-  buildAlert,
-  buildForecast,
-  buildSeverityData,
-  createAlerts,
+    buildAlert,
+    buildForecast,
+    buildSeverityData,
+    createAlerts,
 } from '@api-service/test/helpers/alert.helper';
 import { getActiveEvents } from '@api-service/test/helpers/event.helper';
 import {
-  getAccessToken,
-  resetDB,
+    getAccessToken,
+    resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
 // Awash River zone hierarchy (station: AWASH G5305)

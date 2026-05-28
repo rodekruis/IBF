@@ -5,9 +5,9 @@ import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { ExposureReadDto } from '@api-service/src/alerts/dto/exposure-read.dto';
 import { SeverityReadDto } from '@api-service/src/alerts/dto/severity-read.dto';
 import {
-  ForecastSource,
-  HazardType,
-} from '@api-service/src/alerts/enum/shared-enums';
+    ForecastSource,
+    HazardType,
+} from '@api-service/src/shared-enums';
 import { BaseDto } from '@api-service/src/shared/dto/base.dto';
 
 export class AlertReadDto extends IntersectionType(BaseDto, AlertCreateDto) {

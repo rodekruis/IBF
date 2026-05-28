@@ -5,7 +5,7 @@ import { IsArray, IsString, ValidateNested } from 'class-validator';
 import { CentroidDto } from '@api-service/src/alerts/dto/centroid.dto';
 import { ExposureDto } from '@api-service/src/alerts/dto/exposure.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
-import { EnsembleMemberType } from '@api-service/src/alerts/enum/shared-enums';
+import { EnsembleMemberType } from '@api-service/src/shared-enums';
 
 // The data pipelines also use this definition.
 // If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py

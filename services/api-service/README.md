@@ -50,7 +50,7 @@ Make sure to update any dependencies from _within_ the Docker-container, with:
 
 #### Updating shared enums
 
-Enums in `services/api-service/src/alerts/enum/shared-enums.ts` are needed by either the frontend, the data pipelines or both. If there are changes in this file, do the following to propagate the changes:
+Enums in `services/api-service/src/shared-enums.ts` are needed by either the frontend, the data pipelines or both. If there are changes in this file, do the following to propagate the changes:
 
 1. If you added new enums (not just new values to an existing enum), and these new enums must be shared, add the enum to `api-service/src/scripts/generate-python-enums.ts`
 2. Regenerate `data/pipelines/infra/data_types/enums.py` from the repo root:

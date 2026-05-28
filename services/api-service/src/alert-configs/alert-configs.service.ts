@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { AlertConfigsRepository } from '@api-service/src/alert-configs/alert-configs.repository';
 import { AlertConfigCreateDto } from '@api-service/src/alert-configs/dto/alert-config-create.dto';
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
-import { HazardType } from '@api-service/src/alerts/enum/shared-enums';
+import { HazardType } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class AlertConfigsService {

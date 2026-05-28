@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { Layer } from '@api-service/src/alerts/enum/shared-enums';
+import { Layer } from '@api-service/src/shared-enums';
 
 class AdminAreaExposureDto {
   @ApiProperty({ enum: Layer, example: Layer.populationExposed })

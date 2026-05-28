@@ -1,20 +1,20 @@
 import { HttpStatus } from '@nestjs/common';
 
 import {
-  ForecastSource,
-  HazardType,
-} from '@api-service/src/alerts/enum/shared-enums';
+    ForecastSource,
+    HazardType,
+} from '@api-service/src/shared-enums';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
-  buildAlert,
-  buildForecast,
-  buildSeverityData,
-  createAlerts,
+    buildAlert,
+    buildForecast,
+    buildSeverityData,
+    createAlerts,
 } from '@api-service/test/helpers/alert.helper';
 import { getActiveEvents } from '@api-service/test/helpers/event.helper';
 import {
-  getAccessToken,
-  resetDB,
+    getAccessToken,
+    resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
 describe('GET /events - lifecycle across multiple forecasts', () => {

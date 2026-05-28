@@ -1,12 +1,12 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { Layer } from '@api-service/src/alerts/enum/shared-enums';
+import { Layer } from '@api-service/src/shared-enums';
 import { GeoFeatureType } from '@api-service/src/geo-features/enum/geo-feature-type.enum';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
-  getAccessToken,
-  getServer,
-  resetDB,
+    getAccessToken,
+    getServer,
+    resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
 describe('/ Geo Features', () => {

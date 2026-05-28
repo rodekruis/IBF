@@ -5,11 +5,11 @@ import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import {
-  EnsembleMemberType,
-  ForecastSource,
-  HazardType,
-  Layer,
-} from '@api-service/src/alerts/enum/shared-enums';
+    EnsembleMemberType,
+    ForecastSource,
+    HazardType,
+    Layer,
+} from '@api-service/src/shared-enums';
 import { env } from '@api-service/src/env';
 import { getServer } from '@api-service/test/helpers/utility.helper';
 
