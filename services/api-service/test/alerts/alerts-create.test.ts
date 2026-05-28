@@ -1,18 +1,18 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { EnsembleMemberType } from '@api-service/src/shared-enums';
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
+import { EnsembleMemberType } from '@api-service/src/shared-enums';
 import {
-    buildAlert,
-    buildForecast,
-    createAlerts,
+  buildAlert,
+  buildForecast,
+  createAlerts,
 } from '@api-service/test/helpers/alert.helper';
 import { getActiveEvents } from '@api-service/test/helpers/event.helper';
 import {
-    getAccessToken,
-    getServer,
-    resetDB,
+  getAccessToken,
+  getServer,
+  resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
 const VALID_FORECAST = buildForecast([buildAlert()]);

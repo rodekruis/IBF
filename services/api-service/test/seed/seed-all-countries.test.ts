@@ -1,12 +1,12 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { HazardType, Layer } from '@api-service/src/shared-enums';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { SEED_COUNTRIES } from '@api-service/src/scripts/seed-data/seed-countries.const';
+import { HazardType, Layer } from '@api-service/src/shared-enums';
 import {
-    getAccessToken,
-    getServer,
-    resetDB,
+  getAccessToken,
+  getServer,
+  resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
 describe('Seed – all countries', () => {

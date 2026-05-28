@@ -1,18 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-    ArrayMinSize,
-    IsArray,
-    IsDate,
-    IsEnum,
-    ValidateNested,
+  ArrayMinSize,
+  IsArray,
+  IsDate,
+  IsEnum,
+  ValidateNested,
 } from 'class-validator';
 
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
-import {
-    ForecastSource,
-    HazardType,
-} from '@api-service/src/shared-enums';
+import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
 
 // The data pipelines also use this definition.
 // If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py

@@ -4,11 +4,8 @@ import { AlertConfigsService } from '@api-service/src/alert-configs/alert-config
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
-import {
-    EnsembleMemberType,
-    HazardType,
-} from '@api-service/src/shared-enums';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
+import { EnsembleMemberType, HazardType } from '@api-service/src/shared-enums';
 
 interface TimeIntervalGroup {
   readonly start: string;

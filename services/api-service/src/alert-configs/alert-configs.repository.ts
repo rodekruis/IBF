@@ -1,15 +1,15 @@
 import {
-    BadRequestException,
-    Injectable,
-    NotFoundException,
+  BadRequestException,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import { AlertConfigCreateDto } from '@api-service/src/alert-configs/dto/alert-config-create.dto';
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
-import { HazardType } from '@api-service/src/shared-enums';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
+import { HazardType } from '@api-service/src/shared-enums';
 
 type AlertConfigRow = Prisma.AlertConfigGetPayload<null>;
 

@@ -1,11 +1,11 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { HazardType } from '@api-service/src/shared-enums';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
+import { HazardType } from '@api-service/src/shared-enums';
 import {
-    getAccessToken,
-    getServer,
-    resetDB,
+  getAccessToken,
+  getServer,
+  resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
 describe('/ Alert Configs', () => {
