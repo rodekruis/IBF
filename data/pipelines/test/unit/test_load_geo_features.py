@@ -2,8 +2,8 @@ from unittest.mock import MagicMock
 
 from shared.country_data import CountryCodeIso3
 
-from pipelines.infra.data_types.alert_types import HazardType
 from pipelines.infra.data_types.data_config_types import DataSource, DataSourceConfig
+from pipelines.infra.data_types.enums import HazardType
 from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
 from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.data_provider_fetchers import _load_ibf_api_glofas_stations

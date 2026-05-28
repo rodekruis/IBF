@@ -4,8 +4,8 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from pipelines.infra.data_submitter import DataSubmitter
-from pipelines.infra.data_types.alert_types import ForecastSource, HazardType
 from pipelines.infra.data_types.data_config_types import OutputMode
+from pipelines.infra.data_types.enums import ForecastSource, HazardType
 
 
 class TestLocalMode:

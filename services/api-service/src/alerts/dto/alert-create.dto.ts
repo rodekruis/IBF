@@ -7,6 +7,8 @@ import { ExposureDto } from '@api-service/src/alerts/dto/exposure.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import { EnsembleMemberType } from '@api-service/src/alerts/enum/shared-enums';
 
+// The data pipelines also use this definition.
+// If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py
 export class AlertCreateDto {
   @ApiProperty({ example: 'KEN_floods_station-A' })
   @IsString()

@@ -23,8 +23,9 @@ from pipelines.flood.utils_raster import (  # TODO-infra: move utils to infra an
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import Centroid, EnsembleMemberType, Layer
+from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.data_config_types import DataSource
+from pipelines.infra.data_types.enums import EnsembleMemberType, Layer
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.data_types.location_point import LocationPoint
 
@@ -218,13 +219,13 @@ def calculate_flood_forecasts(
             # data_submitter.add_geo_feature_exposure(
             #     event_name=event_name,
             #     geo_feature_id=station_code,
-            #     layer="glofas_stations",
-            #     value={"river_discharge": 0},
+            #     layer=Layer.GLOFAS_STATIONS,
+            #     attributes={"river_discharge": 0},
             # )
 
             data_submitter.add_raster_exposure(
                 event_name=event_name,
-                layer="alert_extent",
+                layer=Layer.ALERT_EXTENT,
                 value=clipped_flood_extent_path,
                 extent=get_raster_extent(clipped_flood_extent_path),
             )

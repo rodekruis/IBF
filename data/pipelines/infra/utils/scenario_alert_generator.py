@@ -5,7 +5,7 @@ from typing import Callable
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.alert_types import (
+from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
     HazardType,
@@ -91,7 +91,7 @@ def _generate_alert_scenario(
 
     data_submitter.add_raster_exposure(
         event_name=event_name,
-        layer="alert_extent",
+        layer=Layer.ALERT_EXTENT,
         value="scenario_alert_extent.tif",
         extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
     )

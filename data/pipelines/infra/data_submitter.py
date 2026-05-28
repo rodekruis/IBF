@@ -6,7 +6,7 @@ import os
 import shutil
 from datetime import datetime, timezone
 
-from pipelines.infra.data_types.alert_types import (
+from pipelines.infra.data_types.dtos import (
     Alert,
     Centroid,
     EnsembleMemberType,
@@ -112,7 +112,7 @@ class DataSubmitter:
         place_code: str,
         admin_level: int,
         layer: Layer,
-        value: bool | int | float,
+        value: int | float,
     ) -> None:
         alert = self._get_alert(event_name, "add_admin_area_exposure")
         if alert is None:
@@ -131,21 +131,23 @@ class DataSubmitter:
         self,
         event_name: str,
         geo_feature_id: str,
-        layer: str,
-        value: dict[str, bool | str | int | float],
+        layer: Layer,
+        attributes: dict[str, bool | str | int | float],
     ) -> None:
         alert = self._get_alert(event_name, "add_geo_feature_exposure")
         if alert is None:
             return
 
         alert.exposure.geo_features.append(
-            ExposureGeoFeature(geo_feature_id=geo_feature_id, layer=layer, value=value)
+            ExposureGeoFeature(
+                geo_feature_id=geo_feature_id, layer=layer, attributes=attributes
+            )
         )
 
     def add_raster_exposure(
         self,
         event_name: str,
-        layer: str,
+        layer: Layer,
         value: str,
         extent: dict[str, float],
     ) -> None:

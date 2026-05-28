@@ -11,7 +11,6 @@ from pathlib import Path
 
 import yaml
 
-from pipelines.infra.data_types.alert_types import HazardType
 from pipelines.infra.data_types.data_config_types import (
     CountryCodeIso3,
     CountryRunConfig,
@@ -21,6 +20,7 @@ from pipelines.infra.data_types.data_config_types import (
     PipelineRunConfig,
     RunTargetType,
 )
+from pipelines.infra.data_types.enums import HazardType
 
 logger = logging.getLogger(__name__)
 

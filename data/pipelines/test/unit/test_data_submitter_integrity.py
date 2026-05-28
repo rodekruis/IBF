@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from pipelines.infra.data_submitter import DataSubmitter
-from pipelines.infra.data_types.alert_types import (
+from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
     ForecastSource,
@@ -136,7 +136,7 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
     )
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
-        layer="some_other_layer",
+        layer=Layer.POPULATION_EXPOSED,
         value="other.tif",
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
@@ -184,7 +184,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     )
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
-        layer="alert_extent",
+        layer=Layer.ALERT_EXTENT,
         value="alert_extent.tif",
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
@@ -202,7 +202,7 @@ def test_raster_invalid_extent_is_rejected(
     """A raster whose xmin >= xmax or ymin >= ymax is rejected."""
     valid_submitter.add_raster_exposure(
         event_name=EVENT_NAME,
-        layer="flood_depth",
+        layer=Layer.ALERT_EXTENT,
         value="flood_depth.tif",
         extent={"xmin": 38.0, "ymin": 2.0, "xmax": 36.0, "ymax": 0.0},
     )
@@ -262,7 +262,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
     )
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
-        layer="alert_extent",
+        layer=Layer.ALERT_EXTENT,
         value="alert_extent.tif",
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )

@@ -48,13 +48,20 @@ Make sure to update any dependencies from _within_ the Docker-container, with:
 
 ## Development
 
-###
+#### Updating shared enums
 
-Enums in `services/api-service/src/alerts/enum/shared-enums.ts` are needed by both the frontend and the data pipelines. To pass any changes, do the following when these values change:
+Enums in `services/api-service/src/alerts/enum/shared-enums.ts` are needed by either the frontend, the data pipelines or both. If there are changes in this file, do the following to propagate the changes:
 
-1. Add the enum to `api-service/src/scripts/generate-python-enums.ts`
-2. Run `npm run gen:enums` from repo root to regenerate enums used in the pipelines
-3. Let someone know to bring the changes to the frontend. See the [frontend repo readme](https://github.com/rodekruis/go-web-app/blob/ibf-main/app/src/components/NrwMap/readme.md) for more details.
+1. If you added new enums (not just new values to an existing enum), and these new enums must be shared, add the enum to `api-service/src/scripts/generate-python-enums.ts`
+2. Regenerate `data/pipelines/infra/data_types/enums.py` from the repo root:
+
+   ```bash
+   npm run gen:python
+   ```
+
+   (TODO in task #42361: Add a command that also updates the front end repo.)
+
+3. Let someone know to bring the changes to the frontend. See the [frontend repo readme](https://github.com/rodekruis/go-web-app/blob/ibf-main/app/src/components/NrwMap/readme.md) for more details. (TODO in task #42361: This will be automated more, so instructions will change.)
 
 ### Testing
 

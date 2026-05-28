@@ -65,7 +65,7 @@ pipelines/
 
 ## YAML config files
 
-Most of the fields in the config file are mapped to enums. You can see the allowed values by looking at the enums in `alert_types.py` and `data_source_types.py`.
+Most of the fields in the config file are mapped to enums. You can see the allowed values by looking at the enums in `data_types/enums.py` and `data_config_types.py`.
 
 To handle new configs and targets, see the sections below.
 

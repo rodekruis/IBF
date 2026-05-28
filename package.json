@@ -26,7 +26,7 @@
     "test:api-service": "cd services/ && docker compose exec api-service npm test",
     "fix:prettier": "npm run test:prettier -- --write",
     "fix:api-service": "npm run fix --prefix=services/api-service",
-    "gen:enums": "npm run gen:enums --prefix=services/api-service",
+    "gen:python": "npm run gen:python --prefix=services/api-service",
     "prepare": "husky"
   },
   "devDependencies": {

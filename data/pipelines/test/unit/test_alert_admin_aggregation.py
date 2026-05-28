@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import pytest
 from pipelines.infra.data_types.admin_area_types import (
     AdminArea,
     AdminAreaProperties,
     AdminAreasSet,
 )
-from pipelines.infra.data_types.alert_types import (
+from pipelines.infra.data_types.dtos import (
     Alert,
     Centroid,
     Exposure,
@@ -224,26 +223,12 @@ def test_multiple_layers_aggregated_independently():
     assert extent[0].value == 30
 
 
-def test_mixed_value_types_raises():
-    # Mixing bool and int for the same layer should raise ValueError
+def test_alert_extent_aggregation_all_zero():
+    # Parent value is 0 when all children are 0
     alert = _make_alert(
         [
-            ExposureAdminArea("child-A", 3, Layer.POPULATION_EXPOSED, True),
-            ExposureAdminArea("child-B", 3, Layer.POPULATION_EXPOSED, 42),
-        ]
-    )
-
-    with pytest.raises(ValueError, match="Mixed or unsupported"):
-        aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
-
-
-def test_boolean_aggregation_uses_any():
-    # Parent is True if any child is True
-    alert = _make_alert(
-        [
-            ExposureAdminArea("child-A", 3, Layer.ALERT_EXTENT, True),
-            ExposureAdminArea("child-B", 3, Layer.ALERT_EXTENT, False),
-            ExposureAdminArea("child-C", 3, Layer.ALERT_EXTENT, False),
+            ExposureAdminArea("child-A", 3, Layer.ALERT_EXTENT, 0),
+            ExposureAdminArea("child-B", 3, Layer.ALERT_EXTENT, 0),
         ]
     )
 
@@ -251,23 +236,4 @@ def test_boolean_aggregation_uses_any():
 
     level_2 = _entries_at_level(alert, 2)
     parent_x = [e for e in level_2 if e.place_code == "parent-X"]
-    parent_y = [e for e in level_2 if e.place_code == "parent-Y"]
-
-    assert parent_x[0].value is True
-    assert parent_y[0].value is False
-
-
-def test_boolean_aggregation_all_false():
-    # Parent is False when all children are False
-    alert = _make_alert(
-        [
-            ExposureAdminArea("child-A", 3, Layer.ALERT_EXTENT, False),
-            ExposureAdminArea("child-B", 3, Layer.ALERT_EXTENT, False),
-        ]
-    )
-
-    aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
-
-    level_2 = _entries_at_level(alert, 2)
-    parent_x = [e for e in level_2 if e.place_code == "parent-X"]
-    assert parent_x[0].value is False
+    assert parent_x[0].value == 0
