@@ -10,6 +10,8 @@ See the [data README](../README.md) for general Python/UV setup and dependency m
 
 ### Running a pipeline
 
+**(Temporary workaround, May 2026)**: Until the pipelines can pull from regular sources, you will need to grab setup files to do local runs. For flood runs, you will need to copy the contents of [this zip](https://rodekruis.sharepoint.com/sites/510-CRAVK-510/Gedeelde%20%20documenten/IBF%20-%20System/ibf-pipelines/bronze.zip?csf=1&web=1&e=OMUoX8) into `data/pipelines/flood`. This will put the content into `data/pipelines/flood/bronze/` which is already ignored as part of .gitignore. See [this PR](https://github.com/rodekruis/IBF/pull/126) for full details.
+
 From the `<repo root>/data/` directory:
 
 ```bash
@@ -34,7 +36,7 @@ This separation means data scientists only need to implement one function per ha
 
 ### run_target vs scenario
 
-These two concepts are orthogonal:
+These two concepts are independent:
 
 - **`--run-target`** selects an environment configuration from the YAML config: which countries to run, which data sources to load, and where to write output. It flows through the entire pipeline including `forecast.py`.
 - **`--scenario`** is an infra-level override that _replaces_ the hazard logic in `forecast.py` with a predetermined outcome (`no-alert` = empty alerts, `alert` = one synthetic alert). The real `forecast.py` never runs.
