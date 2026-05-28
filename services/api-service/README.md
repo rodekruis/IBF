@@ -67,16 +67,16 @@ Making changes to the frontend files requires you to have a clone of the Go repo
 
 Use these commands to regenerate downstream files. From the repo root:
 
-   ```bash
-   # Pipelines only (writes to data/pipelines/infra/data_types/enums.py)
-   npm run gen:python
+```bash
+# Pipelines only (writes to data/pipelines/infra/data_types/enums.py)
+npm run gen:python
 
-   # Front end only (writes shared-dtos.ts + shared-enums.ts into the Go repo)
-   npm run gen:frontend
+# Front end only (writes shared-dtos.ts + shared-enums.ts into the Go repo)
+npm run gen:frontend
 
-   # Both at once
-   npm run gen:all
-   ```
+# Both at once
+npm run gen:all
+```
 
 ### Testing
 
