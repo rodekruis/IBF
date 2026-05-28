@@ -48,20 +48,35 @@ Make sure to update any dependencies from _within_ the Docker-container, with:
 
 ## Development
 
-#### Updating shared enums
+#### Updating shared enums and DTOs
 
-Enums in `services/api-service/src/shared-enums.ts` are needed by either the frontend, the data pipelines or both. If there are changes in this file, do the following to propagate the changes:
+Enums and DTO classes defined in `services/api-service/src/` may be needed by either the frontend, the data pipelines or both.
+If there are changes that need to be propagated, do the following:
 
-1. If you added new enums (not just new values to an existing enum), and these new enums must be shared, add the enum to `api-service/src/scripts/generate-python-enums.ts`
-2. Regenerate `data/pipelines/infra/data_types/enums.py` from the repo root:
+**Enums**
+
+Shared enums are located in `services/api-service/src/shared-enums.ts`. If you add new values, you just need to propagate changes. If you added new enums (not just new values to an existing enum), add the enum to `api-service/src/scripts/generate-python-enums.ts`
+
+**DTOs**
+
+DTOs changes needed by Python must be copied/reformatted by hand. All changes are placed in `data/pipelines/infra/data_types/dtos.py`. Changes needed by the front end are automated, but if you need to add new classes, add a reference to them in `SOURCE_DTOS` at the top of `api-service/src/scripts/generate-frontend-dtos.ts`, along with any new DTO dependencies they have.
+
+**Propagate changes**
+
+Making changes to the frontend files requires you to have a clone of the Go repo, with the path to it set in `GO_REPO_LOCAL_PATH` in `services/.env`. Files copied for the front end must be added to that repo in a separate PR. See the [frontend repo readme](https://github.com/rodekruis/go-web-app/blob/ibf-main/app/src/components/NrwMap/readme.md) for more details.
+
+Use these commands to regenerate downstream files. From the repo root:
 
    ```bash
+   # Pipelines only (writes to data/pipelines/infra/data_types/enums.py)
    npm run gen:python
+
+   # Front end only (writes shared-dtos.ts + shared-enums.ts into the Go repo)
+   npm run gen:frontend
+
+   # Both at once
+   npm run gen:all
    ```
-
-   (TODO in task #42361: Add a command that also updates the front end repo.)
-
-3. Let someone know to bring the changes to the frontend. See the [frontend repo readme](https://github.com/rodekruis/go-web-app/blob/ibf-main/app/src/components/NrwMap/readme.md) for more details. (TODO in task #42361: This will be automated more, so instructions will change.)
 
 ### Testing
 
