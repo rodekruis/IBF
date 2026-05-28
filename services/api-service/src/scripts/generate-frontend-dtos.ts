@@ -15,6 +15,7 @@ const SHARED_ENUMS_OUTPUT_IMPORT = './shared-enums';
 
 const REPO_ROOT = resolve(__dirname, '../../../..');
 
+// eslint-disable-next-line n/no-process-env -- The local path is needed
 const goRepoLocalPath = process.env.GO_REPO_LOCAL_PATH;
 if (!goRepoLocalPath) {
   throw new Error(
