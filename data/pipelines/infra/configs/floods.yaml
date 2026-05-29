@@ -11,6 +11,7 @@ run_targets:
           - source: glofas_station_thresholds_seed_repo
           - source: admin_area_ibf_api
           - source: population_seed_repo
+          - source: flood_extents_seed_repo
           - source: todo_glofas_discharge
         output:
           mode: api

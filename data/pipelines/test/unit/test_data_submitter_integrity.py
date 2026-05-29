@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from pipelines.infra.data_submitter import DataSubmitter
+from pipelines.infra.data_types.data_config_types import OutputMode
 from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
@@ -10,7 +11,6 @@ from pipelines.infra.data_types.dtos import (
     HazardType,
     Layer,
 )
-from pipelines.infra.data_types.data_config_types import OutputMode
 
 EVENT_NAME = "ETH_floods_station-test"
 
@@ -137,7 +137,7 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
         layer=Layer.POPULATION_EXPOSED,
-        value="other.tif",
+        value="alert_extent.tif",
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
 
@@ -203,7 +203,7 @@ def test_raster_invalid_extent_is_rejected(
     valid_submitter.add_raster_exposure(
         event_name=EVENT_NAME,
         layer=Layer.ALERT_EXTENT,
-        value="flood_depth.tif",
+        value="alert_extent.tif",
         extent={"xmin": 38.0, "ymin": 2.0, "xmax": 36.0, "ymax": 0.0},
     )
 

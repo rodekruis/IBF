@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import logging
-import os
 
 import numpy as np
-import rasterio
 from rasterio.enums import Resampling
-from rasterio.mask import mask
+from rasterio.features import geometry_mask
+from rasterio.transform import from_bounds
 from rasterio.warp import reproject
+from rasterio.windows import from_bounds as window_from_bounds
 from rasterstats import zonal_stats
+from shapely.geometry import shape
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.loaded_data_types import RasterData
@@ -19,11 +20,11 @@ def determine_spatial_extent(
     station: LocationPoint,
     station_place_codes: list[str],
     admin_areas: AdminAreasSet,
-    flood_extent_raster_path: str,
-) -> tuple[str, list[str]]:
+    flood_extent_raster: RasterData,
+) -> tuple[RasterData | None, list[str]]:
     """
     Determine spatial extent by filtering station place codes to valid admin areas, clipping the flood extent raster.
-    Return a tuple of (clipped_raster_path, place_codes).
+    Return a tuple of (clipped_raster_data, place_codes).
     """
     valid_place_codes = [
         place_code
@@ -32,21 +33,21 @@ def determine_spatial_extent(
     ]
 
     if not valid_place_codes:
-        return "", []
+        return None, []
 
-    clipped_flood_extent_raster_path = clip_flood_extent_to_admin_areas(
+    clipped_flood_extent = clip_flood_extent_to_admin_areas(
         place_codes=valid_place_codes,
         admin_areas=admin_areas,
-        flood_extent_raster_path=flood_extent_raster_path,
+        flood_extent_raster=flood_extent_raster,
         station_code=station.id,
     )
 
-    return clipped_flood_extent_raster_path, valid_place_codes
+    return clipped_flood_extent, valid_place_codes
 
 
 def compute_population_exposed(
     population_raster: RasterData,
-    flood_extent_raster_path: str,
+    flood_extent_raster: RasterData,
 ) -> RasterData | None:
     """
     Extract population only within the intersection of admin areas and flood extent.
@@ -58,17 +59,16 @@ def compute_population_exposed(
     pop_transform = population_raster.transform
     pop_crs = population_raster.crs
 
-    with rasterio.open(flood_extent_raster_path) as flood_src:
-        flood_array_resampled = np.zeros(pop_array.shape, dtype=np.float32)
-        reproject(
-            source=flood_src.read(1).astype(np.float32),
-            destination=flood_array_resampled,
-            src_transform=flood_src.transform,
-            src_crs=flood_src.crs,
-            dst_transform=pop_transform,
-            dst_crs=pop_crs,
-            resampling=Resampling.nearest,
-        )
+    flood_array_resampled = np.zeros(pop_array.shape, dtype=np.float32)
+    reproject(
+        source=flood_extent_raster.array.astype(np.float32),
+        destination=flood_array_resampled,
+        src_transform=flood_extent_raster.transform,
+        src_crs=flood_extent_raster.crs,
+        dst_transform=pop_transform,
+        dst_crs=pop_crs,
+        resampling=Resampling.nearest,
+    )
 
     binary_flood_extent = (flood_array_resampled > 0).astype(np.uint8)
     population_in_flood_extent = np.where(binary_flood_extent == 1, pop_array, 0.0)
@@ -81,7 +81,7 @@ def compute_population_exposed(
     )
 
 
-# TODO: reusable function for other hazard types, create a common utils across hazards?
+# TODO-infra: reusable function for other hazard types, create a common utils across hazards?
 def aggregate_population_exposed(
     population_exposed_raster: RasterData,
     place_codes_exposed: list[str],
@@ -117,57 +117,66 @@ def aggregate_population_exposed(
     return population
 
 
-# TODO: to reuse with other hazard types, create a common utils across hazards?
+# TODO-infra: to reuse with other hazard types, create a common utils across hazards?
 def clip_flood_extent_to_admin_areas(
     place_codes: list[str],
     admin_areas: AdminAreasSet,
-    flood_extent_raster_path: str,
+    flood_extent_raster: RasterData,
     station_code: str,
-) -> str:
-    output_path = os.path.join(
-        os.path.dirname(flood_extent_raster_path),
-        f"alert_extent_{station_code}.tif",
-    )
-
+) -> RasterData:
     geometries, _ = get_admin_area_geometries(
         place_codes=place_codes,
         admin_areas=admin_areas,
     )
 
-    with rasterio.open(flood_extent_raster_path) as src:
-        profile = src.profile.copy()
-        nodata_value = src.nodata
+    if not geometries:
+        logging.warning(
+            f"No admin area geometries to clip for station {station_code}; using full flood extent"
+        )
+        return flood_extent_raster
 
-        # Source rasters may carry block size options without tiled output.
-        # Drop these creation options to avoid GDAL warnings on write.
-        profile.pop("blockxsize", None)
-        profile.pop("blockysize", None)
-        if profile.get("tiled") is False:
-            profile.pop("tiled", None)
+    combined_geom = shape(geometries[0])
+    for geom in geometries[1:]:
+        combined_geom = combined_geom.union(shape(geom))
 
-        if geometries:
-            clipped_data, clipped_transform = mask(
-                src,
-                geometries,
-                crop=True,
-                nodata=nodata_value,
-                filled=True,
-            )
-            profile.update(
-                height=clipped_data.shape[1],
-                width=clipped_data.shape[2],
-                transform=clipped_transform,
-            )
-        else:
-            logging.warning(
-                f"No admin area geometries to clip for station {station_code}; using full flood extent"
-            )
-            clipped_data = src.read()
+    minx, miny, maxx, maxy = combined_geom.bounds
+    window = window_from_bounds(minx, miny, maxx, maxy, flood_extent_raster.transform)
+    row_off = max(int(window.row_off), 0)
+    col_off = max(int(window.col_off), 0)
+    row_end = min(
+        int(window.row_off + window.height), flood_extent_raster.array.shape[0]
+    )
+    col_end = min(
+        int(window.col_off + window.width), flood_extent_raster.array.shape[1]
+    )
 
-    with rasterio.open(output_path, "w", **profile) as dst:
-        dst.write(clipped_data)
+    cropped_array = flood_extent_raster.array[row_off:row_end, col_off:col_end]
+    t = flood_extent_raster.transform
+    cropped_transform = from_bounds(
+        t.c + col_off * t.a,
+        t.f + row_end * t.e,
+        t.c + col_end * t.a,
+        t.f + row_off * t.e,
+        col_end - col_off,
+        row_end - row_off,
+    )
 
-    return output_path
+    mask_array = geometry_mask(
+        geometries,
+        out_shape=cropped_array.shape,
+        transform=cropped_transform,
+        invert=True,
+    )
+
+    nodata = flood_extent_raster.nodata
+    clipped = np.where(mask_array, cropped_array, nodata)
+
+    return RasterData(
+        array=clipped.astype(np.float32),
+        transform=cropped_transform,
+        crs=flood_extent_raster.crs,
+        nodata=nodata,
+    )
 
 
 def get_admin_area_geometries(

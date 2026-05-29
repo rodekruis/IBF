@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.dtos import (
     Centroid,

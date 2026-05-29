@@ -3,14 +3,15 @@ from __future__ import annotations
 import logging
 import os
 
-import rasterio
 import xarray as xr
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
+from pipelines.infra.data_types.loaded_data_types import RasterData
 
 BoundingBox = tuple[float, float, float, float]  # (min_lon, min_lat, max_lon, max_lat)
 
-#TODO-infra: to be moved to utils folder?
+
+# TODO-infra: to be moved to utils folder?
 def get_bounding_box(admin_areas: AdminAreasSet) -> BoundingBox:
     """Compute (min_lon, min_lat, max_lon, max_lat) from admin area geometries."""
     from shapely.geometry import shape
@@ -68,14 +69,13 @@ def slice_netcdf_to_bounds(
     return output_path
 
 
-def get_raster_extent(raster_path: str) -> dict[str, float]:
+def get_raster_extent(raster: RasterData) -> dict[str, float]:
     """Return raster bounds as an extent dict expected by the API layer."""
-    with rasterio.open(raster_path) as src:
-        bounds = src.bounds
-
+    t = raster.transform
+    rows, cols = raster.array.shape
     return {
-        "xmin": bounds.left,
-        "ymin": bounds.bottom,
-        "xmax": bounds.right,
-        "ymax": bounds.top,
+        "xmin": t.c,
+        "ymin": t.f + rows * t.e,
+        "xmax": t.c + cols * t.a,
+        "ymax": t.f,
     }

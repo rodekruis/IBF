@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import glob
 import logging
 
 from pipelines.flood.compute_alert_extent import compute_alert_extent
@@ -25,6 +24,7 @@ from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.enums import EnsembleMemberType, Layer
+from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
 
@@ -48,15 +48,19 @@ def calculate_flood_forecasts(
     target_admin_areas = data_provider.get_data(
         DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
     )
+    flood_extent_provider: FloodExtentProvider = data_provider.get_data(
+        DataSource.FLOOD_EXTENTS_SEED_REPO, FloodExtentProvider
+    )
 
     if (
         not alert_configs
         or not glofas_stations
         or not glofas_station_thresholds
         or not target_admin_areas
+        or not flood_extent_provider
     ):
         data_submitter.add_error(
-            f"Missing input data: alert_configs={bool(alert_configs)}, glofas_stations={bool(glofas_stations)}, admin_areas={bool(target_admin_areas)}, thresholds={bool(glofas_station_thresholds)}"
+            f"Missing input data: alert_configs={bool(alert_configs)}, glofas_stations={bool(glofas_stations)}, admin_areas={bool(target_admin_areas)}, thresholds={bool(glofas_station_thresholds)}, flood_extents={bool(flood_extent_provider)}"
         )
         return
 
@@ -66,14 +70,6 @@ def calculate_flood_forecasts(
     # glofas netcdf files
     glofas_netcdf_paths: list[str] = [
         "./pipelines/flood/bronze/glofas/dis_00_2026040800.nc"
-    ]
-
-    # flood extent rasters
-    flood_extent_paths: list[str] = [
-        f
-        for f in glob.glob(
-            f"./pipelines/flood/bronze/flood_extents/flood_map_{country}_*.tif"
-        )
     ]
 
     ### Step 2 - Extract discharge per station from GloFAS data ###
@@ -116,20 +112,20 @@ def calculate_flood_forecasts(
                 continue
 
             ### Step 5 - Compute alert extent ###
-            flood_extent_path = compute_alert_extent(
+            flood_extent = compute_alert_extent(
                 time_interval_severities=time_interval_severities,
-                flood_extent_paths=flood_extent_paths,
+                flood_extent_provider=flood_extent_provider,
             )
 
             ### Step 6 - Determine spatial extent ###
-            clipped_flood_extent_path, place_codes_exposed = determine_spatial_extent(
+            clipped_flood_extent, place_codes_exposed = determine_spatial_extent(
                 station=station,
                 station_place_codes=config.spatial_extent_place_codes,
                 admin_areas=target_admin_areas,
-                flood_extent_raster_path=flood_extent_path,
+                flood_extent_raster=flood_extent,
             )
 
-            if not place_codes_exposed:
+            if not place_codes_exposed or clipped_flood_extent is None:
                 logging.info(f"No place codes for station {station_code}")
                 continue
 
@@ -143,7 +139,7 @@ def calculate_flood_forecasts(
 
             population_exposed_raster = compute_population_exposed(
                 population_raster,
-                clipped_flood_extent_path,
+                clipped_flood_extent,
             )
 
             if population_exposed_raster is None:
@@ -197,7 +193,7 @@ def calculate_flood_forecasts(
                     value=population_exposed.get(place_code, 0),
                 )
 
-            # TODO: use this in the future to (A) add water-discharege/return-period for glofas-station-popup and (B) add exposure status of points/roads/buildings.
+            # TODO: use this in the future to (A) add water-discharge/return-period for glofas-station-popup and (B) add exposure status of points/roads/buildings.
             # data_submitter.add_geo_feature_exposure(
             #     event_name=event_name,
             #     geo_feature_id=station_code,
@@ -205,9 +201,10 @@ def calculate_flood_forecasts(
             #     attributes={"river_discharge": 0},
             # )
 
+            # TODO AB#42226: currently nothing happens with this yet, upload to API to be done.
             data_submitter.add_raster_exposure(
                 event_name=event_name,
                 layer=Layer.ALERT_EXTENT,
-                value=clipped_flood_extent_path,
-                extent=get_raster_extent(clipped_flood_extent_path),
+                value="alert_extent.tif",
+                extent=get_raster_extent(clipped_flood_extent),
             )

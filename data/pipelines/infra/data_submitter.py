@@ -6,6 +6,7 @@ import os
 import shutil
 from datetime import datetime, timezone
 
+from pipelines.infra.data_types.data_config_types import OutputMode
 from pipelines.infra.data_types.dtos import (
     Alert,
     Centroid,
@@ -21,7 +22,6 @@ from pipelines.infra.data_types.dtos import (
     Severity,
     TimeInterval,
 )
-from pipelines.infra.data_types.data_config_types import OutputMode
 from pipelines.infra.utils.alert_integrity_checks import (
     check_admin_area_integrity,
     check_centroid,
