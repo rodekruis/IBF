@@ -59,7 +59,7 @@ Shared enums are located in `services/api-service/src/shared-enums.ts`. If you a
 
 **DTOs**
 
-DTOs changes needed by Python must be copied/reformatted by hand. All changes are placed in `data/pipelines/infra/data_types/dtos.py`. Changes needed by the front end are automated, but if you need to add new classes, add a reference to them in `SOURCE_DTOS` at the top of `services/api-service/src/scripts/generate-frontend-dtos.ts`, along with any new DTO dependencies they have.
+DTO changes needed by Python must be copied/reformatted by hand. All changes are placed in `data/pipelines/infra/data_types/dtos.py`. Changes needed by the front end are automated, but if you need to add new classes, add a reference to them in `SOURCE_DTOS` at the top of `services/api-service/src/scripts/generate-frontend-dtos.ts`, along with any new DTO dependencies they have.
 
 **Propagate changes**
 
