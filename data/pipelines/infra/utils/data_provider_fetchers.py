@@ -14,6 +14,7 @@ from pipelines.infra.data_types.data_config_types import (
     DataSource,
     DataSourceConfig,
 )
+from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import (
     DataType,
     LoadedDataSource,
@@ -28,6 +29,7 @@ from shared.image_helpers import rgba_png_to_float_array
 logger = logging.getLogger(__name__)
 
 SEED_REPO_POPULATION_DATA_PNG_PATH = "/raster-data/population/data-png/"
+SEED_REPO_FLOOD_EXTENTS_RGBA_PATH = "/raster-data/flood-extents/rgba/"
 
 
 def _get_seed_repo_uri() -> str:
@@ -62,6 +64,8 @@ def load_data_container(
             )
         case DataSource.POPULATION_SEED_REPO:
             return _load_seed_repo_population_data(data_config, container)
+        case DataSource.FLOOD_EXTENTS_SEED_REPO:
+            return _load_seed_repo_flood_extents(data_config, container)
 
         # --- Flood sources ---
         case DataSource.GLOFAS_STATIONS_IBF_API:
@@ -151,6 +155,30 @@ def _load_seed_repo_population_data(
         transform=transform,
         crs=crs,
         nodata=nodata,
+    )
+
+
+def _load_seed_repo_flood_extents(
+    config: DataSourceConfig, container: LoadedDataSource
+):
+    container.data_type = DataType.FLOOD_EXTENT_PROVIDER
+
+    country = config.country_code_iso_3
+    base_url = _get_seed_repo_uri() + SEED_REPO_FLOOD_EXTENTS_RGBA_PATH
+    manifest_url = f"{base_url}{country}_flood_extents_manifest.json"
+
+    manifest = download_json_source(manifest_url, check_count=False)
+    if manifest is None:
+        container.error = (
+            f"Failed to download flood extents manifest from '{manifest_url}'"
+        )
+        raise FileNotFoundError(container.error)
+
+    container.data = FloodExtentProvider(
+        available_return_periods=manifest["return_periods"],
+        has_empty=manifest["has_empty"],
+        _base_url=base_url,
+        _country=country,
     )
 
 
