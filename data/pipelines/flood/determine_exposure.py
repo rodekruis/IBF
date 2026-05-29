@@ -141,13 +141,13 @@ def clip_flood_extent_to_admin_areas(
 
     minx, miny, maxx, maxy = combined_geom.bounds
     window = window_from_bounds(minx, miny, maxx, maxy, flood_extent_raster.transform)
-    row_off = max(int(window.row_off), 0)
-    col_off = max(int(window.col_off), 0)
+    row_off = max(int(np.floor(window.row_off)), 0)
+    col_off = max(int(np.floor(window.col_off)), 0)
     row_end = min(
-        int(window.row_off + window.height), flood_extent_raster.array.shape[0]
+        int(np.ceil(window.row_off + window.height)), flood_extent_raster.array.shape[0]
     )
     col_end = min(
-        int(window.col_off + window.width), flood_extent_raster.array.shape[1]
+        int(np.ceil(window.col_off + window.width)), flood_extent_raster.array.shape[1]
     )
 
     cropped_array = flood_extent_raster.array[row_off:row_end, col_off:col_end]

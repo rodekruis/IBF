@@ -73,9 +73,17 @@ def get_raster_extent(raster: RasterData) -> dict[str, float]:
     """Return raster bounds as an extent dict expected by the API layer."""
     t = raster.transform
     rows, cols = raster.array.shape
+    corners = [
+        t * (0, 0),
+        t * (cols, 0),
+        t * (0, rows),
+        t * (cols, rows),
+    ]
+    xs = [c[0] for c in corners]
+    ys = [c[1] for c in corners]
     return {
-        "xmin": t.c,
-        "ymin": t.f + rows * t.e,
-        "xmax": t.c + cols * t.a,
-        "ymax": t.f,
+        "xmin": min(xs),
+        "ymin": min(ys),
+        "xmax": max(xs),
+        "ymax": max(ys),
     }

@@ -1,9 +1,8 @@
 """
 One-off script to convert flood extent GeoTIFFs to RGBA data PNGs for the seed repo.
 
-Reads flood extent rasters from pipelines/flood/bronze/flood_extents/
-and writes RGBA-encoded PNGs + metadata JSONs to the seed repo at
-/raster-data/flood-extents/
+Reads flood extent rasters from the seed repo at /raster-data/flood-extents/tif/
+and writes RGBA-encoded PNGs + metadata JSONs to /raster-data/flood-extents/rgba/
 
 Usage:
     cd data
@@ -20,7 +19,7 @@ from shared.image_helpers import geotiff_to_rgba_data_array
 INPUT_DIR = Path(get_seed_data_repo_path()) / "raster-data" / "flood-extents" / "tif"
 OUTPUT_DIR = Path(get_seed_data_repo_path()) / "raster-data" / "flood-extents" / "rgba"
 
-# TODO AB#42407: extend to all countries, once tifs available.
+# TODO AB#42407: extend to all countries, once tifs available. If some input-files exceed 100mb, revisit if we should commit all tifs. Instead convert locally and only commit pngs.
 COUNTRY = "ETH"
 
 
