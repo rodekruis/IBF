@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
 
+import numpy as np
 from pipelines.infra.data_types.data_config_types import DataSource
+from rasterio.transform import Affine
 
 
 @dataclass
@@ -30,12 +32,8 @@ class DataType(StrEnum):
     See the readme for more details.
     """
 
-    # A PNG image loaded as bytes
-    # Meta data may be loaded in the data container's metadata field
-    PNG = "png"
-
-    # A file path to a raster on disk (e.g. GeoTIFF)
-    RASTER_FILE_PATH = "raster_file_path"
+    # In-memory raster data (array + geo metadata)
+    RASTER_DATA = "raster_data"
 
     # an AdminAreasSet object
     ADMIN_AREA_SET = "admin_area_set"
@@ -46,12 +44,19 @@ class DataType(StrEnum):
     LOCATION_POINT_DICT = "location_point_dict"
 
     # Generic types
-    STRING = "string"
     BINARY = "binary"
     JSON_LIST = "json_list"
 
     # Default value until the type is set by the loader
     UNSPECIFIED = "unspecified"
+
+
+@dataclass
+class RasterData:
+    array: np.ndarray
+    transform: Affine
+    crs: str
+    nodata: float
 
 
 @dataclass
@@ -65,4 +70,3 @@ class LoadedDataSource:
     data_source: DataSource
     data: object | None = None
     error: str | None = None
-    metadata: dict[str, str | int | float | bool] = field(default_factory=dict)

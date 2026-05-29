@@ -22,10 +22,10 @@ from pipelines.flood.utils_raster import (  # TODO-infra: move utils to infra an
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.data_config_types import DataSource
+from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.enums import EnsembleMemberType, Layer
-from pipelines.infra.data_types.loaded_data_types import AlertConfig
+from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
 
 
@@ -48,21 +48,19 @@ def calculate_flood_forecasts(
     target_admin_areas = data_provider.get_data(
         DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
     )
-    population_raster_path: str = data_provider.get_data(
-        DataSource.POPULATION_SEED_REPO, str
-    )  # TODO AB#42339: switch to loading population raster from IBF API (geo-features).
 
     if (
         not alert_configs
         or not glofas_stations
         or not glofas_station_thresholds
         or not target_admin_areas
-        or not population_raster_path
     ):
         data_submitter.add_error(
-            f"Missing input data: alert_configs={bool(alert_configs)}, glofas_stations={bool(glofas_stations)}, admin_areas={bool(target_admin_areas)}, thresholds={bool(glofas_station_thresholds)}, population={bool(population_raster_path)}"
+            f"Missing input data: alert_configs={bool(alert_configs)}, glofas_stations={bool(glofas_stations)}, admin_areas={bool(target_admin_areas)}, thresholds={bool(glofas_station_thresholds)}"
         )
         return
+
+    population_raster: RasterData | None = None
 
     # TODO: (placeholder data) replace with data provider calls once data sources are wired
     # glofas netcdf files
@@ -136,12 +134,19 @@ def calculate_flood_forecasts(
                 continue
 
             ### Step 7 - Compute exposure within the flood extent ###
-            population_exposed_raster_path = compute_population_exposed(
-                population_raster_path,
+            # Load here instead of at the top since this is a costly operation and only needed if there is exposure to compute.
+            # the 'if' makes sure, it's only loaded once for the first alert-station
+            if population_raster is None:
+                population_raster = data_provider.get_data(
+                    DataSource.POPULATION_SEED_REPO, RasterData
+                )  # TODO AB#42339: switch to loading population raster from IBF API (geo-features).
+
+            population_exposed_raster = compute_population_exposed(
+                population_raster,
                 clipped_flood_extent_path,
             )
 
-            if population_exposed_raster_path is None:
+            if population_exposed_raster is None:
                 data_submitter.add_error(
                     f"Could not compute exposed population raster for station {station_code}"
                 )
@@ -149,7 +154,7 @@ def calculate_flood_forecasts(
 
             ### Step 8 - Aggregate population exposed per place_code ###
             population_exposed = aggregate_population_exposed(
-                population_exposed_raster_path, place_codes_exposed, target_admin_areas
+                population_exposed_raster, place_codes_exposed, target_admin_areas
             )
 
             ### Step 9 - Create alert and submit severity/exposure payloads ###

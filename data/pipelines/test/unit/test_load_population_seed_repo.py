@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-import os
 from unittest.mock import patch
 
 import numpy as np
 import pytest
-import rasterio
 from PIL import Image
 from shared.country_data import CountryCodeIso3
 
 from pipelines.infra.data_types.data_config_types import DataSource, DataSourceConfig
 from pipelines.infra.data_types.enums import HazardType
-from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
+from pipelines.infra.data_types.loaded_data_types import (
+    DataType,
+    LoadedDataSource,
+    RasterData,
+)
 from pipelines.infra.utils.data_provider_fetchers import _load_seed_repo_population_data
 
 # Fake base URL injected via GITHUB_DATA_BASE_URL; actual HTTP calls are mocked
@@ -69,7 +71,7 @@ def _make_metadata(width: int, height: int) -> dict:
 
 
 class TestLoadSeedRepoPopulationData:
-    def test_produces_geotiff_with_correct_values(self, monkeypatch):
+    def test_produces_raster_data_with_correct_values(self, monkeypatch):
         monkeypatch.setenv("GITHUB_DATA_BASE_URL", MOCK_SEED_REPO_BASE_URL)
         population_values = np.array([[1.5, 2.0], [0.0, 3.5]], dtype=np.float64)
         png_bytes = _make_rgba_png_bytes(population_values)
@@ -87,17 +89,12 @@ class TestLoadSeedRepoPopulationData:
         ):
             _load_seed_repo_population_data(config, container)
 
-        assert container.data_type == DataType.RASTER_FILE_PATH
-        assert isinstance(container.data, str)
-        assert os.path.exists(container.data)
-
-        with rasterio.open(container.data) as src:
-            data = src.read(1)
-            assert src.crs.to_string() == "EPSG:4326"
-            assert data.shape == (2, 2)
-            np.testing.assert_allclose(data, population_values, atol=0.01)
-
-        os.unlink(container.data)
+        assert container.data_type == DataType.RASTER_DATA
+        assert isinstance(container.data, RasterData)
+        assert container.data.crs == "EPSG:4326"
+        assert container.data.array.shape == (2, 2)
+        assert container.data.nodata == 0
+        np.testing.assert_allclose(container.data.array, population_values, atol=0.01)
 
     def test_raises_when_png_download_fails(self, monkeypatch):
         monkeypatch.setenv("GITHUB_DATA_BASE_URL", MOCK_SEED_REPO_BASE_URL)

@@ -18,7 +18,11 @@ from shared.country_data import CountryCodeIso3
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource, RunTargetType
-from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
+from pipelines.infra.data_types.loaded_data_types import (
+    DataType,
+    LoadedDataSource,
+    RasterData,
+)
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.data_provider_fetchers import load_data_container
 
@@ -144,19 +148,13 @@ if __name__ == "__main__":
                     print(
                         f"  ERROR: [{container.data_source}] ({container.data_type}): <no data>"
                     )
-            elif container.data_type == DataType.RASTER_FILE_PATH:
-                print(
-                    f"  [{container.data_source}] ({container.data_type}): {container.data}"
-                )
-            elif container.data_type == DataType.STRING:
-                print(
-                    f"  [{container.data_source}] ({container.data_type}): {container.data}"
-                )
-            elif container.data_type == DataType.PNG:
-                crs = container.metadata.get("crs", "N/A")
-                bounds = container.metadata.get("bounds", "N/A")
-                size = len(container.data) if isinstance(container.data, bytes) else 0
-                print(
-                    f"  [{container.data_source}] ({container.data_type}): {size} bytes, crs={crs}, bounds={bounds}"
-                )
+            elif container.data_type == DataType.RASTER_DATA:
+                raster = container.data
+                if isinstance(raster, RasterData):
+                    print(
+                        f"  [{container.data_source}] ({container.data_type}): "
+                        f"shape={raster.array.shape}, "
+                        f"crs={raster.crs}, "
+                        f"nodata={raster.nodata}"
+                    )
     print("Complete")

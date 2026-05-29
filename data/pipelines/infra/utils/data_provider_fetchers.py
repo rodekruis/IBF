@@ -6,17 +6,19 @@ See the readme for more details on adding new data sources.
 
 import logging
 import os
-import tempfile
 
 import numpy as np
-import rasterio
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
     DataSourceConfig,
 )
-from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
+from pipelines.infra.data_types.loaded_data_types import (
+    DataType,
+    LoadedDataSource,
+    RasterData,
+)
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.dummy_data import DUMMY_DATA
 from rasterio.transform import Affine
@@ -122,7 +124,7 @@ def _load_ibf_api_alert_configs(
 def _load_seed_repo_population_data(
     config: DataSourceConfig, container: LoadedDataSource
 ):
-    container.data_type = DataType.RASTER_FILE_PATH
+    container.data_type = DataType.RASTER_DATA
 
     png_filename = f"{config.country_code_iso_3}_population.png"
     json_filename = f"{config.country_code_iso_3}_population_metadata.json"
@@ -144,25 +146,12 @@ def _load_seed_repo_population_data(
     crs = json_data["crs"]
     nodata = json_data["nodata"]
 
-    fd, temp_path = tempfile.mkstemp(
-        suffix=f"_{config.country_code_iso_3}_population.tif"
-    )
-    os.close(fd)
-    with rasterio.open(
-        temp_path,
-        "w",
-        driver="GTiff",
-        height=population_array.shape[0],
-        width=population_array.shape[1],
-        count=1,
-        dtype=np.float32,
-        crs=crs,
+    container.data = RasterData(
+        array=population_array.astype(np.float32),
         transform=transform,
+        crs=crs,
         nodata=nodata,
-    ) as dst:
-        dst.write(population_array.astype(np.float32), 1)
-
-    container.data = temp_path
+    )
 
 
 # =============================================================================
