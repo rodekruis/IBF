@@ -20,7 +20,7 @@ from shared.image_helpers import geotiff_to_rgba_data_array
 INPUT_DIR = Path(get_seed_data_repo_path()) / "raster-data" / "flood-extents" / "tif"
 OUTPUT_DIR = Path(get_seed_data_repo_path()) / "raster-data" / "flood-extents" / "rgba"
 
-# ##TODO: extend to all countries, once tifs available.
+# TODO AB#42407: extend to all countries, once tifs available.
 COUNTRY = "ETH"
 
 
