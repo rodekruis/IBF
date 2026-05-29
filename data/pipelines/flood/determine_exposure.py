@@ -11,6 +11,7 @@ from rasterio.warp import reproject
 from rasterstats import zonal_stats
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
+from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
 
 
@@ -44,29 +45,18 @@ def determine_spatial_extent(
 
 
 def compute_population_exposed(
-    population_raster_path: str,
+    population_raster: RasterData,
     flood_extent_raster_path: str,
-) -> str | None:
+) -> RasterData | None:
     """
     Extract population only within the intersection of admin areas and flood extent.
-    For each admin area, masks the population raster with the (binary) flood extent raster
+    Masks the population raster with the (binary) flood extent raster
     so only flooded pixels count toward the population sum.
-    Returns the path to the output population raster.
-
+    Returns the exposed population as in-memory raster data.
     """
-    population_raster_stem, _ = os.path.splitext(
-        os.path.basename(population_raster_path)
-    )
-    population_exposed_raster_output_path = os.path.join(
-        os.path.dirname(population_raster_path),
-        f"{population_raster_stem}_exposed.tif",
-    )
-
-    with rasterio.open(population_raster_path) as pop_src:
-        pop_array = pop_src.read(1)
-        pop_profile = pop_src.profile.copy()
-        pop_transform = pop_src.transform
-        pop_crs = pop_src.crs
+    pop_array = population_raster.array
+    pop_transform = population_raster.transform
+    pop_crs = population_raster.crs
 
     with rasterio.open(flood_extent_raster_path) as flood_src:
         flood_array_resampled = np.zeros(pop_array.shape, dtype=np.float32)
@@ -83,22 +73,17 @@ def compute_population_exposed(
     binary_flood_extent = (flood_array_resampled > 0).astype(np.uint8)
     population_in_flood_extent = np.where(binary_flood_extent == 1, pop_array, 0.0)
 
-    output_profile = pop_profile.copy()
-    output_profile.update(
-        dtype=rasterio.float32,
-        count=1,
+    return RasterData(
+        array=population_in_flood_extent.astype(np.float32),
+        transform=pop_transform,
+        crs=pop_crs,
+        nodata=population_raster.nodata,
     )
-    with rasterio.open(
-        population_exposed_raster_output_path, "w", **output_profile
-    ) as dst:
-        dst.write(population_in_flood_extent.astype(np.float32), 1)
-
-    return population_exposed_raster_output_path
 
 
 # TODO: reusable function for other hazard types, create a common utils across hazards?
 def aggregate_population_exposed(
-    population_raster_path: str,
+    population_exposed_raster: RasterData,
     place_codes_exposed: list[str],
     admin_areas: AdminAreasSet,
 ) -> dict[str, float]:
@@ -116,15 +101,13 @@ def aggregate_population_exposed(
     if not geometries:
         return population
 
-    with rasterio.open(population_raster_path) as pop_src:
-        pop_nodata = pop_src.nodata
-
     stats = zonal_stats(
         geometries,
-        population_raster_path,
+        population_exposed_raster.array,
+        affine=population_exposed_raster.transform,
         stats=["sum"],
         all_touched=False,
-        nodata=pop_nodata,
+        nodata=population_exposed_raster.nodata,
     )
 
     for pcode, stat in zip(pcodes_ordered, stats):

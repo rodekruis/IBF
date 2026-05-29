@@ -15,6 +15,7 @@ from pipelines.infra.data_types.admin_area_types import (
     AdminAreaProperties,
     AdminAreasSet,
 )
+from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
 from rasterio.transform import from_origin
 
@@ -90,9 +91,11 @@ def _build_partial_admin_areas() -> AdminAreasSet:
 def test_compute_population_exposed_sums_only_flooded_pixels(
     tmp_path: Path,
 ):
-    population_path = _create_raster(
-        tmp_path / "population.tif",
-        np.array([[10.0, 20.0], [30.0, 40.0]], dtype=np.float32),
+    population_data = RasterData(
+        array=np.array([[10.0, 20.0], [30.0, 40.0]], dtype=np.float32),
+        transform=from_origin(0, 2, 1, 1),
+        crs="EPSG:4326",
+        nodata=-9999.0,
     )
     flood_extent_path = _create_raster(
         tmp_path / "flood_extent.tif",
@@ -100,14 +103,14 @@ def test_compute_population_exposed_sums_only_flooded_pixels(
         nodata=0,
     )
 
-    population_exposed_raster_path = compute_population_exposed(
-        population_raster_path=population_path,
+    population_exposed_raster = compute_population_exposed(
+        population_raster=population_data,
         flood_extent_raster_path=flood_extent_path,
     )
-    assert population_exposed_raster_path is not None
+    assert population_exposed_raster is not None
 
     population = aggregate_population_exposed(
-        population_raster_path=population_exposed_raster_path,
+        population_exposed_raster=population_exposed_raster,
         place_codes_exposed=["PC001"],
         admin_areas=_build_admin_areas(),
     )
@@ -118,9 +121,11 @@ def test_compute_population_exposed_sums_only_flooded_pixels(
 def test_compute_population_exposed_returns_zero_for_empty_extent(
     tmp_path: Path,
 ):
-    population_path = _create_raster(
-        tmp_path / "population.tif",
-        np.array([[10.0, 20.0], [30.0, 40.0]], dtype=np.float32),
+    population_data = RasterData(
+        array=np.array([[10.0, 20.0], [30.0, 40.0]], dtype=np.float32),
+        transform=from_origin(0, 2, 1, 1),
+        crs="EPSG:4326",
+        nodata=-9999.0,
     )
     flood_extent_path = _create_raster(
         tmp_path / "flood_extent_empty.tif",
@@ -128,14 +133,14 @@ def test_compute_population_exposed_returns_zero_for_empty_extent(
         nodata=0,
     )
 
-    population_exposed_raster_path = compute_population_exposed(
-        population_raster_path=population_path,
+    population_exposed_raster = compute_population_exposed(
+        population_raster=population_data,
         flood_extent_raster_path=flood_extent_path,
     )
-    assert population_exposed_raster_path is not None
+    assert population_exposed_raster is not None
 
     population = aggregate_population_exposed(
-        population_raster_path=population_exposed_raster_path,
+        population_exposed_raster=population_exposed_raster,
         place_codes_exposed=["PC001"],
         admin_areas=_build_admin_areas(),
     )

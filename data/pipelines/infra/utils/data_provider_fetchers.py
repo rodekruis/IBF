@@ -7,16 +7,23 @@ See the readme for more details on adding new data sources.
 import logging
 import os
 
+import numpy as np
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
     DataSourceConfig,
 )
-from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
+from pipelines.infra.data_types.loaded_data_types import (
+    DataType,
+    LoadedDataSource,
+    RasterData,
+)
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.dummy_data import DUMMY_DATA
+from rasterio.transform import Affine
 from shared.download_helpers import download_json_source, download_object
+from shared.image_helpers import rgba_png_to_float_array
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +46,7 @@ def load_data_container(
 ):
 
     match data_config.source:
+        # --- Generic sources ---
         case DataSource.ADMIN_AREA_IBF_API:
             return _load_ibf_api_admin_areas(
                 container,
@@ -52,24 +60,37 @@ def load_data_container(
                 api_client,
                 data_config,
             )
+        case DataSource.POPULATION_SEED_REPO:
+            return _load_seed_repo_population_data(data_config, container)
+
+        # --- Flood sources ---
         case DataSource.GLOFAS_STATIONS_IBF_API:
             return _load_ibf_api_glofas_stations(
                 container,
                 api_client,
                 data_config,
             )
-        case DataSource.POPULATION_SEED_REPO:
-            return _load_seed_repo_population_data(data_config, container)
-        case DataSource.TODO_ECMWF_FORECAST:
-            return _load_ecmwf_forecast(data_config, container)
+        case DataSource.GLOFAS_STATION_THRESHOLDS_SEED_REPO:
+            return _load_glofas_station_thresholds(data_config, container)
         case DataSource.TODO_GLOFAS_DISCHARGE:
             return _load_glofas_discharge(data_config, container)
+
+        # --- Drought sources ---
+        case DataSource.TODO_ECMWF_FORECAST:
+            return _load_ecmwf_forecast(data_config, container)
+
+        # --- Fallback ---
         case DataSource.TODO_DATA_SOURCE:
             container.error = "Data source not yet configured"
             raise NotImplementedError("Data source not yet configured")
         case _:
             container.error = f"Unknown source type: '{data_config.source}'"
             raise ValueError(f"Unknown source type: '{data_config.source}'")
+
+
+# =============================================================================
+# Generic source loaders
+# =============================================================================
 
 
 def _load_ibf_api_admin_areas(
@@ -99,6 +120,45 @@ def _load_ibf_api_alert_configs(
     )
 
 
+# TODO AB#42339: switch to loading population raster from IBF API (geo-features).
+def _load_seed_repo_population_data(
+    config: DataSourceConfig, container: LoadedDataSource
+):
+    container.data_type = DataType.RASTER_DATA
+
+    png_filename = f"{config.country_code_iso_3}_population.png"
+    json_filename = f"{config.country_code_iso_3}_population_metadata.json"
+    png_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_DATA_PNG_PATH + png_filename
+    json_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_DATA_PNG_PATH + json_filename
+
+    png_bytes = download_object(png_uri)
+    if png_bytes is None:
+        container.error = f"Failed to download PNG data from '{png_uri}'"
+        raise ValueError(container.error)
+
+    json_data = download_json_source(json_uri, check_count=False)
+    if json_data is None:
+        container.error = f"Failed to download metadata JSON from '{json_uri}'"
+        raise ValueError(container.error)
+
+    population_array = rgba_png_to_float_array(png_bytes)
+    transform = Affine(*json_data["transform"][:6])
+    crs = json_data["crs"]
+    nodata = json_data["nodata"]
+
+    container.data = RasterData(
+        array=population_array.astype(np.float32),
+        transform=transform,
+        crs=crs,
+        nodata=nodata,
+    )
+
+
+# =============================================================================
+# Flood source loaders
+# =============================================================================
+
+
 def _load_ibf_api_glofas_stations(
     container: LoadedDataSource,
     api_client: ApiClient,
@@ -110,40 +170,38 @@ def _load_ibf_api_glofas_stations(
     )
 
 
-def _load_seed_repo_population_data(
+# TODO AB#42288: include as part of glofas stations api call
+def _load_glofas_station_thresholds(
     config: DataSourceConfig, container: LoadedDataSource
-):
-    container.data_type = DataType.PNG
+) -> None:
+    container.data_type = DataType.JSON_LIST
+    country = config.country_code_iso_3
+    url = f"{_get_seed_repo_uri()}/pipelines/{country}_station_thresholds.json"
+    data = download_json_source(url, check_count=False)
+    if data is None:
+        container.error = f"Failed to download station thresholds from '{url}'"
+        raise FileNotFoundError(container.error)
+    seen: set[str] = set()
+    thresholds: list[dict] = []
+    for entry in data:
+        station_code = entry["station_code"]
+        if station_code not in seen:
+            seen.add(station_code)
+            thresholds.append(entry)
+    container.data = thresholds
 
-    png_filename = f"{config.country_code_iso_3}_population.png"
-    json_filename = f"{config.country_code_iso_3}_population_metadata.json"
-    png_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_DATA_PNG_PATH + png_filename
-    json_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_DATA_PNG_PATH + json_filename
 
-    container.data = download_object(png_uri)
+def _load_glofas_discharge(config: DataSourceConfig, container: LoadedDataSource):
+    # TODO: Set the type correctly once real data is loaded
+    container.data_type = DataType.UNSPECIFIED
+    container.data = _load_dummy_data(config)
     if container.data is None:
-        container.error = f"Failed to download PNG data from '{png_uri}'"
-        raise ValueError(container.error)
+        container.error = f"No dummy data found for source '{config.source}'"
 
-    json_data = download_json_source(json_uri, check_count=False)
-    if json_data is None:
-        container.error = f"Failed to download metadata JSON from '{json_uri}'"
-        raise ValueError(container.error)
 
-    container.metadata = {
-        "crs": json_data["crs"],
-        "transform": json_data["transform"],
-        "width": json_data["width"],
-        "height": json_data["height"],
-        "bounds": json_data["bounds"],
-        "res": json_data["res"],
-        "scales": json_data["scales"],
-        "offsets": json_data["offsets"],
-        "count": json_data["count"],
-        "max_value": json_data["max_value"],
-        "nodata": json_data["nodata"],
-        "dtype": json_data["dtype"],
-    }
+# =============================================================================
+# Drought source loaders
+# =============================================================================
 
 
 def _load_ecmwf_forecast(config: DataSourceConfig, container: LoadedDataSource):
@@ -154,12 +212,9 @@ def _load_ecmwf_forecast(config: DataSourceConfig, container: LoadedDataSource):
         container.error = f"No dummy data found for source '{config.source}'"
 
 
-def _load_glofas_discharge(config: DataSourceConfig, container: LoadedDataSource):
-    # TODO: Set the type correctly once real data is loaded
-    container.data_type = DataType.UNSPECIFIED
-    container.data = _load_dummy_data(config)
-    if container.data is None:
-        container.error = f"No dummy data found for source '{config.source}'"
+# =============================================================================
+# Helpers
+# =============================================================================
 
 
 def _load_dummy_data(source_config: DataSourceConfig) -> object:

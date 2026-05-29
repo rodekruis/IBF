@@ -10,7 +10,7 @@ import {
 
 type EnumObject = Record<string, string | number>;
 
-// Add new enums here to have the propogated the the pipeline Pyton code.
+// Add new API enums here and run manually to have them propagate into pipeline Python code.
 const enumsToGenerate: { name: string; values: EnumObject }[] = [
   { name: 'EnsembleMemberType', values: EnsembleMemberType },
   { name: 'ForecastSource', values: ForecastSource },

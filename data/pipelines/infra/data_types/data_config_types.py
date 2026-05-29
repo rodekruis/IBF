@@ -47,7 +47,8 @@ class DataSource(StrEnum):
     ADMIN_AREA_IBF_API = "admin_area_ibf_api"
     ALERT_CONFIGS_IBF_API = "alert_configs_ibf_api"
     GLOFAS_STATIONS_IBF_API = "glofas_stations_ibf_api"
-    POPULATION_SEED_REPO = "population_seed_repo"
+    GLOFAS_STATION_THRESHOLDS_SEED_REPO = "glofas_station_thresholds_seed_repo"  # TODO AB#42288: include as part of glofas stations api call
+    POPULATION_SEED_REPO = "population_seed_repo"  # TODO AB#42339: switch to loading population raster from IBF API (geo-features).
     TODO_ECMWF_FORECAST = "todo_ecmwf_forecast"
     TODO_GLOFAS_DISCHARGE = "todo_glofas_discharge"
     TODO_DATA_SOURCE = "todo_data_source"
