@@ -15,6 +15,10 @@ from pipelines.infra.data_types.data_config_types import (
     DataSourceConfig,
 )
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
+from pipelines.infra.data_types.glofas_discharge_provider import (
+    download_glofas_discharge_from_ftp,
+    load_glofas_discharge_from_mock_file,
+)
 from pipelines.infra.data_types.loaded_data_types import (
     DataType,
     LoadedDataSource,
@@ -76,8 +80,10 @@ def load_data_container(
             )
         case DataSource.GLOFAS_STATION_THRESHOLDS_SEED_REPO:
             return _load_glofas_station_thresholds(data_config, container)
-        case DataSource.TODO_GLOFAS_DISCHARGE:
-            return _load_glofas_discharge(data_config, container)
+        case DataSource.GLOFAS_DISCHARGE_FTP:
+            return _load_glofas_discharge_ftp(data_config, container)
+        case DataSource.GLOFAS_DISCHARGE_MOCK_FILE:
+            return _load_glofas_discharge_mock_file(data_config, container)
 
         # --- Drought sources ---
         case DataSource.TODO_ECMWF_FORECAST:
@@ -219,12 +225,18 @@ def _load_glofas_station_thresholds(
     container.data = thresholds
 
 
-def _load_glofas_discharge(config: DataSourceConfig, container: LoadedDataSource):
-    # TODO: Set the type correctly once real data is loaded
-    container.data_type = DataType.UNSPECIFIED
-    container.data = _load_dummy_data(config)
-    if container.data is None:
-        container.error = f"No dummy data found for source '{config.source}'"
+def _load_glofas_discharge_ftp(
+    config: DataSourceConfig, container: LoadedDataSource
+) -> None:
+    container.data_type = DataType.PATH_LIST
+    container.data = download_glofas_discharge_from_ftp(config.country_code_iso_3)
+
+
+def _load_glofas_discharge_mock_file(
+    config: DataSourceConfig, container: LoadedDataSource
+) -> None:
+    container.data_type = DataType.PATH_LIST
+    container.data = load_glofas_discharge_from_mock_file(config.country_code_iso_3)
 
 
 # =============================================================================

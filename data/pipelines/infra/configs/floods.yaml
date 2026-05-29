@@ -12,6 +12,6 @@ run_targets:
           - source: admin_area_ibf_api
           - source: population_seed_repo
           - source: flood_extents_seed_repo
-          - source: todo_glofas_discharge
+          - source: glofas_discharge_mock_file
         output:
           mode: api

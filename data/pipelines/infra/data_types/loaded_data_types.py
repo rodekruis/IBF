@@ -49,6 +49,7 @@ class DataType(StrEnum):
     # Generic types
     BINARY = "binary"
     JSON_LIST = "json_list"
+    PATH_LIST = "path_list"
 
     # Default value until the type is set by the loader
     UNSPECIFIED = "unspecified"

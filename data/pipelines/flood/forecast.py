@@ -66,11 +66,19 @@ def calculate_flood_forecasts(
 
     population_raster: RasterData | None = None
 
-    # TODO: (placeholder data) replace with data provider calls once data sources are wired
-    # glofas netcdf files
-    glofas_netcdf_paths: list[str] = [
-        "./pipelines/flood/bronze/glofas/dis_00_2026040800.nc"
-    ]
+    glofas_netcdf_paths: list[str] = []
+    for source in (
+        DataSource.GLOFAS_DISCHARGE_FTP,
+        DataSource.GLOFAS_DISCHARGE_MOCK_FILE,
+    ):
+        if source in data_provider.loaded_data:
+            glofas_netcdf_paths = data_provider.get_data(source, list)
+            break
+    if not glofas_netcdf_paths:
+        raise KeyError(
+            "No GloFAS discharge source configured. "
+            "Add 'glofas_discharge_ftp' or 'glofas_discharge_mock_file' to data_sources in config."
+        )
 
     ### Step 2 - Extract discharge per station from GloFAS data ###
     country_bounds = get_bounding_box(target_admin_areas)

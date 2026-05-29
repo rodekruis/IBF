@@ -50,8 +50,9 @@ class DataSource(StrEnum):
     GLOFAS_STATION_THRESHOLDS_SEED_REPO = "glofas_station_thresholds_seed_repo"  # TODO AB#42288: include as part of glofas stations api call
     POPULATION_SEED_REPO = "population_seed_repo"  # TODO AB#42339: switch to loading population raster from IBF API (geo-features).
     FLOOD_EXTENTS_SEED_REPO = "flood_extents_seed_repo"
+    GLOFAS_DISCHARGE_FTP = "glofas_discharge_ftp"
+    GLOFAS_DISCHARGE_MOCK_FILE = "glofas_discharge_mock_file"  # TODO AB#41516: replace with seed-repo source using country-clipped mock alert/no-alert files
     TODO_ECMWF_FORECAST = "todo_ecmwf_forecast"
-    TODO_GLOFAS_DISCHARGE = "todo_glofas_discharge"
     TODO_DATA_SOURCE = "todo_data_source"
 
 
