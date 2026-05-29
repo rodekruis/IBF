@@ -3,8 +3,8 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from pipelines.infra.data_types.alert_types import HazardType
 from pipelines.infra.data_types.data_config_types import DataSource, DataSourceConfig
+from pipelines.infra.data_types.enums import HazardType
 from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
 from pipelines.infra.utils.data_provider_fetchers import _load_glofas_station_thresholds
 from shared.country_data import CountryCodeIso3
