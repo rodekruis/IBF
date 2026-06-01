@@ -15,7 +15,7 @@ def test_floods_scenario_no_alert(pipeline):
     validation—implicitly asserts correct structure."""
     result = pipeline.run_pipeline(
         "pipelines/infra/configs/floods.yaml",
-        "TEST",
+        "SCENARIO",
         extra_env={"IBF_OUTPUT_MODE": OutputMode.API},
         scenario="no-alert",
         issued_at="2026-04-17T12:00:00Z",
@@ -31,7 +31,7 @@ def test_floods_scenario_alert(pipeline):
     validation—implicitly asserts correct alert structure."""
     result = pipeline.run_pipeline(
         "pipelines/infra/configs/floods.yaml",
-        "TEST",
+        "SCENARIO",
         extra_env={"IBF_OUTPUT_MODE": OutputMode.API},
         scenario="alert",
         issued_at="2026-04-17T12:00:00Z",

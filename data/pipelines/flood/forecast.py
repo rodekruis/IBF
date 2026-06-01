@@ -69,7 +69,8 @@ def calculate_flood_forecasts(
     glofas_netcdf_paths: list[str] = []
     for source in (
         DataSource.GLOFAS_DISCHARGE_FTP,
-        DataSource.GLOFAS_DISCHARGE_MOCK_FILE,
+        DataSource.GLOFAS_DISCHARGE_SEED_REPO_ALERT,
+        DataSource.GLOFAS_DISCHARGE_SEED_REPO_NO_ALERT,
     ):
         if source in data_provider.loaded_data:
             glofas_netcdf_paths = data_provider.get_data(source, list)
@@ -77,7 +78,7 @@ def calculate_flood_forecasts(
     if not glofas_netcdf_paths:
         raise KeyError(
             "No GloFAS discharge source configured. "
-            "Add 'glofas_discharge_ftp' or 'glofas_discharge_mock_file' to data_sources in config."
+            "Add 'glofas_discharge_ftp' or 'glofas_discharge_seed_repo_alert/no_alert' to data_sources in config."
         )
 
     ### Step 2 - Extract discharge per station from GloFAS data ###
