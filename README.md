@@ -21,7 +21,7 @@ This guide is a text version of that script which will help you troubleshoot or 
 
 - [git](https://git-scm.com/install/mac)
 - [Docker](https://docs.docker.com/get-docker)
-- [NodeJS v22+](https://nodejs.org/en/download)v22+
+- [NodeJS v22+](https://nodejs.org/en/download)
 - [pnpm](https://pnpm.io/)
 - Python 3.12+
 - [uv](https://docs.astral.sh/uv/getting-started/installation/)
