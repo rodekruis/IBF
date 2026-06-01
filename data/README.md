@@ -51,7 +51,7 @@ To upgrade all packages in the `uv.lock` file to the latest, run `uv lock --upgr
 
 ## Running the forecast pipelines
 
-From the `<repo root>/data/` dir, you can run the pipeline from command line, for example with: `uv run pipeline.py --hazard drought --country KEN --prepare --forecast --send --debug`
+For running locally, and for deploying to Azure, see the [pipelines readme](./pipelines/README.md) for more info.
 
 ## Quality checks
 

@@ -1,0 +1,105 @@
+bundle:
+  name: nrw-pipelines
+
+# This bundle deploys the hazard pipelines, and defines what runs and when.
+#
+# The bundle is packaged as a Python wheel (built via `uv build --wheel`)
+# and executed via the `pipeline` entry point declared in pyproject.toml.
+#
+# Source files (including infra/configs/*.yaml) are also synced to the
+# workspace by `databricks bundle deploy`, so the YAML configs can be
+# referenced via ${workspace.file_path}.
+#
+# Since this is a bundle file, that needs all shared Python files in it's dir scope,
+# it needs to be in the data/ directory.
+
+variables:
+  notification_email:
+    description: Email address to notify on job failure.
+    default: ehill@redcross.nl # TODO: change this with a shared alias
+
+artifacts:
+  pipelines_wheel:
+    type: whl
+    build: uv build --wheel
+    path: .
+
+targets:
+  test:
+    mode: production
+    workspace:
+      root_path: /Workspace/nrw/test
+    resources:
+      jobs:
+        # Jobs are paused from scheduled runs and are only triggered manually.
+        nrw_drought_forecast:
+          schedule:
+            pause_status: PAUSED
+        nrw_floods_forecast:
+          schedule:
+            pause_status: PAUSED
+  prod:
+    mode: production
+    default: true
+    workspace:
+      root_path: /Workspace/nrw/prod
+
+resources:
+  jobs:
+    nrw_drought_forecast:
+      name: 'NRW - Drought forecast'
+      description: 'Daily drought forecast pipeline (currently runs on test data).'
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      schedule:
+        # Daily at 06:00 UTC.
+        quartz_cron_expression: '0 0 6 * * ?'
+        timezone_id: UTC
+        pause_status: UNPAUSED
+      email_notifications:
+        on_failure:
+          - ${var.notification_email}
+      tasks:
+        - task_key: run_drought
+          environment_key: default
+          notebook_task:
+            notebook_path: ${workspace.file_path}/pipelines/infra/databricks_entry
+            base_parameters:
+              config_path: ${workspace.file_path}/pipelines/infra/configs/drought.yaml
+              run_target: DEBUG
+              secret_scope: nrw
+      environments:
+        - environment_key: default
+          spec:
+            client: '5'
+            dependencies:
+              - ./dist/*.whl
+
+    nrw_floods_forecast:
+      name: 'NRW - Floods forecast'
+      description: 'Daily floods forecast pipeline (currently runs on test data).'
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      schedule:
+        # Daily at 06:30 UTC (staggered from drought).
+        quartz_cron_expression: '0 30 6 * * ?'
+        timezone_id: UTC
+        pause_status: UNPAUSED
+      email_notifications:
+        on_failure:
+          - ${var.notification_email}
+      tasks:
+        - task_key: run_floods
+          environment_key: default
+          notebook_task:
+            notebook_path: ${workspace.file_path}/pipelines/infra/databricks_entry
+            base_parameters:
+              config_path: ${workspace.file_path}/pipelines/infra/configs/floods.yaml
+              run_target: DEBUG
+              secret_scope: nrw
+      environments:
+        - environment_key: default
+          spec:
+            client: '5'
+            dependencies:
+              - ./dist/*.whl
