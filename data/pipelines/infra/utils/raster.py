@@ -4,14 +4,12 @@ import logging
 import os
 
 import xarray as xr
-
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.loaded_data_types import RasterData
 
 BoundingBox = tuple[float, float, float, float]  # (min_lon, min_lat, max_lon, max_lat)
 
 
-# TODO-infra: to be moved to utils folder?
 def get_bounding_box(admin_areas: AdminAreasSet) -> BoundingBox:
     """Compute (min_lon, min_lat, max_lon, max_lat) from admin area geometries."""
     from shapely.geometry import shape

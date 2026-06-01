@@ -8,16 +8,10 @@ from pipelines.flood.determine_alerts import (
     ReturnPeriodThresholds,
 )
 from pipelines.flood.determine_exposure import (
-    aggregate_population_exposed,
     compute_population_exposed,
     determine_spatial_extent,
 )
 from pipelines.flood.extract_forecast import extract_discharge_glofas_station
-from pipelines.flood.utils_raster import (  # TODO-infra: move utils to infra and import in flood pipeline
-    get_bounding_box,
-    get_raster_extent,
-    slice_netcdf_to_bounds,
-)
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
@@ -27,6 +21,12 @@ from pipelines.infra.data_types.enums import EnsembleMemberType, Layer
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
+from pipelines.infra.utils.exposure import aggregate_population_exposed
+from pipelines.infra.utils.raster import (
+    get_bounding_box,
+    get_raster_extent,
+    slice_netcdf_to_bounds,
+)
 
 
 def calculate_flood_forecasts(
@@ -90,7 +90,7 @@ def calculate_flood_forecasts(
         country_sliced_netcdf_paths.append(country_sliced_path)
 
     ### Step 3 - Loop through alert configs (spatial extents / stations) ###
-    # DO NOT REMOVE: this loop over spatial-extents is obligatory. TODO-infra: enforce this better.
+    # REQUIRED: loop over spatial extents (alert configs)
     for config in alert_configs:
         station_code = config.spatial_extent_name
         station = glofas_stations.get(station_code)
@@ -98,7 +98,7 @@ def calculate_flood_forecasts(
             logging.warning(f"No station location found for '{station_code}', skipping")
             continue
 
-        # DO NOT REMOVE: this loop over temporal-extents is obligatory. TODO-infra: enforce this better.
+        # REQUIRED: loop over temporal extents (even though there is just one temporal extent for floods - the extent of all lead times - stick to the generic pattern of looping over temporal extents defined in the alert config
         for temporal_extent in config.temporal_extents:
             discharges = extract_discharge_glofas_station(
                 station_code=station_code,
@@ -190,16 +190,12 @@ def calculate_flood_forecasts(
                     severity_value=severity.median_discharge,
                 )
 
-            # TODO: determine place codes by looking at the admin areas in a catchment area.
-            # TODO-infra: actually, do not call add_admin_area_exposure per place_code, but just once (per layer)
-            for place_code in place_codes_exposed:
-                data_submitter.add_admin_area_exposure(
-                    event_name=event_name,
-                    place_code=place_code,
-                    admin_level=target_admin_level,
-                    layer=Layer.POPULATION_EXPOSED,
-                    value=population_exposed.get(place_code, 0),
-                )
+            data_submitter.add_admin_area_exposure(
+                event_name=event_name,
+                admin_level=target_admin_level,
+                layer=Layer.POPULATION_EXPOSED,
+                values_by_place_code=population_exposed,
+            )
 
             # TODO: use this in the future to (A) add water-discharge/return-period for glofas-station-popup and (B) add exposure status of points/roads/buildings.
             # data_submitter.add_geo_feature_exposure(

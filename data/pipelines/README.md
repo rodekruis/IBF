@@ -88,9 +88,9 @@ run_targets:
 ### Adding a new hazard type
 
 1. Create a new folder: `<hazard_type>/`
-2. Add `__init__.py` and `forecast.py`
-3. Implement a function that receives `DataProvider` and `DataSubmitter`
-4. Register the hazard type in `infra/run_forecasts.py`
+2. Copy `infra/template_forecast.py` to `<hazard_type>/forecast.py`
+3. Implement the hazard-specific logic (replace placeholders marked with `<...>`)
+4. Register the function in `infra/run_forecasts.py` (`HAZARD_FUNCTIONS`)
 5. Add a config YAML in `infra/configs/<hazard_type>.yaml`
 
 ### Adding a new data source

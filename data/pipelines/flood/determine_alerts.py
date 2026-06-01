@@ -7,10 +7,8 @@ from typing import TypedDict
 import numpy as np
 
 from pipelines.flood.extract_forecast import TimeIntervalDischarge
+from pipelines.flood.settings import MINIMUM_RETURN_PERIOD
 from pipelines.infra.data_types.location_point import LocationPoint
-
-# TODO-infra: where to put this constant?
-MINIMUM_RETURN_PERIOD = "1.5yr"
 
 
 @dataclass
