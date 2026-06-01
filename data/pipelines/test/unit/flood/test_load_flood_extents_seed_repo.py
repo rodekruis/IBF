@@ -16,8 +16,9 @@ from pipelines.infra.data_types.loaded_data_types import (
 from pipelines.infra.utils.data_provider_fetchers import _load_seed_repo_flood_extents
 from shared.country_data import CountryCodeIso3
 
-# Fake base URL injected via GITHUB_DATA_BASE_URL; actual HTTP calls are mocked
+# Fake URLs; actual HTTP calls are mocked via patch() so these are never fetched
 MOCK_SEED_REPO_BASE_URL = "https://test-seed-repo"
+MOCK_FLOOD_EXTENT_BASE_URL = "https://test-seed-repo/flood-extents/data-png/"
 
 
 def _make_config(
@@ -119,7 +120,7 @@ class TestFloodExtentProviderGetRaster:
 
         provider = FloodExtentProvider(
             available_return_periods=[10, 20],
-            _base_url="http://mock/flood-extents/data-png/",
+            _base_url=MOCK_FLOOD_EXTENT_BASE_URL,
             _country="KEN",
         )
 
@@ -144,7 +145,7 @@ class TestFloodExtentProviderGetRaster:
 
         provider = FloodExtentProvider(
             available_return_periods=[10],
-            _base_url="http://mock/flood-extents/data-png/",
+            _base_url=MOCK_FLOOD_EXTENT_BASE_URL,
             _country="KEN",
         )
 
@@ -164,7 +165,7 @@ class TestFloodExtentProviderGetRaster:
     def test_raises_when_png_download_fails(self):
         provider = FloodExtentProvider(
             available_return_periods=[10],
-            _base_url="http://mock/flood-extents/data-png/",
+            _base_url=MOCK_FLOOD_EXTENT_BASE_URL,
             _country="KEN",
         )
 

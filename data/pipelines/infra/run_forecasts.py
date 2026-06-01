@@ -11,6 +11,7 @@ from typing import Callable
 
 import click
 from dotenv import load_dotenv
+from shared.country_data import CountryCodeIso3
 
 from pipelines.drought.forecast import calculate_drought_forecasts
 from pipelines.flood.forecast import calculate_flood_forecasts
@@ -134,6 +135,30 @@ def _cleanup_temp_data(data_provider: DataProvider) -> None:
             shutil.rmtree(parent, ignore_errors=True)
 
 
+def _resolve_countries(
+    country_configs: dict[CountryCodeIso3, CountryRunConfig],
+    run_target: RunTargetType,
+    country_filter: str | None,
+) -> list[CountryRunConfig] | str:
+    """Determine which countries to run.
+
+    When country_filter is provided (--country CLI flag), run only that single
+    country. Otherwise run all countries in the run target.
+    Returns an error message string if resolution fails.
+    """
+    if country_filter:
+        country_code = CountryCodeIso3(country_filter.upper())
+        country = country_configs.get(country_code)
+        if country is None:
+            return f"Country '{country_code}' not found in run_target '{run_target}'"
+        return [country]
+
+    countries = list(country_configs.values())
+    if not countries:
+        return f"No countries configured for run_target '{run_target}'"
+    return countries
+
+
 def run_forecasts(
     config_path: str,
     run_target_str: str,
@@ -170,21 +195,12 @@ def run_forecasts(
         for country_config in run_target_config.country_configs.values():
             country_config.scenario = scenario
 
-    countries = list(run_target_config.country_configs.values())
-    if country_filter:
-        country_filter_upper = country_filter.upper()
-        countries = [
-            c for c in countries if c.country_code_iso_3 == country_filter_upper
-        ]
-        if not countries:
-            msg = f"Country '{country_filter_upper}' not found in run_target '{run_target}'"
-            logger.error(msg)
-            return [msg]
-
-    if not countries:
-        msg = f"No countries configured for run_target '{run_target}'"
-        logger.warning(msg)
-        return [msg]
+    countries = _resolve_countries(
+        run_target_config.country_configs, run_target, country_filter
+    )
+    if isinstance(countries, str):
+        logger.error(countries)
+        return [countries]
 
     all_errors: list[str] = []
 

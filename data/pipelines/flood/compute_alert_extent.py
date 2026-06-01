@@ -96,6 +96,7 @@ def _resolve_flood_extent(
 
 
 def _create_empty_raster(flood_extent_provider: FloodExtentProvider) -> RasterData:
+    """Create a zero-valued raster (indicating no flood) as fallback when no return period threshold is exceeded."""
     if not flood_extent_provider.available_return_periods:
         raise FileNotFoundError(
             "Could not resolve flood extent raster: no available return period "
