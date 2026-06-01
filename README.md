@@ -58,9 +58,7 @@ In the `go-web-app` directory, follow [the instructions from that repository](ht
 
 #### Pipelines (`IBF/data`)
 
-The code for the pipelines lives in the `IBF` repository under `/data`.
-
-The pipelines are under construction. See the [readme](/data/README.md) for setup.
+The code for the pipelines lives in the `IBF` repository under `/data`. See the [readme](/data/README.md) for setup.
 
 #### Seed data (`ibf-seed-data`)
 
