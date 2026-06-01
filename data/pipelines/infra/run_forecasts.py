@@ -119,6 +119,7 @@ def _run_country(
 
         return data_submitter.send_all(output_mode, output_path)
     finally:
+        # TODO AB#42516: this will be replaced by an azure-managed clean up policy, once the glofas-download step is isolated from this forecast run.
         _cleanup_temp_data(data_provider)
 
 

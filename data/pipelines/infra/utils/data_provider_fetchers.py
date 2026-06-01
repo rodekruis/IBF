@@ -80,6 +80,7 @@ def load_data_container(
             )
         case DataSource.GLOFAS_STATION_THRESHOLDS_SEED_REPO:
             return _load_glofas_station_thresholds(data_config, container)
+        # TODO AB#42516: this will likely move out of this forecast-run, into a shared setup step that downloads the files once
         case DataSource.GLOFAS_DISCHARGE_FTP:
             return _load_glofas_discharge_ftp(data_config, container)
         case DataSource.GLOFAS_DISCHARGE_MOCK_FILE:

@@ -20,10 +20,10 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
     data with bands per lead time. The pipeline slices these to country bounds
     before processing.
 
-    TODO: These files are global (~600MB each). Download once and share
+    TODO AB#42516: These files are global (~600MB each). Download once and share
     across country runs instead of re-downloading per country.
 
-    TODO: allow to proceed if a few ensemble run files are missing, as long as we have a minimum number to work with.
+    TODO AB#42516: allow to proceed if a few ensemble run files are missing, as long as we have a minimum number to work with.
 
     Required env vars:
         GLOFAS_FTP_HOST: FTP host (e.g. "aux.ecmwf.int")
