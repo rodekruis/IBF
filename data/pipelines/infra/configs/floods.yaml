@@ -1,6 +1,20 @@
 hazard_type: floods
 
 run_targets:
+  TEST:
+    countries:
+      - iso_3_code: ETH
+        target_admin_level: 3
+        data_sources:
+          - source: alert_configs_ibf_api
+          - source: glofas_stations_ibf_api
+          - source: glofas_station_thresholds_seed_repo
+          - source: admin_area_ibf_api
+          - source: population_seed_repo
+          - source: flood_extents_seed_repo
+          # TODO AB#41516: add glofas_discharge_mock_file here
+        output:
+          mode: api
   DEBUG:
     countries:
       - iso_3_code: ETH
