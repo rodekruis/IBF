@@ -98,7 +98,7 @@ def calculate_flood_forecasts(
             logging.warning(f"No station location found for '{station_code}', skipping")
             continue
 
-        # REQUIRED: loop over temporal extents (just one: the extent of all lead times)
+        # REQUIRED: loop over temporal extents (even though there is just one temporal extent for floods - the extent of all lead times - stick to the generic pattern of looping over temporal extents defined in the alert config
         for temporal_extent in config.temporal_extents:
             discharges = extract_discharge_glofas_station(
                 station_code=station_code,
