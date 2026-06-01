@@ -80,17 +80,9 @@ def test_admin_area_unequal_layer_counts_is_rejected(
     # Add 2 records of another layer, while valid_submitter only has 1 population_exposed record
     valid_submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
-        place_code="PC001",
         admin_level=3,
         layer=Layer.ALERT_EXTENT,  # not actually an admin-area layer, but works to test the record count validation
-        value=1,
-    )
-    valid_submitter.add_admin_area_exposure(
-        event_name=EVENT_NAME,
-        place_code="PC002",
-        admin_level=3,
-        layer=Layer.ALERT_EXTENT,
-        value=1,
+        values_by_place_code={"PC001": 1, "PC002": 1},
     )
 
     errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
@@ -129,10 +121,9 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
     )
     submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
-        place_code="PC001",
         admin_level=3,
         layer=Layer.POPULATION_EXPOSED,
-        value=0,
+        values_by_place_code={"PC001": 0},
     )
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
@@ -177,10 +168,9 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     )
     submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
-        place_code="PC001",
         admin_level=3,
         layer=Layer.POPULATION_EXPOSED,
-        value=0,
+        values_by_place_code={"PC001": 0},
     )
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
@@ -327,10 +317,9 @@ def test_negative_population_exposed_is_rejected(
     """An admin-area record with negative population_exposed value is rejected."""
     valid_submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
-        place_code="PC002",
         admin_level=3,
         layer=Layer.POPULATION_EXPOSED,
-        value=-100,
+        values_by_place_code={"PC002": -100},
     )
 
     errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))

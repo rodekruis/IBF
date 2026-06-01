@@ -1,3 +1,13 @@
+"""
+Template forecast function for a new hazard type.
+
+Copy this file to pipelines/<hazard_type>/forecast.py and implement
+the hazard-specific logic. Then register the function in run_forecasts.py.
+
+The function signature MUST match the HazardFunction type:
+    (DataProvider, DataSubmitter, str, int) -> None
+"""
+
 from __future__ import annotations
 
 from pipelines.infra.data_provider import DataProvider
@@ -10,22 +20,15 @@ from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.utils.exposure import get_place_codes_for_alert_config
 
 
-def calculate_drought_forecasts(
+def calculate_forecasts(
     data_provider: DataProvider,
     data_submitter: DataSubmitter,
     country: str,
     target_admin_level: int,
 ) -> None:
-    ##################################################################################################################################
-    # TEMPLATE IMPLEMENTATION
-    # — Replace anything in this method/file as wished, but be sure to follow the correct loading and export of the data as outlined here.
-    # - To make the code easier to read/maintain, split it into multiple files/methods as needed.
-    ##################################################################################################################################
-
-    # Step 1 - Get data supplied by the data provider
-    # For early prototyping, just fetch a new data source here directly.
-    # As soon as the source is stable enough, inform software-dev to fetch it through the data provider instead.
-
+    # Step 1 - Get data supplied by the data provider.
+    # For early prototyping, fetch a new data source here directly.
+    # Once stable, inform software-dev to add it to the data provider config.
     alert_configs: list[AlertConfig] = data_provider.get_data(
         DataSource.ALERT_CONFIGS_IBF_API, list
     )
@@ -39,13 +42,11 @@ def calculate_drought_forecasts(
         )
         return
 
-    # Step 2 - Calculate the forecast
-    # NOTE: the code in here is purely for demonstration purposes and should be replaced with actual logic, which should include:
-    # - Loop over alert configs (spatial extents / climate regions) and temporal extents (seasons)
-    # - Compute aggregate severity per season
-    # - If minimum severity threshold is passed, create an alert
-    # - Generate drought extent rasters
-    # - Compute population exposure from population raster + drought extent
+    # Step 2 - Calculate the forecast.
+    # Replace the placeholder logic below with actual hazard-specific computations:
+    # - Determine severity per ensemble member
+    # - Generate hazard extent rasters
+    # - Compute population exposure from population raster + hazard extent
     # - Compute geo-feature exposure (hospitals, roads, etc.)
 
     # REQUIRED: loop over spatial extents (alert configs)
@@ -54,34 +55,36 @@ def calculate_drought_forecasts(
             config, target_admin_areas, target_admin_level
         )
 
-        # REQUIRED: loop over temporal extents (seasons)
+        # REQUIRED: loop over temporal extents (seasons / lead times)
         for temporal_extent in config.temporal_extents:
             season = next(iter(temporal_extent.keys()), config.spatial_extent_name)
-            event_name = f"{country}_drought_{config.spatial_extent_name}_{season}"
+            event_name = f"{country}_<hazard>_{config.spatial_extent_name}_{season}"
 
+            # Step 3 - Create an alert and submit severity data.
             data_submitter.create_alert(
                 event_name=event_name,
                 centroid=Centroid(latitude=0.0, longitude=0.0),
             )
 
-            for _ in range(2):
-                data_submitter.add_severity_data(
-                    event_name=event_name,
-                    time_interval_start="2026-03-01T00:00:00Z",
-                    time_interval_end="2026-05-31T23:59:59Z",
-                    ensemble_member_type=EnsembleMemberType.RUN,
-                    severity_key="percentile",
-                    severity_value=0,
-                )
+            # At least 1 RUN + 1 MEDIAN severity record per time interval is required.
             data_submitter.add_severity_data(
                 event_name=event_name,
-                time_interval_start="2026-03-01T00:00:00Z",
-                time_interval_end="2026-05-31T23:59:59Z",
+                time_interval_start="2026-01-01T00:00:00Z",
+                time_interval_end="2026-03-31T23:59:59Z",
+                ensemble_member_type=EnsembleMemberType.RUN,
+                severity_key="<severity_metric>",
+                severity_value=0,
+            )
+            data_submitter.add_severity_data(
+                event_name=event_name,
+                time_interval_start="2026-01-01T00:00:00Z",
+                time_interval_end="2026-03-31T23:59:59Z",
                 ensemble_member_type=EnsembleMemberType.MEDIAN,
-                severity_key="percentile",
+                severity_key="<severity_metric>",
                 severity_value=0,
             )
 
+            # Step 4 - Submit exposure data per admin area.
             data_submitter.add_admin_area_exposure(
                 event_name=event_name,
                 admin_level=target_admin_level,
@@ -91,6 +94,7 @@ def calculate_drought_forecasts(
                 },
             )
 
+            # Step 5 - Submit raster exposure (alert extent).
             data_submitter.add_raster_exposure(
                 event_name=event_name,
                 layer=Layer.ALERT_EXTENT,

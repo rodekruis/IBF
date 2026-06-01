@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 from pipelines.flood.determine_exposure import (
-    aggregate_population_exposed,
     clip_flood_extent_to_admin_areas,
     compute_population_exposed,
     determine_spatial_extent,
@@ -14,6 +13,7 @@ from pipelines.infra.data_types.admin_area_types import (
 )
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
+from pipelines.infra.utils.exposure import aggregate_population_exposed
 from rasterio.transform import from_origin
 
 
