@@ -22,7 +22,7 @@ dependencies = [
     "PyYAML",
     "python-dotenv",
     "rasterio",
-    "rasterstats>=0.20.0",
+    "rasterstats>=0.21.0",
     "requests",
     "scipy",
     "shapely",
