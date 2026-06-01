@@ -138,6 +138,7 @@ def run_forecasts(
     config_path: str,
     run_target_str: str,
     scenario: Scenario | None = None,
+    country_filter: str | None = None,
 ) -> list[str]:
     _register_hazard_functions()
 
@@ -170,6 +171,16 @@ def run_forecasts(
             country_config.scenario = scenario
 
     countries = list(run_target_config.country_configs.values())
+    if country_filter:
+        country_filter_upper = country_filter.upper()
+        countries = [
+            c for c in countries if c.country_code_iso_3 == country_filter_upper
+        ]
+        if not countries:
+            msg = f"Country '{country_filter_upper}' not found in run_target '{run_target}'"
+            logger.error(msg)
+            return [msg]
+
     if not countries:
         msg = f"No countries configured for run_target '{run_target}'"
         logger.warning(msg)
@@ -233,11 +244,18 @@ def run_forecasts(
     default=None,
     help="Override the issued_at timestamp (ISO 8601). Only valid with --scenario.",
 )
+@click.option(
+    "--country",
+    "country_filter",
+    default=None,
+    help="Run only this country (ISO 3 code, e.g. KEN). Omit to run all.",
+)
 def main(
     config_path: str,
     run_target: str,
     scenario_str: str | None,
     issued_at_str: str | None,
+    country_filter: str | None,
 ) -> None:
     load_dotenv()
     logging.basicConfig(
@@ -259,7 +277,9 @@ def main(
             issued_at = parsed.astimezone(timezone.utc)
         scenario = Scenario(type=ScenarioType(scenario_str), issued_at=issued_at)
 
-    errors = run_forecasts(config_path, run_target, scenario=scenario)
+    errors = run_forecasts(
+        config_path, run_target, scenario=scenario, country_filter=country_filter
+    )
     if errors:
         logger.error(f"Pipeline finished with {len(errors)} error(s)")
         sys.exit(1)

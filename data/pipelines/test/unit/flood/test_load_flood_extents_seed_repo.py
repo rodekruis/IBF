@@ -80,7 +80,6 @@ class TestLoadSeedRepoFloodExtents:
         manifest = {
             "country": "KEN",
             "return_periods": [10, 20, 50, 75, 100],
-            "has_empty": True,
         }
         config = _make_config()
         container = _make_container()
@@ -94,7 +93,6 @@ class TestLoadSeedRepoFloodExtents:
         assert container.data_type == DataType.FLOOD_EXTENT_PROVIDER
         assert isinstance(container.data, FloodExtentProvider)
         assert container.data.available_return_periods == [10, 20, 50, 75, 100]
-        assert container.data.has_empty is True
 
     def test_raises_when_manifest_download_fails(self, monkeypatch):
         monkeypatch.setenv("GITHUB_DATA_BASE_URL", MOCK_SEED_REPO_BASE_URL)
@@ -121,8 +119,7 @@ class TestFloodExtentProviderGetRaster:
 
         provider = FloodExtentProvider(
             available_return_periods=[10, 20],
-            has_empty=True,
-            _base_url="http://mock/flood-extents/rgba/",
+            _base_url="http://mock/flood-extents/data-png/",
             _country="KEN",
         )
 
@@ -147,8 +144,7 @@ class TestFloodExtentProviderGetRaster:
 
         provider = FloodExtentProvider(
             available_return_periods=[10],
-            has_empty=True,
-            _base_url="http://mock/flood-extents/rgba/",
+            _base_url="http://mock/flood-extents/data-png/",
             _country="KEN",
         )
 
@@ -165,35 +161,10 @@ class TestFloodExtentProviderGetRaster:
         assert raster1 is raster2
         assert mock_download.call_count == 1
 
-    def test_fetches_empty_raster(self):
-        flood_values = np.array([[0.0, 0.0]], dtype=np.float64)
-        png_bytes = _make_rgba_png_bytes(flood_values)
-        metadata = _make_metadata(2, 1)
-
-        provider = FloodExtentProvider(
-            available_return_periods=[10],
-            has_empty=True,
-            _base_url="http://mock/flood-extents/rgba/",
-            _country="KEN",
-        )
-
-        with patch(
-            "pipelines.infra.data_types.flood_extent_provider.download_object",
-            return_value=png_bytes,
-        ), patch(
-            "pipelines.infra.data_types.flood_extent_provider.download_json_source",
-            return_value=metadata,
-        ):
-            raster = provider.get_raster(None)
-
-        assert isinstance(raster, RasterData)
-        assert raster.array.shape == (1, 2)
-
     def test_raises_when_png_download_fails(self):
         provider = FloodExtentProvider(
             available_return_periods=[10],
-            has_empty=True,
-            _base_url="http://mock/flood-extents/rgba/",
+            _base_url="http://mock/flood-extents/data-png/",
             _country="KEN",
         )
 

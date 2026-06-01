@@ -21,12 +21,9 @@ _MOCK_RASTER = RasterData(
 )
 
 
-def _make_provider(
-    return_periods: list[int], has_empty: bool = True
-) -> FloodExtentProvider:
+def _make_provider(return_periods: list[int]) -> FloodExtentProvider:
     provider = FloodExtentProvider(
         available_return_periods=return_periods,
-        has_empty=has_empty,
         _base_url="http://mock/",
         _country="UGA",
     )
@@ -70,7 +67,7 @@ def test_falls_back_to_closest_lower_return_period():
 
 
 def test_falls_back_to_empty_when_no_lower_return_period_exists():
-    provider = _make_provider([50], has_empty=True)
+    provider = _make_provider([50])
     time_interval_severities = _build_time_interval_severities("10yr")
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
@@ -79,15 +76,18 @@ def test_falls_back_to_empty_when_no_lower_return_period_exists():
             flood_extent_provider=provider,
         )
 
-    mock.assert_called_once_with(None)
-    assert selected is _MOCK_RASTER
+    mock.assert_called_once_with(50)
+    assert np.all(selected.array == 0)
+    assert selected.transform == _MOCK_RASTER.transform
+    assert selected.crs == _MOCK_RASTER.crs
+    assert selected.nodata == _MOCK_RASTER.nodata
 
 
-def test_raises_when_no_raster_and_no_empty_fallback():
-    provider = _make_provider([50], has_empty=False)
+def test_raises_when_no_available_return_periods():
+    provider = _make_provider([])
     time_interval_severities = _build_time_interval_severities("10yr")
 
-    with pytest.raises(FileNotFoundError, match="no empty fallback raster was found"):
+    with pytest.raises(FileNotFoundError, match="no available return period"):
         compute_alert_extent(
             time_interval_severities=time_interval_severities,
             flood_extent_provider=provider,

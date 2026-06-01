@@ -12,10 +12,10 @@ See the [data README](../README.md) for general Python/UV setup and dependency m
 
 **(Temporary workaround, May 2026)**: To run the floods pipeline, copy the contents of [this zip](https://rodekruis.sharepoint.com/sites/510-CRAVK-510/Gedeelde%20%20documenten/IBF%20-%20System/ibf-pipelines/bronze.zip?csf=1&web=1&e=OMUoX8) into `data/pipelines/flood`. This will put the content into `data/pipelines/flood/bronze/`. Currently, only the .nc file is still needed, the rest has been migrated to seed-data repo. The .nc file will be phased out in AB#41516, after which this comment can be removed.
 
-From the `<repo root>/data/` directory:
+From the `<repo root>/data/` directory, for one country (or omit country-flag for all)
 
 ```bash
-uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG
+uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG --country ETH
 ```
 
 | Flag           | Description                                                                      |
