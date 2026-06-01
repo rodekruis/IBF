@@ -236,7 +236,7 @@ def _load_glofas_discharge_mock_file(
     config: DataSourceConfig, container: LoadedDataSource
 ) -> None:
     container.data_type = DataType.PATH_LIST
-    container.data = load_glofas_discharge_from_mock_file(config.country_code_iso_3)
+    container.data = load_glofas_discharge_from_mock_file()
 
 
 # =============================================================================

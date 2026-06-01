@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -25,6 +27,7 @@ from pipelines.infra.data_types.data_config_types import (
     ScenarioType,
 )
 from pipelines.infra.data_types.enums import ForecastSource, HazardType
+from pipelines.infra.data_types.loaded_data_types import DataType
 from pipelines.infra.utils.alert_admin_aggregation import (
     aggregate_to_parent_admin_levels,
 )
@@ -63,54 +66,72 @@ def _run_country(
     ):
         return [f"Failed to load data for {country.country_code_iso_3}"]
 
-    data_submitter = DataSubmitter(api_client)
+    try:
+        data_submitter = DataSubmitter(api_client)
 
-    # --- Set forecast metadata based on hazard type ---
-    if country.scenario and country.scenario.issued_at:
-        issued_at = country.scenario.issued_at
-    else:
-        issued_at = datetime.now(timezone.utc)
-    forecast_sources = FORECAST_SOURCES[hazard_type]
-    data_submitter.set_forecast_metadata(
-        issued_at=issued_at,
-        hazard_type=hazard_type,
-        forecast_sources=forecast_sources,
-    )
-
-    # --- Hazard-specific forecast logic (implemented by data scientists) ---
-    hazard_fn(
-        data_provider,
-        data_submitter,
-        country.country_code_iso_3,
-        country.target_admin_level,
-    )
-
-    # --- Post-processing: aggregate deepest-level admin area data upward ---
-    admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_IBF_API, AdminAreasSet)
-    for alert in data_submitter.get_alerts():
-        aggregate_to_parent_admin_levels(alert, admin_areas)
-
-    # --- Write output ---
-    output_config = config_reader.get_country_config(
-        country.country_code_iso_3, run_target
-    )
-    if output_config is None:
-        raise ValueError(
-            f"No output config found for country '{country.country_code_iso_3}' and run target '{run_target}'"
+        # --- Set forecast metadata based on hazard type ---
+        if country.scenario and country.scenario.issued_at:
+            issued_at = country.scenario.issued_at
+        else:
+            issued_at = datetime.now(timezone.utc)
+        forecast_sources = FORECAST_SOURCES[hazard_type]
+        data_submitter.set_forecast_metadata(
+            issued_at=issued_at,
+            hazard_type=hazard_type,
+            forecast_sources=forecast_sources,
         )
-    output_mode = OutputMode(
-        os.environ.get("IBF_OUTPUT_MODE", output_config.output_mode)
-    )
 
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    output_path = str(
-        Path(output_config.output_path)
-        / hazard_type
-        / country.country_code_iso_3
-        / timestamp
-    )
+        # --- Hazard-specific forecast logic (implemented by data scientists) ---
+        hazard_fn(
+            data_provider,
+            data_submitter,
+            country.country_code_iso_3,
+            country.target_admin_level,
+        )
 
-    return data_submitter.send_all(output_mode, output_path)
+        # --- Post-processing: aggregate deepest-level admin area data upward ---
+        admin_areas = data_provider.get_data(
+            DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
+        )
+        for alert in data_submitter.get_alerts():
+            aggregate_to_parent_admin_levels(alert, admin_areas)
+
+        # --- Write output ---
+        output_config = config_reader.get_country_config(
+            country.country_code_iso_3, run_target
+        )
+        if output_config is None:
+            raise ValueError(
+                f"No output config found for country '{country.country_code_iso_3}' and run target '{run_target}'"
+            )
+        output_mode = OutputMode(
+            os.environ.get("IBF_OUTPUT_MODE", output_config.output_mode)
+        )
+
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        output_path = str(
+            Path(output_config.output_path)
+            / hazard_type
+            / country.country_code_iso_3
+            / timestamp
+        )
+
+        return data_submitter.send_all(output_mode, output_path)
+    finally:
+        _cleanup_temp_data(data_provider)
+
+
+def _cleanup_temp_data(data_provider: DataProvider) -> None:
+    for container in data_provider.loaded_data.values():
+        if container.data_type != DataType.PATH_LIST or not isinstance(
+            container.data, list
+        ):
+            continue
+        if not container.data:
+            continue
+        parent = os.path.dirname(container.data[0])
+        if parent.startswith(tempfile.gettempdir()):
+            shutil.rmtree(parent, ignore_errors=True)
 
 
 def run_forecasts(

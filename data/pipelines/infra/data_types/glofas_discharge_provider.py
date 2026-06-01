@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import ftplib
+import io
 import logging
 import os
 import tempfile
 from datetime import datetime, timedelta, timezone
-
-from shared.download_helpers import download_object
 
 logger = logging.getLogger(__name__)
 
@@ -48,25 +48,27 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
     output_dir = tempfile.mkdtemp(prefix=f"glofas_{country}_{forecast_date}_")
     downloaded_paths: list[str] = []
 
-    for ensemble_index in range(ensemble_count):
-        ensemble_label = f"{ensemble_index:02d}"
-        filename = f"dis_{ensemble_label}_{forecast_date}00.nc"
-        ftp_url = f"ftp://{user}:{password}@{host}/{GLOFAS_FTP_BASE_PATH}/{forecast_date}/{filename}"
+    ftp = _connect_ftp(host, user, password)
+    ftp.cwd(f"{GLOFAS_FTP_BASE_PATH}/{forecast_date}")
 
-        logger.info(
-            f"Downloading GloFAS ensemble {ensemble_label}/{ensemble_count} for {country}"
-        )
-        content = download_object(ftp_url)
-        if content is None:
-            raise FileNotFoundError(
-                f"Failed to download GloFAS discharge file: {filename}"
+    try:
+        for ensemble_index in range(ensemble_count):
+            ensemble_label = f"{ensemble_index:02d}"
+            filename = f"dis_{ensemble_label}_{forecast_date}00.nc"
+
+            logger.info(
+                f"Downloading GloFAS ensemble {ensemble_label}/{ensemble_count} for {country}"
             )
 
-        local_path = os.path.join(output_dir, filename)
-        with open(local_path, "wb") as f:
-            f.write(content)
+            content = _download_ftp_file(ftp, filename)
 
-        downloaded_paths.append(local_path)
+            local_path = os.path.join(output_dir, filename)
+            with open(local_path, "wb") as f:
+                f.write(content)
+
+            downloaded_paths.append(local_path)
+    finally:
+        ftp.quit()
 
     logger.info(
         f"Downloaded {len(downloaded_paths)} GloFAS ensemble files to {output_dir}"
@@ -75,7 +77,7 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
 
 
 # TODO AB#41516: replace with seed-repo source using country-clipped mock alert/no-alert files
-def load_glofas_discharge_from_mock_file(country: str) -> list[str]:
+def load_glofas_discharge_from_mock_file() -> list[str]:
     """
     Load mock GloFAS discharge NetCDF files from the local filesystem.
 
@@ -107,11 +109,36 @@ def load_glofas_discharge_from_mock_file(country: str) -> list[str]:
     return netcdf_files
 
 
-def _resolve_forecast_date(today: str, user: str, password: str, host: str) -> str:
-    import ftplib
-
-    ftp = ftplib.FTP(host, timeout=15)
+def _connect_ftp(host: str, user: str, password: str, timeout: int = 60) -> ftplib.FTP:
+    ftp = ftplib.FTP(host, timeout=timeout)
     ftp.login(user, password)
+    return ftp
+
+
+def _download_ftp_file(ftp: ftplib.FTP, filename: str) -> bytes:
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            buffer = io.BytesIO()
+            ftp.retrbinary(f"RETR {filename}", buffer.write)
+            return buffer.getvalue()
+        except ftplib.error_perm as exc:
+            raise FileNotFoundError(f"FTP server rejected '{filename}': {exc}") from exc
+        except ftplib.all_errors as exc:
+            logger.error(
+                f"Attempt {attempt}/{max_retries} failed for '{filename}': {exc}"
+            )
+            if attempt == max_retries:
+                raise ConnectionError(
+                    f"Failed to download '{filename}' after {max_retries} attempts"
+                ) from exc
+    raise ConnectionError(
+        f"Failed to download '{filename}' after {max_retries} attempts"
+    )
+
+
+def _resolve_forecast_date(today: str, user: str, password: str, host: str) -> str:
+    ftp = _connect_ftp(host, user, password, timeout=15)
     ftp.cwd(GLOFAS_FTP_BASE_PATH)
     available_dates = sorted(ftp.nlst())
     ftp.quit()
