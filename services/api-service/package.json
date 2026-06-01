@@ -106,7 +106,7 @@
     "@types/passport-jwt": "^4.0.1",
     "@typescript-eslint/eslint-plugin": "^8.59.0",
     "@typescript-eslint/parser": "^8.59.0",
-    "date-fns": "^4.1.0",
+    "date-fns": "^4.3.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-custom-rules": "file:./eslint-plugin-custom-rules/",
