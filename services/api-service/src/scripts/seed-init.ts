@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
-import { HazardType, Layer } from '@api-service/src/alerts/enum/shared-enums';
 import { env } from '@api-service/src/env';
 import { GeoFeatureType } from '@api-service/src/geo-features/enum/geo-feature-type.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
@@ -18,6 +17,7 @@ import {
   SEED_COUNTRIES,
   SeedCountry,
 } from '@api-service/src/scripts/seed-data/seed-countries.const';
+import { HazardType, Layer } from '@api-service/src/shared-enums';
 import { hashPassword } from '@api-service/src/utils/hash-password.helper';
 
 interface GeoJsonFeature {

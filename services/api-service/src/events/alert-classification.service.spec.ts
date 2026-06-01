@@ -1,8 +1,8 @@
 import { AlertConfigsService } from '@api-service/src/alert-configs/alert-configs.service';
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
-import { HazardType } from '@api-service/src/alerts/enum/shared-enums';
 import { AlertClassificationInput } from '@api-service/src/events/alert-classification.service';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
+import { HazardType } from '@api-service/src/shared-enums';
 import {
   buildAlert,
   buildSeverityData,
