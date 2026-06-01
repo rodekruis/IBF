@@ -146,7 +146,7 @@ def _resolve_forecast_date(today: str, user: str, password: str, host: str) -> s
     if today in available_dates:
         return today
 
-    # ##TODO: check this fallback behaviour with Phuoc
+    # TODO: move this fallback behaviour to a separate download-job we might set up
     yesterday = (datetime.strptime(today, "%Y%m%d") - timedelta(days=1)).strftime(
         "%Y%m%d"
     )
