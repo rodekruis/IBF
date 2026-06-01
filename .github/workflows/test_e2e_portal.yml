@@ -5,6 +5,9 @@
 
 name: 'Test: E2E (Portal)'
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   merge_group:

@@ -40,7 +40,7 @@ The tests read configuration from `services/.env` (loaded via `env.ts`):
 
 - `EXTERNAL_API_SERVICE_URL` — base URL of the api-service (default
   `http://localhost:4000`), used to seed mock data.
-- `RESET_SECRET` — secret required by the `/instance/reset` endpoint.
+- `RESET_SECRET` — secret required by the `/api/instance/reset` endpoint.
 - `BASE_URL` — frontend URL Playwright points at (default
   `http://localhost:5173`).
 
