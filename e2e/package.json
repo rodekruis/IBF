@@ -1,0 +1,48 @@
+{
+  "name": "e2e",
+  "author": "IBF",
+  "homepage": "https://github.com/rodekruis/IBF/",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rodekruis/IBF.git",
+    "directory": "e2e"
+  },
+  "private": true,
+  "scripts": {
+    "setup": "npm install && npx playwright install",
+    "typecheck": "npx tsc --noEmit",
+    "prelint": "npm run typecheck",
+    "lint": "eslint \"**/*.{ts,js,mjs}\"",
+    "fix": "npm run lint -- --fix",
+    "test": "playwright test --config=playwright.config.ts",
+    "test:update-snapshots": "npm run test -- --update-snapshots",
+    "test:update-snapshots:specific": "npm run test -- --update-snapshots --grep"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@playwright/test": "^1.58.1",
+    "@types/node": "^22.x",
+    "@typescript-eslint/eslint-plugin": "^8.51.0",
+    "@typescript-eslint/parser": "^8.51.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-eslint-comments": "^3.2.0",
+    "eslint-plugin-n": "^17.23.1",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-promise": "^7.2.1",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "globals": "^17.3.0",
+    "prettier": "^3.7.4",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.51.0"
+  },
+  "dependencies": {
+    "dotenv": "17.2.3",
+    "playwright": "^1.58.1"
+  },
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
+  }
+}
