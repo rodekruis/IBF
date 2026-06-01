@@ -15,13 +15,12 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FloodExtentProvider:
     available_return_periods: list[int]
-    has_empty: bool
     _base_url: str
     _country: str
     _cache: dict[str, RasterData] = field(default_factory=dict)
 
-    def get_raster(self, return_period: int | None) -> RasterData:
-        key = "empty" if return_period is None else f"rp{return_period}"
+    def get_raster(self, return_period: int) -> RasterData:
+        key = f"rp{return_period}"
 
         if key in self._cache:
             return self._cache[key]

@@ -11,6 +11,7 @@ from typing import Callable
 
 import click
 from dotenv import load_dotenv
+from shared.country_data import CountryCodeIso3
 
 from pipelines.drought.forecast import calculate_drought_forecasts
 from pipelines.flood.forecast import calculate_flood_forecasts
@@ -134,10 +135,35 @@ def _cleanup_temp_data(data_provider: DataProvider) -> None:
             shutil.rmtree(parent, ignore_errors=True)
 
 
+def _resolve_countries(
+    country_configs: dict[CountryCodeIso3, CountryRunConfig],
+    run_target: RunTargetType,
+    country_filter: str | None,
+) -> list[CountryRunConfig] | str:
+    """Determine which countries to run.
+
+    When country_filter is provided (--country CLI flag), run only that single
+    country. Otherwise run all countries in the run target.
+    Returns an error message string if resolution fails.
+    """
+    if country_filter:
+        country_code = CountryCodeIso3(country_filter.upper())
+        country = country_configs.get(country_code)
+        if country is None:
+            return f"Country '{country_code}' not found in run_target '{run_target}'"
+        return [country]
+
+    countries = list(country_configs.values())
+    if not countries:
+        return f"No countries configured for run_target '{run_target}'"
+    return countries
+
+
 def run_forecasts(
     config_path: str,
     run_target_str: str,
     scenario: Scenario | None = None,
+    country_filter: str | None = None,
 ) -> list[str]:
     _register_hazard_functions()
 
@@ -169,11 +195,12 @@ def run_forecasts(
         for country_config in run_target_config.country_configs.values():
             country_config.scenario = scenario
 
-    countries = list(run_target_config.country_configs.values())
-    if not countries:
-        msg = f"No countries configured for run_target '{run_target}'"
-        logger.warning(msg)
-        return [msg]
+    countries = _resolve_countries(
+        run_target_config.country_configs, run_target, country_filter
+    )
+    if isinstance(countries, str):
+        logger.error(countries)
+        return [countries]
 
     all_errors: list[str] = []
 
@@ -233,11 +260,18 @@ def run_forecasts(
     default=None,
     help="Override the issued_at timestamp (ISO 8601). Only valid with --scenario.",
 )
+@click.option(
+    "--country",
+    "country_filter",
+    default=None,
+    help="Run only this country (ISO 3 code, e.g. KEN). Omit to run all.",
+)
 def main(
     config_path: str,
     run_target: str,
     scenario_str: str | None,
     issued_at_str: str | None,
+    country_filter: str | None,
 ) -> None:
     load_dotenv()
     logging.basicConfig(
@@ -259,7 +293,9 @@ def main(
             issued_at = parsed.astimezone(timezone.utc)
         scenario = Scenario(type=ScenarioType(scenario_str), issued_at=issued_at)
 
-    errors = run_forecasts(config_path, run_target, scenario=scenario)
+    errors = run_forecasts(
+        config_path, run_target, scenario=scenario, country_filter=country_filter
+    )
     if errors:
         logger.error(f"Pipeline finished with {len(errors)} error(s)")
         sys.exit(1)

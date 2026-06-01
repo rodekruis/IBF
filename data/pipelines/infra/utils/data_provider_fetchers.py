@@ -33,7 +33,7 @@ from shared.image_helpers import rgba_png_to_float_array
 logger = logging.getLogger(__name__)
 
 SEED_REPO_POPULATION_DATA_PNG_PATH = "/raster-data/population/data-png/"
-SEED_REPO_FLOOD_EXTENTS_RGBA_PATH = "/raster-data/flood-extents/rgba/"
+SEED_REPO_FLOOD_EXTENTS_DATA_PNG_PATH = "/raster-data/flood-extents/data-png/"
 
 
 def _get_seed_repo_uri() -> str:
@@ -170,7 +170,7 @@ def _load_seed_repo_flood_extents(
     container.data_type = DataType.FLOOD_EXTENT_PROVIDER
 
     country = config.country_code_iso_3
-    base_url = _get_seed_repo_uri() + SEED_REPO_FLOOD_EXTENTS_RGBA_PATH
+    base_url = _get_seed_repo_uri() + SEED_REPO_FLOOD_EXTENTS_DATA_PNG_PATH
     manifest_url = f"{base_url}{country}_flood_extents_manifest.json"
 
     manifest = download_json_source(manifest_url, check_count=False)
@@ -182,7 +182,6 @@ def _load_seed_repo_flood_extents(
 
     container.data = FloodExtentProvider(
         available_return_periods=manifest["return_periods"],
-        has_empty=manifest["has_empty"],
         _base_url=base_url,
         _country=country,
     )

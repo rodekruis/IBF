@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import logging
 
+import numpy as np
+
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import RasterData
 
@@ -90,10 +92,25 @@ def _resolve_flood_extent(
         if fallback_value is not None:
             return flood_extent_provider.get_raster(fallback_value)
 
-    if flood_extent_provider.has_empty:
-        return flood_extent_provider.get_raster(None)
+    return _create_empty_raster(flood_extent_provider)
 
-    raise FileNotFoundError(
-        "Could not resolve flood extent raster: no suitable return period raster "
-        "or no empty fallback raster was found."
+
+def _create_empty_raster(flood_extent_provider: FloodExtentProvider) -> RasterData:
+    """Create a zero-valued raster (indicating no flood) as fallback when no return period threshold is exceeded."""
+    if not flood_extent_provider.available_return_periods:
+        raise FileNotFoundError(
+            "Could not resolve flood extent raster: no available return period "
+            "rasters to derive an empty fallback from."
+        )
+
+    reference_return_period = flood_extent_provider.available_return_periods[0]
+    reference_raster = flood_extent_provider.get_raster(reference_return_period)
+
+    empty_array = np.zeros_like(reference_raster.array)
+
+    return RasterData(
+        array=empty_array,
+        transform=reference_raster.transform,
+        crs=reference_raster.crs,
+        nodata=reference_raster.nodata,
     )
