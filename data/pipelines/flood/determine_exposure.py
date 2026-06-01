@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import logging
-
 import numpy as np
 from rasterio.enums import Resampling
 from rasterio.warp import reproject
