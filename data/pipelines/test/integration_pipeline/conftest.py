@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 import pytest
+
 from pipelines.infra.data_types.data_config_types import OutputMode
 
 
@@ -19,6 +20,7 @@ def _run_pipeline(
     config: str,
     run_target: str,
     extra_env: dict[str, str] | None = None,
+    scenario: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["IBF_OUTPUT_MODE"] = OutputMode.API
@@ -34,6 +36,8 @@ def _run_pipeline(
         "--run-target",
         run_target,
     ]
+    if scenario:
+        cmd.extend(["--scenario", scenario])
 
     return subprocess.run(
         cmd,

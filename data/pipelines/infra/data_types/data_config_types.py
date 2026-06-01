@@ -32,9 +32,10 @@ class RunTargetType(StrEnum):
     Add to this as needed.
     """
 
-    DEBUG = "debug"
-    TEST = "test"
-    PROD = "prod"
+    MOCK_ALERT = "mock_alert"
+    MOCK_NO_ALERT = "mock_no_alert"
+    SCENARIO = "scenario"
+    LIVE = "live"
 
 
 class DataSource(StrEnum):
@@ -51,7 +52,8 @@ class DataSource(StrEnum):
     POPULATION_SEED_REPO = "population_seed_repo"  # TODO AB#42339: switch to loading population raster from IBF API (geo-features).
     FLOOD_EXTENTS_SEED_REPO = "flood_extents_seed_repo"
     GLOFAS_DISCHARGE_FTP = "glofas_discharge_ftp"
-    GLOFAS_DISCHARGE_MOCK_FILE = "glofas_discharge_mock_file"  # TODO AB#41516: replace with seed-repo source using country-clipped mock alert/no-alert files
+    GLOFAS_DISCHARGE_SEED_REPO_ALERT = "glofas_discharge_seed_repo_alert"
+    GLOFAS_DISCHARGE_SEED_REPO_NO_ALERT = "glofas_discharge_seed_repo_no_alert"
     TODO_ECMWF_FORECAST = "todo_ecmwf_forecast"
     TODO_DATA_SOURCE = "todo_data_source"
 
