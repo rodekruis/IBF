@@ -15,6 +15,10 @@ from pipelines.infra.data_types.data_config_types import (
     DataSourceConfig,
 )
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
+from pipelines.infra.data_types.glofas_discharge_provider import (
+    download_glofas_discharge_from_ftp,
+    load_glofas_discharge_from_mock_file,
+)
 from pipelines.infra.data_types.loaded_data_types import (
     DataType,
     LoadedDataSource,
@@ -29,7 +33,7 @@ from shared.image_helpers import rgba_png_to_float_array
 logger = logging.getLogger(__name__)
 
 SEED_REPO_POPULATION_DATA_PNG_PATH = "/raster-data/population/data-png/"
-SEED_REPO_FLOOD_EXTENTS_RGBA_PATH = "/raster-data/flood-extents/rgba/"
+SEED_REPO_FLOOD_EXTENTS_DATA_PNG_PATH = "/raster-data/flood-extents/data-png/"
 
 
 def _get_seed_repo_uri() -> str:
@@ -76,8 +80,11 @@ def load_data_container(
             )
         case DataSource.GLOFAS_STATION_THRESHOLDS_SEED_REPO:
             return _load_glofas_station_thresholds(data_config, container)
-        case DataSource.TODO_GLOFAS_DISCHARGE:
-            return _load_glofas_discharge(data_config, container)
+        # TODO AB#42516: this will likely move out of this forecast-run, into a shared setup step that downloads the files once
+        case DataSource.GLOFAS_DISCHARGE_FTP:
+            return _load_glofas_discharge_ftp(data_config, container)
+        case DataSource.GLOFAS_DISCHARGE_MOCK_FILE:
+            return _load_glofas_discharge_mock_file(data_config, container)
 
         # --- Drought sources ---
         case DataSource.TODO_ECMWF_FORECAST:
@@ -164,7 +171,7 @@ def _load_seed_repo_flood_extents(
     container.data_type = DataType.FLOOD_EXTENT_PROVIDER
 
     country = config.country_code_iso_3
-    base_url = _get_seed_repo_uri() + SEED_REPO_FLOOD_EXTENTS_RGBA_PATH
+    base_url = _get_seed_repo_uri() + SEED_REPO_FLOOD_EXTENTS_DATA_PNG_PATH
     manifest_url = f"{base_url}{country}_flood_extents_manifest.json"
 
     manifest = download_json_source(manifest_url, check_count=False)
@@ -176,7 +183,6 @@ def _load_seed_repo_flood_extents(
 
     container.data = FloodExtentProvider(
         available_return_periods=manifest["return_periods"],
-        has_empty=manifest["has_empty"],
         _base_url=base_url,
         _country=country,
     )
@@ -219,12 +225,18 @@ def _load_glofas_station_thresholds(
     container.data = thresholds
 
 
-def _load_glofas_discharge(config: DataSourceConfig, container: LoadedDataSource):
-    # TODO: Set the type correctly once real data is loaded
-    container.data_type = DataType.UNSPECIFIED
-    container.data = _load_dummy_data(config)
-    if container.data is None:
-        container.error = f"No dummy data found for source '{config.source}'"
+def _load_glofas_discharge_ftp(
+    config: DataSourceConfig, container: LoadedDataSource
+) -> None:
+    container.data_type = DataType.PATH_LIST
+    container.data = download_glofas_discharge_from_ftp(config.country_code_iso_3)
+
+
+def _load_glofas_discharge_mock_file(
+    config: DataSourceConfig, container: LoadedDataSource
+) -> None:
+    container.data_type = DataType.PATH_LIST
+    container.data = load_glofas_discharge_from_mock_file()
 
 
 # =============================================================================

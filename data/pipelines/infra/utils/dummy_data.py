@@ -5,22 +5,6 @@
 from pipelines.infra.data_types.data_config_types import DataSource
 
 DUMMY_DATA: dict[DataSource, object] = {
-    DataSource.TODO_GLOFAS_DISCHARGE: {
-        # Per station, per time interval (0-7 days), per ensemble member (50):
-        # water_discharge in m³/s
-        "glofas-station-A": {
-            time_interval: {
-                f"member-{m}": 80 + time_interval * 5 + m * 2 for m in range(1, 51)
-            }
-            for time_interval in range(8)
-        },
-        "glofas-station-B": {
-            time_interval: {
-                f"member-{m}": 40 + time_interval * 3 + m for m in range(1, 51)
-            }
-            for time_interval in range(8)
-        },
-    },
     DataSource.TODO_ECMWF_FORECAST: {
         # In reality a raster (GRIB/NetCDF) per ensemble member per month.
         # Represented here as nested dict: month -> ensemble_member -> cell grid

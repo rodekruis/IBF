@@ -10,6 +10,7 @@ from rasterio.warp import reproject
 from rasterio.windows import from_bounds as window_from_bounds
 from rasterstats import zonal_stats
 from shapely.geometry import shape
+from shapely.validation import make_valid
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.loaded_data_types import RasterData
@@ -135,9 +136,9 @@ def clip_flood_extent_to_admin_areas(
         )
         return flood_extent_raster
 
-    combined_geom = shape(geometries[0])
+    combined_geom = make_valid(shape(geometries[0]))
     for geom in geometries[1:]:
-        combined_geom = combined_geom.union(shape(geom))
+        combined_geom = combined_geom.union(make_valid(shape(geom)))
 
     minx, miny, maxx, maxy = combined_geom.bounds
     window = window_from_bounds(minx, miny, maxx, maxy, flood_extent_raster.transform)

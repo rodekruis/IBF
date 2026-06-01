@@ -133,6 +133,9 @@ class ConfigReader:
     ) -> bool:
         """Parse countries from run target config and add to provided dict."""
         success = True
+        default_data_sources_raw = target_config.get("default_data_sources", [])
+        default_output_raw = target_config.get("default_output", {})
+
         for country_raw in target_config.get("countries", []):
             if "iso_3_code" not in country_raw:
                 logger.error(
@@ -166,10 +169,17 @@ class ConfigReader:
                 success = False
                 continue
 
-            # Parse data sources
+            # Parse data sources (fall back to run-target-level defaults)
             data_sources: list[DataSourceConfig] = []
+            effective_sources_raw = country_raw.get(
+                "data_sources", default_data_sources_raw
+            )
+            country_with_sources = {
+                **country_raw,
+                "data_sources": effective_sources_raw,
+            }
             if not self._parse_data_sources(
-                data_sources, iso_3_code, country_raw, target, hazard_type
+                data_sources, iso_3_code, country_with_sources, target, hazard_type
             ):
                 success = False
                 # Continue processing - still validate rest of country config
@@ -188,7 +198,7 @@ class ConfigReader:
                 success = False
                 continue
 
-            output_raw = country_raw.get("output", {})
+            output_raw = country_raw.get("output", default_output_raw)
 
             try:
                 output_mode = OutputMode(output_raw["mode"].lower())

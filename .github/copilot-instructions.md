@@ -197,6 +197,12 @@ Before requesting review, ensure:
 - Avoid abbreviations — same principle as the TypeScript codebase
 - Use type annotations everywhere; avoid `Any`
 
+### Infra vs Hazard Code Separation
+
+- **`pipelines/infra/`** owns all infrastructure concerns: data loading/cleanup, configuration, submission, and resource lifecycle management
+- **`pipelines/<hazard-type>/forecast.py`** contains only hazard-specific logic (data science computations, alert determination, exposure calculation)
+- Never put infrastructure concerns (file cleanup, retry logic, authentication, resource management) in `forecast.py` — these belong in the infra layer
+
 ### Testing
 
 ```bash

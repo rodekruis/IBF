@@ -1,17 +1,43 @@
 hazard_type: floods
 
 run_targets:
-  DEBUG:
+  TEST:
+    default_data_sources:
+      - source: alert_configs_ibf_api
+      - source: glofas_stations_ibf_api
+      - source: glofas_station_thresholds_seed_repo
+      - source: admin_area_ibf_api
+      - source: population_seed_repo
+      - source: flood_extents_seed_repo
+      # TODO AB#41516: add glofas_discharge_mock_file here
+    default_output:
+      mode: api
     countries:
       - iso_3_code: ETH
         target_admin_level: 3
-        data_sources:
-          - source: alert_configs_ibf_api
-          - source: glofas_stations_ibf_api
-          - source: glofas_station_thresholds_seed_repo
-          - source: admin_area_ibf_api
-          - source: population_seed_repo
-          - source: flood_extents_seed_repo
-          - source: todo_glofas_discharge
-        output:
-          mode: api
+  DEBUG:
+    default_data_sources:
+      - source: alert_configs_ibf_api
+      - source: glofas_stations_ibf_api
+      - source: glofas_station_thresholds_seed_repo
+      - source: admin_area_ibf_api
+      - source: population_seed_repo
+      - source: flood_extents_seed_repo
+      - source: glofas_discharge_mock_file
+    default_output:
+      mode: api
+    countries:
+      - iso_3_code: ETH
+        target_admin_level: 3
+      - iso_3_code: KEN
+        target_admin_level: 3
+      - iso_3_code: UGA
+        target_admin_level: 4
+      - iso_3_code: PHL
+        target_admin_level: 3
+      - iso_3_code: MWI
+        target_admin_level: 3
+      - iso_3_code: ZMB
+        target_admin_level: 3
+      - iso_3_code: SSD
+        target_admin_level: 3
