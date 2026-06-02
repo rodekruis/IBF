@@ -1,7 +1,23 @@
 hazard_type: drought
 
 run_targets:
-  DEBUG:
+  # Runs the full pipeline including forecast.py with deterministic mock data.
+  # Template forecast.py creates alerts with severity_value=0.
+  # Used by: integration_pipeline tests to verify the pipeline end-to-end.
+  MOCK_ALERT:
+    countries:
+      - iso_3_code: ETH
+        target_admin_level: 2
+        data_sources:
+          - source: alert_configs_ibf_api
+          - source: admin_area_ibf_api
+          - source: population_seed_repo
+          - source: todo_ecmwf_forecast
+        output:
+          mode: api
+  # Bypasses forecast.py entirely; uses --scenario flag to inject synthetic output.
+  # Used by: integration_infra tests to verify config parsing, data loading, and submission.
+  SCENARIO:
     countries:
       - iso_3_code: ETH
         target_admin_level: 2

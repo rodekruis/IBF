@@ -10,20 +10,38 @@ See the [data README](../README.md) for general Python/UV setup and dependency m
 
 ### Running a pipeline
 
-**(Temporary workaround, May 2026)**: To run the floods pipeline, copy the contents of [this zip](https://rodekruis.sharepoint.com/sites/510-CRAVK-510/Gedeelde%20%20documenten/IBF%20-%20System/ibf-pipelines/bronze.zip?csf=1&web=1&e=OMUoX8) into `data/pipelines/flood`. This will put the content into `data/pipelines/flood/bronze/`. Currently, only the .nc file is still needed, the rest has been migrated to seed-data repo. The .nc file will be phased out in AB#41516, after which this comment can be removed.
-
-From the `<repo root>/data/` directory:
+From the `<repo root>/data/` directory, for one country (or omit country-flag for all countries):
 
 ```bash
-uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG --country ETH
+# Run with real data (requires FTP credentials)
+uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target LIVE --country ETH
+
+# Run with mock data that triggers alerts
+uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target MOCK_ALERT --country ETH
+
+# Run with mock data for all configured countries (no --country flag)
+uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target MOCK_NO_ALERT
+
+# Bypass forecast.py with synthetic output (useful for testing infra changes)
+uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target SCENARIO --scenario alert --country ETH
 ```
 
-| Flag           | Description                                                                      |
-| -------------- | -------------------------------------------------------------------------------- |
-| `--config`     | Path to the hazard YAML config file (e.g. `pipelines/infra/configs/floods.yaml`) |
-| `--run-target` | Run target defined in the config (e.g. `DEBUG`, `TEST`)                          |
-| `--scenario`   | _(optional)_ Infra-level override: `no-alert` or `alert`. Bypasses forecast.py   |
-| `--issued-at`  | _(optional)_ Override the issued-at timestamp (ISO 8601). Requires `--scenario`  |
+| Flag           | Description                                                                                     |
+| -------------- | ----------------------------------------------------------------------------------------------- |
+| `--config`     | Path to the hazard YAML config file (e.g. `pipelines/infra/configs/floods.yaml`)                |
+| `--run-target` | Run target defined in the config (see below)                                                    |
+| `--scenario`   | _(optional)_ `no-alert` or `alert`. Only valid with `SCENARIO` run target. Bypasses forecast.py |
+| `--issued-at`  | _(optional)_ Override the issued-at timestamp (ISO 8601). Requires `--scenario`                 |
+| `--country`    | _(optional)_ ISO3 country code to run a single country instead of all configured countries      |
+
+### Run targets
+
+| Run target      | Purpose                                                        | Uses forecast.py? | `--scenario` valid? |
+| --------------- | -------------------------------------------------------------- | ----------------- | ------------------- |
+| `LIVE`          | Production with real data (e.g. GloFAS FTP)                    | Yes               | No                  |
+| `MOCK_ALERT`    | Deterministic mock data that produces alerts                   | Yes               | No                  |
+| `MOCK_NO_ALERT` | Deterministic mock data that produces no alerts                | Yes               | No                  |
+| `SCENARIO`      | Bypasses forecast.py; injects synthetic output for infra tests | No                | Yes (required)      |
 
 ## Structure
 
@@ -36,12 +54,10 @@ This separation means data scientists only need to implement one function per ha
 
 ### run_target vs scenario
 
-These two concepts are independent:
+These two concepts serve different purposes:
 
-- **`--run-target`** selects an environment configuration from the YAML config: which countries to run, which data sources to load, and where to write output. It flows through the entire pipeline including `forecast.py`.
-- **`--scenario`** is an infra-level override that _replaces_ the hazard logic in `forecast.py` with a predetermined outcome (`no-alert` = empty alerts, `alert` = one synthetic alert). The real `forecast.py` never runs.
-
-This means any run target can be combined with any scenario (`--run-target DEBUG --scenario alert`), and adding new scenarios does not require new run targets or vice versa.
+- **`--run-target`** selects a data configuration from the YAML: which countries to run, which data sources to load, and where to write output. `MOCK_ALERT` and `MOCK_NO_ALERT` run the real `forecast.py` with deterministic mock data. `LIVE` runs with real data (e.g. FTP).
+- **`--scenario`** bypasses `forecast.py` entirely with a predetermined outcome (`no-alert` = empty, `alert` = synthetic alert). Only valid with the `SCENARIO` run target. Used by infra integration tests.
 
 Here are the main files used by the hazard logic flow.
 
@@ -61,8 +77,8 @@ pipelines/
 │   └── forecast.py            # calculate_drought_forecasts(data_provider, data_submitter, country)
 ├── test/
 │   ├── unit/                  # Unit tests on individual functions
-│   ├── integration_infra/     # test pipeline-infra + integration with API (using scenarios, bypasses hazard-logic in forecast.py)
-│   └── integration_pipeline/  # FUTURE: full pipeline tests with mock input data through forecast.py
+│   ├── integration_infra/     # test pipeline-infra + integration with API (using --scenario, bypasses forecast.py)
+│   └── integration_pipeline/  # Full pipeline tests with mock input data through forecast.py (MOCK_ALERT/MOCK_NO_ALERT)
 ```
 
 ## YAML config files
@@ -74,7 +90,7 @@ To handle new configs and targets, see the sections below.
 ```
 hazard_type                      # HazardType enum (e.g. "floods", "drought")
 run_targets:
-  <run_target>:                  # RunTargetType enum (DEBUG / TEST / PROD, etc.)
+  <run_target>:                  # RunTargetType enum (MOCK_ALERT / MOCK_NO_ALERT / SCENARIO / LIVE)
     countries:
       - iso_3_code               # ISO alpha-3 country code (e.g. "KEN", "ETH")
         target_admin_level       # Target admin level to make forecasts on (1–4)
@@ -108,7 +124,8 @@ From the `<repo root>/data/` directory:
 
 ```bash
 uv run pytest pipelines/test/unit/                  # unit tests
-uv run pytest pipelines/test/integration_infra/     test pipeline-infra + integration with API (using scenarios, bypasses hazard-logic in forecast.py)
+uv run pytest pipelines/test/integration_infra/     # test pipeline-infra + integration with API (using scenarios, bypasses hazard-logic in forecast.py)
+uv run pytest pipelines/test/integration_pipeline   # test full pipeline including hazard-logic in forecast.py
 ```
 
 Unit tests cover alert validation and data submitter logic. Infra integration tests use the `--scenario` flag to bypass `forecast.py`, exercising only the pipeline infrastructure (config parsing, data loading, data submission, output writing). Future `integration_pipeline/` tests will run the full pipeline with controlled mock input data flowing through `forecast.py`.

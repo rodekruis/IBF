@@ -193,8 +193,17 @@ def run_forecasts(
         return [msg]
 
     if scenario:
+        if run_target != RunTargetType.SCENARIO:
+            msg = f"--scenario is only valid with run target 'SCENARIO', got '{run_target}'"
+            logger.error(msg)
+            return [msg]
         for country_config in run_target_config.country_configs.values():
             country_config.scenario = scenario
+
+    if not scenario and run_target == RunTargetType.SCENARIO:
+        msg = "--scenario is required when using run target 'SCENARIO'"
+        logger.error(msg)
+        return [msg]
 
     countries = _resolve_countries(
         run_target_config.country_configs, run_target, country_filter
@@ -216,8 +225,6 @@ def run_forecasts(
 
         active_fn = hazard_fn
         if country.scenario:
-            # Scenario overrides only the hazard function (forecast.py), so all
-            # surrounding infra (data loading, metadata, aggregation, output) still runs.
             active_fn = make_scenario_hazard_function(country.scenario, hazard_type)
             logger.info(
                 f"Using scenario '{country.scenario.type}' for {country.country_code_iso_3}"

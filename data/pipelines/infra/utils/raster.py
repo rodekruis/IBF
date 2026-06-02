@@ -6,12 +6,16 @@ import os
 import xarray as xr
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.loaded_data_types import RasterData
+from pipelines.infra.data_types.location_point import LocationPoint
 
 BoundingBox = tuple[float, float, float, float]  # (min_lon, min_lat, max_lon, max_lat)
 
 
-def get_bounding_box(admin_areas: AdminAreasSet) -> BoundingBox:
-    """Compute (min_lon, min_lat, max_lon, max_lat) from admin area geometries."""
+def get_bounding_box(
+    admin_areas: AdminAreasSet,
+    point_locations: dict[str, LocationPoint] | None = None,
+) -> BoundingBox:
+    """Compute (min_lon, min_lat, max_lon, max_lat) from admin area geometries and optionally point locations."""
     from shapely.geometry import shape
 
     min_lon = float("inf")
@@ -31,6 +35,13 @@ def get_bounding_box(admin_areas: AdminAreasSet) -> BoundingBox:
         min_lat = min(min_lat, bounds[1])
         max_lon = max(max_lon, bounds[2])
         max_lat = max(max_lat, bounds[3])
+
+    if point_locations:
+        for point in point_locations.values():
+            min_lon = min(min_lon, float(point.lon))
+            min_lat = min(min_lat, float(point.lat))
+            max_lon = max(max_lon, float(point.lon))
+            max_lat = max(max_lat, float(point.lat))
 
     return (min_lon, min_lat, max_lon, max_lat)
 
