@@ -32,7 +32,7 @@ run_targets:
       mode: api
     countries: *all_countries
   # Runs the full pipeline including forecast.py with mock GloFAS data that
-  # does not exceed thresholds, producing alerts. Used by: integration_pipeline tests or local test runs.
+  # does not exceed thresholds, producing no alerts. Used by: integration_pipeline tests or local test runs.
   MOCK_NO_ALERT:
     default_data_sources:
       - source: alert_configs_ibf_api

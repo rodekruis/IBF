@@ -35,6 +35,15 @@ from shared.download_helpers import download_json_source
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
+SEED_REPO_OUTPUT_DIR = (
+    Path(__file__).resolve().parent.parent.parent.parent.parent
+    / "IBF-seed-data"
+    / "pipelines"
+    / "mock-data"
+    / "floods"
+    / "glofas-discharge"
+)
+
 GLOFAS_RESOLUTION = 0.05
 NODATA_VALUE = -9999.0
 NUM_LEAD_TIMES = 8
@@ -46,7 +55,7 @@ def fetch_station_thresholds(country: str) -> list[dict]:
     if not base_url:
         raise ValueError("GITHUB_DATA_BASE_URL environment variable is required")
 
-    url = f"{base_url}/pipelines/floods/{country}_station_thresholds.json"
+    url = f"{base_url}/pipelines/{country}_station_thresholds.json"
     logger.info(f"Fetching station thresholds from {url}")
     data = download_json_source(url, check_count=False)
     if data is None:
@@ -221,8 +230,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--output-dir",
-        default=".",
-        help="Directory to write output files (default: current directory)",
+        default=str(SEED_REPO_OUTPUT_DIR),
+        help="Directory to write output files (default: IBF-seed-data repo sibling directory)",
     )
     parser.add_argument(
         "--alert-lead-times",
