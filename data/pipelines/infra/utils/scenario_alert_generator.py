@@ -5,16 +5,16 @@ from typing import Callable
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
+from pipelines.infra.data_types.data_config_types import (
+    DataSource,
+    Scenario,
+    ScenarioType,
+)
 from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
     HazardType,
     Layer,
-)
-from pipelines.infra.data_types.data_config_types import (
-    DataSource,
-    Scenario,
-    ScenarioType,
 )
 
 HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
@@ -80,14 +80,12 @@ def _generate_alert_scenario(
     )
 
     place_codes = list(target_admin_areas.admin_areas.keys())[:2]
-    for place_code in place_codes:
-        data_submitter.add_admin_area_exposure(
-            event_name=event_name,
-            place_code=place_code,
-            admin_level=target_admin_level,
-            layer=Layer.POPULATION_EXPOSED,
-            value=100,
-        )
+    data_submitter.add_admin_area_exposure(
+        event_name=event_name,
+        admin_level=target_admin_level,
+        layer=Layer.POPULATION_EXPOSED,
+        values_by_place_code={place_code: 100 for place_code in place_codes},
+    )
 
     data_submitter.add_raster_exposure(
         event_name=event_name,

@@ -7,9 +7,8 @@ from typing import TypedDict
 import numpy as np
 
 from pipelines.flood.extract_forecast import TimeIntervalDischarge
+from pipelines.flood.settings import MINIMUM_RETURN_PERIOD
 from pipelines.infra.data_types.location_point import LocationPoint
-
-MINIMUM_RETURN_PERIOD = "1.5yr"
 
 
 @dataclass
@@ -142,4 +141,3 @@ def _prepare_station_threshold(
         return None
 
     return station_thresholds
-

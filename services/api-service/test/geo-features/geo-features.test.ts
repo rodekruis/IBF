@@ -64,10 +64,17 @@ describe('/ Geo Features', () => {
     });
 
     it('should return 409 for duplicate geo-feature', async () => {
+      const firstResponse = await getServer()
+        .post('/geo-features')
+        .set('Cookie', [accessToken])
+        .send({ ...validGeoFeature, referenceId: 'DUPLICATE_TEST_01' });
+
+      expect(firstResponse.status).toBe(HttpStatus.CREATED);
+
       const response = await getServer()
         .post('/geo-features')
         .set('Cookie', [accessToken])
-        .send(validGeoFeature);
+        .send({ ...validGeoFeature, referenceId: 'DUPLICATE_TEST_01' });
 
       expect(response.status).toBe(HttpStatus.CONFLICT);
     });

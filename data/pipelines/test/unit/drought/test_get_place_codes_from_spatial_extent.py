@@ -1,10 +1,10 @@
-from pipelines.drought.forecast import _get_place_codes_from_spatial_extent
 from pipelines.infra.data_types.admin_area_types import (
     AdminArea,
     AdminAreaProperties,
     AdminAreasSet,
 )
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
+from pipelines.infra.utils.exposure import get_place_codes_for_alert_config
 
 
 def _make_admin_areas() -> AdminAreasSet:
@@ -63,7 +63,7 @@ def test_returns_explicit_place_codes_when_provided():
         spatial_extent_place_codes=["ET0101", "ET0102"],
         temporal_extents=[],
     )
-    result = _get_place_codes_from_spatial_extent(config, _make_admin_areas(), 2)
+    result = get_place_codes_for_alert_config(config, _make_admin_areas(), 2)
     assert result == ["ET0101", "ET0102"]
 
 
@@ -73,7 +73,7 @@ def test_expands_to_all_admin_areas_at_target_level_when_empty():
         spatial_extent_place_codes=[],
         temporal_extents=[],
     )
-    result = _get_place_codes_from_spatial_extent(config, _make_admin_areas(), 2)
+    result = get_place_codes_for_alert_config(config, _make_admin_areas(), 2)
     assert sorted(result) == ["ET0101", "ET0102"]
 
 
@@ -83,7 +83,7 @@ def test_expands_to_different_admin_level():
         spatial_extent_place_codes=[],
         temporal_extents=[],
     )
-    result = _get_place_codes_from_spatial_extent(config, _make_admin_areas(), 1)
+    result = get_place_codes_for_alert_config(config, _make_admin_areas(), 1)
     assert result == ["ET01"]
 
 
@@ -93,5 +93,5 @@ def test_returns_empty_when_no_areas_match_level():
         spatial_extent_place_codes=[],
         temporal_extents=[],
     )
-    result = _get_place_codes_from_spatial_extent(config, _make_admin_areas(), 3)
+    result = get_place_codes_for_alert_config(config, _make_admin_areas(), 3)
     assert result == []

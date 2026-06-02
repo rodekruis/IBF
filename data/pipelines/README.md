@@ -10,12 +10,12 @@ See the [data README](../README.md) for general Python/UV setup and dependency m
 
 ### Running a pipeline
 
-**(Temporary workaround, May 2026)**: Until the pipelines can pull from regular sources, you will need to grab setup files to do local runs. For flood runs, you will need to copy the contents of [this zip](https://rodekruis.sharepoint.com/sites/510-CRAVK-510/Gedeelde%20%20documenten/IBF%20-%20System/ibf-pipelines/bronze.zip?csf=1&web=1&e=OMUoX8) into `data/pipelines/flood`. This will put the content into `data/pipelines/flood/bronze/` which is already ignored as part of .gitignore. See [this PR](https://github.com/rodekruis/IBF/pull/126) for full details.
+**(Temporary workaround, May 2026)**: To run the floods pipeline, copy the contents of [this zip](https://rodekruis.sharepoint.com/sites/510-CRAVK-510/Gedeelde%20%20documenten/IBF%20-%20System/ibf-pipelines/bronze.zip?csf=1&web=1&e=OMUoX8) into `data/pipelines/flood`. This will put the content into `data/pipelines/flood/bronze/`. Currently, only the .nc file is still needed, the rest has been migrated to seed-data repo. The .nc file will be phased out in AB#41516, after which this comment can be removed.
 
 From the `<repo root>/data/` directory:
 
 ```bash
-uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG
+uv run pipeline --config pipelines/infra/configs/floods.yaml --run-target DEBUG --country ETH
 ```
 
 | Flag           | Description                                                                      |
@@ -88,9 +88,9 @@ run_targets:
 ### Adding a new hazard type
 
 1. Create a new folder: `<hazard_type>/`
-2. Add `__init__.py` and `forecast.py`
-3. Implement a function that receives `DataProvider` and `DataSubmitter`
-4. Register the hazard type in `infra/run_forecasts.py`
+2. Copy `infra/template_forecast.py` to `<hazard_type>/forecast.py`
+3. Implement the hazard-specific logic (replace placeholders marked with `<...>`)
+4. Register the function in `infra/run_forecasts.py` (`HAZARD_FUNCTIONS`)
 5. Add a config YAML in `infra/configs/<hazard_type>.yaml`
 
 ### Adding a new data source

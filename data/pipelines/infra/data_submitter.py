@@ -6,6 +6,7 @@ import os
 import shutil
 from datetime import datetime, timezone
 
+from pipelines.infra.data_types.data_config_types import OutputMode
 from pipelines.infra.data_types.dtos import (
     Alert,
     Centroid,
@@ -21,7 +22,6 @@ from pipelines.infra.data_types.dtos import (
     Severity,
     TimeInterval,
 )
-from pipelines.infra.data_types.data_config_types import OutputMode
 from pipelines.infra.utils.alert_integrity_checks import (
     check_admin_area_integrity,
     check_centroid,
@@ -109,23 +109,23 @@ class DataSubmitter:
     def add_admin_area_exposure(
         self,
         event_name: str,
-        place_code: str,
         admin_level: int,
         layer: Layer,
-        value: int | float,
+        values_by_place_code: dict[str, int | float],
     ) -> None:
         alert = self._get_alert(event_name, "add_admin_area_exposure")
         if alert is None:
             return
 
-        alert.exposure.admin_areas.append(
-            ExposureAdminArea(
-                place_code=place_code,
-                admin_level=admin_level,
-                layer=layer,
-                value=value,
+        for place_code, value in values_by_place_code.items():
+            alert.exposure.admin_areas.append(
+                ExposureAdminArea(
+                    place_code=place_code,
+                    admin_level=admin_level,
+                    layer=layer,
+                    value=value,
+                )
             )
-        )
 
     def add_geo_feature_exposure(
         self,

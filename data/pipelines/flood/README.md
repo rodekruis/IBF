@@ -24,7 +24,7 @@ This folder contains the flood-specific forecast logic used by the pipeline fram
   - Clips the selected flood extent raster to affected admin areas for raster exposure output.
   - Computes an exposed-population raster and aggregates exposed population per place code.
 
-- `utils_raster.py`
+- `pipelines/infra/utils/raster.py`
   - Utility functions for geospatial preprocessing:
     - derive country bounding box from admin geometries,
     - slice NetCDF to country bounds,
@@ -38,22 +38,6 @@ This folder contains the flood-specific forecast logic used by the pipeline fram
 - `bronze/glofas/`
   - GloFAS discharge NetCDF files (ensemble forecast source).
   - Current code points to a local file such as `dis_00_YYYYMMDDHH.nc` and creates `_sliced.nc` files per country run.
-
-- `bronze/thresholds/`
-  - Country-specific threshold JSON files (`*_{ISO3}.json`).
-  - Used to convert station discharge values into return-period-based alert severities.
-
-- `bronze/station-district/`
-  - Station-to-admin mapping JSON (`{ISO3}_station_district_mapping.json`).
-  - Links station IDs to impacted place codes before flood extent clipping and exposure aggregation.
-
-- `bronze/population/`
-  - Country population raster (`{ISO3}.tif`).
-  - Used to create `{ISO3}_exposed.tif`, which is then aggregated over affected admin areas.
-
-- `bronze/flood_extents/`
-  - Flood extent rasters by return period (`flood_map_{ISO3}_rp*.tif`) plus empty fallback.
-  - Used to select, clip, and attach alert extent rasters to events.
 
 ## `forecast.py` flow (read -> output)
 
