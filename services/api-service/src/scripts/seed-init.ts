@@ -5,11 +5,8 @@ import { env } from '@api-service/src/env';
 import { GeoFeatureType } from '@api-service/src/geo-features/enum/geo-feature-type.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import {
-  FLOOD_ALERT_CLASS_MATRIX,
-  FLOOD_ALERT_CLASS_ORDER,
+  FLOOD_CLASSIFICATION_BY_COUNTRY,
   FLOOD_LEAD_TIME_SPECTRUM,
-  FLOOD_PROBABILITY_CLASS_LEVELS,
-  FLOOD_SEVERITY_CLASS_LEVELS,
   SEED_DROUGHT_ALERT_CONFIGS,
   SeedAlertConfig,
 } from '@api-service/src/scripts/seed-data/seed-alert-configs.const';
@@ -283,7 +280,22 @@ export class SeedInit {
 
     await this.prisma.$transaction(
       allConfigs.map((alertConfig) =>
-        this.prisma.alertConfig.create({ data: alertConfig }),
+        this.prisma.alertConfig.create({
+          data: {
+            countryCodeIso3: alertConfig.countryCodeIso3,
+            hazardType: alertConfig.hazardType,
+            spatialExtentName: alertConfig.spatialExtentName,
+            spatialExtentPlaceCodes: alertConfig.spatialExtentPlaceCodes,
+            temporalExtents:
+              alertConfig.temporalExtents as Prisma.InputJsonValue,
+            severityClassLevels:
+              alertConfig.severityClassLevels as unknown as Prisma.InputJsonValue,
+            probabilityClassLevels:
+              alertConfig.probabilityClassLevels as unknown as Prisma.InputJsonValue,
+            triggerAlertClass: alertConfig.triggerAlertClass,
+            triggerLeadTimeDuration: alertConfig.triggerLeadTimeDuration,
+          },
+        }),
       ),
     );
     this.logger.log(`Seeded ${allConfigs.length} alert configs`);
@@ -318,6 +330,15 @@ export class SeedInit {
       }
     }
 
+    const classificationConfig =
+      FLOOD_CLASSIFICATION_BY_COUNTRY[country.countryCodeIso3];
+    if (!classificationConfig) {
+      this.logger.warn(
+        `No flood classification config for ${country.countryCodeIso3}, skipping`,
+      );
+      return [];
+    }
+
     const configs: SeedAlertConfig[] = [];
     for (const [stationCode, placeCodes] of stationMap) {
       if (placeCodes.length === 0) {
@@ -329,12 +350,10 @@ export class SeedInit {
         spatialExtentName: stationCode,
         spatialExtentPlaceCodes: placeCodes,
         temporalExtents: [{ 'lead-time-spectrum': FLOOD_LEAD_TIME_SPECTRUM }],
-        severityClassLevels: FLOOD_SEVERITY_CLASS_LEVELS,
-        probabilityClassLevels: FLOOD_PROBABILITY_CLASS_LEVELS,
-        alertClassMatrix: FLOOD_ALERT_CLASS_MATRIX,
-        alertClassOrder: FLOOD_ALERT_CLASS_ORDER,
-        triggerAlertClass: 'high',
-        triggerLeadTimeDuration: 'P7D',
+        severityClassLevels: classificationConfig.severityClassLevels,
+        probabilityClassLevels: classificationConfig.probabilityClassLevels,
+        triggerAlertClass: classificationConfig.triggerAlertClass,
+        triggerLeadTimeDuration: classificationConfig.triggerLeadTimeDuration,
       });
     }
 

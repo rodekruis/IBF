@@ -32,12 +32,6 @@ describe('/ Alert Configs', () => {
       { label: 'med', threshold: 0.65 },
       { label: 'high', threshold: 0.85 },
     ],
-    alertClassMatrix: {
-      low: { low: 'low', med: 'low', high: 'med' },
-      med: { low: 'low', med: 'med', high: 'high' },
-      high: { low: 'med', med: 'high', high: 'high' },
-    },
-    alertClassOrder: ['low', 'med', 'high'],
     triggerAlertClass: 'high',
     triggerLeadTimeDuration: 'P7D',
   };

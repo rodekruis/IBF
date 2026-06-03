@@ -46,7 +46,7 @@ export class EventsService {
       eventLabel: this.deriveEventLabel(event.eventName),
       hazardType: event.hazardType as HazardType,
       forecastSources: event.forecastSources as ForecastSource[],
-      alertClass: event.alertClass as AlertClassType,
+      alertClass: event.alertClass as AlertClassType, // ##TODO resolve with AlertClass enum
       trigger: event.trigger,
       centroid: event.centroid as { latitude: number; longitude: number },
       startAt: event.startAt.toISOString(),

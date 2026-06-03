@@ -4,8 +4,50 @@ import { AlertConfigsService } from '@api-service/src/alert-configs/alert-config
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
+import {
+  AlertClass,
+  AlertClassificationLevel,
+} from '@api-service/src/classification-level.enum';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
 import { EnsembleMemberType, HazardType } from '@api-service/src/shared-enums';
+
+type AlertClassMatrix = Record<
+  AlertClassificationLevel,
+  Record<AlertClassificationLevel, AlertClass>
+>;
+
+const { single, low, med, high } = AlertClassificationLevel;
+
+// This matrix determines how severityClass and probabilityClass are combined into alertClass
+// - single * low/med/high (or vice versa) > low/med/high
+// - single * single > high
+// - low/med/high * low/med/high > low/med/high according to matrix
+const ALERT_CLASS_MATRIX: AlertClassMatrix = {
+  [single]: {
+    [single]: AlertClass.high,
+    [low]: AlertClass.low,
+    [med]: AlertClass.med,
+    [high]: AlertClass.high,
+  },
+  [low]: {
+    [single]: AlertClass.low,
+    [low]: AlertClass.low,
+    [med]: AlertClass.low,
+    [high]: AlertClass.med,
+  },
+  [med]: {
+    [single]: AlertClass.med,
+    [low]: AlertClass.low,
+    [med]: AlertClass.med,
+    [high]: AlertClass.high,
+  },
+  [high]: {
+    [single]: AlertClass.high,
+    [low]: AlertClass.med,
+    [med]: AlertClass.high,
+    [high]: AlertClass.high,
+  },
+};
 
 interface TimeIntervalGroup {
   readonly start: string;
@@ -51,7 +93,7 @@ export class AlertClassificationService {
     config: AlertConfigResponseDto,
   ): ClassificationResult {
     const timeIntervalGroups = this.groupByTimeInterval(severityData);
-    const alertClassPerTimeInterval = new Map<string, string | null>();
+    const alertClassPerTimeInterval = new Map<string, AlertClass | null>();
     const sortedSeverityLevels = this.sortByThresholdDescending(
       config.severityClassLevels,
     );
@@ -67,7 +109,6 @@ export class AlertClassificationService {
         group,
         sortedSeverityLevels,
         sortedProbabilityLevels,
-        config.alertClassMatrix,
       );
       alertClassPerTimeInterval.set(group.start, alertClassForTimeInterval);
 
@@ -81,10 +122,7 @@ export class AlertClassificationService {
       }
     }
 
-    const alertClass = this.computeAlertClass(
-      alertClassPerTimeInterval,
-      config.alertClassOrder,
-    );
+    const alertClass = this.computeAlertClass(alertClassPerTimeInterval);
 
     const reachesPeakAlertClassAt = this.computeReachesPeakAlertClassAt(
       alertClassPerTimeInterval,
@@ -147,8 +185,7 @@ export class AlertClassificationService {
     group: TimeIntervalGroup,
     sortedSeverityLevels: ClassLevelDto[],
     sortedProbabilityLevels: ClassLevelDto[],
-    alertClassMatrix: Record<string, Record<string, string | null>>,
-  ): string | null {
+  ): AlertClass | null {
     const severityClass = this.classifyValue(
       group.medianValue,
       sortedSeverityLevels,
@@ -172,13 +209,13 @@ export class AlertClassificationService {
       return null;
     }
 
-    return alertClassMatrix[severityClass]?.[probabilityClass] ?? null;
+    return ALERT_CLASS_MATRIX[severityClass]?.[probabilityClass] ?? null;
   }
 
   private classifyValue(
     value: number,
     sortedLevelsDescending: ClassLevelDto[],
-  ): string | null {
+  ): AlertClassificationLevel | null {
     for (const level of sortedLevelsDescending) {
       if (value >= level.threshold) {
         return level.label;
@@ -199,11 +236,12 @@ export class AlertClassificationService {
   }
 
   private computeAlertClass(
-    alertClassPerTimeInterval: Map<string, string | null>,
-    alertClassOrder: readonly string[],
-  ): string | null {
-    let highest: string | null = null;
+    alertClassPerTimeInterval: Map<string, AlertClass | null>,
+  ): AlertClass | null {
+    let highest: AlertClass | null = null;
     let highestOrder = -1;
+
+    const alertClassOrder = Object.values(AlertClass);
 
     for (const alertClass of alertClassPerTimeInterval.values()) {
       if (alertClass === null) {
@@ -219,8 +257,8 @@ export class AlertClassificationService {
   }
 
   private computeReachesPeakAlertClassAt(
-    alertClassPerTimeInterval: Map<string, string | null>,
-    overallAlertClass: string | null,
+    alertClassPerTimeInterval: Map<string, AlertClass | null>,
+    overallAlertClass: AlertClass | null,
     fallback: Date,
   ): Date {
     if (overallAlertClass === null) {
@@ -240,7 +278,7 @@ export class AlertClassificationService {
   }
 
   private computeTrigger(
-    alertClass: string | null,
+    alertClass: AlertClass | null,
     reachesPeakAlertClassAt: Date,
     issuedAt: Date,
     config: AlertConfigResponseDto,
@@ -249,9 +287,10 @@ export class AlertClassificationService {
       return false;
     }
 
-    const alertClassRank = config.alertClassOrder.indexOf(alertClass) + 1;
+    const alertClassOrder = Object.values(AlertClass);
+    const alertClassRank = alertClassOrder.indexOf(alertClass) + 1;
     const triggerRank =
-      config.alertClassOrder.indexOf(config.triggerAlertClass) + 1;
+      alertClassOrder.indexOf(config.triggerAlertClass as AlertClass) + 1;
 
     if (alertClassRank < triggerRank) {
       return false;

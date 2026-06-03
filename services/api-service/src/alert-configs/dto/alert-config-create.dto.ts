@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
+import { AlertClass } from '@api-service/src/classification-level.enum';
 import { HazardType } from '@api-service/src/shared-enums';
 
 export class AlertConfigCreateDto {
@@ -76,28 +77,10 @@ export class AlertConfigCreateDto {
   @Type(() => ClassLevelDto)
   public readonly probabilityClassLevels: ClassLevelDto[];
 
-  @ApiProperty({
-    example: {
-      low: { low: 'low', med: 'low', high: 'med' },
-      med: { low: 'low', med: 'med', high: 'high' },
-      high: { low: 'med', med: 'high', high: 'high' },
-    },
-  })
-  @IsObject()
-  public readonly alertClassMatrix: Record<
-    string,
-    Record<string, string | null>
-  >;
-
-  @ApiProperty({ type: [String], example: ['low', 'med', 'high'] })
-  @IsArray()
-  @IsString({ each: true })
-  public readonly alertClassOrder: string[];
-
   @ApiPropertyOptional({ example: 'high' })
   @IsOptional()
   @IsString()
-  public readonly triggerAlertClass?: string | null;
+  public readonly triggerAlertClass?: AlertClass | null;
 
   @ApiPropertyOptional({ example: 'P7D' })
   @IsOptional()

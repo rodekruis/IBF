@@ -26,8 +26,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     const viewTimestamp = '2026-03-25T00:00:00Z';
     const laterViewTimestamp = '2026-03-27T00:00:00Z';
 
-    // median=2 → severity 'low', runs all exceed 1.5 → prob=1.0 → 'high'
-    // matrix[low][high] = 'med', below triggerAlertClass 'high' → trigger false
+    // median=2 → severity 'low' (≥2), runs all exceed 2 → prob=1.0 → 'single'
+    // matrix[low][single] = 'low', below triggerAlertClass 'high' → trigger false
     const alertA = buildAlert({
       eventName: 'ETH_floods_station-A',
       severity: buildSeverityData({
@@ -38,8 +38,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       }),
     });
 
-    // Same station, upgraded severity: median=25 → severity 'high', prob=1.0 → 'high'
-    // matrix[high][high] = 'high', within P7D of issuedAt → trigger true
+    // Same station, upgraded severity: median=25 → severity 'high', prob=1.0 → 'single'
+    // matrix[high][single] = 'high', within P7D of issuedAt → trigger true
     const alertAUpgraded = buildAlert({
       eventName: 'ETH_floods_station-A',
       severity: buildSeverityData({
@@ -50,8 +50,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       }),
     });
 
-    // Different station: median=10 → severity 'med', prob=1.0 → 'high'
-    // matrix[med][high] = 'high', within P7D of issuedAt → trigger true
+    // Different station: median=10 → severity 'high', prob=1.0 → 'single'
+    // matrix[high][single] = 'high', within P7D of issuedAt → trigger true
     const alertB = buildAlert({
       eventName: 'ETH_floods_station-B',
       severity: buildSeverityData({
@@ -73,7 +73,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       eventName: 'ETH_floods_station-A',
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
-      alertClass: 'med',
+      alertClass: 'low',
       trigger: false,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
       lastUpdatedAt: '2026-03-23T12:00:00.000Z',

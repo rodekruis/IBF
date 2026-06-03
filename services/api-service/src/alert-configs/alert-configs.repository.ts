@@ -8,6 +8,7 @@ import { Prisma } from '@prisma/client';
 import { AlertConfigCreateDto } from '@api-service/src/alert-configs/dto/alert-config-create.dto';
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
+import { AlertClass } from '@api-service/src/classification-level.enum';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import { HazardType } from '@api-service/src/shared-enums';
 
@@ -34,12 +35,7 @@ export class AlertConfigsRepository {
         row.severityClassLevels as unknown as ClassLevelDto[],
       probabilityClassLevels:
         row.probabilityClassLevels as unknown as ClassLevelDto[],
-      alertClassMatrix: row.alertClassMatrix as Record<
-        string,
-        Record<string, string | null>
-      >,
-      alertClassOrder: row.alertClassOrder,
-      triggerAlertClass: row.triggerAlertClass,
+      triggerAlertClass: row.triggerAlertClass as AlertClass | null,
       triggerLeadTimeDuration: row.triggerLeadTimeDuration,
     };
   }
@@ -76,9 +72,6 @@ export class AlertConfigsRepository {
             alertConfigCreateDto.severityClassLevels as unknown as Prisma.InputJsonValue,
           probabilityClassLevels:
             alertConfigCreateDto.probabilityClassLevels as unknown as Prisma.InputJsonValue,
-          alertClassMatrix:
-            alertConfigCreateDto.alertClassMatrix as Prisma.InputJsonValue,
-          alertClassOrder: alertConfigCreateDto.alertClassOrder,
           triggerAlertClass: alertConfigCreateDto.triggerAlertClass ?? null,
           triggerLeadTimeDuration:
             alertConfigCreateDto.triggerLeadTimeDuration ?? null,

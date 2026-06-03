@@ -1,6 +1,10 @@
 import { Test } from '@nestjs/testing';
 import { Event } from '@prisma/client';
 
+import {
+  AlertClass,
+  AlertClassificationLevel,
+} from '@api-service/src/classification-level.enum';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
 import {
   AlertToEventService,
@@ -15,8 +19,10 @@ function buildClassificationResult(
   overrides: Partial<ClassificationResult> = {},
 ): ClassificationResult {
   return {
-    alertClassPerTimeInterval: new Map([['2026-04-01T00:00:00Z', 'max']]),
-    alertClass: 'max',
+    alertClassPerTimeInterval: new Map([
+      ['2026-04-01T00:00:00Z', AlertClass.high],
+    ]),
+    alertClass: AlertClass.high,
     startAt: new Date('2026-04-01T00:00:00Z'),
     endAt: new Date('2026-04-02T00:00:00Z'),
     reachesPeakAlertClassAt: new Date('2026-04-01T00:00:00Z'),
@@ -113,7 +119,7 @@ describe('AlertToEventService', () => {
         eventName: alert.eventName,
         hazardType: forecast.hazardType,
         forecastSources: forecast.forecastSources,
-        alertClass: 'max',
+        alertClass: AlertClassificationLevel.high,
         trigger: true,
         centroid: {
           latitude: alert.centroid.latitude,
@@ -147,7 +153,7 @@ describe('AlertToEventService', () => {
         eventName: 'ETH_floods_station-A',
         hazardType: HazardType.floods,
         forecastSources: [ForecastSource.glofas],
-        alertClass: 'med',
+        alertClass: AlertClassificationLevel.med,
         trigger: false,
         centroid: { latitude: 0.35, longitude: 32.6 },
         startAt: new Date('2026-04-03T00:00:00Z'),
@@ -173,7 +179,7 @@ describe('AlertToEventService', () => {
 
       expect(result).toBe(42);
       expect(repository.updateEvent).toHaveBeenCalledWith(42, {
-        alertClass: 'max',
+        alertClass: AlertClassificationLevel.high,
         trigger: true,
         startAt: new Date('2026-04-08T00:00:00Z'),
         reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
@@ -206,7 +212,7 @@ describe('AlertToEventService', () => {
         eventName: 'ETH_floods_station-A',
         hazardType: HazardType.floods,
         forecastSources: [ForecastSource.glofas],
-        alertClass: 'med',
+        alertClass: AlertClassificationLevel.med,
         trigger: false,
         centroid: { latitude: 0.35, longitude: 32.6 },
         startAt: new Date('2026-04-01T00:00:00Z'),
