@@ -38,7 +38,7 @@
     "typescript-eslint": "^8.51.0"
   },
   "dependencies": {
-    "dotenv": "17.2.3",
+    "dotenv": "17.4.2",
     "playwright": "^1.58.1"
   },
   "engines": {
