@@ -97,7 +97,7 @@ jobs:
           cache-dependency-path: '${{ env.e2eTestsPath }}/package-lock.json'
 
       - name: Set up pnpm (for the frontend)
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 9
 
