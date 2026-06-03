@@ -28,8 +28,8 @@ export class AlertCreateDto {
           end: '2026-03-20T23:59:59Z',
         },
         ensembleMemberType: EnsembleMemberType.median,
-        severityKey: 'water_discharge',
-        severityValue: 120.5,
+        severityKey: 'return_period',
+        severityValue: 5,
       },
       {
         timeInterval: {
@@ -37,8 +37,8 @@ export class AlertCreateDto {
           end: '2026-03-20T23:59:59Z',
         },
         ensembleMemberType: EnsembleMemberType.run,
-        severityKey: 'water_discharge',
-        severityValue: 135.0,
+        severityKey: 'return_period',
+        severityValue: 10,
       },
     ],
   })

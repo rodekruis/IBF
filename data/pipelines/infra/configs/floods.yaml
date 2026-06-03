@@ -23,7 +23,6 @@ run_targets:
     default_data_sources:
       - source: alert_configs_ibf_api
       - source: glofas_stations_ibf_api
-      - source: glofas_station_thresholds_seed_repo
       - source: admin_area_ibf_api
       - source: population_seed_repo
       - source: flood_extents_seed_repo
@@ -37,7 +36,6 @@ run_targets:
     default_data_sources:
       - source: alert_configs_ibf_api
       - source: glofas_stations_ibf_api
-      - source: glofas_station_thresholds_seed_repo
       - source: admin_area_ibf_api
       - source: population_seed_repo
       - source: flood_extents_seed_repo

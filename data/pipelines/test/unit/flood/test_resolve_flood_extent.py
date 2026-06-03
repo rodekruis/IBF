@@ -30,17 +30,16 @@ def _make_provider(return_periods: list[int]) -> FloodExtentProvider:
     return provider
 
 
-def _build_time_interval_severities(return_period: str):
+def _build_time_interval_severities(return_period: float):
     severity = SimpleNamespace(
-        median_discharge=1.0,
-        return_period=return_period,
+        median_return_period=return_period,
     )
     return [severity]
 
 
 def test_returns_exact_matching_return_period():
     provider = _make_provider([10, 50])
-    time_interval_severities = _build_time_interval_severities("50yr")
+    time_interval_severities = _build_time_interval_severities(50)
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
         selected = compute_alert_extent(
@@ -54,7 +53,7 @@ def test_returns_exact_matching_return_period():
 
 def test_falls_back_to_closest_lower_return_period():
     provider = _make_provider([5, 25])
-    time_interval_severities = _build_time_interval_severities("50yr")
+    time_interval_severities = _build_time_interval_severities(50)
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
         selected = compute_alert_extent(
@@ -68,7 +67,7 @@ def test_falls_back_to_closest_lower_return_period():
 
 def test_falls_back_to_empty_when_no_lower_return_period_exists():
     provider = _make_provider([50])
-    time_interval_severities = _build_time_interval_severities("10yr")
+    time_interval_severities = _build_time_interval_severities(10)
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
         selected = compute_alert_extent(
@@ -85,7 +84,7 @@ def test_falls_back_to_empty_when_no_lower_return_period_exists():
 
 def test_raises_when_no_available_return_periods():
     provider = _make_provider([])
-    time_interval_severities = _build_time_interval_severities("10yr")
+    time_interval_severities = _build_time_interval_severities(10)
 
     with pytest.raises(FileNotFoundError, match="no available return period"):
         compute_alert_extent(

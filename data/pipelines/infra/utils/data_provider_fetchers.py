@@ -78,8 +78,6 @@ def load_data_container(
                 api_client,
                 data_config,
             )
-        case DataSource.GLOFAS_STATION_THRESHOLDS_SEED_REPO:
-            return _load_glofas_station_thresholds(data_config, container)
         # TODO AB#42516: this will likely move out of this forecast-run, into a shared setup step that downloads the files once
         case DataSource.GLOFAS_DISCHARGE_FTP:
             return _load_glofas_discharge_ftp(data_config, container)
@@ -230,27 +228,6 @@ def _load_ibf_api_glofas_stations(
     container.data = api_client.get_glofas_stations(
         data_config.country_code_iso_3,
     )
-
-
-# TODO AB#42288: include as part of glofas stations api call
-def _load_glofas_station_thresholds(
-    config: DataSourceConfig, container: LoadedDataSource
-) -> None:
-    container.data_type = DataType.JSON_LIST
-    country = config.country_code_iso_3
-    url = f"{_get_seed_repo_uri()}/pipelines/{country}_station_thresholds.json"
-    data = download_json_source(url, check_count=False)
-    if data is None:
-        container.error = f"Failed to download station thresholds from '{url}'"
-        raise FileNotFoundError(container.error)
-    seen: set[str] = set()
-    thresholds: list[dict] = []
-    for entry in data:
-        station_code = entry["station_code"]
-        if station_code not in seen:
-            seen.add(station_code)
-            thresholds.append(entry)
-    container.data = thresholds
 
 
 def _load_glofas_discharge_ftp(

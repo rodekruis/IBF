@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -13,3 +13,4 @@ class LocationPoint:
     lat: float
     lon: float
     id: str
+    attributes: dict = field(default_factory=dict)

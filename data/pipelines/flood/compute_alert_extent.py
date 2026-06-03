@@ -1,22 +1,9 @@
 from __future__ import annotations
 
-import logging
-
 import numpy as np
 
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import RasterData
-
-# Supported return period labels used by flood alerts.
-
-RETURN_PERIODS: dict[str, int] = {
-    "5yr": 5,
-    "10yr": 10,
-    "20yr": 20,
-    "25yr": 25,
-    "50yr": 50,
-    "100yr": 100,
-}
 
 
 def compute_alert_extent(
@@ -37,36 +24,15 @@ def compute_alert_extent(
     return flood_extent
 
 
-def _extract_return_period_label_value(return_period_label: str) -> int | None:
-    normalized_label = return_period_label.strip().lower()
-
-    if normalized_label.endswith("yr"):
-        value_text = normalized_label[:-2].strip()
-        if value_text.isdigit():
-            return int(value_text)
-
-    return None
-
-
 def _resolve_requested_return_period_value(
     time_interval_severities: list,
 ) -> int | None:
     highest_return_period = max(
         time_interval_severities,
-        key=lambda s: s.median_discharge,
-    ).return_period
+        key=lambda s: s.median_return_period,
+    ).median_return_period
 
-    return_period = RETURN_PERIODS.get(highest_return_period)
-    if return_period is not None:
-        return return_period
-
-    parsed_return_period = _extract_return_period_label_value(highest_return_period)
-    if parsed_return_period is None:
-        logging.warning(
-            f"Unknown return period '{highest_return_period}', using empty fallback"
-        )
-
-    return parsed_return_period
+    return int(highest_return_period) if highest_return_period > 0 else None
 
 
 def _resolve_flood_extent(

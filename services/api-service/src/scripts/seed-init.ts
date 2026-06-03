@@ -367,7 +367,12 @@ export class SeedInit {
     const entries = (await response.json()) as StationThresholdEntry[];
     const seenStations = new Map<
       string,
-      { name: string; lat: number; lon: number }
+      {
+        name: string;
+        lat: number;
+        lon: number;
+        thresholds: { return_period: number; threshold_value: number }[];
+      }
     >();
     for (const entry of entries) {
       if (!seenStations.has(entry.station_code)) {
@@ -375,6 +380,7 @@ export class SeedInit {
           name: entry.station_name,
           lat: entry.lat,
           lon: entry.lon,
+          thresholds: entry.thresholds,
         });
       }
     }
@@ -388,8 +394,11 @@ export class SeedInit {
         geometry: {
           type: 'Point',
           coordinates: [station.lon, station.lat],
-        },
-        attributes: { name: station.name },
+        } as Prisma.InputJsonValue,
+        attributes: {
+          name: station.name,
+          thresholds: station.thresholds,
+        } as Prisma.InputJsonValue,
       }),
     );
 
