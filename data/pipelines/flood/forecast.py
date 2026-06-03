@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import logging
+from typing import cast
 
 from pipelines.flood.compute_alert_extent import compute_alert_extent
 from pipelines.flood.determine_alerts import (
     determine_temporal_extent,
     ReturnPeriodThresholds,
+    ReturnPeriodThresholdValue,
 )
 from pipelines.flood.determine_exposure import (
     compute_population_exposed,
@@ -66,7 +68,13 @@ def calculate_flood_forecasts(
 
     ### Step 2 - Extract discharge per station from GloFAS data ###
     glofas_station_thresholds: list[ReturnPeriodThresholds] = [
-        {"station_code": station.id, "thresholds": station.attributes["thresholds"]}
+        {
+            "station_code": station.id,
+            "thresholds": cast(
+                list[ReturnPeriodThresholdValue],
+                station.attributes["thresholds"],
+            ),
+        }
         for station in glofas_stations.values()
         if station.attributes.get("thresholds")
     ]
