@@ -169,7 +169,10 @@ model AdminArea {
   nameEn            String
   countryCodeIso3   String
   country           Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
-  attributes        Json? // all parent place codes, e.g. { "ADM0_PCODE": "KEN", "ADM1_PCODE": "KE001" }
+  placeCodeLevel1   String?
+  placeCodeLevel2   String?
+  placeCodeLevel3   String?
+  attributes        Json? // e.g. { "POPULATION": 215293 }
   geometry          Unsupported("geometry(MultiPolygon, 4326)")?
 
   @@index([countryCodeIso3])

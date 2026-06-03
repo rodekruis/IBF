@@ -165,6 +165,9 @@ export class SeedInit {
             ${area.adminLevel},
             ${area.nameEn},
             ${area.countryCodeIso3},
+            ${area.placeCodeLevel1},
+            ${area.placeCodeLevel2},
+            ${area.placeCodeLevel3},
             ${attrs}::jsonb,
             NOW(),
             NOW(),
@@ -173,7 +176,7 @@ export class SeedInit {
         });
         await tx.$executeRaw`
           INSERT INTO "api-service"."admin-area"
-            ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", attributes, created, updated, geometry)
+            ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", "placeCodeLevel1", "placeCodeLevel2", "placeCodeLevel3", attributes, created, updated, geometry)
           VALUES ${Prisma.join(values)}`;
       }
     });
@@ -190,6 +193,9 @@ export class SeedInit {
         adminLevel: number;
         nameEn: string;
         countryCodeIso3: string;
+        placeCodeLevel1: string | null;
+        placeCodeLevel2: string | null;
+        placeCodeLevel3: string | null;
         attributes: Prisma.InputJsonValue;
         geometry: Record<string, unknown>;
       }
@@ -219,20 +225,19 @@ export class SeedInit {
       return undefined;
     }
 
-    // Collect all parent place codes into attributes
-    const attributes: Record<string, string> = {};
-    for (let level = 0; level < file.adminLevel; level++) {
-      const parentPcode = props[`ADM${level}_PCODE`];
-      if (parentPcode) {
-        attributes[`ADM${level}_PCODE`] = parentPcode;
-      }
-    }
+    // Collect attributes
+    const attributes: Record<string, unknown> = {
+      POPULATION: typeof props.POPULATION === 'number' ? props.POPULATION : 0,
+    };
 
     return {
       placeCode,
       adminLevel: file.adminLevel,
       nameEn,
       countryCodeIso3: file.countryCodeIso3,
+      placeCodeLevel1: props.ADM1_PCODE ?? null,
+      placeCodeLevel2: props.ADM2_PCODE ?? null,
+      placeCodeLevel3: props.ADM3_PCODE ?? null,
       attributes: attributes as unknown as Prisma.InputJsonValue,
       geometry: this.normalizeToMultiPolygon(feature.geometry),
     };
