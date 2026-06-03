@@ -56,6 +56,22 @@ The following URLs are now available
 
 In the `go-web-app` directory, follow [the instructions from that repository](https://github.com/rodekruis/go-web-app/tree/ibf-main#local-development) on how to install dependencies and start the frontend.
 
+#### Frontend (`nrw-standalone`, in this repository)
+
+Alternatively, the [NRW standalone front-end](/portal/nrw-standalone/README.md) bundled in this repository can be built and served locally. From the `IBF` repository root:
+
+- `npm run setup:frontend` — one-time: initialise the `go-web-app` submodule (sparse checkout), create its `.env`, and install dependencies
+- `npm run start:frontend` — build and serve the standalone front-end on [http://localhost:5173](http://localhost:5173)
+
+#### End-to-end tests (`e2e`)
+
+End-to-end tests (Playwright) live in [`/e2e`](/e2e/README.md) and run against a running backend and `nrw-standalone` front-end. From the `IBF` repository root:
+
+- `npm run install:e2e` — one-time: install dependencies and Playwright browsers
+- `npm run test:e2e` — run the end-to-end tests
+
+See the [e2e README](/e2e/README.md) for the full setup.
+
 #### Pipelines (`IBF/data`)
 
 The code for the pipelines lives in the `IBF` repository under `/data`. See the [readme](/data/README.md) for setup.
