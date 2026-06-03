@@ -13,4 +13,4 @@ class LocationPoint:
     lat: float
     lon: float
     id: str
-    attributes: dict = field(default_factory=dict)
+    attributes: dict[str, object] = field(default_factory=dict)

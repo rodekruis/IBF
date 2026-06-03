@@ -26,17 +26,17 @@ def compute_alert_extent(
 
 def _resolve_requested_return_period_value(
     time_interval_severities: list,
-) -> int | None:
+) -> float | None:
     highest_return_period = max(
         time_interval_severities,
         key=lambda s: s.median_return_period,
     ).median_return_period
 
-    return int(highest_return_period) if highest_return_period > 0 else None
+    return float(highest_return_period) if highest_return_period > 0 else None
 
 
 def _resolve_flood_extent(
-    return_period: int | None,
+    return_period: float | None,
     flood_extent_provider: FloodExtentProvider,
 ) -> RasterData:
     """
@@ -47,10 +47,13 @@ def _resolve_flood_extent(
     """
     available = flood_extent_provider.available_return_periods
 
-    if return_period is not None and return_period in available:
-        return flood_extent_provider.get_raster(return_period)
-
     if return_period is not None:
+        exact_match = (
+            int(return_period) if return_period == int(return_period) else None
+        )
+        if exact_match is not None and exact_match in available:
+            return flood_extent_provider.get_raster(exact_match)
+
         fallback_value = max(
             (rp for rp in available if rp <= return_period),
             default=None,
