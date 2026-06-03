@@ -8,6 +8,9 @@ This project is a wrapper of the core NRW files to allow standalone deployment a
 
 Note: This project requires a running DB populated with admin area data. See [the main README](../../README.md) for the latest information on the setup.
 
+> [!TIP]
+> From the repository root, `npm run setup:frontend` performs the setup steps 1–4 below in one command. To build and serve the app you can either run `pnpm start` here (dev server with hot reload, step 5), or `npm run start:frontend` from the root (builds and serves a static preview — this is what the [e2e tests](../../e2e/README.md) use). Both serve on `http://localhost:5173`.
+
 1. Copy the `sample.env` file, rename it as `.env`, and set the required values.
 1. Run `git submodule update --init` to get the files in the submodule. This can be done from either the root or from `portal/nrw-standalone`. This will need to be rerun any time the submodule is updated.
 1. Set up the submodule for a sparse checkout. From `portal/nrw-standalone/src/go-web-app`, run this: `git sparse-checkout set --no-cone '/app/src/utils/nrw/' '/app/src/components/NrwMap/'`
