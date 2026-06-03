@@ -21,17 +21,17 @@ export class AdminAreaCreateDto {
   @ApiPropertyOptional({ example: 'KE010', nullable: true })
   @IsOptional()
   @IsString()
-  public readonly placeCodeLevel1?: string;
+  public readonly placeCodeLevel1?: string | null;
 
   @ApiPropertyOptional({ example: 'KE010222', nullable: true })
   @IsOptional()
   @IsString()
-  public readonly placeCodeLevel2?: string;
+  public readonly placeCodeLevel2?: string | null;
 
   @ApiPropertyOptional({ example: 'KE010222333', nullable: true })
   @IsOptional()
   @IsString()
-  public readonly placeCodeLevel3?: string;
+  public readonly placeCodeLevel3?: string | null;
 
   @ApiPropertyOptional({
     example: { POPULATION: 215293 },

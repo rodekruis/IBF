@@ -132,6 +132,9 @@ export class AdminAreasRepository {
             adminLevel: adminAreaUpdateDto.adminLevel,
             nameEn: adminAreaUpdateDto.nameEn,
             countryCodeIso3: adminAreaUpdateDto.countryCodeIso3,
+            placeCodeLevel1: adminAreaUpdateDto.placeCodeLevel1,
+            placeCodeLevel2: adminAreaUpdateDto.placeCodeLevel2,
+            placeCodeLevel3: adminAreaUpdateDto.placeCodeLevel3,
             ...(adminAreaUpdateDto.attributes !== undefined && {
               attributes:
                 adminAreaUpdateDto.attributes as unknown as Prisma.InputJsonValue,
