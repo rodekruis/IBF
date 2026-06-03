@@ -1,8 +1,8 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { HazardType, Layer } from '@api-service/src/alerts/enum/shared-enums';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { SEED_COUNTRIES } from '@api-service/src/scripts/seed-data/seed-countries.const';
+import { HazardType, Layer } from '@api-service/src/shared-enums';
 import {
   getAccessToken,
   getServer,

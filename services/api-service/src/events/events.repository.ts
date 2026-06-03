@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Event, Prisma } from '@prisma/client';
 
+import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import {
   EnsembleMemberType,
   HazardType,
   Layer,
-} from '@api-service/src/alerts/enum/shared-enums';
-import { PrismaService } from '@api-service/src/prisma/prisma.service';
+} from '@api-service/src/shared-enums';
 
 interface EventAlertHistorySeverity {
   readonly timeInterval: {

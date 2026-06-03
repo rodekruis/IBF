@@ -1,10 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 
-import {
-  ForecastSource,
-  HazardType,
-} from '@api-service/src/alerts/enum/shared-enums';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
+import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
 import {
   buildAlert,
   buildForecast,

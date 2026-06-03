@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import { IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
 
 import { TimeIntervalDto } from '@api-service/src/alerts/dto/time-interval.dto';
-import { EnsembleMemberType } from '@api-service/src/alerts/enum/shared-enums';
+import { EnsembleMemberType } from '@api-service/src/shared-enums';
 
 // The data pipelines also use this definition.
 // If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py

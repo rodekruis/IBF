@@ -2,14 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
 
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
-import {
-  ForecastSource,
-  HazardType,
-} from '@api-service/src/alerts/enum/shared-enums';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
 import { EventAlertHistoryRecord } from '@api-service/src/events/events.repository';
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
+import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
 
 export interface ForecastMetadata {
   readonly hazardType: HazardType;

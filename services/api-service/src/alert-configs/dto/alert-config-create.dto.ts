@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
-import { HazardType } from '@api-service/src/alerts/enum/shared-enums';
+import { HazardType } from '@api-service/src/shared-enums';
 
 export class AlertConfigCreateDto {
   @ApiProperty({ example: 'KEN' })

@@ -4,13 +4,13 @@ import * as request from 'supertest';
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
+import { env } from '@api-service/src/env';
 import {
   EnsembleMemberType,
   ForecastSource,
   HazardType,
   Layer,
-} from '@api-service/src/alerts/enum/shared-enums';
-import { env } from '@api-service/src/env';
+} from '@api-service/src/shared-enums';
 import { getServer } from '@api-service/test/helpers/utility.helper';
 
 export async function createAlerts(

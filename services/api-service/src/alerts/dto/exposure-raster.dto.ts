@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import { IsEnum, IsString, ValidateNested } from 'class-validator';
 
 import { RasterExtentDto } from '@api-service/src/alerts/dto/raster-extent.dto';
-import { Layer } from '@api-service/src/alerts/enum/shared-enums';
+import { Layer } from '@api-service/src/shared-enums';
 
 // The data pipelines also use this definition.
 // If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py
