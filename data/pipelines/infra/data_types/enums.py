@@ -27,3 +27,8 @@ class Layer(StrEnum):
     ALERT_EXTENT = "alert_extent"
     POPULATION_EXPOSED = "population_exposed"
     GLOFAS_STATIONS = "glofas_stations"
+
+
+class SeverityKey(StrEnum):
+    RETURN_PERIOD = "return_period"
+    PERCENTILE = "percentile"

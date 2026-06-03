@@ -11,6 +11,7 @@ from pipelines.infra.data_types.dtos import (
     ForecastSource,
     HazardType,
     Layer,
+    SeverityKey,
 )
 from pipelines.infra.utils.api_client import ApiClient
 
@@ -35,7 +36,7 @@ def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.RUN,
-        severity_key="return_period",
+        severity_key=SeverityKey.RETURN_PERIOD,
         severity_value=0,
     )
     submitter.add_severity_data(
@@ -43,7 +44,7 @@ def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
         time_interval_start="2026-03-20T00:00:00Z",
         time_interval_end="2026-03-20T23:59:59Z",
         ensemble_member_type=EnsembleMemberType.MEDIAN,
-        severity_key="return_period",
+        severity_key=SeverityKey.RETURN_PERIOD,
         severity_value=0,
     )
     submitter.add_admin_area_exposure(

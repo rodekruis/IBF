@@ -54,3 +54,8 @@ export enum MapLayerDisplayType {
   // Vector tiles, used for dense vector information such as many buildings and roads
   VectorTile = 'vector_tile',
 }
+
+export enum SeverityKey {
+  returnPeriod = 'return_period',
+  percentile = 'percentile',
+}

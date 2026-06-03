@@ -11,6 +11,7 @@ import {
   ForecastSource,
   HazardType,
   Layer,
+  SeverityKey,
 } from '@api-service/src/shared-enums';
 
 function createMockValidForecast(
@@ -39,7 +40,7 @@ function createMockValidAlert(
           end: new Date('2026-03-20T23:59:59Z'),
         },
         ensembleMemberType: EnsembleMemberType.median,
-        severityKey: 'return_period',
+        severityKey: SeverityKey.returnPeriod,
         severityValue: 5,
       },
       {
@@ -48,7 +49,7 @@ function createMockValidAlert(
           end: new Date('2026-03-20T23:59:59Z'),
         },
         ensembleMemberType: EnsembleMemberType.run,
-        severityKey: 'return_period',
+        severityKey: SeverityKey.returnPeriod,
         severityValue: 10,
       },
     ],
@@ -187,7 +188,7 @@ describe('AlertsService', () => {
                 end: new Date('2026-03-20T00:00:00Z'),
               },
               ensembleMemberType: EnsembleMemberType.median,
-              severityKey: 'k',
+              severityKey: SeverityKey.returnPeriod,
               severityValue: 1,
             },
             {
@@ -196,7 +197,7 @@ describe('AlertsService', () => {
                 end: new Date('2026-03-20T00:00:00Z'),
               },
               ensembleMemberType: EnsembleMemberType.run,
-              severityKey: 'k',
+              severityKey: SeverityKey.returnPeriod,
               severityValue: 1,
             },
           ],
@@ -226,7 +227,7 @@ describe('AlertsService', () => {
                 end: new Date('2026-03-20T23:59:59Z'),
               },
               ensembleMemberType: EnsembleMemberType.run,
-              severityKey: 'k',
+              severityKey: SeverityKey.returnPeriod,
               severityValue: 1,
             },
           ],
@@ -256,7 +257,7 @@ describe('AlertsService', () => {
                 end: new Date('2026-03-20T23:59:59Z'),
               },
               ensembleMemberType: EnsembleMemberType.median,
-              severityKey: 'k',
+              severityKey: SeverityKey.returnPeriod,
               severityValue: 1,
             },
           ],

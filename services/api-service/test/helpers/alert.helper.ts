@@ -10,6 +10,7 @@ import {
   ForecastSource,
   HazardType,
   Layer,
+  SeverityKey,
 } from '@api-service/src/shared-enums';
 import { getServer } from '@api-service/test/helpers/utility.helper';
 
@@ -55,7 +56,7 @@ export function buildAlert(
           end: tomorrow,
         },
         ensembleMemberType: EnsembleMemberType.median,
-        severityKey: 'return_period',
+        severityKey: SeverityKey.returnPeriod,
         severityValue: 5,
       },
       {
@@ -64,7 +65,7 @@ export function buildAlert(
           end: tomorrow,
         },
         ensembleMemberType: EnsembleMemberType.run,
-        severityKey: 'return_period',
+        severityKey: SeverityKey.returnPeriod,
         severityValue: 10,
       },
     ],
@@ -117,13 +118,13 @@ export function buildSeverityData({
     {
       timeInterval: { start, end },
       ensembleMemberType: EnsembleMemberType.median,
-      severityKey: 'return_period',
+      severityKey: SeverityKey.returnPeriod,
       severityValue: medianValue,
     },
     ...runValues.map((value) => ({
       timeInterval: { start, end },
       ensembleMemberType: EnsembleMemberType.run as const,
-      severityKey: 'return_period',
+      severityKey: SeverityKey.returnPeriod,
       severityValue: value,
     })),
   ];

@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
+import { IsEnum, IsNumber, ValidateNested } from 'class-validator';
 
 import { TimeIntervalDto } from '@api-service/src/alerts/dto/time-interval.dto';
-import { EnsembleMemberType } from '@api-service/src/shared-enums';
+import { EnsembleMemberType, SeverityKey } from '@api-service/src/shared-enums';
 
 // The data pipelines also use this definition.
 // If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py
@@ -17,9 +17,9 @@ export class SeverityDto {
   @IsEnum(EnsembleMemberType)
   public readonly ensembleMemberType: EnsembleMemberType;
 
-  @ApiProperty({ example: 'return_period' })
-  @IsString()
-  public readonly severityKey: string;
+  @ApiProperty({ example: SeverityKey.returnPeriod, enum: SeverityKey })
+  @IsEnum(SeverityKey)
+  public readonly severityKey: SeverityKey;
 
   @ApiProperty({ example: 0 })
   @IsNumber()

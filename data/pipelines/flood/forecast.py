@@ -19,7 +19,7 @@ from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import Centroid
-from pipelines.infra.data_types.enums import EnsembleMemberType, Layer
+from pipelines.infra.data_types.enums import EnsembleMemberType, Layer, SeverityKey
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
@@ -178,7 +178,7 @@ def calculate_flood_forecasts(
                         time_interval_start=severity.time_interval_start,
                         time_interval_end=severity.time_interval_end,
                         ensemble_member_type=EnsembleMemberType.RUN,
-                        severity_key="return_period",
+                        severity_key=SeverityKey.RETURN_PERIOD,
                         severity_value=severity.ensemble_return_periods[i],
                     )
                 data_submitter.add_severity_data(
@@ -186,7 +186,7 @@ def calculate_flood_forecasts(
                     time_interval_start=severity.time_interval_start,
                     time_interval_end=severity.time_interval_end,
                     ensemble_member_type=EnsembleMemberType.MEDIAN,
-                    severity_key="return_period",
+                    severity_key=SeverityKey.RETURN_PERIOD,
                     severity_value=severity.median_return_period,
                 )
 
