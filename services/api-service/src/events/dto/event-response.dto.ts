@@ -21,7 +21,7 @@ export class EventResponseDto {
   @ApiProperty({ enum: HazardType, isArray: true })
   public readonly hazardType: HazardType[];
 
-  @ApiProperty({ type: [String] })
+  @ApiProperty({ enum: DataSourceType, isArray: true })
   public readonly forecastSources: DataSourceType[];
 
   @ApiProperty({ enum: AlertClassType })

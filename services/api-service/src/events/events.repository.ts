@@ -182,7 +182,7 @@ export class EventsRepository {
         (row) => ({
           placeCode: row.placeCode,
           adminLevel: row.adminLevel,
-          name: nameByPlaceCode.get(row.placeCode) ?? '',
+          name: nameByPlaceCode.get(row.placeCode) ?? row.placeCode,
           exposure: [{ type: row.layer as Layer, exposed: row.value }],
         }),
       );

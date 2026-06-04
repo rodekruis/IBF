@@ -23,6 +23,7 @@ export class ExposedAdminAreaDto {
   @ApiProperty({ example: 1 })
   public readonly adminLevel: number;
 
+  @ApiProperty({ example: 'Region A' })
   public readonly name: string;
 
   @ApiProperty({ type: [AdminAreaExposureDto] })
