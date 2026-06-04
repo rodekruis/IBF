@@ -172,6 +172,7 @@ model AdminArea {
   placeCodeLevel1   String?
   placeCodeLevel2   String?
   placeCodeLevel3   String?
+  placeCodeLevel4   String?
   attributes        Json? // e.g. { "POPULATION": 215293 }
   geometry          Unsupported("geometry(MultiPolygon, 4326)")?
 

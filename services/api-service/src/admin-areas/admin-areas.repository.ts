@@ -84,6 +84,7 @@ export class AdminAreasRepository {
             placeCodeLevel1: adminAreaCreateDto.placeCodeLevel1,
             placeCodeLevel2: adminAreaCreateDto.placeCodeLevel2,
             placeCodeLevel3: adminAreaCreateDto.placeCodeLevel3,
+            placeCodeLevel4: adminAreaCreateDto.placeCodeLevel4,
             attributes:
               (adminAreaCreateDto.attributes as Prisma.InputJsonValue) ??
               undefined,
@@ -135,6 +136,7 @@ export class AdminAreasRepository {
             placeCodeLevel1: adminAreaUpdateDto.placeCodeLevel1,
             placeCodeLevel2: adminAreaUpdateDto.placeCodeLevel2,
             placeCodeLevel3: adminAreaUpdateDto.placeCodeLevel3,
+            placeCodeLevel4: adminAreaUpdateDto.placeCodeLevel4,
             ...(adminAreaUpdateDto.attributes !== undefined && {
               attributes:
                 adminAreaUpdateDto.attributes as unknown as Prisma.InputJsonValue,

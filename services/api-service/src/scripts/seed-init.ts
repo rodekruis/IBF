@@ -168,6 +168,7 @@ export class SeedInit {
             ${area.placeCodeLevel1},
             ${area.placeCodeLevel2},
             ${area.placeCodeLevel3},
+            ${area.placeCodeLevel4},
             ${attrs}::jsonb,
             NOW(),
             NOW(),
@@ -176,7 +177,7 @@ export class SeedInit {
         });
         await tx.$executeRaw`
           INSERT INTO "api-service"."admin-area"
-            ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", "placeCodeLevel1", "placeCodeLevel2", "placeCodeLevel3", attributes, created, updated, geometry)
+            ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", "placeCodeLevel1", "placeCodeLevel2", "placeCodeLevel3", "placeCodeLevel4", attributes, created, updated, geometry)
           VALUES ${Prisma.join(values)}`;
       }
     });
@@ -196,6 +197,7 @@ export class SeedInit {
         placeCodeLevel1: string | null;
         placeCodeLevel2: string | null;
         placeCodeLevel3: string | null;
+        placeCodeLevel4: string | null;
         attributes: Prisma.InputJsonValue;
         geometry: Record<string, unknown>;
       }
@@ -238,6 +240,7 @@ export class SeedInit {
       placeCodeLevel1: props.ADM1_PCODE ?? null,
       placeCodeLevel2: props.ADM2_PCODE ?? null,
       placeCodeLevel3: props.ADM3_PCODE ?? null,
+      placeCodeLevel4: props.ADM4_PCODE ?? null,
       attributes: attributes as unknown as Prisma.InputJsonValue,
       geometry: this.normalizeToMultiPolygon(feature.geometry),
     };
