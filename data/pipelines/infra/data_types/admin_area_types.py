@@ -48,17 +48,12 @@ class AdminAreasSet:
         for feature in feature_collection.get("features", []):
             props = feature.get("properties", {})
             geom = feature.get("geometry") or {}
-            attributes = props.get("attributes") or {}
 
             parent_pcodes: dict[int, str] = {}
-            if isinstance(attributes, dict):
-                for key, value in attributes.items():
-                    if key.startswith("ADM") and key.endswith("_PCODE") and value:
-                        try:
-                            level = int(key[3:-6])
-                        except ValueError:
-                            continue
-                        parent_pcodes[level] = str(value)
+            for level in range(1, 5):
+                value = props.get(f"placeCodeLevel{level}")
+                if value:
+                    parent_pcodes[level] = str(value)
 
             pcode = props.get("placeCode", "")
             admin_areas[pcode] = AdminArea(
