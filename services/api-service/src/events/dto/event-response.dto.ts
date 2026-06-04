@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
+import { MapLayerDetailsDto } from '@api-service/src/events/dto/map-layer-details.dto';
+import {
+  AlertClassType,
+  DataSourceType,
+  HazardType,
+} from '@api-service/src/shared-enums';
 
 export class EventResponseDto {
   @ApiProperty()
@@ -12,39 +18,42 @@ export class EventResponseDto {
   @ApiProperty()
   public readonly eventLabel: string;
 
-  @ApiProperty()
-  public readonly hazardType: string;
+  @ApiProperty({ enum: HazardType, isArray: true })
+  public readonly hazardType: HazardType[];
 
   @ApiProperty({ type: [String] })
-  public readonly forecastSources: string[];
+  public readonly forecastSources: DataSourceType[];
 
-  @ApiProperty()
-  public readonly alertClass: string;
+  @ApiProperty({ enum: AlertClassType })
+  public readonly alertClass: AlertClassType;
 
   @ApiProperty()
   public readonly trigger: boolean;
 
-  @ApiProperty({ type: Object, example: { latitude: 0.35, longitude: 32.6 } })
-  public readonly centroid: { latitude: number; longitude: number };
+  @ApiProperty({ type: Array, example: [32.6, 0.35] })
+  public readonly centroid: [number, number]; // lon, lat
 
-  @ApiProperty()
-  public readonly startAt: Date;
+  @ApiProperty({ example: '2026-03-20T23:59:59Z' })
+  public readonly startAt: string;
 
-  @ApiProperty()
-  public readonly reachesPeakAlertClassAt: Date;
+  @ApiProperty({ example: '2026-03-20T23:59:59Z' })
+  public readonly reachesPeakAlertClassAt: string;
 
-  @ApiProperty()
-  public readonly endAt: Date;
+  @ApiProperty({ example: '2026-03-20T23:59:59Z' })
+  public readonly endAt: string;
 
-  @ApiProperty()
-  public readonly firstIssuedAt: Date;
+  @ApiProperty({ example: '2026-03-20T23:59:59Z' })
+  public readonly firstIssuedAt: string;
 
-  @ApiProperty()
-  public readonly lastUpdatedAt: Date;
+  @ApiProperty({ example: '2026-03-20T23:59:59Z' })
+  public readonly lastUpdatedAt: string;
 
   @ApiProperty()
   public readonly isOngoing: boolean;
 
   @ApiProperty({ type: [ExposedAdminAreaDto] })
   public readonly exposedAdminAreas: ExposedAdminAreaDto[];
+
+  @ApiProperty({ type: [MapLayerDetailsDto] })
+  public readonly availableLayers: MapLayerDetailsDto[];
 }

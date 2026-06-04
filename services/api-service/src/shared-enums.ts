@@ -25,3 +25,47 @@ export enum Layer {
   // geo-feature layers
   glofasStations = 'glofas_stations',
 }
+
+// Enum to identify alert classes
+// These then point to the color/style/localized string in the front end.
+// A given country may support only a subset of these.
+export enum AlertClassType {
+  High = 'high',
+  Medium = 'medium',
+  Low = 'low',
+}
+
+// Sources for the data used in events, map layers, etc.
+export enum DataSourceType {
+  Glofas = 'glofas',
+  Other = 'other',
+}
+
+// Key to identify the type of map layer info being shown.
+// This is used to style/label it on the frontend.
+export enum MapLayerInfoType {
+  Population = 'population',
+  EventExtent = 'event_extent',
+  RedCrossBranches = 'red_cross_branches',
+  Clinics = 'clinics',
+}
+
+export enum MapLayerDisplayType {
+  // Image data, i.e. PNGs
+  Raster = 'raster',
+  // Vector shape data for lines and polygons, including admin areas
+  Shape = 'shape',
+  // Vector point data, such as for glofas locations
+  Point = 'point',
+  // Vector tiles, used for dense vector information such as many buildings and roads
+  VectorTile = 'vector_tile',
+}
+
+// Units for labelling values in the UI
+export enum MeasurementUnits {
+  Km = 'km',
+  Buildings = 'buildings',
+  People = 'people',
+  Locations = 'locations',
+  None = '',
+}

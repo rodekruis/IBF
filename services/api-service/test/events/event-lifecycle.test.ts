@@ -71,7 +71,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
       eventName: 'ETH_floods_station-A',
-      hazardType: HazardType.floods,
+      hazardType: [HazardType.floods],
       forecastSources: [ForecastSource.glofas],
       alertClass: 'med',
       trigger: false,

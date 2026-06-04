@@ -27,6 +27,7 @@ export interface EventAlertHistoryRecord {
 export interface ExposedAdminAreaRecord {
   readonly placeCode: string;
   readonly adminLevel: number;
+  readonly name: string;
   readonly exposure: { readonly type: Layer; readonly exposed: number }[];
 }
 
@@ -162,6 +163,17 @@ export class EventsRepository {
       },
     });
 
+    const allPlaceCodes = latestAlerts.flatMap((alert) =>
+      alert.exposureAdminArea.map((area) => area.placeCode),
+    );
+    const adminAreas = await this.prisma.adminArea.findMany({
+      where: { placeCode: { in: allPlaceCodes } },
+      select: { placeCode: true, nameEn: true },
+    });
+    const nameByPlaceCode = new Map(
+      adminAreas.map((area) => [area.placeCode, area.nameEn]),
+    );
+
     for (const alert of latestAlerts) {
       if (alert.eventId === null) {
         continue;
@@ -170,6 +182,7 @@ export class EventsRepository {
         (row) => ({
           placeCode: row.placeCode,
           adminLevel: row.adminLevel,
+          name: nameByPlaceCode.get(row.placeCode) ?? '',
           exposure: [{ type: row.layer as Layer, exposed: row.value }],
         }),
       );
