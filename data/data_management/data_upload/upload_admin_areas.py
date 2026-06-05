@@ -165,12 +165,11 @@ def insert_admin_areas_data(connection, features: list[dict]):
                 name_en = props.get(f"ADM{admin_level}_EN")
                 place_code = props.get(f"ADM{admin_level}_PCODE")
 
-            # Parent place codes per level. Only levels strictly above the
-            # feature's own admin level are populated; the rest stay NULL.
-            place_code_level_1 = props.get("ADM1_PCODE") if admin_level > 1 else None
-            place_code_level_2 = props.get("ADM2_PCODE") if admin_level > 2 else None
-            place_code_level_3 = props.get("ADM3_PCODE") if admin_level > 3 else None
-            place_code_level_4 = props.get("ADM4_PCODE") if admin_level > 4 else None
+            # Set all place codes present in the data
+            place_code_level_1 = props.get("ADM1_PCODE")
+            place_code_level_2 = props.get("ADM2_PCODE")
+            place_code_level_3 = props.get("ADM3_PCODE")
+            place_code_level_4 = props.get("ADM4_PCODE")
 
             if not name_en or not place_code:
                 print(f"Error: could not parse: {props}.")
