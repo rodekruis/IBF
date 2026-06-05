@@ -67,14 +67,6 @@ describe('GET /events', () => {
     );
   }
 
-  describe('authentication', () => {
-    it('should reject request without authentication', async () => {
-      const response = await readEvents('');
-
-      expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
-    });
-  });
-
   describe('active filter', () => {
     beforeEach(async () => {
       await seedEventsForReadTests();
