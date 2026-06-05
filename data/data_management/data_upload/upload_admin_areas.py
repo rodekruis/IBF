@@ -1,13 +1,16 @@
 """
 Upload all admin areas from a local clone of the seed-data repo
 
-TODO: This script is used for development purposes.
+This script is used for development purposes.
 Before using this, make sure it matches the current table structure and data parsing logic.
 For table DTO, see: services/api-service/src/admin-areas/dto/admin-area-create.dto.ts
 For parsing json, see: services/api-service/src/admin-areas/admin-areas.service.spec.ts
+You can use an LLM to update this for you by pointing it at the above instructions.
 
-The frontend also uses the api endpoint wrapper, so if you need to test your changes
-on the front end, you would need to change the uri.
+Note: The frontend uses the api endpoint wrapper targeting the standard DB table, while
+this script targets a debug table that is not wrapped by the api-service.
+This means that if you need to test your changes on the front end,
+you would need to change the uri in the front end as well.
 
 Example URI directly to pg_featureserv (for Uganda):
 http://localhost:9000/collections/debug.admin_areas/items?filter=%22countryCodeIso3%22=%27UGA%27&limit=10000&transform=simplify,0.005`;
@@ -28,10 +31,10 @@ from data_management.utils.postgis_handler import (
 from shared.country_data import CountryCodeIso2
 from shared.data_helpers import get_seed_data_repo_path
 
-# Table config (mirrors AdminAreaCreateDto in
-# services/api-service/src/admin-areas/dto/admin-area-create.dto.ts)
 TABLE_NAME = "debug.admin_areas"
 
+# Table config (mirrors AdminAreaCreateDto in
+# services/api-service/src/admin-areas/dto/admin-area-create.dto.ts)
 COL_PLACE_CODE = "placeCode"
 COL_ADMIN_LEVEL = "adminLevel"
 COL_NAME_EN = "nameEn"
@@ -154,9 +157,7 @@ def insert_admin_areas_data(connection, features: list[dict]):
                 print(f"Error: No admin level from file attached to {props}.")
                 continue
 
-            # Name and code must come from the feature's own admin level.
-            # Falling back across levels would cause duplicates (e.g. a country's
-            # ADM0 code reappearing in every admN file when ADMn fields are null).
+            # Name and code from the feature's own admin level.
             if admin_level == 0:
                 name_en = props.get("ADM0_EN")
                 place_code = props.get("ADM0_ISO_A3")

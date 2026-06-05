@@ -59,7 +59,7 @@ The process may simplify in the future, but the steps are:
 
 #### 4. Upload to the DB
 
-The data is uploaded from `admin-areas/processed` from your local seed repo clone to the DB by `upload_admin_areas.py`
+The data is uploaded from `admin-areas/processed` from your local seed repo clone to the DB by `upload_admin_areas.py`. There is a chance `upload_admin_areas.py` is out-of-date, so follow the instructions in that file to update it.
 
 #### 5. Check in seed repo changes
 
