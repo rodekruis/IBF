@@ -8,7 +8,6 @@ from pathlib import Path
 
 import psycopg
 from dotenv import load_dotenv
-from psycopg import sql
 
 # Load env from the <repo root>/services/.env file
 env_path = Path(__file__).resolve().parents[3] / "services" / ".env"
