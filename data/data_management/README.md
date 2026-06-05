@@ -28,9 +28,17 @@ See the summary in each script for the purpose.
 
 Shared util files
 
+## Data processing notes
+
+Using data from GADM, China, India, and Pakistan all have multiple admin level 0 shapes.
+This is due to disputed borders in the region. The current solution (June 2026) is to lump all the shared into a single multi-polygon. These overlap, so the territorial claims are drawn on top of eachother, which to the user, shows one country's claim rather than another's.
+This may need to be handled differently in the future.
+
+These are not the only disputed borders we may need to rework, but they are the only ones represented as individual admin level 0 areas with the same country names.
+
 ## Admin areas update process
 
-(June 2026) This process is still under development. The scripts here are used for development/prototyping purposes. The current steps are the following:
+(June 2026) This process is still under development. The scripts here are used for development/prototyping purposes until this can be streamlined. The current steps are the following:
 
 #### 1. Process IBF v1 admin area data
 
@@ -50,6 +58,10 @@ The process may simplify in the future, but the steps are:
 
 1. If you need new population rasters that are not already in the seed repo, fetch and preprocess them with `seed_data_management/fetch_population_raster.py`
 2. Apply these fetched rasters to the admin areas with `seed_data_management/add_population_to_admin_areas.py`
+
+#### 4. Clean again, and assure parents are added.
+
+Any remaining formatting issues that were not picked up in previous steps are cleaned with `clean_all_processed_admin_areas.py`. This processes directly on files in `admin-areas/processed` in your local copy of the seed repo.
 
 #### 4. Check in seed repo changes
 
