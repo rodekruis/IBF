@@ -24,13 +24,11 @@ import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.de
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 
 @ApiTags('geo-features')
-@UseGuards(AuthenticatedUserGuard)
 @Controller('geo-features')
 export class GeoFeaturesController {
   public constructor(private readonly geoFeaturesService: GeoFeaturesService) {}
 
   // TODO: Re-add @ApiQuery decorators once we have clarity on which pg_featureserv params to expose
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get()
   @ApiOperation({
     summary:
@@ -50,6 +48,7 @@ export class GeoFeaturesController {
   }
 
   // TODO: Consider adding a batch endpoint (POST with array body) for bulk imports
+  @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
   @ApiOperation({ summary: 'Create a geo-feature' })
@@ -73,6 +72,7 @@ export class GeoFeaturesController {
     return this.geoFeaturesService.createGeoFeature(geoFeatureCreateDto);
   }
 
+  @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Patch(':id')
   @ApiOperation({ summary: 'Update a geo-feature' })
@@ -95,6 +95,7 @@ export class GeoFeaturesController {
     );
   }
 
+  @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
