@@ -116,7 +116,33 @@ def _load_ibf_api_admin_areas(
         raise ValueError(
             f"No admin areas returned from API for {country_code_iso_3} at level {target_admin_level}"
         )
-    container.data = AdminAreasSet.from_api(data)
+    admin_areas_set = AdminAreasSet.from_api(data)
+    _validate_parent_pcodes(admin_areas_set, country_code_iso_3)
+    container.data = admin_areas_set
+
+
+def _validate_parent_pcodes(
+    admin_areas_set: AdminAreasSet, country_code_iso_3: str
+) -> None:
+    """
+    Every admin area at level N (N > 1) must have parent place codes for all
+    levels 1..N-1. Missing parents indicate broken data and would silently
+    break downstream aggregation.
+    """
+    missing: list[str] = []
+    for pcode, area in admin_areas_set.admin_areas.items():
+        level = area.properties.admin_level
+        for parent_level in range(1, level):
+            if not area.properties.parent_pcodes.get(parent_level):
+                missing.append(
+                    f"{pcode} (level {level}) missing placeCodeLevel{parent_level}"
+                )
+    if missing:
+        preview = ", ".join(missing[:5])
+        suffix = f" (and {len(missing) - 5} more)" if len(missing) > 5 else ""
+        raise ValueError(
+            f"Admin areas for {country_code_iso_3} have missing parent place codes: {preview}{suffix}"
+        )
 
 
 def _load_ibf_api_alert_configs(
