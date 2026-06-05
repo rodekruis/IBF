@@ -1,7 +1,7 @@
 """
 Upload all admin areas from a local clone of the seed-data repo
 
-This script is used for development purposes.
+This script is used for development purposes. For example this is still needed for showing all countries in the world in the FE, which we do not have easily available in api-service.admin-area.
 Before using this, make sure it matches the current table structure and data parsing logic.
 For table DTO, see: services/api-service/src/admin-areas/dto/admin-area-create.dto.ts
 For parsing json, see: services/api-service/src/admin-areas/admin-areas.service.spec.ts
