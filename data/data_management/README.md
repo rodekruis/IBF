@@ -16,7 +16,7 @@ For specific notes on the data being used, see the [seed data repo readme](https
 
 ### data_upload/
 
-Dev scripts for uploading data. See comments in the files for more details. There is a chance the schema or data structure in these files is out-of-date, so be sure to update them before use.
+Dev scripts for uploading data. See comments in the files for more details. There is a chance the schema or data structure in these files is out-of-date, so be sure to update them before use. More details are in the files.
 
 ### seed_data_management/
 
