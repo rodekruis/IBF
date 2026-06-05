@@ -4,22 +4,17 @@ import {
   HttpStatus,
   ParseBoolPipe,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
 import { EventsService } from '@api-service/src/events/events.service';
-import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
-import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 
 @ApiTags('events')
-@UseGuards(AuthenticatedUserGuard)
 @Controller('events')
 export class EventsController {
   public constructor(private readonly eventsService: EventsService) {}
 
-  @AuthenticatedUser()
   @Get()
   @ApiOperation({ summary: 'Get all active or all closed events' })
   @ApiQuery({
