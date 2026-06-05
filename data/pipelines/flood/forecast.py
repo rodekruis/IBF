@@ -66,22 +66,12 @@ def calculate_flood_forecasts(
 
     population_raster: RasterData | None = None
 
-    glofas_netcdf_paths: list[str] = []
-    for source in (
-        DataSource.GLOFAS_DISCHARGE_FTP,
-        DataSource.GLOFAS_DISCHARGE_MOCK_FILE,
-    ):
-        if source in data_provider.loaded_data:
-            glofas_netcdf_paths = data_provider.get_data(source, list)
-            break
-    if not glofas_netcdf_paths:
-        raise KeyError(
-            "No GloFAS discharge source configured. "
-            "Add 'glofas_discharge_ftp' or 'glofas_discharge_mock_file' to data_sources in config."
-        )
+    glofas_netcdf_paths = _get_glofas_discharge_paths(data_provider)
 
     ### Step 2 - Extract discharge per station from GloFAS data ###
-    country_bounds = get_bounding_box(target_admin_areas)
+    country_bounds = get_bounding_box(
+        target_admin_areas, point_locations=glofas_stations
+    )
 
     # Slice NetCDF files to country bounds once before processing stations
     country_sliced_netcdf_paths: list[str] = []
@@ -212,3 +202,17 @@ def calculate_flood_forecasts(
                 value="alert_extent.tif",
                 extent=get_raster_extent(clipped_flood_extent),
             )
+
+
+def _get_glofas_discharge_paths(data_provider: DataProvider) -> list[str]:
+    for source in (
+        DataSource.GLOFAS_DISCHARGE_FTP,
+        DataSource.GLOFAS_DISCHARGE_SEED_REPO_ALERT,
+        DataSource.GLOFAS_DISCHARGE_SEED_REPO_NO_ALERT,
+    ):
+        if source in data_provider.loaded_data:
+            return data_provider.get_data(source, list)
+    raise KeyError(
+        "No GloFAS discharge source configured. "
+        "Add 'glofas_discharge_ftp' or 'glofas_discharge_seed_repo_alert/no_alert' to data_sources in config."
+    )
