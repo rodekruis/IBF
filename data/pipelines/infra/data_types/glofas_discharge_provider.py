@@ -78,37 +78,44 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
     return downloaded_paths
 
 
-# TODO AB#41516: replace with seed-repo source using country-clipped mock alert/no-alert files
-def load_glofas_discharge_from_mock_file() -> list[str]:
+def download_glofas_discharge_from_seed_repo(
+    country: str, mock_variant: str
+) -> list[str]:
     """
-    Load mock GloFAS discharge NetCDF files from the local filesystem.
+    Download a mock GloFAS discharge NetCDF file from the seed-data repo.
 
-    Looks for files in the directory specified by GLOFAS_LOCAL_DIR env var,
-    or falls back to the default bronze directory.
+    The file is a small country-clipped NetCDF with synthetic discharge values
+    that deterministically produce either an alert or no-alert outcome.
 
-    Returns a list of local file paths to the NetCDF files.
+    Returns a list with a single local file path to the downloaded NetCDF file.
     """
-    local_dir = os.environ.get("GLOFAS_LOCAL_DIR")
-    if not local_dir:
-        local_dir = "./pipelines/flood/bronze/glofas"
-
-    if not os.path.isdir(local_dir):
-        raise FileNotFoundError(
-            f"GloFAS local directory not found: {local_dir}. "
-            f"Set GLOFAS_LOCAL_DIR or place files in the default directory."
+    base_url = os.environ.get("GITHUB_DATA_BASE_URL")
+    if not base_url:
+        raise ValueError(
+            "GITHUB_DATA_BASE_URL environment variable is required "
+            "for loading GloFAS discharge from seed-repo."
         )
 
-    netcdf_files = sorted(
-        os.path.join(local_dir, f)
-        for f in os.listdir(local_dir)
-        if f.endswith(".nc") and not f.endswith("_sliced.nc")
-    )
+    filename = f"{country}_glofas_discharge_{mock_variant}.nc"
+    url = f"{base_url}/pipelines/mock-data/floods/glofas-discharge/{filename}"
 
-    if not netcdf_files:
-        raise FileNotFoundError(f"No GloFAS NetCDF files found in {local_dir}")
+    logger.info(f"Downloading GloFAS mock discharge from {url}")
 
-    logger.info(f"Loaded {len(netcdf_files)} GloFAS files from {local_dir}")
-    return netcdf_files
+    from shared.download_helpers import download_object
+
+    content = download_object(url)
+    if content is None:
+        raise FileNotFoundError(f"Failed to download GloFAS discharge from '{url}'")
+
+    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+    local_filename = f"dis_00_{forecast_date}00.nc"
+    output_dir = tempfile.mkdtemp(prefix=f"glofas_{country}_mock_")
+    local_path = os.path.join(output_dir, local_filename)
+    with open(local_path, "wb") as f:
+        f.write(content)
+
+    logger.info(f"Downloaded GloFAS mock discharge to {local_path}")
+    return [local_path]
 
 
 def _connect_ftp(host: str, user: str, password: str, timeout: int = 60) -> ftplib.FTP:

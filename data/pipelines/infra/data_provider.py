@@ -108,18 +108,20 @@ if __name__ == "__main__":
     if not success:
         print(f"Failed to load config from path {config_path}")
     else:
-        data = config_reader.run_targets.get(RunTargetType.DEBUG)
+        data = config_reader.run_targets.get(RunTargetType.MOCK_ALERT)
         if data is None:
-            print("No DEBUG run target found in config")
+            print("No MOCK_ALERT run target found in config")
             sys.exit(1)
         print(
-            f"Data sources for DEBUG run target: {data.hazard_type} - {data.country_configs}"
+            f"Data sources for MOCK_ALERT run target: {data.hazard_type} - {data.country_configs}"
         )
 
         api_client = ApiClient()
         provider = DataProvider(api_client)
         for country_code in data.country_configs:
-            provider.try_load_data(config_reader, country_code, RunTargetType.DEBUG)
+            provider.try_load_data(
+                config_reader, country_code, RunTargetType.MOCK_ALERT
+            )
 
         # For the loaded data, print out some of the printable fields to verify it loaded
         for container in provider.loaded_data.values():

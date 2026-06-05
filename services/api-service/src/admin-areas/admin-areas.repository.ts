@@ -81,6 +81,10 @@ export class AdminAreasRepository {
             adminLevel: adminAreaCreateDto.adminLevel,
             nameEn: adminAreaCreateDto.nameEn,
             countryCodeIso3: adminAreaCreateDto.countryCodeIso3,
+            placeCodeLevel1: adminAreaCreateDto.placeCodeLevel1,
+            placeCodeLevel2: adminAreaCreateDto.placeCodeLevel2,
+            placeCodeLevel3: adminAreaCreateDto.placeCodeLevel3,
+            placeCodeLevel4: adminAreaCreateDto.placeCodeLevel4,
             attributes:
               (adminAreaCreateDto.attributes as Prisma.InputJsonValue) ??
               undefined,
@@ -129,6 +133,10 @@ export class AdminAreasRepository {
             adminLevel: adminAreaUpdateDto.adminLevel,
             nameEn: adminAreaUpdateDto.nameEn,
             countryCodeIso3: adminAreaUpdateDto.countryCodeIso3,
+            placeCodeLevel1: adminAreaUpdateDto.placeCodeLevel1,
+            placeCodeLevel2: adminAreaUpdateDto.placeCodeLevel2,
+            placeCodeLevel3: adminAreaUpdateDto.placeCodeLevel3,
+            placeCodeLevel4: adminAreaUpdateDto.placeCodeLevel4,
             ...(adminAreaUpdateDto.attributes !== undefined && {
               attributes:
                 adminAreaUpdateDto.attributes as unknown as Prisma.InputJsonValue,

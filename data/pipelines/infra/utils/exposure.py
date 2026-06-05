@@ -9,8 +9,6 @@ from rasterio.features import geometry_mask
 from rasterio.transform import from_bounds
 from rasterio.windows import from_bounds as window_from_bounds
 from rasterstats import zonal_stats
-from shapely.geometry import shape
-from shapely.validation import make_valid
 
 
 def aggregate_population_exposed(
@@ -66,9 +64,11 @@ def clip_raster_to_admin_areas(
         )
         return raster
 
-    combined_geom = make_valid(shape(geometries[0]))
-    for geom in geometries[1:]:
-        combined_geom = combined_geom.union(make_valid(shape(geom)))
+    combined_geom = admin_areas.admin_areas[place_codes[0]].to_geometry()
+    for pcode in place_codes[1:]:
+        area = admin_areas.admin_areas.get(pcode)
+        if area:
+            combined_geom = combined_geom.union(area.to_geometry())
 
     minx, miny, maxx, maxy = combined_geom.bounds
     window = window_from_bounds(minx, miny, maxx, maxy, raster.transform)

@@ -1,7 +1,25 @@
 hazard_type: floods
 
+_countries: &all_countries
+  - iso_3_code: ETH
+    target_admin_level: 3
+  - iso_3_code: KEN
+    target_admin_level: 3
+  - iso_3_code: MWI
+    target_admin_level: 3
+  - iso_3_code: PHL
+    target_admin_level: 3
+  - iso_3_code: SSD
+    target_admin_level: 3
+  - iso_3_code: UGA
+    target_admin_level: 4
+  - iso_3_code: ZMB
+    target_admin_level: 3
+
 run_targets:
-  TEST:
+  # Runs the full pipeline including forecast.py with mock GloFAS data that
+  # exceeds thresholds, producing alerts. Used by: integration_pipeline tests or local test runs.
+  MOCK_ALERT:
     default_data_sources:
       - source: alert_configs_ibf_api
       - source: glofas_stations_ibf_api
@@ -9,13 +27,13 @@ run_targets:
       - source: admin_area_ibf_api
       - source: population_seed_repo
       - source: flood_extents_seed_repo
-      # TODO AB#41516: add glofas_discharge_mock_file here
+      - source: glofas_discharge_seed_repo_alert
     default_output:
       mode: api
-    countries:
-      - iso_3_code: ETH
-        target_admin_level: 3
-  DEBUG:
+    countries: *all_countries
+  # Runs the full pipeline including forecast.py with mock GloFAS data that
+  # does not exceed thresholds, producing no alerts. Used by: integration_pipeline tests or local test runs.
+  MOCK_NO_ALERT:
     default_data_sources:
       - source: alert_configs_ibf_api
       - source: glofas_stations_ibf_api
@@ -23,21 +41,33 @@ run_targets:
       - source: admin_area_ibf_api
       - source: population_seed_repo
       - source: flood_extents_seed_repo
-      - source: glofas_discharge_mock_file
+      - source: glofas_discharge_seed_repo_no_alert
     default_output:
       mode: api
-    countries:
-      - iso_3_code: ETH
-        target_admin_level: 3
-      - iso_3_code: KEN
-        target_admin_level: 3
-      - iso_3_code: UGA
-        target_admin_level: 4
-      - iso_3_code: PHL
-        target_admin_level: 3
-      - iso_3_code: MWI
-        target_admin_level: 3
-      - iso_3_code: ZMB
-        target_admin_level: 3
-      - iso_3_code: SSD
-        target_admin_level: 3
+    countries: *all_countries
+  # Bypasses forecast.py entirely; uses --scenario flag to inject synthetic output.
+  # No glofas_discharge source needed. Used by: integration_infra tests.
+  SCENARIO:
+    default_data_sources:
+      - source: alert_configs_ibf_api
+      - source: glofas_stations_ibf_api
+      - source: glofas_station_thresholds_seed_repo
+      - source: admin_area_ibf_api
+      - source: population_seed_repo
+      - source: flood_extents_seed_repo
+    default_output:
+      mode: api
+    countries: *all_countries
+  # Production target with real data from external sources (e.g. GloFAS FTP).
+  LIVE:
+    default_data_sources:
+      - source: alert_configs_ibf_api
+      - source: glofas_stations_ibf_api
+      - source: glofas_station_thresholds_seed_repo
+      - source: admin_area_ibf_api
+      - source: population_seed_repo
+      - source: flood_extents_seed_repo
+      - source: glofas_discharge_ftp
+    default_output:
+      mode: api
+    countries: *all_countries

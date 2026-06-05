@@ -29,7 +29,6 @@ export class AdminAreasController {
   public constructor(private readonly adminAreasService: AdminAreasService) {}
 
   // TODO: Re-add @ApiQuery decorators once we have clarity on which pg_featureserv params to expose
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get()
   @ApiOperation({
     summary:
