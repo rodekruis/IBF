@@ -1,4 +1,4 @@
-import { AlertClass } from '@api-service/src/alerts/enum/classification-level.enum';
+import { AlertClass } from '@api-service/src/events/enum/classification-level.enum';
 
 export interface ClassificationResult {
   readonly alertClassPerTimeInterval: ReadonlyMap<string, AlertClass | null>;

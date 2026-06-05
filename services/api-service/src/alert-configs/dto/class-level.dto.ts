@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNumber } from 'class-validator';
 
-import { AlertClassificationLevel } from '@api-service/src/alerts/enum/classification-level.enum';
+import { AlertClassificationLevel } from '@api-service/src/events/enum/classification-level.enum';
 
 export class ClassLevelDto {
   @ApiProperty({ enum: AlertClassificationLevel, example: 'high' })

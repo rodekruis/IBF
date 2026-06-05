@@ -1,11 +1,11 @@
 import { AlertConfigsService } from '@api-service/src/alert-configs/alert-configs.service';
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
+import { AlertClassificationInput } from '@api-service/src/events/alert-classification.service';
+import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
 import {
   AlertClass,
   AlertClassificationLevel,
-} from '@api-service/src/classification-level.enum';
-import { AlertClassificationInput } from '@api-service/src/events/alert-classification.service';
-import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
+} from '@api-service/src/events/enum/classification-level.enum';
 import { HazardType } from '@api-service/src/shared-enums';
 import {
   buildAlert,

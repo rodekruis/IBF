@@ -7,7 +7,7 @@ import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import {
   AlertClass,
   AlertClassificationLevel,
-} from '@api-service/src/classification-level.enum';
+} from '@api-service/src/events/enum/classification-level.enum';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
 import { EnsembleMemberType, HazardType } from '@api-service/src/shared-enums';
 

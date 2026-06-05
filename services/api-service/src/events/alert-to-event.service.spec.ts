@@ -1,15 +1,15 @@
 import { Test } from '@nestjs/testing';
 import { Event } from '@prisma/client';
 
-import {
-  AlertClass,
-  AlertClassificationLevel,
-} from '@api-service/src/classification-level.enum';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
 import {
   AlertToEventService,
   ForecastMetadata,
 } from '@api-service/src/events/alert-to-event.service';
+import {
+  AlertClass,
+  AlertClassificationLevel,
+} from '@api-service/src/events/enum/classification-level.enum';
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
 import { ForecastSource, HazardType } from '@api-service/src/shared-enums';

@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
-import { AlertClass } from '@api-service/src/classification-level.enum';
+import { AlertClass } from '@api-service/src/events/enum/classification-level.enum';
 import { HazardType } from '@api-service/src/shared-enums';
 
 export class AlertConfigCreateDto {

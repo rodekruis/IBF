@@ -1,7 +1,7 @@
 import {
   AlertClass,
   AlertClassificationLevel,
-} from '@api-service/src/classification-level.enum';
+} from '@api-service/src/events/enum/classification-level.enum';
 import { HazardType } from '@api-service/src/shared-enums';
 
 interface ClassLevel {
