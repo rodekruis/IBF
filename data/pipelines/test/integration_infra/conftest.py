@@ -44,6 +44,7 @@ def _run_pipeline(
     extra_env: dict[str, str] | None = None,
     scenario: str | None = None,
     issued_at: str | None = None,
+    country: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     if extra_env:
@@ -62,6 +63,8 @@ def _run_pipeline(
         cmd.extend(["--scenario", scenario])
     if issued_at:
         cmd.extend(["--issued-at", issued_at])
+    if country:
+        cmd.extend(["--country", country])
 
     return subprocess.run(
         cmd,

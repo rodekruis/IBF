@@ -6,7 +6,7 @@ This folder contains the flood-specific forecast logic used by the pipeline fram
 
 - `flood/forecast.py`
   - Entry point for flood hazard logic via `calculate_flood_forecasts(...)`:
-  - Loads station points and admin areas through `DataProvider`, then combines them with local bronze flood inputs.
+  - Loads station points and admin areas through `DataProvider`, then combines them with GloFAS discharge data (from FTP or seed-repo mock files).
   - Builds alerts, severity time series, admin-area exposure, and raster exposure through `DataSubmitter`.
 
 ## Accompanying scripts in this folder
@@ -31,19 +31,19 @@ This folder contains the flood-specific forecast logic used by the pipeline fram
     - clip rasters to bounding boxes,
     - get raster extent for output metadata.
 
-## Bronze input data
+## GloFAS discharge data
 
-`bronze/` holds preprocessed flood inputs used by `forecast.py`:
+GloFAS discharge NetCDF files are sourced either from:
 
-- `bronze/glofas/`
-  - GloFAS discharge NetCDF files (ensemble forecast source).
-  - Current code points to a local file such as `dis_00_YYYYMMDDHH.nc` and creates `_sliced.nc` files per country run.
+- **FTP** (`glofas_discharge_ftp`): Real-time ensemble forecast files from the GloFAS FTP server.
+- **Seed-repo alert** (`glofas_discharge_seed_repo_alert`): Country-clipped mock file with values above thresholds (triggers alerts).
+- **Seed-repo no-alert** (`glofas_discharge_seed_repo_no_alert`): Country-clipped mock file with values below thresholds (no alerts).
 
 ## `forecast.py` flow (read -> output)
 
 1. Load core inputs:
    - Load GloFAS station metadata and target admin areas through `DataProvider`.
-   - Load threshold JSON, station-district mapping JSON, population raster path, and flood extent raster paths from local `bronze/` files.
+   - Load threshold JSON, population raster, and flood extent rasters through `DataProvider`.
    - Stop early and record an error if stations or admin areas are missing.
 
 2. Build country spatial extent

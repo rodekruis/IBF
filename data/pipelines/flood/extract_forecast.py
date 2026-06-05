@@ -70,9 +70,7 @@ def extract_discharge_glofas_station(
                 discharge_sampled = list(
                     src.sample(station_coords, indexes=lead_time + 1)
                 )
-                discharge_value = float(
-                    discharge_sampled[0][0]
-                )  # For mocking alert, multiply 100 by adding *100 to this line. For sustainability, instead alert/no-alert will be triggered via differing mock source files TODO AB#41516:
+                discharge_value = float(discharge_sampled[0][0])
                 discharges[station_code][lead_time].ensemble_discharges.append(
                     discharge_value
                 )
