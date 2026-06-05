@@ -62,24 +62,25 @@ def create_gis_table(db_connection: psycopg.Connection, table_name: str, columns
     print(f"Table '{table_name}' created")
 
 
-def create_gis_index(db_connection: psycopg.Connection, table_name: str):
+def create_gis_index(
+    db_connection: psycopg.Connection,
+    table_name: str,
+    geometry_column: str = "geom",
+):
     """
     Create a spatial index on a geometry column.
     Run this after the initial inserting since having this index can slow down large batch inserts.
     """
-    # Default name for geometry columns
-    GEOMETRY_COLUMN: str = "geom"
-
     with db_connection.cursor() as cur:
         # If the index name has a dot (for indicating public, debug, etc.)
         # That dot needs to be "_" when creating a GIS index
-        raw_index_name = f"{table_name}_{GEOMETRY_COLUMN}_idx"
+        raw_index_name = f"{table_name}_{geometry_column}_idx"
         index_name = raw_index_name.replace(".", "_")
         cur.execute(
-            f"CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIST ({GEOMETRY_COLUMN});"
+            f'CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} USING GIST ("{geometry_column}");'
         )
         db_connection.commit()
-    print(f"Spatial index created on {table_name}.{GEOMETRY_COLUMN}!")
+    print(f"Spatial index created on {table_name}.{geometry_column}!")
 
 
 def drop_table_if_exists(db_connection: psycopg.Connection, table_name: str):

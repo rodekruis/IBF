@@ -1,12 +1,19 @@
 """
 Upload all admin areas from a local clone of the seed-data repo
 
-TODO: This table format is used for development purposes, and we may need
-a different table or different data structure/preprocessing for MVP,
-such as including extent data here.
+This script is used for development purposes. For example this is still needed for showing all countries in the world in the FE, which we do not have easily available in api-service.admin-area.
+Before using this, make sure it matches the current table structure and data parsing logic.
+For table DTO, see: services/api-service/src/admin-areas/dto/admin-area-create.dto.ts
+For parsing json, see: services/api-service/src/admin-areas/admin-areas.service.spec.ts
+You can use an LLM to update this for you by pointing it at the above instructions.
 
-Example URI (for Uganda):
-http://localhost:9000/collections/debug.admin_areas/items?filter=country=%27UG%27&limit=10000&transform=simplify,0.005`;
+Note: The frontend uses the api endpoint wrapper targeting the standard DB table, while
+this script targets a debug table that is not wrapped by the api-service.
+This means that if you need to test your changes on the front end,
+you would need to change the uri in the front end as well.
+
+Example URI directly to pg_featureserv (for Uganda):
+http://localhost:9000/collections/debug.admin_areas/items?filter=%22countryCodeIso3%22=%27UGA%27&limit=10000&transform=simplify,0.005`;
 """
 
 import glob
@@ -18,34 +25,42 @@ from data_management.utils.geo_utils import normalize_polygon_to_multipolygon
 from data_management.utils.postgis_handler import (
     create_gis_index,
     create_gis_table,
+    drop_table_if_exists,
     get_db_connection,
 )
+from shared.country_data import CountryCodeIso2
 from shared.data_helpers import get_seed_data_repo_path
 
-# Table config
 TABLE_NAME = "debug.admin_areas"
 
-COL_COUNTRY = "country"
-COL_ADMIN_LEVEL = "admin_level"
-COL_NAME_EN = "name_en"
-COL_CODE = "code"
-COL_PARENT_ADMIN1_CODE = "admin1_pcode"
-COL_PARENT_ADMIN2_CODE = "admin2_pcode"
-COL_PARENT_ADMIN3_CODE = "admin3_pcode"
-COL_GEOM = "geom"
+# Table config (mirrors AdminAreaCreateDto in
+# services/api-service/src/admin-areas/dto/admin-area-create.dto.ts)
+COL_PLACE_CODE = "placeCode"
+COL_ADMIN_LEVEL = "adminLevel"
+COL_NAME_EN = "nameEn"
+COL_COUNTRY_CODE_ISO3 = "countryCodeIso3"
+COL_PLACE_CODE_LEVEL_1 = "placeCodeLevel1"
+COL_PLACE_CODE_LEVEL_2 = "placeCodeLevel2"
+COL_PLACE_CODE_LEVEL_3 = "placeCodeLevel3"
+COL_PLACE_CODE_LEVEL_4 = "placeCodeLevel4"
+COL_ATTRIBUTES = "attributes"
+COL_GEOMETRY = "geometry"
 
 EPSG_PROJECTION = 4326
 
+# Column identifiers are camelCase, so they must be double-quoted in SQL.
 ADMIN_TABLE_COLUMNS = {
     "id": "SERIAL PRIMARY KEY",
-    COL_COUNTRY: "VARCHAR(3)",
-    COL_ADMIN_LEVEL: "SMALLINT",
-    COL_NAME_EN: "VARCHAR(255)",
-    COL_CODE: "VARCHAR(64)",
-    COL_PARENT_ADMIN1_CODE: "VARCHAR(64)",
-    COL_PARENT_ADMIN2_CODE: "VARCHAR(64)",
-    COL_PARENT_ADMIN3_CODE: "VARCHAR(64)",
-    COL_GEOM: f"GEOMETRY(MultiPolygon, {EPSG_PROJECTION})",
+    f'"{COL_PLACE_CODE}"': "VARCHAR(64) UNIQUE NOT NULL",
+    f'"{COL_ADMIN_LEVEL}"': "SMALLINT NOT NULL",
+    f'"{COL_NAME_EN}"': "VARCHAR(255) NOT NULL",
+    f'"{COL_COUNTRY_CODE_ISO3}"': "VARCHAR(3) NOT NULL",
+    f'"{COL_PLACE_CODE_LEVEL_1}"': "VARCHAR(64)",
+    f'"{COL_PLACE_CODE_LEVEL_2}"': "VARCHAR(64)",
+    f'"{COL_PLACE_CODE_LEVEL_3}"': "VARCHAR(64)",
+    f'"{COL_PLACE_CODE_LEVEL_4}"': "VARCHAR(64)",
+    f'"{COL_ATTRIBUTES}"': "JSONB",
+    f'"{COL_GEOMETRY}"': f"GEOMETRY(MultiPolygon, {EPSG_PROJECTION})",
 }
 
 # Input
@@ -105,6 +120,18 @@ def load_admin_areas_data(json_dir):
     return parsed_data
 
 
+def validate_multipolygon_geometry(geometry: dict) -> str | None:
+    """
+    Mirror of `validateMultiPolygonGeometry` in admin-areas.repository.ts.
+    Returns an error message if invalid, otherwise None.
+    """
+    if not isinstance(geometry, dict) or geometry.get("type") != "MultiPolygon":
+        return f"Invalid geometry: expected type 'MultiPolygon', got '{geometry.get('type') if isinstance(geometry, dict) else type(geometry).__name__}'"
+    if not isinstance(geometry.get("coordinates"), list):
+        return "Invalid geometry: coordinates must be an array"
+    return None
+
+
 def insert_admin_areas_data(connection, features: list[dict]):
     """
     Insert all admin area features into the table.
@@ -116,54 +143,66 @@ def insert_admin_areas_data(connection, features: list[dict]):
 
             admin_level = feature.get("admin_level")
 
+            geometry_error = validate_multipolygon_geometry(geom)
+            if geometry_error:
+                admin_code = (
+                    props.get(f"ADM{admin_level}_PCODE")
+                    or props.get("ADM0_ISO_A3")
+                    or "unknown"
+                )
+                print(f"Error: {admin_code}: {geometry_error}")
+                continue
+
             if admin_level is None:
                 print(f"Error: No admin level from file attached to {props}.")
                 continue
 
-            # Name and code are called different things in different admin levels,
-            # but there is only one in each feature. Get any, with the most granular level grabbed first.
-            name = (
-                props.get("ADM4_EN")
-                or props.get("ADM3_EN")
-                or props.get("ADM2_EN")
-                or props.get("ADM1_EN")
-                or props.get("ADM0_EN")
-                or None
-            )
-            code = (
-                props.get("ADM4_PCODE")
-                or props.get("ADM3_PCODE")
-                or props.get("ADM2_PCODE")
-                or props.get("ADM1_PCODE")
-                or props.get("ADM0_ISO_A3")
-                or None
-            )
+            # Name and code from the feature's own admin level.
+            if admin_level == 0:
+                name_en = props.get("ADM0_EN")
+                place_code = props.get("ADM0_ISO_A3")
+            else:
+                name_en = props.get(f"ADM{admin_level}_EN")
+                place_code = props.get(f"ADM{admin_level}_PCODE")
 
-            # Set the parent codes
-            # For the same level and higher (so for non-parents), set to None
-            admin1_code = props.get("ADM1_PCODE") if admin_level > 1 else None
-            admin2_code = props.get("ADM2_PCODE") if admin_level > 2 else None
-            admin3_code = props.get("ADM3_PCODE") if admin_level > 3 else None
+            # Set all place codes present in the data
+            place_code_level_1 = props.get("ADM1_PCODE")
+            place_code_level_2 = props.get("ADM2_PCODE")
+            place_code_level_3 = props.get("ADM3_PCODE")
+            place_code_level_4 = props.get("ADM4_PCODE")
 
-            if not name or not code:
+            if not name_en or not place_code:
                 print(f"Error: could not parse: {props}.")
                 continue
 
-            # Try to get the ISO A3 code
-            try:
-                country = props.get("ADM0_ISO_A3")
-            except Exception as e:
-                print(f"Error: Invalid code for '{code}' from {props} - Error: {e}")
-                continue
+            country_code_iso3 = props.get("ADM0_ISO_A3")
+            if not country_code_iso3:
+                iso_a2 = props.get("ADM0_ISO_A2") or props.get("ADM0_PCODE")
+                try:
+                    country_code_iso3 = CountryCodeIso2(iso_a2).name
+                except ValueError:
+                    print(
+                        f"Error: missing ADM0_ISO_A3 and could not infer from '{iso_a2}' in {props}."
+                    )
+                    continue
+
+            # Free-form attributes from the source GeoJSON. POPULATION may be
+            # missing or null; fall back to 0 in that case.
+            population = props.get("POPULATION")
+            if population is None:
+                population = 0
+            attributes_json = json.dumps({"POPULATION": population})
 
             # Convert geometry to GeoJSON string
             geom_json = json.dumps(geom)
 
-            # Insert into the table
-            # .   ST_SetSRID: Sets the spatial reference ID (SRID) for the geometry
+            # Insert into the table.
+            # Mirrors admin-areas.repository.ts: ST_Force2D(ST_GeomFromGeoJSON(...)).
             query = f"""
                 INSERT INTO {TABLE_NAME}
-                ({COL_COUNTRY}, {COL_ADMIN_LEVEL}, {COL_NAME_EN}, {COL_CODE}, {COL_PARENT_ADMIN1_CODE}, {COL_PARENT_ADMIN2_CODE}, {COL_PARENT_ADMIN3_CODE}, {COL_GEOM})
+                ("{COL_PLACE_CODE}", "{COL_ADMIN_LEVEL}", "{COL_NAME_EN}", "{COL_COUNTRY_CODE_ISO3}",
+                 "{COL_PLACE_CODE_LEVEL_1}", "{COL_PLACE_CODE_LEVEL_2}", "{COL_PLACE_CODE_LEVEL_3}", "{COL_PLACE_CODE_LEVEL_4}",
+                 "{COL_ATTRIBUTES}", "{COL_GEOMETRY}")
                 VALUES (
                     %s,
                     %s,
@@ -172,26 +211,33 @@ def insert_admin_areas_data(connection, features: list[dict]):
                     %s,
                     %s,
                     %s,
-                    ST_SetSRID(ST_GeomFromGeoJSON(%s), {EPSG_PROJECTION})
+                    %s,
+                    %s::jsonb,
+                    ST_Force2D(ST_GeomFromGeoJSON(%s))
                 )
             """
             try:
+                cur.execute("SAVEPOINT row_insert")
                 cur.execute(
                     query,
                     (
-                        country,
+                        place_code,
                         admin_level,
-                        name,
-                        code,
-                        admin1_code,
-                        admin2_code,
-                        admin3_code,
+                        name_en,
+                        country_code_iso3,
+                        place_code_level_1,
+                        place_code_level_2,
+                        place_code_level_3,
+                        place_code_level_4,
+                        attributes_json,
                         geom_json,
                     ),
                 )
+                cur.execute("RELEASE SAVEPOINT row_insert")
             except Exception as e:
+                cur.execute("ROLLBACK TO SAVEPOINT row_insert")
                 print(f"Error inserting feature with properties {props} - Error: {e}")
-                return
+                continue
 
         connection.commit()
 
@@ -204,9 +250,11 @@ def verify_data(connection):
     """
     with connection.cursor() as cur:
         cur.execute(f"""
-            SELECT id,  {COL_COUNTRY}, {COL_ADMIN_LEVEL}, {COL_NAME_EN}, {COL_CODE},
-                   {COL_PARENT_ADMIN1_CODE}, {COL_PARENT_ADMIN2_CODE}, {COL_PARENT_ADMIN3_CODE},
-                   ST_GeometryType({COL_GEOM}) as geom_type, ST_NumGeometries({COL_GEOM}) as num_geoms
+            SELECT id, "{COL_PLACE_CODE}", "{COL_ADMIN_LEVEL}", "{COL_NAME_EN}", "{COL_COUNTRY_CODE_ISO3}",
+                   "{COL_PLACE_CODE_LEVEL_1}", "{COL_PLACE_CODE_LEVEL_2}", "{COL_PLACE_CODE_LEVEL_3}", "{COL_PLACE_CODE_LEVEL_4}",
+                   "{COL_ATTRIBUTES}",
+                   ST_GeometryType("{COL_GEOMETRY}") as geom_type,
+                   ST_NumGeometries("{COL_GEOMETRY}") as num_geoms
             FROM {TABLE_NAME}
             LIMIT 3;
         """)
@@ -230,10 +278,12 @@ def create_admin_areas_tables():
 
     # Connect to database and create table
     with get_db_connection() as connection:
+        # always drop table so you can be sure to have a clean start
+        drop_table_if_exists(connection, TABLE_NAME)
         # Create table if needed, insert data, and create spatial index
         create_gis_table(connection, TABLE_NAME, ADMIN_TABLE_COLUMNS)
         insert_admin_areas_data(connection, features)
-        create_gis_index(connection, TABLE_NAME)
+        create_gis_index(connection, TABLE_NAME, geometry_column=COL_GEOMETRY)
 
         # Verify data
         verify_data(connection)
