@@ -84,7 +84,9 @@ def merge_adm0_duplicate_features(features: list[dict]) -> list[dict]:
 
     Some country adm0 files (e.g. CHN, IND, PAK) contain multiple features with
     identical properties but different geometry pieces. Combine their geometry
-    coordinates into a single MultiPolygon feature per PCODE.
+    coordinates into a single MultiPolygon feature.
+    This is is due to a territorial dispute, and may later need to be resolved in a
+    different way. See readme for more details.
     """
     grouped: dict[str, list[dict]] = defaultdict(list)
     order: list[str] = []
