@@ -16,34 +16,17 @@ def get_bounding_box(
     point_locations: dict[str, LocationPoint] | None = None,
 ) -> BoundingBox:
     """Compute (min_lon, min_lat, max_lon, max_lat) from admin area geometries and optionally point locations."""
-    from shapely.geometry import shape
+    from shapely.geometry import MultiPoint
+    from shapely.ops import unary_union
 
-    min_lon = float("inf")
-    min_lat = float("inf")
-    max_lon = float("-inf")
-    max_lat = float("-inf")
-
-    for admin_area in admin_areas.admin_areas.values():
-        geom = shape(
-            {
-                "type": admin_area.geometry_type,
-                "coordinates": admin_area.coordinates,
-            }
-        )
-        bounds = geom.bounds  # (minx, miny, maxx, maxy)
-        min_lon = min(min_lon, bounds[0])
-        min_lat = min(min_lat, bounds[1])
-        max_lon = max(max_lon, bounds[2])
-        max_lat = max(max_lat, bounds[3])
+    geoms = [a.to_geometry() for a in admin_areas.admin_areas.values()]
 
     if point_locations:
-        for point in point_locations.values():
-            min_lon = min(min_lon, float(point.lon))
-            min_lat = min(min_lat, float(point.lat))
-            max_lon = max(max_lon, float(point.lon))
-            max_lat = max(max_lat, float(point.lat))
+        geoms.append(
+            MultiPoint([(float(p.lon), float(p.lat)) for p in point_locations.values()])
+        )
 
-    return (min_lon, min_lat, max_lon, max_lat)
+    return unary_union(geoms).bounds
 
 
 def slice_netcdf_to_bounds(

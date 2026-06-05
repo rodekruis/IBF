@@ -32,6 +32,14 @@ class AdminArea:
     geometry_type: str
     coordinates: list
 
+    def to_geometry(self):
+        from shapely.geometry import shape
+        from shapely.validation import make_valid
+
+        return make_valid(
+            shape({"type": self.geometry_type, "coordinates": self.coordinates})
+        )
+
 
 @dataclass
 class AdminAreasSet:
