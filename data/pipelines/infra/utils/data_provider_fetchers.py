@@ -17,7 +17,7 @@ from pipelines.infra.data_types.data_config_types import (
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.glofas_discharge_provider import (
     download_glofas_discharge_from_ftp,
-    load_glofas_discharge_from_mock_file,
+    download_glofas_discharge_from_seed_repo,
 )
 from pipelines.infra.data_types.loaded_data_types import (
     DataType,
@@ -83,8 +83,10 @@ def load_data_container(
         # TODO AB#42516: this will likely move out of this forecast-run, into a shared setup step that downloads the files once
         case DataSource.GLOFAS_DISCHARGE_FTP:
             return _load_glofas_discharge_ftp(data_config, container)
-        case DataSource.GLOFAS_DISCHARGE_MOCK_FILE:
-            return _load_glofas_discharge_mock_file(data_config, container)
+        case DataSource.GLOFAS_DISCHARGE_SEED_REPO_ALERT:
+            return _load_glofas_discharge_seed_repo(data_config, container, "alert")
+        case DataSource.GLOFAS_DISCHARGE_SEED_REPO_NO_ALERT:
+            return _load_glofas_discharge_seed_repo(data_config, container, "no-alert")
 
         # --- Drought sources ---
         case DataSource.TODO_ECMWF_FORECAST:
@@ -116,7 +118,33 @@ def _load_ibf_api_admin_areas(
         raise ValueError(
             f"No admin areas returned from API for {country_code_iso_3} at level {target_admin_level}"
         )
-    container.data = AdminAreasSet.from_api(data)
+    admin_areas_set = AdminAreasSet.from_api(data)
+    _validate_parent_pcodes(admin_areas_set, country_code_iso_3)
+    container.data = admin_areas_set
+
+
+def _validate_parent_pcodes(
+    admin_areas_set: AdminAreasSet, country_code_iso_3: str
+) -> None:
+    """
+    Every admin area at level N (N > 1) must have parent place codes for all
+    levels 1..N-1. Missing parents indicate broken data and would silently
+    break downstream aggregation.
+    """
+    missing: list[str] = []
+    for pcode, area in admin_areas_set.admin_areas.items():
+        level = area.properties.admin_level
+        for parent_level in range(1, level):
+            if not area.properties.parent_pcodes.get(parent_level):
+                missing.append(
+                    f"{pcode} (level {level}) missing placeCodeLevel{parent_level}"
+                )
+    if missing:
+        preview = ", ".join(missing[:5])
+        suffix = f" (and {len(missing) - 5} more)" if len(missing) > 5 else ""
+        raise ValueError(
+            f"Admin areas for {country_code_iso_3} have missing parent place codes: {preview}{suffix}"
+        )
 
 
 def _load_ibf_api_alert_configs(
@@ -232,11 +260,13 @@ def _load_glofas_discharge_ftp(
     container.data = download_glofas_discharge_from_ftp(config.country_code_iso_3)
 
 
-def _load_glofas_discharge_mock_file(
-    config: DataSourceConfig, container: LoadedDataSource
+def _load_glofas_discharge_seed_repo(
+    config: DataSourceConfig, container: LoadedDataSource, variant: str
 ) -> None:
     container.data_type = DataType.PATH_LIST
-    container.data = load_glofas_discharge_from_mock_file()
+    container.data = download_glofas_discharge_from_seed_repo(
+        config.country_code_iso_3, variant
+    )
 
 
 # =============================================================================

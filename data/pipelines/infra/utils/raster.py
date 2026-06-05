@@ -6,33 +6,27 @@ import os
 import xarray as xr
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.loaded_data_types import RasterData
+from pipelines.infra.data_types.location_point import LocationPoint
 
 BoundingBox = tuple[float, float, float, float]  # (min_lon, min_lat, max_lon, max_lat)
 
 
-def get_bounding_box(admin_areas: AdminAreasSet) -> BoundingBox:
-    """Compute (min_lon, min_lat, max_lon, max_lat) from admin area geometries."""
-    from shapely.geometry import shape
+def get_bounding_box(
+    admin_areas: AdminAreasSet,
+    point_locations: dict[str, LocationPoint] | None = None,
+) -> BoundingBox:
+    """Compute (min_lon, min_lat, max_lon, max_lat) from admin area geometries and optionally point locations."""
+    from shapely.geometry import MultiPoint
+    from shapely.ops import unary_union
 
-    min_lon = float("inf")
-    min_lat = float("inf")
-    max_lon = float("-inf")
-    max_lat = float("-inf")
+    geoms = [a.to_geometry() for a in admin_areas.admin_areas.values()]
 
-    for admin_area in admin_areas.admin_areas.values():
-        geom = shape(
-            {
-                "type": admin_area.geometry_type,
-                "coordinates": admin_area.coordinates,
-            }
+    if point_locations:
+        geoms.append(
+            MultiPoint([(float(p.lon), float(p.lat)) for p in point_locations.values()])
         )
-        bounds = geom.bounds  # (minx, miny, maxx, maxy)
-        min_lon = min(min_lon, bounds[0])
-        min_lat = min(min_lat, bounds[1])
-        max_lon = max(max_lon, bounds[2])
-        max_lat = max(max_lat, bounds[3])
 
-    return (min_lon, min_lat, max_lon, max_lat)
+    return unary_union(geoms).bounds
 
 
 def slice_netcdf_to_bounds(
