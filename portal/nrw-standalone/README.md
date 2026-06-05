@@ -24,6 +24,7 @@ There are several steps when updating the NRW submodule code from Go. Generally 
 
 1. **(Required)** Update the submodule itself. Run `git submodule update --remote <relative submodule path>` to update the submodule commit pointer to latest, and commit your change. The `relative submodule path` would be `portal/nrw-standalone/src/go-web-app` from root, or nothing if run from the submodule dir.
 1. **(Do at least every few months)** Update the binaries as needed. If there have been version changes in the `package.json` in the go-web-app repo for packages that are also used in this standalone project, update those dependencies. If this falls behind for many months, it is rarely a problem though.
+1. **(Do as needed)** Update the sample.env file if there are any changes, and update your .env as well.
 1. **(Do as needed)** Update any wrappers or helpers in this project as needed. This is rare, but may be needed if NRW has a new dependency in Go. Build errors will normally make it clear if you need this.
 1. **(Do as needed)** Bring over new directories from Go as part of the submodule. If there are new dependency directories we need in this project, you need to add them to the submodule checkout. See the section below on how to do that. Build errors will make it clear if you need this.
 
