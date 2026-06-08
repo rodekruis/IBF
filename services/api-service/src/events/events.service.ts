@@ -40,16 +40,15 @@ export class EventsService {
     viewTime: Date,
     exposedAdminAreas: ExposedAdminAreaRecord[],
   ): EventResponseDto {
-    const centroid = event.centroid as { latitude: number; longitude: number };
     return {
       eventId: event.id,
       eventName: event.eventName,
       eventLabel: this.deriveEventLabel(event.eventName),
-      hazardType: [event.hazardType as HazardType],
+      hazardType: event.hazardType as HazardType,
       forecastSources: event.forecastSources as ForecastSource[],
       alertClass: event.alertClass as AlertClassType,
       trigger: event.trigger,
-      centroid,
+      centroid: event.centroid as { latitude: number; longitude: number },
       startAt: event.startAt.toISOString(),
       reachesPeakAlertClassAt: event.reachesPeakAlertClassAt.toISOString(),
       endAt: event.endAt.toISOString(),
@@ -60,7 +59,7 @@ export class EventsService {
         event.endAt > viewTime &&
         event.closedAt === null,
       exposedAdminAreas: this.mapExposedAdminAreas(exposedAdminAreas),
-      availableLayers: [], // Will be filled when we do #AB42226
+      availableLayers: [], // TODO AB#42226: re-evaluate naming/structure/etc based on actual usage when putting 'flood extent' in here
     };
   }
 

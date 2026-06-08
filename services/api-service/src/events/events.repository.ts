@@ -162,7 +162,7 @@ export class EventsRepository {
         },
       },
     });
-
+    // TODO: consider fetching name via original query, which requires an explicit relation ship between admin-areas and alert-exposure-admin-area tables
     const allPlaceCodes = latestAlerts.flatMap((alert) =>
       alert.exposureAdminArea.map((area) => area.placeCode),
     );

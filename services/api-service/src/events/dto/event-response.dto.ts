@@ -18,8 +18,8 @@ export class EventResponseDto {
   @ApiProperty()
   public readonly eventLabel: string;
 
-  @ApiProperty({ enum: HazardType, isArray: true })
-  public readonly hazardType: HazardType[];
+  @ApiProperty({ enum: HazardType })
+  public readonly hazardType: HazardType;
 
   @ApiProperty({ enum: ForecastSource, isArray: true })
   public readonly forecastSources: ForecastSource[];

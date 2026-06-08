@@ -90,7 +90,7 @@ describe('EventsService', () => {
 
       const result = await service.getEvents(new Date('2026-03-25T12:00:00Z'));
 
-      expect(result[0].hazardType).toEqual([HazardType.floods]);
+      expect(result[0].hazardType).toEqual(HazardType.floods);
     });
   });
 });
