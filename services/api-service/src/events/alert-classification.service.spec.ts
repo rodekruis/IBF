@@ -24,8 +24,11 @@ function toClassificationInput(
   };
 }
 
-const { single, low, med, high } = AlertClassificationLevel;
+const { singleThreshold: single, low, med, high } = AlertClassificationLevel;
 
+// Severity thresholds: low >= 1.5, med >= 5, high >= 20 (return period)
+// Probability thresholds: low >= 50%, med >= 65%, high >= 85% (fraction of runs exceeding severity threshold)
+// Trigger: alertClass must be 'high' and peak must be within 7 days of issuedAt
 const testFloodConfig: Partial<AlertConfigResponseDto> = {
   hazardType: HazardType.floods,
   severityClassLevels: [

@@ -16,13 +16,13 @@ type AlertClassMatrix = Record<
   Record<AlertClassificationLevel, AlertClass>
 >;
 
-const { single, low, med, high } = AlertClassificationLevel;
+const { singleThreshold: single, low, med, high } = AlertClassificationLevel;
 
 // This matrix determines how severityClass and probabilityClass are combined into alertClass.
 // When one dimension is 'single' (not multi-threshold) the other dimension passes through directly, so matrix[single][x] = x and matrix[x][single] = x.
 // The inner 3x3 cells (low/med/high × low/med/high) follow a standard risk matrix (UNDRR/WMO),
 // but are currently unused: all configs use 'single' for at least one dimension.
-// See AlertClassificationLevel comments for why multi-sev × multi-prob is avoided.
+// See comments in classification-level.enum for why multi-sev × multi-prob is avoided.
 const ALERT_CLASS_MATRIX: AlertClassMatrix = {
   [single]: {
     [single]: AlertClass.high, // when both dimensions are 'single', we classify as 'high' for now

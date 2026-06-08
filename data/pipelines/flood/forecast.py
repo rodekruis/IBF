@@ -76,7 +76,6 @@ def calculate_flood_forecasts(
             ),
         }
         for station in glofas_stations.values()
-        if station.attributes.get("thresholds")
     ]
 
     country_bounds = get_bounding_box(

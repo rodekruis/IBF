@@ -42,7 +42,7 @@ interface FloodClassificationConfig {
   readonly triggerLeadTimeDuration: string;
 }
 
-const { single, low, med, high } = AlertClassificationLevel;
+const { singleThreshold: single, low, med, high } = AlertClassificationLevel;
 
 // All configs use 'single' for at least one dimension (severity or probability).
 // This avoids the non-independence issue between severity and probability

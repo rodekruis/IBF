@@ -24,6 +24,7 @@ from pipelines.infra.data_types.loaded_data_types import (
     LoadedDataSource,
     RasterData,
 )
+from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.dummy_data import DUMMY_DATA
 from rasterio.transform import Affine
@@ -225,9 +226,25 @@ def _load_ibf_api_glofas_stations(
     data_config: DataSourceConfig,
 ):
     container.data_type = DataType.LOCATION_POINT_DICT
-    container.data = api_client.get_glofas_stations(
+    stations = api_client.get_glofas_stations(
         data_config.country_code_iso_3,
     )
+    _validate_station_thresholds(stations, data_config.country_code_iso_3)
+    container.data = stations
+
+
+def _validate_station_thresholds(
+    stations: dict[str, LocationPoint], country_code_iso_3: str
+) -> None:
+    missing = [
+        station_id
+        for station_id, station in stations.items()
+        if not station.attributes.get("thresholds")
+    ]
+    if missing:
+        raise ValueError(
+            f"GloFAS stations for {country_code_iso_3} missing thresholds: {', '.join(missing)}"
+        )
 
 
 def _load_glofas_discharge_ftp(
