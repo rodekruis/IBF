@@ -2,7 +2,7 @@
 AUTO-GENERATED code from services/api-service/src/shared-enums.ts
 
 These are the enums shared between the API service and the pipeline code.
-Run `npm run gen:python` (from the repo root) to regenerate.
+Run `npm run generate:python` (from the repo root) to regenerate.
 """
 
 from enum import StrEnum
