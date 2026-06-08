@@ -35,12 +35,6 @@ export enum AlertClassType {
   Low = 'low',
 }
 
-// Sources for the data used in events, map layers, etc.
-export enum DataSourceType {
-  Glofas = 'glofas',
-  Other = 'other',
-}
-
 // Key to identify the type of map layer info being shown.
 // This is used to style/label it on the frontend.
 export enum MapLayerInfoType {
@@ -59,13 +53,4 @@ export enum MapLayerDisplayType {
   Point = 'point',
   // Vector tiles, used for dense vector information such as many buildings and roads
   VectorTile = 'vector_tile',
-}
-
-// Units for labelling values in the UI
-export enum MeasurementUnits {
-  Km = 'km',
-  Buildings = 'buildings',
-  People = 'people',
-  Locations = 'locations',
-  None = '',
 }

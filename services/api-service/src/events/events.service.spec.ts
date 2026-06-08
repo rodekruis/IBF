@@ -3,7 +3,7 @@ import { Event } from '@prisma/client';
 
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import { EventsService } from '@api-service/src/events/events.service';
-import { HazardType, Layer } from '@api-service/src/shared-enums';
+import { HazardType } from '@api-service/src/shared-enums';
 
 function buildEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -49,7 +49,7 @@ describe('EventsService', () => {
   });
 
   describe('getEvents', () => {
-    it('should return centroid as [longitude, latitude]', async () => {
+    it('should return centroid as { latitude, longitude } object', async () => {
       const event = buildEvent({
         centroid: { latitude: 0.35, longitude: 32.6 },
       });
@@ -60,7 +60,7 @@ describe('EventsService', () => {
 
       const result = await service.getEvents(new Date('2026-03-25T12:00:00Z'));
 
-      expect(result[0].centroid).toEqual([32.6, 0.35]);
+      expect(result[0].centroid).toEqual({ latitude: 0.35, longitude: 32.6 });
     });
 
     it('should return date fields as ISO strings', async () => {
@@ -91,30 +91,6 @@ describe('EventsService', () => {
       const result = await service.getEvents(new Date('2026-03-25T12:00:00Z'));
 
       expect(result[0].hazardType).toEqual([HazardType.floods]);
-    });
-
-    it('should set exposure unit based on layer type', async () => {
-      const event = buildEvent();
-      repository.getEvents.mockResolvedValue([event]);
-      repository.getExposedAdminAreasForLatestAlerts.mockResolvedValue(
-        new Map([
-          [
-            event.id,
-            [
-              {
-                placeCode: 'ETH_01',
-                adminLevel: 1,
-                name: 'Region A',
-                exposure: [{ type: Layer.populationExposed, exposed: 1000 }],
-              },
-            ],
-          ],
-        ]),
-      );
-
-      const result = await service.getEvents(new Date('2026-03-25T12:00:00Z'));
-
-      expect(result[0].exposedAdminAreas[0].exposure[0].unit).toBe('people');
     });
   });
 });

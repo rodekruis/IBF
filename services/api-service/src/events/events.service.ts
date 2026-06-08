@@ -9,10 +9,8 @@ import {
 } from '@api-service/src/events/events.repository';
 import {
   AlertClassType,
-  DataSourceType,
+  ForecastSource,
   HazardType,
-  Layer,
-  MeasurementUnits,
 } from '@api-service/src/shared-enums';
 
 @Injectable()
@@ -48,10 +46,10 @@ export class EventsService {
       eventName: event.eventName,
       eventLabel: this.deriveEventLabel(event.eventName),
       hazardType: [event.hazardType as HazardType],
-      forecastSources: event.forecastSources as DataSourceType[],
+      forecastSources: event.forecastSources as ForecastSource[],
       alertClass: event.alertClass as AlertClassType,
       trigger: event.trigger,
-      centroid: [centroid.longitude, centroid.latitude],
+      centroid,
       startAt: event.startAt.toISOString(),
       reachesPeakAlertClassAt: event.reachesPeakAlertClassAt.toISOString(),
       endAt: event.endAt.toISOString(),
@@ -62,7 +60,7 @@ export class EventsService {
         event.endAt > viewTime &&
         event.closedAt === null,
       exposedAdminAreas: this.mapExposedAdminAreas(exposedAdminAreas),
-      availableLayers: [],
+      availableLayers: [], // Will be filled when we do #AB42226
     };
   }
 
@@ -75,20 +73,10 @@ export class EventsService {
       name: area.name,
       exposure: area.exposure.map((exp) => ({
         type: exp.type,
-        unit: this.getUnitForLayer(exp.type),
-        total: 0,
+        total: null,
         exposed: exp.exposed,
       })),
     }));
-  }
-
-  private getUnitForLayer(layer: Layer): MeasurementUnits {
-    const units: Record<Layer, MeasurementUnits> = {
-      [Layer.populationExposed]: MeasurementUnits.People,
-      [Layer.alertExtent]: MeasurementUnits.Km,
-      [Layer.glofasStations]: MeasurementUnits.Locations,
-    };
-    return units[layer] ?? MeasurementUnits.None;
   }
 
   private deriveEventLabel(eventName: string): string {

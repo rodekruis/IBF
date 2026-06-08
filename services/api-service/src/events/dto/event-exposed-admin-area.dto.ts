@@ -1,16 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { Layer, MeasurementUnits } from '@api-service/src/shared-enums';
+import { Layer } from '@api-service/src/shared-enums';
 
 class AdminAreaExposureDto {
   @ApiProperty({ enum: Layer, example: Layer.populationExposed })
-  public readonly type: Layer;
-
-  @ApiProperty({ enum: MeasurementUnits, example: MeasurementUnits.People })
-  public readonly unit: MeasurementUnits;
+  public readonly type: Layer; // NOTE: Consider renaming to "layer" for consistency with the rest of the codebase.
 
   @ApiProperty({ example: 20_000 })
-  public readonly total: number;
+  public readonly total: number | null; // TODO, make non-nullable again when possible.
 
   @ApiProperty({ example: 5_000 })
   public readonly exposed: number;
