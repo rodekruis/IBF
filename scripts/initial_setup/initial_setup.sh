@@ -181,7 +181,7 @@ set -Eeuo pipefail
 open http://localhost:4000/docs # OpenAPI docs
 open http://localhost:9000/ # pg_featureserv
 open http://localhost:7800/ # pg_tileserv
-open http://localhost:3000/ # Frontend
+open http://localhost:3000/nrw?c=MWI&e=1001 # Frontend
 EOF
 
 chmod +x "$TARGET_DIR/backend_start.sh" "$TARGET_DIR/frontend_start.sh" "$TARGET_DIR/open_urls.sh"
