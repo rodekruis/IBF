@@ -1,11 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
 
+import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
 import {
   EventsRepository,
   ExposedAdminAreaRecord,
 } from '@api-service/src/events/events.repository';
+import {
+  AlertClassType,
+  ForecastSource,
+  HazardType,
+} from '@api-service/src/shared-enums';
 
 @Injectable()
 export class EventsService {
@@ -38,22 +44,38 @@ export class EventsService {
       eventId: event.id,
       eventName: event.eventName,
       eventLabel: this.deriveEventLabel(event.eventName),
-      hazardType: event.hazardType,
-      forecastSources: event.forecastSources,
-      alertClass: event.alertClass,
+      hazardType: event.hazardType as HazardType,
+      forecastSources: event.forecastSources as ForecastSource[],
+      alertClass: event.alertClass as AlertClassType,
       trigger: event.trigger,
       centroid: event.centroid as { latitude: number; longitude: number },
-      startAt: event.startAt,
-      reachesPeakAlertClassAt: event.reachesPeakAlertClassAt,
-      endAt: event.endAt,
-      firstIssuedAt: event.firstIssuedAt,
-      lastUpdatedAt: event.lastUpdatedAt,
+      startAt: event.startAt.toISOString(),
+      reachesPeakAlertClassAt: event.reachesPeakAlertClassAt.toISOString(),
+      endAt: event.endAt.toISOString(),
+      firstIssuedAt: event.firstIssuedAt.toISOString(),
+      lastUpdatedAt: event.lastUpdatedAt.toISOString(),
       isOngoing:
         event.startAt <= viewTime &&
         event.endAt > viewTime &&
         event.closedAt === null,
-      exposedAdminAreas,
+      exposedAdminAreas: this.mapExposedAdminAreas(exposedAdminAreas),
+      availableLayers: [], // TODO AB#42226: re-evaluate naming/structure/etc based on actual usage when putting 'flood extent' in here
     };
+  }
+
+  private mapExposedAdminAreas(
+    exposedAdminAreas: ExposedAdminAreaRecord[],
+  ): ExposedAdminAreaDto[] {
+    return exposedAdminAreas.map((area) => ({
+      placeCode: area.placeCode,
+      adminLevel: area.adminLevel,
+      name: area.name,
+      exposure: area.exposure.map((exp) => ({
+        type: exp.type,
+        total: null,
+        exposed: exp.exposed,
+      })),
+    }));
   }
 
   private deriveEventLabel(eventName: string): string {
