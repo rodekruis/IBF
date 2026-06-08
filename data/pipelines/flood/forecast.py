@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import logging
+from typing import cast
 
 from pipelines.flood.compute_alert_extent import compute_alert_extent
 from pipelines.flood.determine_alerts import (
     determine_temporal_extent,
     ReturnPeriodThresholds,
+    ReturnPeriodThresholdValue,
 )
 from pipelines.flood.determine_exposure import (
     compute_population_exposed,
@@ -17,7 +19,7 @@ from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import Centroid
-from pipelines.infra.data_types.enums import EnsembleMemberType, Layer
+from pipelines.infra.data_types.enums import EnsembleMemberType, Layer, SeverityKey
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
@@ -42,9 +44,6 @@ def calculate_flood_forecasts(
     glofas_stations: dict[str, LocationPoint] = data_provider.get_data(
         DataSource.GLOFAS_STATIONS_IBF_API, dict
     )
-    glofas_station_thresholds: list[ReturnPeriodThresholds] = data_provider.get_data(
-        DataSource.GLOFAS_STATION_THRESHOLDS_SEED_REPO, list
-    )  # TODO AB#42288: include as part of glofas stations api call
     target_admin_areas = data_provider.get_data(
         DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
     )
@@ -55,12 +54,11 @@ def calculate_flood_forecasts(
     if (
         not alert_configs
         or not glofas_stations
-        or not glofas_station_thresholds
         or not target_admin_areas
         or not flood_extent_provider
     ):
         data_submitter.add_error(
-            f"Missing input data: alert_configs={bool(alert_configs)}, glofas_stations={bool(glofas_stations)}, admin_areas={bool(target_admin_areas)}, thresholds={bool(glofas_station_thresholds)}, flood_extents={bool(flood_extent_provider)}"
+            f"Missing input data: alert_configs={bool(alert_configs)}, glofas_stations={bool(glofas_stations)}, admin_areas={bool(target_admin_areas)}, flood_extents={bool(flood_extent_provider)}"
         )
         return
 
@@ -69,6 +67,17 @@ def calculate_flood_forecasts(
     glofas_netcdf_paths = _get_glofas_discharge_paths(data_provider)
 
     ### Step 2 - Extract discharge per station from GloFAS data ###
+    glofas_station_thresholds: list[ReturnPeriodThresholds] = [
+        {
+            "station_code": station.id,
+            "thresholds": cast(
+                list[ReturnPeriodThresholdValue],
+                station.attributes["thresholds"],
+            ),
+        }
+        for station in glofas_stations.values()
+    ]
+
     country_bounds = get_bounding_box(
         target_admin_areas, point_locations=glofas_stations
     )
@@ -162,22 +171,22 @@ def calculate_flood_forecasts(
             )
 
             for severity in time_interval_severities:
-                for i in range(len(severity.ensemble_discharges)):
+                for i in range(len(severity.ensemble_return_periods)):
                     data_submitter.add_severity_data(
                         event_name=event_name,
                         time_interval_start=severity.time_interval_start,
                         time_interval_end=severity.time_interval_end,
                         ensemble_member_type=EnsembleMemberType.RUN,
-                        severity_key="water_discharge",
-                        severity_value=severity.ensemble_discharges[i],
+                        severity_key=SeverityKey.RETURN_PERIOD,
+                        severity_value=severity.ensemble_return_periods[i],
                     )
                 data_submitter.add_severity_data(
                     event_name=event_name,
                     time_interval_start=severity.time_interval_start,
                     time_interval_end=severity.time_interval_end,
                     ensemble_member_type=EnsembleMemberType.MEDIAN,
-                    severity_key="water_discharge",
-                    severity_value=severity.median_discharge,
+                    severity_key=SeverityKey.RETURN_PERIOD,
+                    severity_value=severity.median_return_period,
                 )
 
             data_submitter.add_admin_area_exposure(

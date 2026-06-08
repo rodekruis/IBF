@@ -6,6 +6,7 @@ import {
   ForecastSource,
   HazardType,
   Layer,
+  SeverityKey,
 } from '@api-service/src/shared-enums';
 
 type EnumObject = Record<string, string | number>;
@@ -16,6 +17,7 @@ const enumsToGenerate: { name: string; values: EnumObject }[] = [
   { name: 'ForecastSource', values: ForecastSource },
   { name: 'HazardType', values: HazardType },
   { name: 'Layer', values: Layer },
+  { name: 'SeverityKey', values: SeverityKey },
 ];
 
 const SOURCE_PATH = 'services/api-service/src/shared-enums.ts';

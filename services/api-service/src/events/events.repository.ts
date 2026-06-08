@@ -6,6 +6,7 @@ import {
   EnsembleMemberType,
   HazardType,
   Layer,
+  SeverityKey,
 } from '@api-service/src/shared-enums';
 
 interface EventAlertHistorySeverity {
@@ -14,7 +15,7 @@ interface EventAlertHistorySeverity {
     readonly end: string;
   };
   readonly ensembleMemberType: EnsembleMemberType;
-  readonly severityKey: string;
+  readonly severityKey: SeverityKey;
   readonly severityValue: number;
 }
 
@@ -131,7 +132,7 @@ export class EventsRepository {
       severityData: alert.severity.map((severity) => ({
         timeInterval: severity.timeInterval as { start: string; end: string },
         ensembleMemberType: severity.ensembleMemberType as EnsembleMemberType,
-        severityKey: severity.severityKey,
+        severityKey: severity.severityKey as SeverityKey,
         severityValue: severity.severityValue,
       })),
     }));

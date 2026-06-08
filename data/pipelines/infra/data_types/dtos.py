@@ -13,6 +13,7 @@ from pipelines.infra.data_types.enums import (
     ForecastSource,
     HazardType,
     Layer,
+    SeverityKey,
 )
 
 # Pyright cannot enforce recursive JSON types due to dict invariance.
@@ -68,7 +69,7 @@ class TimeInterval:
 class Severity:
     time_interval: TimeInterval
     ensemble_member_type: EnsembleMemberType
-    severity_key: str
+    severity_key: SeverityKey
     severity_value: float | int
 
     def to_dict(self) -> JsonDict:

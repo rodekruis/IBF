@@ -1,4 +1,13 @@
-import { HazardType } from '@api-service/src/shared-enums';
+import {
+  AlertClass,
+  AlertClassificationLevel,
+  HazardType,
+} from '@api-service/src/shared-enums';
+
+interface ClassLevel {
+  readonly label: AlertClassificationLevel;
+  readonly threshold: number;
+}
 
 export interface SeedAlertConfig {
   readonly countryCodeIso3: string;
@@ -6,15 +15,14 @@ export interface SeedAlertConfig {
   readonly spatialExtentName: string;
   readonly spatialExtentPlaceCodes: string[];
   readonly temporalExtents: Record<string, string[] | number[]>[];
-  readonly severityClassLevels: { label: string; threshold: number }[];
-  readonly probabilityClassLevels: { label: string; threshold: number }[];
-  readonly alertClassMatrix: Record<string, Record<string, string>>;
-  readonly alertClassOrder: string[];
-  readonly triggerAlertClass: string | null;
+  readonly severityClassLevels: ClassLevel[];
+  readonly probabilityClassLevels: ClassLevel[];
+  readonly triggerAlertClass: AlertClass | null;
   readonly triggerLeadTimeDuration: string | null;
 }
 
-// --- FLOODS: loaded dynamically from seed-data repo in seed-init.ts ---
+// --- FLOODS: in-code config ---
+// TODO: should some of the below come from a seed-data repo source instead of defined in code?
 
 export const FLOOD_LEAD_TIME_SPECTRUM = [
   '0-day',
@@ -27,38 +35,93 @@ export const FLOOD_LEAD_TIME_SPECTRUM = [
   '7-day',
 ];
 
-// TODO AB#42288 make thresholds station-specific
-export const FLOOD_SEVERITY_CLASS_LEVELS = [
-  { label: 'low', threshold: 100 },
-  { label: 'med', threshold: 200 },
-  { label: 'high', threshold: 400 },
-];
+interface FloodClassificationConfig {
+  readonly severityClassLevels: ClassLevel[];
+  readonly probabilityClassLevels: ClassLevel[];
+  readonly triggerAlertClass: AlertClass;
+  readonly triggerLeadTimeDuration: string;
+}
 
-export const FLOOD_PROBABILITY_CLASS_LEVELS = [
-  { label: 'low', threshold: 0.5 },
-  { label: 'med', threshold: 0.65 },
-  { label: 'high', threshold: 0.85 },
-];
+const {
+  SingleThreshold: single,
+  Low: low,
+  Medium: med,
+  High: high,
+} = AlertClassificationLevel;
 
-export const FLOOD_ALERT_CLASS_MATRIX = {
-  low: { low: 'low', med: 'low', high: 'med' },
-  med: { low: 'low', med: 'med', high: 'high' },
-  high: { low: 'med', med: 'high', high: 'high' },
+// All configs use 'single' for at least one dimension (severity or probability).
+// This avoids the non-independence issue between severity and probability
+// (see AlertClassificationLevel enum comments for details).
+export const FLOOD_CLASSIFICATION_BY_COUNTRY: Record<
+  string,
+  FloodClassificationConfig
+> = {
+  UGA: {
+    severityClassLevels: [
+      { label: low, threshold: 1.5 },
+      { label: med, threshold: 2 },
+      { label: high, threshold: 5 },
+    ],
+    probabilityClassLevels: [{ label: single, threshold: 0.6 }],
+    triggerAlertClass: AlertClass.High,
+    triggerLeadTimeDuration: 'P5D',
+  },
+  KEN: {
+    severityClassLevels: [{ label: single, threshold: 5 }],
+    probabilityClassLevels: [{ label: single, threshold: 0.85 }],
+    triggerAlertClass: AlertClass.High,
+    triggerLeadTimeDuration: 'P7D',
+  },
+  ETH: {
+    severityClassLevels: [
+      { label: low, threshold: 2 },
+      { label: med, threshold: 5 },
+      { label: high, threshold: 10 },
+    ],
+    probabilityClassLevels: [{ label: single, threshold: 0.75 }],
+    triggerAlertClass: AlertClass.High,
+    triggerLeadTimeDuration: 'P7D',
+  },
+  ZMB: {
+    severityClassLevels: [{ label: single, threshold: 10 }],
+    probabilityClassLevels: [
+      { label: low, threshold: 0.6 },
+      { label: med, threshold: 0.7 },
+      { label: high, threshold: 0.8 },
+    ],
+    triggerAlertClass: AlertClass.High,
+    triggerLeadTimeDuration: 'P7D',
+  },
+  SSD: {
+    severityClassLevels: [{ label: single, threshold: 5 }],
+    probabilityClassLevels: [{ label: single, threshold: 0.6 }],
+    triggerAlertClass: AlertClass.High,
+    triggerLeadTimeDuration: 'P7D',
+  },
+  MWI: {
+    severityClassLevels: [{ label: single, threshold: 5 }],
+    probabilityClassLevels: [{ label: single, threshold: 0.6 }],
+    triggerAlertClass: AlertClass.High,
+    triggerLeadTimeDuration: 'P6D',
+  },
+  PHL: {
+    severityClassLevels: [{ label: single, threshold: 5 }],
+    probabilityClassLevels: [{ label: single, threshold: 0.8 }],
+    triggerAlertClass: AlertClass.High,
+    triggerLeadTimeDuration: 'P3D',
+  },
 };
-
-export const FLOOD_ALERT_CLASS_ORDER = ['low', 'med', 'high'];
 
 // --- DROUGHT: in-code config ---
+// TODO: should some of the below come from a seed-data repo source instead of defined in code?
 
-const DROUGHT_SEVERITY_CLASS_LEVELS = [{ label: 'warning', threshold: 0.2 }];
+const DROUGHT_SEVERITY_CLASS_LEVELS: ClassLevel[] = [
+  { label: single, threshold: 0.2 },
+];
 
-const DROUGHT_PROBABILITY_CLASS_LEVELS = [{ label: 'any', threshold: 0 }];
-
-const DROUGHT_ALERT_CLASS_MATRIX = {
-  warning: { any: 'warning' },
-};
-
-const DROUGHT_ALERT_CLASS_ORDER = ['warning'];
+const DROUGHT_PROBABILITY_CLASS_LEVELS: ClassLevel[] = [
+  { label: single, threshold: 0 },
+];
 
 function createDroughtAlertConfig(
   countryCodeIso3: string,
@@ -74,15 +137,12 @@ function createDroughtAlertConfig(
     temporalExtents: seasons,
     severityClassLevels: DROUGHT_SEVERITY_CLASS_LEVELS,
     probabilityClassLevels: DROUGHT_PROBABILITY_CLASS_LEVELS,
-    alertClassMatrix: DROUGHT_ALERT_CLASS_MATRIX,
-    alertClassOrder: DROUGHT_ALERT_CLASS_ORDER,
     triggerAlertClass: null,
     triggerLeadTimeDuration: null,
   };
 }
 
-// --- DROUGHT: ETH (from droughtSeasonRegions + droughtRegions) ---
-// TODO: consider loading from seed-data repo as well
+// --- DROUGHT: ETH  ---
 
 const ETH_DROUGHT_CONFIGS: SeedAlertConfig[] = [
   createDroughtAlertConfig(

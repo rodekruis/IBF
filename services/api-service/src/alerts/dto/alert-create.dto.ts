@@ -5,7 +5,7 @@ import { IsArray, IsString, ValidateNested } from 'class-validator';
 import { CentroidDto } from '@api-service/src/alerts/dto/centroid.dto';
 import { ExposureDto } from '@api-service/src/alerts/dto/exposure.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
-import { EnsembleMemberType } from '@api-service/src/shared-enums';
+import { EnsembleMemberType, SeverityKey } from '@api-service/src/shared-enums';
 
 // The data pipelines also use this definition.
 // If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py
@@ -28,8 +28,8 @@ export class AlertCreateDto {
           end: '2026-03-20T23:59:59Z',
         },
         ensembleMemberType: EnsembleMemberType.median,
-        severityKey: 'water_discharge',
-        severityValue: 120.5,
+        severityKey: SeverityKey.returnPeriod,
+        severityValue: 5,
       },
       {
         timeInterval: {
@@ -37,8 +37,8 @@ export class AlertCreateDto {
           end: '2026-03-20T23:59:59Z',
         },
         ensembleMemberType: EnsembleMemberType.run,
-        severityKey: 'water_discharge',
-        severityValue: 135.0,
+        severityKey: SeverityKey.returnPeriod,
+        severityValue: 10,
       },
     ],
   })
