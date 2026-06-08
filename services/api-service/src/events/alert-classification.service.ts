@@ -17,19 +17,14 @@ type AlertClassMatrix = Record<
   Record<AlertClassificationLevel, AlertClass>
 >;
 
-const {
-  singleThreshold: singleThreshold,
-  Low: low,
-  Med: med,
-  High: high,
-} = AlertClassificationLevel;
+const { SingleThreshold, Low, Medium, High } = AlertClassificationLevel;
 
 // This matrix determines how severityClass and probabilityClass are combined into alertClass.
-// - When one dimension is 'singleThreshold' the other dimension passes through directly, so matrix[singleThreshold][x] = x and matrix[x][singleThreshold] = x.
-// - The inner 3x3 cells (low/med/high × low/med/high) follow a standard risk matrix (UNDRR/WMO),
-// but are currently unused: all configs use 'singleThreshold' for at least one dimension.
+// - When one dimension is 'SingleThreshold' the other dimension passes through directly, so matrix[SingleThreshold][x] = x and matrix[x][SingleThreshold] = x.
+// - The inner 3x3 cells (Low/Medium/High × Low/Medium/High) follow a standard risk matrix (UNDRR/WMO),
+// but are currently unused: all configs use 'SingleThreshold' for at least one dimension.
 //
-// NOTE: 'singleThreshold' is used when a dimension (severity or probability) has only one threshold level,
+// NOTE: 'SingleThreshold' is used when a dimension (severity or probability) has only one threshold level,
 // meaning that dimension does not differentiate between alert classes.
 // In practice, all current configs use either multi-sev + single-prob, or single-sev + multi-prob, or both single.
 // Multi-sev + multi-prob is not used, and would in the current setup lead to counterintuitive results because probability is conditional on severity
@@ -37,29 +32,29 @@ const {
 // which means: lower severity threshold is easier to exceed > higher probability > higher probability class > potentially higher alert class for less severe alert (depending on exact threshold configurations)
 // TODO AB#41119: resolve this computation problem
 const ALERT_CLASS_MATRIX: AlertClassMatrix = {
-  [singleThreshold]: {
-    [singleThreshold]: AlertClass.High, // when both dimensions are 'singleThreshold', we classify as 'high' for now
-    [low]: AlertClass.Low,
-    [med]: AlertClass.Medium,
-    [high]: AlertClass.High,
+  [SingleThreshold]: {
+    [SingleThreshold]: AlertClass.High, // when both dimensions are 'SingleThreshold', we classify as 'high' for now
+    [Low]: AlertClass.Low,
+    [Medium]: AlertClass.Medium,
+    [High]: AlertClass.High,
   },
-  [low]: {
-    [singleThreshold]: AlertClass.Low,
-    [low]: AlertClass.Low,
-    [med]: AlertClass.Low,
-    [high]: AlertClass.Medium,
+  [Low]: {
+    [SingleThreshold]: AlertClass.Low,
+    [Low]: AlertClass.Low,
+    [Medium]: AlertClass.Low,
+    [High]: AlertClass.Medium,
   },
-  [med]: {
-    [singleThreshold]: AlertClass.Medium,
-    [low]: AlertClass.Low,
-    [med]: AlertClass.Medium,
-    [high]: AlertClass.High,
+  [Medium]: {
+    [SingleThreshold]: AlertClass.Medium,
+    [Low]: AlertClass.Low,
+    [Medium]: AlertClass.Medium,
+    [High]: AlertClass.High,
   },
-  [high]: {
-    [singleThreshold]: AlertClass.High,
-    [low]: AlertClass.Medium,
-    [med]: AlertClass.High,
-    [high]: AlertClass.High,
+  [High]: {
+    [SingleThreshold]: AlertClass.High,
+    [Low]: AlertClass.Medium,
+    [Medium]: AlertClass.High,
+    [High]: AlertClass.High,
   },
 };
 

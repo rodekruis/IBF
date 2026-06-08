@@ -1,7 +1,11 @@
 import { HttpStatus } from '@nestjs/common';
 
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { HazardType } from '@api-service/src/shared-enums';
+import {
+  AlertClass,
+  AlertClassificationLevel,
+  HazardType,
+} from '@api-service/src/shared-enums';
 import {
   getAccessToken,
   getServer,
@@ -23,16 +27,16 @@ describe('/ Alert Configs', () => {
     spatialExtentPlaceCodes: ['ET0101'],
     temporalExtents: [{ 'lead-time-spectrum': ['0-day', '1-day', '2-day'] }],
     severityClassLevels: [
-      { label: 'low', threshold: 100 },
-      { label: 'med', threshold: 200 },
-      { label: 'high', threshold: 400 },
+      { label: AlertClassificationLevel.Low, threshold: 100 },
+      { label: AlertClassificationLevel.Medium, threshold: 200 },
+      { label: AlertClassificationLevel.High, threshold: 400 },
     ],
     probabilityClassLevels: [
-      { label: 'low', threshold: 0.5 },
-      { label: 'med', threshold: 0.65 },
-      { label: 'high', threshold: 0.85 },
+      { label: AlertClassificationLevel.Low, threshold: 0.5 },
+      { label: AlertClassificationLevel.Medium, threshold: 0.65 },
+      { label: AlertClassificationLevel.High, threshold: 0.85 },
     ],
-    triggerAlertClass: 'high',
+    triggerAlertClass: AlertClass.High,
     triggerLeadTimeDuration: 'P7D',
   };
 

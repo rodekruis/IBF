@@ -57,9 +57,9 @@ export enum SeverityKey {
 
 // Allowed classification levels for: severityClass and probabilityClass
 export enum AlertClassificationLevel {
-  singleThreshold = 'single_threshold',
+  SingleThreshold = 'single_threshold',
   Low = 'low',
-  Med = 'medium',
+  Medium = 'medium',
   High = 'high',
 }
 

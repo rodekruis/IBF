@@ -25,9 +25,9 @@ function toClassificationInput(
 }
 
 const {
-  singleThreshold: single,
+  SingleThreshold: single,
   Low: low,
-  Med: med,
+  Medium: med,
   High: high,
 } = AlertClassificationLevel;
 
@@ -122,7 +122,7 @@ describe('AlertClassificationService', () => {
         const result = await service.classifyAlert(
           toClassificationInput(alert),
         );
-        expect(result.alertClass).toBe(AlertClassificationLevel.Med);
+        expect(result.alertClass).toBe(AlertClassificationLevel.Medium);
       });
 
       it('should return high alertClass for high severity with high probability', async () => {
@@ -227,7 +227,7 @@ describe('AlertClassificationService', () => {
           const result = await service.classifyAlert(
             toClassificationInput(alert),
           );
-          expect(result.alertClass).toBe(AlertClassificationLevel.Med);
+          expect(result.alertClass).toBe(AlertClassificationLevel.Medium);
           expect(result.trigger).toBe(false);
         });
       });

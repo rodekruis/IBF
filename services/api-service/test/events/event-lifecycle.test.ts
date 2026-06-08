@@ -1,7 +1,11 @@
 import { HttpStatus } from '@nestjs/common';
 
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
+import {
+  AlertClass,
+  ForecastSource,
+  HazardType,
+} from '@api-service/src/shared-enums';
 import {
   buildAlert,
   buildForecast,
@@ -73,7 +77,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       eventName: 'ETH_floods_station-A',
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
-      alertClass: 'low',
+      alertClass: AlertClass.Low,
       trigger: false,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
       lastUpdatedAt: '2026-03-23T12:00:00.000Z',
@@ -99,7 +103,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
       eventName: 'ETH_floods_station-A',
-      alertClass: 'high',
+      alertClass: AlertClass.High,
       trigger: true,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
       lastUpdatedAt: '2026-03-24T12:00:00.000Z',

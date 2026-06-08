@@ -43,9 +43,9 @@ interface FloodClassificationConfig {
 }
 
 const {
-  singleThreshold: single,
+  SingleThreshold: single,
   Low: low,
-  Med: med,
+  Medium: med,
   High: high,
 } = AlertClassificationLevel;
 
