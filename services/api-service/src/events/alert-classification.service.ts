@@ -4,49 +4,62 @@ import { AlertConfigsService } from '@api-service/src/alert-configs/alert-config
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
+import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
 import {
   AlertClass,
   AlertClassificationLevel,
-} from '@api-service/src/events/enum/classification-level.enum';
-import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
-import { EnsembleMemberType, HazardType } from '@api-service/src/shared-enums';
+  EnsembleMemberType,
+  HazardType,
+} from '@api-service/src/shared-enums';
 
 type AlertClassMatrix = Record<
   AlertClassificationLevel,
   Record<AlertClassificationLevel, AlertClass>
 >;
 
-const { singleThreshold: single, low, med, high } = AlertClassificationLevel;
+const {
+  singleThreshold: singleThreshold,
+  Low: low,
+  Med: med,
+  High: high,
+} = AlertClassificationLevel;
 
 // This matrix determines how severityClass and probabilityClass are combined into alertClass.
-// When one dimension is 'single' (not multi-threshold) the other dimension passes through directly, so matrix[single][x] = x and matrix[x][single] = x.
-// The inner 3x3 cells (low/med/high × low/med/high) follow a standard risk matrix (UNDRR/WMO),
-// but are currently unused: all configs use 'single' for at least one dimension.
-// See comments in classification-level.enum for why multi-sev × multi-prob is avoided.
+// - When one dimension is 'singleThreshold' the other dimension passes through directly, so matrix[singleThreshold][x] = x and matrix[x][singleThreshold] = x.
+// - The inner 3x3 cells (low/med/high × low/med/high) follow a standard risk matrix (UNDRR/WMO),
+// but are currently unused: all configs use 'singleThreshold' for at least one dimension.
+//
+// NOTE: 'singleThreshold' is used when a dimension (severity or probability) has only one threshold level,
+// meaning that dimension does not differentiate between alert classes.
+// In practice, all current configs use either multi-sev + single-prob, or single-sev + multi-prob, or both single.
+// Multi-sev + multi-prob is not used, and would in the current setup lead to counterintuitive results because probability is conditional on severity
+// as probability is calculated as % of runs exceeding identified severity threshold
+// which means: lower severity threshold is easier to exceed > higher probability > higher probability class > potentially higher alert class for less severe alert (depending on exact threshold configurations)
+// TODO AB#41119: resolve this computation problem
 const ALERT_CLASS_MATRIX: AlertClassMatrix = {
-  [single]: {
-    [single]: AlertClass.high, // when both dimensions are 'single', we classify as 'high' for now
-    [low]: AlertClass.low,
-    [med]: AlertClass.med,
-    [high]: AlertClass.high,
+  [singleThreshold]: {
+    [singleThreshold]: AlertClass.High, // when both dimensions are 'singleThreshold', we classify as 'high' for now
+    [low]: AlertClass.Low,
+    [med]: AlertClass.Medium,
+    [high]: AlertClass.High,
   },
   [low]: {
-    [single]: AlertClass.low,
-    [low]: AlertClass.low,
-    [med]: AlertClass.low,
-    [high]: AlertClass.med,
+    [singleThreshold]: AlertClass.Low,
+    [low]: AlertClass.Low,
+    [med]: AlertClass.Low,
+    [high]: AlertClass.Medium,
   },
   [med]: {
-    [single]: AlertClass.med,
-    [low]: AlertClass.low,
-    [med]: AlertClass.med,
-    [high]: AlertClass.high,
+    [singleThreshold]: AlertClass.Medium,
+    [low]: AlertClass.Low,
+    [med]: AlertClass.Medium,
+    [high]: AlertClass.High,
   },
   [high]: {
-    [single]: AlertClass.high,
-    [low]: AlertClass.med,
-    [med]: AlertClass.high,
-    [high]: AlertClass.high,
+    [singleThreshold]: AlertClass.High,
+    [low]: AlertClass.Medium,
+    [med]: AlertClass.High,
+    [high]: AlertClass.High,
   },
 };
 

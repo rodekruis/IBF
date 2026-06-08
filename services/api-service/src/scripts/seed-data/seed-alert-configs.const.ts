@@ -1,8 +1,8 @@
 import {
   AlertClass,
   AlertClassificationLevel,
-} from '@api-service/src/events/enum/classification-level.enum';
-import { HazardType } from '@api-service/src/shared-enums';
+  HazardType,
+} from '@api-service/src/shared-enums';
 
 interface ClassLevel {
   readonly label: AlertClassificationLevel;
@@ -42,7 +42,12 @@ interface FloodClassificationConfig {
   readonly triggerLeadTimeDuration: string;
 }
 
-const { singleThreshold: single, low, med, high } = AlertClassificationLevel;
+const {
+  singleThreshold: single,
+  Low: low,
+  Med: med,
+  High: high,
+} = AlertClassificationLevel;
 
 // All configs use 'single' for at least one dimension (severity or probability).
 // This avoids the non-independence issue between severity and probability
@@ -58,13 +63,13 @@ export const FLOOD_CLASSIFICATION_BY_COUNTRY: Record<
       { label: high, threshold: 5 },
     ],
     probabilityClassLevels: [{ label: single, threshold: 0.6 }],
-    triggerAlertClass: AlertClass.high,
+    triggerAlertClass: AlertClass.High,
     triggerLeadTimeDuration: 'P5D',
   },
   KEN: {
     severityClassLevels: [{ label: single, threshold: 5 }],
     probabilityClassLevels: [{ label: single, threshold: 0.85 }],
-    triggerAlertClass: AlertClass.high,
+    triggerAlertClass: AlertClass.High,
     triggerLeadTimeDuration: 'P7D',
   },
   ETH: {
@@ -74,7 +79,7 @@ export const FLOOD_CLASSIFICATION_BY_COUNTRY: Record<
       { label: high, threshold: 10 },
     ],
     probabilityClassLevels: [{ label: single, threshold: 0.75 }],
-    triggerAlertClass: AlertClass.high,
+    triggerAlertClass: AlertClass.High,
     triggerLeadTimeDuration: 'P7D',
   },
   ZMB: {
@@ -84,25 +89,25 @@ export const FLOOD_CLASSIFICATION_BY_COUNTRY: Record<
       { label: med, threshold: 0.7 },
       { label: high, threshold: 0.8 },
     ],
-    triggerAlertClass: AlertClass.high,
+    triggerAlertClass: AlertClass.High,
     triggerLeadTimeDuration: 'P7D',
   },
   SSD: {
     severityClassLevels: [{ label: single, threshold: 5 }],
     probabilityClassLevels: [{ label: single, threshold: 0.6 }],
-    triggerAlertClass: AlertClass.high,
+    triggerAlertClass: AlertClass.High,
     triggerLeadTimeDuration: 'P7D',
   },
   MWI: {
     severityClassLevels: [{ label: single, threshold: 5 }],
     probabilityClassLevels: [{ label: single, threshold: 0.6 }],
-    triggerAlertClass: AlertClass.high,
+    triggerAlertClass: AlertClass.High,
     triggerLeadTimeDuration: 'P6D',
   },
   PHL: {
     severityClassLevels: [{ label: single, threshold: 5 }],
     probabilityClassLevels: [{ label: single, threshold: 0.8 }],
-    triggerAlertClass: AlertClass.high,
+    triggerAlertClass: AlertClass.High,
     triggerLeadTimeDuration: 'P3D',
   },
 };

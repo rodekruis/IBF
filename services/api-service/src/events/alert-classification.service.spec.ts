@@ -5,8 +5,8 @@ import { AlertClassificationService } from '@api-service/src/events/alert-classi
 import {
   AlertClass,
   AlertClassificationLevel,
-} from '@api-service/src/events/enum/classification-level.enum';
-import { HazardType } from '@api-service/src/shared-enums';
+  HazardType,
+} from '@api-service/src/shared-enums';
 import {
   buildAlert,
   buildSeverityData,
@@ -24,7 +24,12 @@ function toClassificationInput(
   };
 }
 
-const { singleThreshold: single, low, med, high } = AlertClassificationLevel;
+const {
+  singleThreshold: single,
+  Low: low,
+  Med: med,
+  High: high,
+} = AlertClassificationLevel;
 
 // Severity thresholds: low >= 1.5, med >= 5, high >= 20 (return period)
 // Probability thresholds: low >= 50%, med >= 65%, high >= 85% (fraction of runs exceeding severity threshold)
@@ -41,7 +46,7 @@ const testFloodConfig: Partial<AlertConfigResponseDto> = {
     { label: med, threshold: 0.65 },
     { label: high, threshold: 0.85 },
   ],
-  triggerAlertClass: AlertClass.high,
+  triggerAlertClass: AlertClass.High,
   triggerLeadTimeDuration: 'P7D',
 };
 
@@ -117,7 +122,7 @@ describe('AlertClassificationService', () => {
         const result = await service.classifyAlert(
           toClassificationInput(alert),
         );
-        expect(result.alertClass).toBe(AlertClassificationLevel.med);
+        expect(result.alertClass).toBe(AlertClassificationLevel.Med);
       });
 
       it('should return high alertClass for high severity with high probability', async () => {
@@ -133,7 +138,7 @@ describe('AlertClassificationService', () => {
         const result = await service.classifyAlert(
           toClassificationInput(alert),
         );
-        expect(result.alertClass).toBe(AlertClassificationLevel.high);
+        expect(result.alertClass).toBe(AlertClassificationLevel.High);
       });
 
       it('should pick highest alertClass across multiple lead times and compute correct dates', async () => {
@@ -159,7 +164,7 @@ describe('AlertClassificationService', () => {
         const result = await service.classifyAlert(
           toClassificationInput(alert),
         );
-        expect(result.alertClass).toBe(AlertClassificationLevel.high);
+        expect(result.alertClass).toBe(AlertClassificationLevel.High);
         expect(result.startAt).toEqual(new Date('2026-04-01T00:00:00Z'));
         expect(result.endAt).toEqual(new Date('2026-04-05T00:00:00Z'));
         expect(result.reachesPeakAlertClassAt).toEqual(
@@ -205,7 +210,7 @@ describe('AlertClassificationService', () => {
               new Date('2026-03-30T00:00:00Z'),
             ),
           );
-          expect(result.alertClass).toBe(AlertClassificationLevel.high);
+          expect(result.alertClass).toBe(AlertClassificationLevel.High);
           expect(result.trigger).toBe(false);
         });
 
@@ -222,7 +227,7 @@ describe('AlertClassificationService', () => {
           const result = await service.classifyAlert(
             toClassificationInput(alert),
           );
-          expect(result.alertClass).toBe(AlertClassificationLevel.med);
+          expect(result.alertClass).toBe(AlertClassificationLevel.Med);
           expect(result.trigger).toBe(false);
         });
       });
@@ -242,7 +247,7 @@ describe('AlertClassificationService', () => {
         const result = await service.classifyAlert(
           toClassificationInput(alert, HazardType.drought),
         );
-        expect(result.alertClass).toBe(AlertClassificationLevel.high);
+        expect(result.alertClass).toBe(AlertClassificationLevel.High);
         expect(result.trigger).toBe(false);
       });
     });
