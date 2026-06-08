@@ -15,6 +15,7 @@ from pipelines.infra.data_types.dtos import (
     EnsembleMemberType,
     HazardType,
     Layer,
+    SeverityKey,
 )
 
 HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
@@ -78,7 +79,7 @@ def _generate_alert_scenarios(
                 time_interval_start="2026-01-01T00:00:00Z",
                 time_interval_end="2026-01-01T23:59:59Z",
                 ensemble_member_type=EnsembleMemberType.RUN,
-                severity_key="scenario_severity",
+                severity_key=SeverityKey.RETURN_PERIOD,
                 severity_value=severity_value,
             )
         data_submitter.add_severity_data(
@@ -86,7 +87,7 @@ def _generate_alert_scenarios(
             time_interval_start="2026-01-01T00:00:00Z",
             time_interval_end="2026-01-01T23:59:59Z",
             ensemble_member_type=EnsembleMemberType.MEDIAN,
-            severity_key="scenario_severity",
+            severity_key=SeverityKey.RETURN_PERIOD,
             severity_value=severity_value,
         )
 

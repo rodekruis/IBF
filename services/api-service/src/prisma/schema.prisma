@@ -215,8 +215,6 @@ model AlertConfig {
   severityClassLevels       Json
   // TODO: the classification fields below are currently duplicated per row (they are hazard-type-level, not per-station). Handle differently later.
   probabilityClassLevels    Json
-  alertClassMatrix          Json
-  alertClassOrder           String[]
   triggerAlertClass         String?
   triggerLeadTimeDuration   String?
 

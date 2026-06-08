@@ -150,8 +150,8 @@ describe('GET /events - rich seed data for demo/debugging', () => {
       severity: buildSeverityData({
         start: daysFromNow(-1),
         end: daysFromNow(7),
-        medianValue: 500,
-        runValues: [480, 520, 510, 490, 530],
+        medianValue: 25,
+        runValues: [25, 25, 25, 25, 25],
       }),
       exposure: {
         adminAreas: AWASH_RIVER_ADMIN_AREAS,
@@ -172,8 +172,8 @@ describe('GET /events - rich seed data for demo/debugging', () => {
       severity: buildSeverityData({
         start: daysFromNow(1),
         end: daysFromNow(8),
-        medianValue: 120,
-        runValues: [150, 140, 160],
+        medianValue: 2,
+        runValues: [2, 2, 2],
       }),
       exposure: {
         adminAreas: GAMBELLA_ADMIN_AREAS,

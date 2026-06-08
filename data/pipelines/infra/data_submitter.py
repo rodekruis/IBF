@@ -20,6 +20,7 @@ from pipelines.infra.data_types.dtos import (
     Layer,
     RasterExtent,
     Severity,
+    SeverityKey,
     TimeInterval,
 )
 from pipelines.infra.utils.alert_integrity_checks import (
@@ -88,7 +89,7 @@ class DataSubmitter:
         time_interval_start: str,
         time_interval_end: str,
         ensemble_member_type: EnsembleMemberType,
-        severity_key: str,
+        severity_key: SeverityKey,
         severity_value: float | int,
     ) -> None:
         alert = self._get_alert(event_name, "add_severity_data")

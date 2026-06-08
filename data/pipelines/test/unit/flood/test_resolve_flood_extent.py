@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
@@ -9,6 +8,7 @@ from pipelines.flood.compute_alert_extent import (
     _resolve_flood_extent,
     compute_alert_extent,
 )
+from pipelines.flood.determine_alerts import TimeIntervalSeverity
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from rasterio.transform import from_origin
@@ -30,17 +30,22 @@ def _make_provider(return_periods: list[int]) -> FloodExtentProvider:
     return provider
 
 
-def _build_time_interval_severities(return_period: str):
-    severity = SimpleNamespace(
-        median_discharge=1.0,
-        return_period=return_period,
-    )
-    return [severity]
+def _build_time_interval_severities(
+    return_period: float,
+) -> list[TimeIntervalSeverity]:
+    return [
+        TimeIntervalSeverity(
+            time_interval_start="2026-04-01",
+            time_interval_end="2026-04-02",
+            median_return_period=return_period,
+            ensemble_return_periods=[return_period],
+        )
+    ]
 
 
 def test_returns_exact_matching_return_period():
     provider = _make_provider([10, 50])
-    time_interval_severities = _build_time_interval_severities("50yr")
+    time_interval_severities = _build_time_interval_severities(50)
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
         selected = compute_alert_extent(
@@ -54,7 +59,7 @@ def test_returns_exact_matching_return_period():
 
 def test_falls_back_to_closest_lower_return_period():
     provider = _make_provider([5, 25])
-    time_interval_severities = _build_time_interval_severities("50yr")
+    time_interval_severities = _build_time_interval_severities(50)
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
         selected = compute_alert_extent(
@@ -68,7 +73,7 @@ def test_falls_back_to_closest_lower_return_period():
 
 def test_falls_back_to_empty_when_no_lower_return_period_exists():
     provider = _make_provider([50])
-    time_interval_severities = _build_time_interval_severities("10yr")
+    time_interval_severities = _build_time_interval_severities(10)
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
         selected = compute_alert_extent(
@@ -85,7 +90,7 @@ def test_falls_back_to_empty_when_no_lower_return_period_exists():
 
 def test_raises_when_no_available_return_periods():
     provider = _make_provider([])
-    time_interval_severities = _build_time_interval_severities("10yr")
+    time_interval_severities = _build_time_interval_severities(10)
 
     with pytest.raises(FileNotFoundError, match="no available return period"):
         compute_alert_extent(
