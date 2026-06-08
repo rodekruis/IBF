@@ -21,7 +21,9 @@ Note: This project requires a running DB populated with admin area data. See [th
 ## Updating your local repo after a submodule change
 
 1. Run `git submodule update --init`.
-2. If you hit compile errors, make sure your `.env` file matches the format of `sample.env`
+2. Update your `.env` file if there were changes in `sample.env`.
+3. From `portal/nrw-standalone`, run `pnpm install` to update the dependencies if they were changed.
+4. From `portal/nrw-standalone`, build with `pnpm build` or build and run with `pnpm start` to check for any other errors.
 
 ## Updating the submodule
 
