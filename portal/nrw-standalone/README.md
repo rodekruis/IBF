@@ -18,17 +18,22 @@ Note: This project requires a running DB populated with admin area data. See [th
 1. From the same dir, run `pnpm start` to build and start it.
 1. Use an existing link, or enter a valid ISO-A3 country code in the URL to use the app. For instance `http://localhost:5173/nrw?c=MWI`
 
+## Updating your local repo after a submodule change
+
+1. Run `git submodule update --init`.
+2. Update your `.env` file if there were changes in `sample.env`.
+3. From `portal/nrw-standalone`, run `pnpm install` to update the dependencies if they were changed.
+4. From `portal/nrw-standalone`, build with `pnpm build` or build and run with `pnpm start` to check for any other errors.
+
 ## Updating the submodule
 
 There are several steps when updating the NRW submodule code from Go. Generally only the first step is needed, but keep in mind the others.
 
-1. **(Required)** Update the submodule itself. Run `git submodule update --remote <relative submodule path>` to update the submodule commit pointer to latest, and commit your change. The `relative submodule path` would be `portal/nrw-standalone/src/go-web-app` from root, or nothing if run from the submodule dir.
-1. **(Do at least every few months)** Update the binaries as needed. If there have been version changes in the `package.json` in the go-web-app repo for packages that are also used in this standalone project, update those dependencies. If this falls behind for many months, it is rarely a problem though.
-1. **(Do as needed)** Update the sample.env file if there are any changes, and update your .env as well.
+1. **(Required)** Update the submodule itself. Run `git submodule update --remote <relative submodule path>` to update the submodule commit pointer to latest, and commit your change. So from root, the command would be `git submodule update --remote portal/nrw-standalone/src/go-web-app`. This will pull latest based on the branch specified in `.gitmodules`
+1. **(Do at least every few months)** Update the binaries as needed. If there have been version changes in the `package.json` in the go-web-app repo for packages that are also used in this standalone project, update those dependencies. Even if this falls behind for many months, it is rarely a problem.
+1. **(Do as needed)** Update the sample.env file if there are any changes. Update both your .env file, as well as `./utils/envParse.ts`.
 1. **(Do as needed)** Update any wrappers or helpers in this project as needed. This is rare, but may be needed if NRW has a new dependency in Go. Build errors will normally make it clear if you need this.
 1. **(Do as needed)** Bring over new directories from Go as part of the submodule. If there are new dependency directories we need in this project, you need to add them to the submodule checkout. See the section below on how to do that. Build errors will make it clear if you need this.
-
-Note: When other users pull this change, they will need to fetch latest for the submodule with `git submodule update --init`.
 
 ## Adding directories to the submodule checkout
 
