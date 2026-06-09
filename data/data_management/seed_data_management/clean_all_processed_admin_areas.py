@@ -6,6 +6,17 @@ It does the following:
  - normalizes polygons to multipolygons, and fixes related nesting
  - handles countries with multiple adm0 features (deletes disputed areas)
  - fills in any missing parent PCODE/name fields
+
+Note: Using data from GADM, there are multiple admin level 0 shapes for China, India, and Pakistan.
+The first shape is always the main country, while the others are disputed territories.
+The current solution (June 2026) is to delete the shapes for disputed territories, which results in holes
+in the map for the Kashmir region and part of the Himalayas (part of Arunachal Pradesh).
+If we merge the disputed territories into the main country data, we get overlapping countries.
+Depending on the draw order of the countries, our map would look like it agrees (at random) to one
+territorial claim over another.
+This may need to be handled differently in the future.
+These are not the only disputed borders we may need to rework, but they are the only ones represented as individual
+admin level 0 areas with the same country names.
 """
 
 import glob
