@@ -1,12 +1,11 @@
 """
-Clean all processed admin area GeoJSON files.
+Clean all admin area GeoJSON files.
 
-Loads each `<COUNTRY>_adm<level>.json` file from the seed-data
-admin-areas/processed directory, normalizes any Polygon geometries to
-MultiPolygon (also fixing incorrectly-nested polygons coming from IBF v1),
-fills in any missing parent PCODE/name fields (using PCODE-prefix matching
-across admin levels for the same country), and writes the cleaned
-FeatureCollection back to disk.
+This script runs on files in the seed-data admin-areas/processed directory and saves over them.
+It does the following:
+ - normalizes polygons to multipolygons, and fixes related nesting
+ - handles countries with multiple adm0 features (deletes disputed areas)
+ - fills in any missing parent PCODE/name fields
 """
 
 import glob
@@ -49,7 +48,13 @@ def clean_admin_area_file(json_file: str) -> None:
     if not features:
         print(f"WARNING: No features in {basename}, skipping.")
         return
+    
+    # Special processing for adm0 to check for extra adm0 areas
+    if re.match(r"^.+_adm0\.json$", basename):
+        features = remove_adm0_disputed_territories(features)
+        geojson_data["features"] = features
 
+    # Normalize geometries
     normalized_count = 0
     for feature in features:
         geometry = feature.get("geometry")
@@ -62,64 +67,32 @@ def clean_admin_area_file(json_file: str) -> None:
             feature["geometry"] = normalized
             normalized_count += 1
 
-    merged_count = 0
-    if re.match(r"^.+_adm0\.json$", basename):
-        original_count = len(features)
-        features = merge_adm0_duplicate_features(features)
-        geojson_data["features"] = features
-        merged_count = original_count - len(features)
-
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump(geojson_data, f, indent=2, ensure_ascii=False)
 
-    merged_msg = f", {merged_count} duplicates merged" if merged_count else ""
     print(
-        f"Cleaned {basename}: {len(features)} features "
-        f"({normalized_count} geometries normalized{merged_msg})"
+        f"Cleaned {basename} with {len(features)} features. Normalize count: {normalized_count}."
     )
 
 
-def merge_adm0_duplicate_features(features: list[dict]) -> list[dict]:
-    """Merge adm0 features sharing the same ADM0_PCODE into one MultiPolygon.
-
-    Some country adm0 files (e.g. CHN, IND, PAK) contain multiple features with
-    identical properties but different geometry pieces. Combine their geometry
-    coordinates into a single MultiPolygon feature.
-    This is is due to a territorial dispute, and may later need to be resolved in a
-    different way. See readme for more details.
+def remove_adm0_disputed_territories(features: list[dict]) -> list[dict]:
+    """Drop adm0 features sharing the same ADM0_PCODE, keeping only the first.
+    The first adm0 area is always the recognized country.
+    The additional adm0 areas are disputed territories.
     """
-    grouped: dict[str, list[dict]] = defaultdict(list)
-    order: list[str] = []
+    kept_features: list[dict] = []
+    seen_pcodes: set[str] = set()
     for feature in features:
         pcode = (feature.get("properties") or {}).get("ADM0_PCODE")
-        key = pcode if pcode else f"__no_pcode_{id(feature)}"
-        if key not in grouped:
-            order.append(key)
-        grouped[key].append(feature)
+        if pcode:
+            # If this is a PCODE we've already seen, skip it (remove from data)
+            if pcode in seen_pcodes:
+                print(f"  Dropping extra adm0 area. ADM0_PCODE={pcode}")
+                continue
+            seen_pcodes.add(pcode)
+        kept_features.append(feature)
 
-    merged_features: list[dict] = []
-    for key in order:
-        group = grouped[key]
-        if len(group) == 1:
-            merged_features.append(group[0])
-            continue
-
-        combined_coords: list = []
-        for feature in group:
-            geometry = feature.get("geometry") or {}
-            if geometry.get("type") == "MultiPolygon":
-                combined_coords.extend(geometry.get("coordinates") or [])
-            elif geometry.get("type") == "Polygon":
-                combined_coords.append(geometry.get("coordinates"))
-
-        merged = dict(group[0])
-        merged["geometry"] = {
-            "type": "MultiPolygon",
-            "coordinates": combined_coords,
-        }
-        merged_features.append(merged)
-
-    return merged_features
+    return kept_features
 
 
 def clean_all_processed_admin_areas() -> None:
@@ -135,15 +108,18 @@ def clean_all_processed_admin_areas() -> None:
 
 
 def populate_all_missing_parents(json_files: list[str]) -> None:
-    """Group files by country, fill missing parent PCODE/name fields, save."""
+
+    # Make a dict of data for each country, with a list of each admin level
     country_levels: dict[str, list[int]] = defaultdict(list)
     for json_file in json_files:
         match = re.match(r"^(.+)_adm(\d+)\.json$", os.path.basename(json_file))
         if match:
             country_levels[match.group(1)].append(int(match.group(2)))
 
+    # Process data for each country
     print(f"\nPopulating missing parents for {len(country_levels)} countries...")
     for country, levels in country_levels.items():
+        # Sort the admin level order so we process parents first
         levels.sort()
         admin_data: dict[int, AdminAreaFeatureCollection] = {}
         for level in levels:
@@ -151,10 +127,12 @@ def populate_all_missing_parents(json_files: list[str]) -> None:
             with open(filepath, "r", encoding="utf-8") as f:
                 admin_data[level] = dict_to_feature_collection(json.load(f))
 
-        filled = populate_missing_parents(admin_data, levels)
-        if not filled:
+        filled_count = populate_missing_parents(admin_data, levels)
+        if not filled_count:
+            # No data was changed
             continue
 
+        # Write to disc
         for level in levels:
             filepath = INPUT_DIR / f"{country}_adm{level}.json"
             with open(filepath, "w", encoding="utf-8") as f:
@@ -164,7 +142,7 @@ def populate_all_missing_parents(json_files: list[str]) -> None:
                     indent=2,
                     ensure_ascii=False,
                 )
-        print(f"  {country}: filled {filled} missing parent field(s)")
+        print(f"  {country}: filled {filled_count} missing parent field(s)")
 
 
 def populate_missing_parents(
@@ -172,22 +150,32 @@ def populate_missing_parents(
     admin_levels: list[int],
 ) -> int:
     """Fill in missing parent PCODE/name on child features via PCODE-prefix match.
-
-    Only writes fields that are currently missing on the child; existing values
-    are preserved.
+    Existing values are preserved.
     """
-    filled = 0
+    added_count = 0
+
+    # Start at the highest admin level, and iterate down for all admin levels.
+    # The place code for the parent is applied to all children.
     for parent_level in admin_levels:
         for parent_feature in admin_data[parent_level].features:
+
+            # Get the place code
             parent_props = parent_feature.properties
             parent_pcode = get_pcode(parent_props, parent_level) or ""
             parent_name = get_name(parent_props, parent_level) or ""
             if not parent_pcode:
+                print(f"Data error: missing place code for {get_pcode_key(parent_level)} on feature with properties {parent_props}.")
                 continue
 
+            # Iterate through admin levels and only process children
             for child_level in admin_levels:
+                # skip levels that are not children
                 if child_level <= parent_level:
                     continue
+
+                # Add parent codes based on 'starts with' matching
+                # Some countries won't have admin areas that match like this, but these countries would
+                # already have their data filled out in the source data (since there is no way to infer parent codes).
                 for child_feature in admin_data[child_level].features:
                     child_props = child_feature.properties
                     child_pcode = get_pcode(child_props, child_level) or ""
@@ -196,19 +184,19 @@ def populate_missing_parents(
 
                     if not get_pcode(child_props, parent_level):
                         set_pcode(child_props, parent_level, parent_pcode)
-                        filled += 1
+                        added_count += 1
                         print(
                             f"    set {get_pcode_key(parent_level)}={parent_pcode} "
                             f"on {get_pcode_key(child_level)}={child_pcode}"
                         )
                     if parent_name and not get_name(child_props, parent_level):
                         set_name(child_props, parent_level, parent_name)
-                        filled += 1
+                        added_count += 1
                         print(
                             f"    set {get_name_key(parent_level)}={parent_name} "
                             f"on {get_pcode_key(child_level)}={child_pcode}"
                         )
-    return filled
+    return added_count
 
 
 if __name__ == "__main__":
