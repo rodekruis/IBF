@@ -69,13 +69,13 @@ Use these commands to regenerate downstream files. From the repo root:
 
 ```bash
 # Pipelines only (writes to data/pipelines/infra/data_types/enums.py)
-npm run gen:python
+npm run generate:python
 
 # Front end only (writes shared-dtos.ts + shared-enums.ts into the Go repo)
-npm run gen:frontend
+npm run generate:frontend
 
 # Both at once
-npm run gen:all
+npm run generate:all
 ```
 
 ### Testing

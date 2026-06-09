@@ -2,7 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { EnsembleMemberType } from '@api-service/src/shared-enums';
+import { EnsembleMemberType, SeverityKey } from '@api-service/src/shared-enums';
 import {
   buildAlert,
   buildForecast,
@@ -44,8 +44,8 @@ describe('POST /alerts', () => {
               end: new Date('2026-03-22T00:00:00Z'),
             },
             ensembleMemberType: EnsembleMemberType.median,
-            severityKey: 'water_discharge',
-            severityValue: 1, // too low to trigger event
+            severityKey: SeverityKey.returnPeriod,
+            severityValue: 0,
           },
           {
             timeInterval: {
@@ -53,8 +53,8 @@ describe('POST /alerts', () => {
               end: new Date('2026-03-22T00:00:00Z'),
             },
             ensembleMemberType: EnsembleMemberType.run,
-            severityKey: 'water_discharge',
-            severityValue: 1, // too low to trigger event
+            severityKey: SeverityKey.returnPeriod,
+            severityValue: 0,
           },
         ],
       });
@@ -110,7 +110,7 @@ describe('POST /alerts', () => {
               end: new Date('2026-03-20T00:00:00Z'),
             },
             ensembleMemberType: EnsembleMemberType.median,
-            severityKey: 'water_discharge',
+            severityKey: SeverityKey.returnPeriod,
             severityValue: 1,
           },
           {
@@ -119,7 +119,7 @@ describe('POST /alerts', () => {
               end: new Date('2026-03-20T00:00:00Z'),
             },
             ensembleMemberType: EnsembleMemberType.run,
-            severityKey: 'water_discharge',
+            severityKey: SeverityKey.returnPeriod,
             severityValue: 1,
           },
         ],

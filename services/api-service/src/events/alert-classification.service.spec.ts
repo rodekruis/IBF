@@ -2,7 +2,11 @@ import { AlertConfigsService } from '@api-service/src/alert-configs/alert-config
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
 import { AlertClassificationInput } from '@api-service/src/events/alert-classification.service';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
-import { HazardType } from '@api-service/src/shared-enums';
+import {
+  AlertClass,
+  AlertClassificationLevel,
+  HazardType,
+} from '@api-service/src/shared-enums';
 import {
   buildAlert,
   buildSeverityData,
@@ -20,36 +24,36 @@ function toClassificationInput(
   };
 }
 
+const {
+  SingleThreshold: single,
+  Low: low,
+  Medium: med,
+  High: high,
+} = AlertClassificationLevel;
+
+// Severity thresholds: low >= 1.5, med >= 5, high >= 20 (return period)
+// Probability thresholds: low >= 50%, med >= 65%, high >= 85% (fraction of runs exceeding severity threshold)
+// Trigger: alertClass must be 'high' and peak must be within 7 days of issuedAt
 const testFloodConfig: Partial<AlertConfigResponseDto> = {
   hazardType: HazardType.floods,
   severityClassLevels: [
-    { label: 'low', threshold: 100 },
-    { label: 'med', threshold: 200 },
-    { label: 'high', threshold: 400 },
+    { label: low, threshold: 1.5 },
+    { label: med, threshold: 5 },
+    { label: high, threshold: 20 },
   ],
   probabilityClassLevels: [
-    { label: 'low', threshold: 0.5 },
-    { label: 'med', threshold: 0.65 },
-    { label: 'high', threshold: 0.85 },
+    { label: low, threshold: 0.5 },
+    { label: med, threshold: 0.65 },
+    { label: high, threshold: 0.85 },
   ],
-  alertClassMatrix: {
-    low: { low: null, med: null, high: 'low' },
-    med: { low: null, med: 'low', high: 'med' },
-    high: { low: 'low', med: 'med', high: 'high' },
-  },
-  alertClassOrder: ['low', 'med', 'high'],
-  triggerAlertClass: 'high',
+  triggerAlertClass: AlertClass.High,
   triggerLeadTimeDuration: 'P7D',
 };
 
 const testDroughtConfig: Partial<AlertConfigResponseDto> = {
   hazardType: HazardType.drought,
-  severityClassLevels: [{ label: 'warning', threshold: 0.2 }],
-  probabilityClassLevels: [{ label: 'any', threshold: 0 }],
-  alertClassMatrix: {
-    warning: { any: 'warning' },
-  },
-  alertClassOrder: ['warning'],
+  severityClassLevels: [{ label: single, threshold: 0.2 }],
+  probabilityClassLevels: [{ label: single, threshold: 0 }],
 };
 
 describe('AlertClassificationService', () => {
@@ -94,8 +98,8 @@ describe('AlertClassificationService', () => {
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
             end: new Date('2026-04-02T00:00:00Z'),
-            medianValue: 50,
-            runValues: [30, 40],
+            medianValue: 1.0,
+            runValues: [0.5, 1.0],
           }),
         });
 
@@ -105,56 +109,54 @@ describe('AlertClassificationService', () => {
         expect(result.alertClass).toBeNull();
       });
 
-      it('should return low alertClass for low severity with high probability', async () => {
+      it('should return med alertClass for low severity with high probability', async () => {
         const alert = buildAlert({
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
             end: new Date('2026-04-02T00:00:00Z'),
-            medianValue: 120,
-            runValues: [150, 150, 150, 150, 150, 150, 150, 150, 150, 150],
+            medianValue: 2,
+            runValues: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
           }),
         });
 
         const result = await service.classifyAlert(
           toClassificationInput(alert),
         );
-        expect(result.alertClass).toBe('low');
+        expect(result.alertClass).toBe(AlertClassificationLevel.Medium);
       });
 
       it('should return high alertClass for high severity with high probability', async () => {
-        // median=500 → severity 'high' (≥400), all runs exceed 400 → prob=1.0 → 'high'
-        // matrix[high][high] = 'high'
         const alert = buildAlert({
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
             end: new Date('2026-04-02T00:00:00Z'),
-            medianValue: 500,
-            runValues: [500, 500, 500, 500, 500, 500, 500, 500, 500, 500],
+            medianValue: 25,
+            runValues: [25, 25, 25, 25, 25, 25, 25, 25, 25, 25],
           }),
         });
 
         const result = await service.classifyAlert(
           toClassificationInput(alert),
         );
-        expect(result.alertClass).toBe('high');
+        expect(result.alertClass).toBe(AlertClassificationLevel.High);
       });
 
       it('should pick highest alertClass across multiple lead times and compute correct dates', async () => {
-        // LT1: Apr 1–2, median=120, all runs=150 → 'low'
-        // LT2: Apr 3–5, median=500, all runs=500 → 'high'
+        // LT1: Apr 1–2, median=2, all runs=2 → 'low'
+        // LT2: Apr 3–5, median=25, all runs=25 → 'high'
         const alert = buildAlert({
           severity: [
             ...buildSeverityData({
               start: new Date('2026-04-01T00:00:00Z'),
               end: new Date('2026-04-02T00:00:00Z'),
-              medianValue: 120,
-              runValues: [150, 150, 150],
+              medianValue: 2,
+              runValues: [2, 2, 2],
             }),
             ...buildSeverityData({
               start: new Date('2026-04-03T00:00:00Z'),
               end: new Date('2026-04-05T00:00:00Z'),
-              medianValue: 500,
-              runValues: [500, 500, 500],
+              medianValue: 25,
+              runValues: [25, 25, 25],
             }),
           ],
         });
@@ -162,7 +164,7 @@ describe('AlertClassificationService', () => {
         const result = await service.classifyAlert(
           toClassificationInput(alert),
         );
-        expect(result.alertClass).toBe('high');
+        expect(result.alertClass).toBe(AlertClassificationLevel.High);
         expect(result.startAt).toEqual(new Date('2026-04-01T00:00:00Z'));
         expect(result.endAt).toEqual(new Date('2026-04-05T00:00:00Z'));
         expect(result.reachesPeakAlertClassAt).toEqual(
@@ -176,8 +178,8 @@ describe('AlertClassificationService', () => {
             severity: buildSeverityData({
               start: new Date('2026-04-01T00:00:00Z'),
               end: new Date('2026-04-02T00:00:00Z'),
-              medianValue: 500,
-              runValues: [500, 500, 500],
+              medianValue: 25,
+              runValues: [25, 25, 25],
             }),
           });
 
@@ -196,8 +198,8 @@ describe('AlertClassificationService', () => {
             severity: buildSeverityData({
               start: new Date('2026-04-10T00:00:00Z'),
               end: new Date('2026-04-11T00:00:00Z'),
-              medianValue: 500,
-              runValues: [500, 500, 500],
+              medianValue: 25,
+              runValues: [25, 25, 25],
             }),
           });
 
@@ -208,7 +210,7 @@ describe('AlertClassificationService', () => {
               new Date('2026-03-30T00:00:00Z'),
             ),
           );
-          expect(result.alertClass).toBe('high');
+          expect(result.alertClass).toBe(AlertClassificationLevel.High);
           expect(result.trigger).toBe(false);
         });
 
@@ -217,22 +219,22 @@ describe('AlertClassificationService', () => {
             severity: buildSeverityData({
               start: new Date('2026-04-01T00:00:00Z'),
               end: new Date('2026-04-02T00:00:00Z'),
-              medianValue: 120,
-              runValues: [150, 150, 150],
+              medianValue: 2,
+              runValues: [2, 2, 2],
             }),
           });
 
           const result = await service.classifyAlert(
             toClassificationInput(alert),
           );
-          expect(result.alertClass).toBe('low');
+          expect(result.alertClass).toBe(AlertClassificationLevel.Medium);
           expect(result.trigger).toBe(false);
         });
       });
     });
 
     describe('drought', () => {
-      it('should classify as warning with no trigger', async () => {
+      it('should classify as high with no trigger', async () => {
         const alert = buildAlert({
           severity: buildSeverityData({
             start: new Date('2026-04-01T00:00:00Z'),
@@ -245,7 +247,7 @@ describe('AlertClassificationService', () => {
         const result = await service.classifyAlert(
           toClassificationInput(alert, HazardType.drought),
         );
-        expect(result.alertClass).toBe('warning');
+        expect(result.alertClass).toBe(AlertClassificationLevel.High);
         expect(result.trigger).toBe(false);
       });
     });

@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
 import { MapLayerDetailsDto } from '@api-service/src/events/dto/map-layer-details.dto';
 import {
-  AlertClassType,
+  AlertClass,
   ForecastSource,
   HazardType,
 } from '@api-service/src/shared-enums';
@@ -24,8 +24,8 @@ export class EventResponseDto {
   @ApiProperty({ enum: ForecastSource, isArray: true })
   public readonly forecastSources: ForecastSource[];
 
-  @ApiProperty({ enum: AlertClassType })
-  public readonly alertClass: AlertClassType;
+  @ApiProperty({ enum: AlertClass })
+  public readonly alertClass: AlertClass;
 
   @ApiProperty()
   public readonly trigger: boolean;

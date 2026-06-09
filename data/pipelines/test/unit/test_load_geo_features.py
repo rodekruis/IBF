@@ -18,8 +18,20 @@ def _make_container() -> LoadedDataSource:
 
 def _make_stations() -> dict[str, LocationPoint]:
     return {
-        "G5142": LocationPoint(name="Awash", lat=8.2, lon=37.5, id="G5142"),
-        "G5200": LocationPoint(name="Borkena", lat=9.0, lon=38.1, id="G5200"),
+        "G5142": LocationPoint(
+            name="Awash",
+            lat=8.2,
+            lon=37.5,
+            id="G5142",
+            attributes={"thresholds": [{"return_period": 5, "threshold_value": 100}]},
+        ),
+        "G5200": LocationPoint(
+            name="Borkena",
+            lat=9.0,
+            lon=38.1,
+            id="G5200",
+            attributes={"thresholds": [{"return_period": 5, "threshold_value": 80}]},
+        ),
     }
 
 

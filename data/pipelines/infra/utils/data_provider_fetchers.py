@@ -24,6 +24,7 @@ from pipelines.infra.data_types.loaded_data_types import (
     LoadedDataSource,
     RasterData,
 )
+from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.dummy_data import DUMMY_DATA
 from rasterio.transform import Affine
@@ -78,8 +79,6 @@ def load_data_container(
                 api_client,
                 data_config,
             )
-        case DataSource.GLOFAS_STATION_THRESHOLDS_SEED_REPO:
-            return _load_glofas_station_thresholds(data_config, container)
         # TODO AB#42516: this will likely move out of this forecast-run, into a shared setup step that downloads the files once
         case DataSource.GLOFAS_DISCHARGE_FTP:
             return _load_glofas_discharge_ftp(data_config, container)
@@ -227,30 +226,25 @@ def _load_ibf_api_glofas_stations(
     data_config: DataSourceConfig,
 ):
     container.data_type = DataType.LOCATION_POINT_DICT
-    container.data = api_client.get_glofas_stations(
+    stations = api_client.get_glofas_stations(
         data_config.country_code_iso_3,
     )
+    _validate_station_thresholds(stations, data_config.country_code_iso_3)
+    container.data = stations
 
 
-# TODO AB#42288: include as part of glofas stations api call
-def _load_glofas_station_thresholds(
-    config: DataSourceConfig, container: LoadedDataSource
+def _validate_station_thresholds(
+    stations: dict[str, LocationPoint], country_code_iso_3: str
 ) -> None:
-    container.data_type = DataType.JSON_LIST
-    country = config.country_code_iso_3
-    url = f"{_get_seed_repo_uri()}/pipelines/{country}_station_thresholds.json"
-    data = download_json_source(url, check_count=False)
-    if data is None:
-        container.error = f"Failed to download station thresholds from '{url}'"
-        raise FileNotFoundError(container.error)
-    seen: set[str] = set()
-    thresholds: list[dict] = []
-    for entry in data:
-        station_code = entry["station_code"]
-        if station_code not in seen:
-            seen.add(station_code)
-            thresholds.append(entry)
-    container.data = thresholds
+    missing = [
+        station_id
+        for station_id, station in stations.items()
+        if not station.attributes.get("thresholds")
+    ]
+    if missing:
+        raise ValueError(
+            f"GloFAS stations for {country_code_iso_3} missing thresholds: {', '.join(missing)}"
+        )
 
 
 def _load_glofas_discharge_ftp(

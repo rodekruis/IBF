@@ -1,7 +1,11 @@
 import { HttpStatus } from '@nestjs/common';
 
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
+import {
+  AlertClass,
+  ForecastSource,
+  HazardType,
+} from '@api-service/src/shared-enums';
 import {
   buildAlert,
   buildForecast,
@@ -26,39 +30,39 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     const viewTimestamp = '2026-03-25T00:00:00Z';
     const laterViewTimestamp = '2026-03-27T00:00:00Z';
 
-    // median=120 → severity 'low', runs all exceed 100 → prob=1.0 → 'high'
-    // matrix[low][high] = 'med', below triggerAlertClass 'high' → trigger false
+    // median=2 → severity 'low' (≥2), runs all exceed 2 → prob=1.0 → 'single'
+    // matrix[low][single] = 'low', below triggerAlertClass 'high' → trigger false
     const alertA = buildAlert({
       eventName: 'ETH_floods_station-A',
       severity: buildSeverityData({
         start: new Date('2026-03-25T00:00:00Z'),
         end: new Date('2026-03-26T00:00:00Z'),
-        medianValue: 120,
-        runValues: [150, 150, 150],
+        medianValue: 2,
+        runValues: [2, 2, 2],
       }),
     });
 
-    // Same station, upgraded severity: median=500 → severity 'high', prob=1.0 → 'high'
-    // matrix[high][high] = 'high', within P7D of issuedAt → trigger true
+    // Same station, upgraded severity: median=25 → severity 'high', prob=1.0 → 'single'
+    // matrix[high][single] = 'high', within P7D of issuedAt → trigger true
     const alertAUpgraded = buildAlert({
       eventName: 'ETH_floods_station-A',
       severity: buildSeverityData({
         start: new Date('2026-03-25T00:00:00Z'),
         end: new Date('2026-03-26T00:00:00Z'),
-        medianValue: 500,
-        runValues: [500, 500, 500],
+        medianValue: 25,
+        runValues: [25, 25, 25],
       }),
     });
 
-    // Different station: median=250 → severity 'mid', prob=1.0 → 'high'
-    // matrix[mid][high] = 'med', below triggerAlertClass 'high' → trigger false
+    // Different station: median=10 → severity 'high', prob=1.0 → 'single'
+    // matrix[high][single] = 'high', within P7D of issuedAt → trigger true
     const alertB = buildAlert({
       eventName: 'ETH_floods_station-B',
       severity: buildSeverityData({
         start: new Date('2026-03-27T00:00:00Z'),
         end: new Date('2026-03-28T00:00:00Z'),
-        medianValue: 250,
-        runValues: [300, 300, 300],
+        medianValue: 10,
+        runValues: [10, 10, 10],
       }),
     });
 
@@ -73,7 +77,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       eventName: 'ETH_floods_station-A',
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
-      alertClass: 'med',
+      alertClass: AlertClass.Low,
       trigger: false,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
       lastUpdatedAt: '2026-03-23T12:00:00.000Z',
@@ -99,7 +103,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
       eventName: 'ETH_floods_station-A',
-      alertClass: 'high',
+      alertClass: AlertClass.High,
       trigger: true,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
       lastUpdatedAt: '2026-03-24T12:00:00.000Z',
@@ -146,8 +150,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         severity: buildSeverityData({
           start: new Date('2026-03-24T00:00:00Z'),
           end: new Date('2026-03-25T00:00:00Z'),
-          medianValue: 120,
-          runValues: [150, 150, 150],
+          medianValue: 25,
+          runValues: [25, 25, 25],
         }),
       });
 
@@ -193,8 +197,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         severity: buildSeverityData({
           start: new Date('2026-03-24T00:00:00Z'),
           end: new Date('2026-03-25T00:00:00Z'),
-          medianValue: 120,
-          runValues: [150, 150, 150],
+          medianValue: 25,
+          runValues: [25, 25, 25],
         }),
       });
 
@@ -234,8 +238,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       severity: buildSeverityData({
         start: new Date('2026-03-25T00:00:00Z'),
         end: new Date('2026-03-26T00:00:00Z'),
-        medianValue: 120,
-        runValues: [150, 150, 150],
+        medianValue: 25,
+        runValues: [25, 25, 25],
       }),
     });
 
@@ -244,8 +248,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       severity: buildSeverityData({
         start: new Date('2026-03-26T00:00:00Z'),
         end: new Date('2026-03-28T00:00:00Z'),
-        medianValue: 120,
-        runValues: [150, 150, 150],
+        medianValue: 25,
+        runValues: [25, 25, 25],
       }),
     });
 
@@ -254,8 +258,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       severity: buildSeverityData({
         start: new Date('2026-03-30T00:00:00Z'),
         end: new Date('2026-03-31T00:00:00Z'),
-        medianValue: 120,
-        runValues: [150, 150, 150],
+        medianValue: 25,
+        runValues: [25, 25, 25],
       }),
     });
 
@@ -299,8 +303,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       severity: buildSeverityData({
         start: new Date('2026-04-05T00:00:00Z'),
         end: new Date('2026-04-06T00:00:00Z'),
-        medianValue: 120,
-        runValues: [150, 150, 150],
+        medianValue: 25,
+        runValues: [25, 25, 25],
       }),
     });
 
@@ -309,8 +313,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       severity: buildSeverityData({
         start: new Date('2026-04-07T00:00:00Z'),
         end: new Date('2026-04-08T00:00:00Z'),
-        medianValue: 120,
-        runValues: [150, 150, 150],
+        medianValue: 25,
+        runValues: [25, 25, 25],
       }),
     });
 
@@ -350,8 +354,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       severity: buildSeverityData({
         start: new Date('2026-04-11T00:00:00Z'),
         end: new Date('2026-04-12T00:00:00Z'),
-        medianValue: 120,
-        runValues: [150, 150, 150],
+        medianValue: 25,
+        runValues: [25, 25, 25],
       }),
     });
     const oldFloodsForecast = buildForecast([oldFloodsAlert], {
@@ -365,8 +369,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       severity: buildSeverityData({
         start: new Date('2026-04-11T00:00:00Z'),
         end: new Date('2026-04-12T00:00:00Z'),
-        medianValue: 120,
-        runValues: [150, 150, 150],
+        medianValue: 25,
+        runValues: [25, 25, 25],
       }),
     });
     const oldDroughtForecast = buildForecast([oldDroughtAlert], {

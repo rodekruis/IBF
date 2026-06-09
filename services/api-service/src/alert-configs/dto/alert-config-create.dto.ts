@@ -10,7 +10,11 @@ import {
 } from 'class-validator';
 
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
-import { HazardType } from '@api-service/src/shared-enums';
+import {
+  AlertClass,
+  AlertClassificationLevel,
+  HazardType,
+} from '@api-service/src/shared-enums';
 
 export class AlertConfigCreateDto {
   @ApiProperty({ example: 'KEN' })
@@ -53,9 +57,9 @@ export class AlertConfigCreateDto {
   @ApiProperty({
     type: [ClassLevelDto],
     example: [
-      { label: 'low', threshold: 100 },
-      { label: 'med', threshold: 200 },
-      { label: 'high', threshold: 400 },
+      { label: AlertClassificationLevel.Low, threshold: 100 },
+      { label: AlertClassificationLevel.Medium, threshold: 200 },
+      { label: AlertClassificationLevel.High, threshold: 400 },
     ],
   })
   @IsArray()
@@ -66,9 +70,9 @@ export class AlertConfigCreateDto {
   @ApiProperty({
     type: [ClassLevelDto],
     example: [
-      { label: 'low', threshold: 0.5 },
-      { label: 'med', threshold: 0.65 },
-      { label: 'high', threshold: 0.85 },
+      { label: AlertClassificationLevel.Low, threshold: 0.5 },
+      { label: AlertClassificationLevel.Medium, threshold: 0.65 },
+      { label: AlertClassificationLevel.High, threshold: 0.85 },
     ],
   })
   @IsArray()
@@ -76,28 +80,10 @@ export class AlertConfigCreateDto {
   @Type(() => ClassLevelDto)
   public readonly probabilityClassLevels: ClassLevelDto[];
 
-  @ApiProperty({
-    example: {
-      low: { low: 'low', med: 'low', high: 'med' },
-      med: { low: 'low', med: 'med', high: 'high' },
-      high: { low: 'med', med: 'high', high: 'high' },
-    },
-  })
-  @IsObject()
-  public readonly alertClassMatrix: Record<
-    string,
-    Record<string, string | null>
-  >;
-
-  @ApiProperty({ type: [String], example: ['low', 'med', 'high'] })
-  @IsArray()
-  @IsString({ each: true })
-  public readonly alertClassOrder: string[];
-
-  @ApiPropertyOptional({ example: 'high' })
+  @ApiPropertyOptional({ example: AlertClass.High })
   @IsOptional()
   @IsString()
-  public readonly triggerAlertClass?: string | null;
+  public readonly triggerAlertClass?: AlertClass | null;
 
   @ApiPropertyOptional({ example: 'P7D' })
   @IsOptional()
