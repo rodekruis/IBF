@@ -30,9 +30,9 @@
     "test:api-service": "cd services/ && docker compose exec api-service npm test",
     "fix:prettier": "npm run test:prettier -- --write",
     "fix:api-service": "npm run fix --prefix=services/api-service",
-    "gen:python": "npm run gen:python --prefix=services/api-service",
-    "gen:frontend": "npm run gen:frontend --prefix=services/api-service",
-    "gen:all": "npx npm-run-all --npm-path npm --print-label --sequential gen:python gen:frontend",
+    "generate:python": "npm run generate:python --prefix=services/api-service",
+    "generate:frontend": "npm run generate:frontend --prefix=services/api-service",
+    "generate:all": "npx npm-run-all --npm-path npm --print-label --sequential generate:python generate:frontend",
     "prepare": "husky"
   },
   "devDependencies": {

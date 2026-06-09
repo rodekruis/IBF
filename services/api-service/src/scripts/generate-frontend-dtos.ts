@@ -29,7 +29,7 @@ const SHARED_ENUMS_OUTPUT = resolve(OUTPUT_DIR, 'shared-enums.ts');
 
 const HEADER = `/**
  * AUTO-GENERATED from api-service DTOs. Do not edit by hand.
- * Regenerate with \`npm run gen:frontend\` (from the IBF repo root).
+ * Regenerate with \`npm run generate:frontend\` (from the IBF repo root).
  *
  * Source DTOs:
 ${SOURCE_DTOS.map((source) => ` * - ${source}`).join('\n')}
