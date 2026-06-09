@@ -32,7 +32,7 @@ Shared util files
 
 ### Multiple admin level 0 areas for the same country
 Using data from GADM, there is multiple admin level 0 shapes for China, India, and Pakistan.
-The first shape is always the main country, while the others are disputed territories. The current solution (June 2026) is to delete the shapes for disputed territories, which results in holes in the map for the Kashmir region and part of the Himalayas (part of Arunachal Pradesh). If we merge the disputed territories into the main country data, we get overlapping countries. Depending of the draw order of the countries, our map would look like it agrees (at random) to one territorial claim over another.
+The first shape is always the main country, while the others are disputed territories. The current solution (June 2026) is to delete the shapes for disputed territories, which results in holes in the map for the Kashmir region and part of the Himalayas (part of Arunachal Pradesh). If we merge the disputed territories into the main country data, we get overlapping countries. Depending on the draw order of the countries, our map would look like it agrees (at random) to one territorial claim over another.
 
 This may need to be handled differently in the future.
 
