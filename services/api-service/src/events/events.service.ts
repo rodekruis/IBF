@@ -8,7 +8,7 @@ import {
   ExposedAdminAreaRecord,
 } from '@api-service/src/events/events.repository';
 import {
-  AlertClassType,
+  AlertClass,
   ForecastSource,
   HazardType,
 } from '@api-service/src/shared-enums';
@@ -46,7 +46,7 @@ export class EventsService {
       eventLabel: this.deriveEventLabel(event.eventName),
       hazardType: event.hazardType as HazardType,
       forecastSources: event.forecastSources as ForecastSource[],
-      alertClass: event.alertClass as AlertClassType,
+      alertClass: event.alertClass as AlertClass,
       trigger: event.trigger,
       centroid: event.centroid as { latitude: number; longitude: number },
       startAt: event.startAt.toISOString(),

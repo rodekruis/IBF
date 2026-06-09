@@ -3,7 +3,7 @@ import { Event } from '@prisma/client';
 
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import { EventsService } from '@api-service/src/events/events.service';
-import { HazardType } from '@api-service/src/shared-enums';
+import { AlertClass, HazardType } from '@api-service/src/shared-enums';
 
 function buildEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -13,7 +13,7 @@ function buildEvent(overrides: Partial<Event> = {}): Event {
     eventName: 'ETH_floods_station-A',
     hazardType: HazardType.floods,
     forecastSources: ['glofas'],
-    alertClass: 'med',
+    alertClass: AlertClass.Medium,
     trigger: false,
     centroid: { latitude: 0.35, longitude: 32.6 },
     startAt: new Date('2026-03-25T00:00:00Z'),

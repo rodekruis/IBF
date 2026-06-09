@@ -122,11 +122,13 @@ class ApiClient:
         for feature in data:
             properties = feature.get("properties", {})
             geometry = feature.get("geometry", {})
+            attributes = properties.get("attributes", {})
             station = LocationPoint(
-                name=properties.get("attributes", {}).get("name", ""),
+                name=attributes.get("name", ""),
                 lat=geometry["coordinates"][1],
                 lon=geometry["coordinates"][0],
                 id=properties["referenceId"],
+                attributes=attributes,
             )
             stations[station.id] = station
         return stations

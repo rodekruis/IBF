@@ -5,7 +5,7 @@ from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import Centroid
-from pipelines.infra.data_types.enums import EnsembleMemberType, Layer
+from pipelines.infra.data_types.enums import EnsembleMemberType, Layer, SeverityKey
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.utils.exposure import get_place_codes_for_alert_config
 
@@ -70,7 +70,7 @@ def calculate_drought_forecasts(
                     time_interval_start="2026-03-01T00:00:00Z",
                     time_interval_end="2026-05-31T23:59:59Z",
                     ensemble_member_type=EnsembleMemberType.RUN,
-                    severity_key="percentile",
+                    severity_key=SeverityKey.PERCENTILE,
                     severity_value=0,
                 )
             data_submitter.add_severity_data(
@@ -78,7 +78,7 @@ def calculate_drought_forecasts(
                 time_interval_start="2026-03-01T00:00:00Z",
                 time_interval_end="2026-05-31T23:59:59Z",
                 ensemble_member_type=EnsembleMemberType.MEDIAN,
-                severity_key="percentile",
+                severity_key=SeverityKey.PERCENTILE,
                 severity_value=0,
             )
 

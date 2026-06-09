@@ -26,15 +26,6 @@ export enum Layer {
   glofasStations = 'glofas_stations',
 }
 
-// Enum to identify alert classes
-// These then point to the color/style/localized string in the front end.
-// A given country may support only a subset of these.
-export enum AlertClassType {
-  High = 'high',
-  Medium = 'medium',
-  Low = 'low',
-}
-
 // Key to identify the type of map layer info being shown.
 // This is used to style/label it on the frontend.
 export enum MapLayerInfoType {
@@ -54,3 +45,32 @@ export enum MapLayerDisplayType {
   // Vector tiles, used for dense vector information such as many buildings and roads
   VectorTile = 'vector_tile',
 }
+
+export enum SeverityKey {
+  returnPeriod = 'return_period',
+  percentile = 'percentile',
+}
+
+// ---------------------------------------------
+// Alert classification related enums - START
+// ---------------------------------------------
+
+// Allowed classification levels for: severityClass and probabilityClass
+export enum AlertClassificationLevel {
+  SingleThreshold = 'single_threshold',
+  Low = 'low',
+  Medium = 'medium',
+  High = 'high',
+}
+
+// Allowed classification levels for alertClass (derived from severityClass and probabilityClass according to ALERT_CLASS_MATRIX)
+// NOTE: do not change order, as this is used functionally
+export enum AlertClass {
+  Low = 'low',
+  Medium = 'medium',
+  High = 'high',
+}
+
+// ---------------------------------------------
+// Alert classification related enums - END
+// ---------------------------------------------

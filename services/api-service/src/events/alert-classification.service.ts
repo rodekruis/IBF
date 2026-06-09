@@ -5,7 +5,58 @@ import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
 import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
-import { EnsembleMemberType, HazardType } from '@api-service/src/shared-enums';
+import {
+  AlertClass,
+  AlertClassificationLevel,
+  EnsembleMemberType,
+  HazardType,
+} from '@api-service/src/shared-enums';
+
+type AlertClassMatrix = Record<
+  AlertClassificationLevel,
+  Record<AlertClassificationLevel, AlertClass>
+>;
+
+const { SingleThreshold, Low, Medium, High } = AlertClassificationLevel;
+
+// This matrix determines how severityClass and probabilityClass are combined into alertClass.
+// - When one dimension is 'SingleThreshold' the other dimension passes through directly, so matrix[SingleThreshold][x] = x and matrix[x][SingleThreshold] = x.
+// - The inner 3x3 cells (Low/Medium/High × Low/Medium/High) follow a standard risk matrix (UNDRR/WMO),
+// but are currently unused: all configs use 'SingleThreshold' for at least one dimension.
+//
+// NOTE: 'SingleThreshold' is used when a dimension (severity or probability) has only one threshold level,
+// meaning that dimension does not differentiate between alert classes.
+// In practice, all current configs use either multi-sev + single-prob, or single-sev + multi-prob, or both single.
+// Multi-sev + multi-prob is not used, and would in the current setup lead to counterintuitive results because probability is conditional on severity
+// as probability is calculated as % of runs exceeding identified severity threshold
+// which means: lower severity threshold is easier to exceed > higher probability > higher probability class > potentially higher alert class for less severe alert (depending on exact threshold configurations)
+// TODO AB#41119: resolve this computation problem
+const ALERT_CLASS_MATRIX: AlertClassMatrix = {
+  [SingleThreshold]: {
+    [SingleThreshold]: AlertClass.High, // when both dimensions are 'SingleThreshold', we classify as 'high' for now
+    [Low]: AlertClass.Low,
+    [Medium]: AlertClass.Medium,
+    [High]: AlertClass.High,
+  },
+  [Low]: {
+    [SingleThreshold]: AlertClass.Low,
+    [Low]: AlertClass.Low,
+    [Medium]: AlertClass.Low,
+    [High]: AlertClass.Medium,
+  },
+  [Medium]: {
+    [SingleThreshold]: AlertClass.Medium,
+    [Low]: AlertClass.Low,
+    [Medium]: AlertClass.Medium,
+    [High]: AlertClass.High,
+  },
+  [High]: {
+    [SingleThreshold]: AlertClass.High,
+    [Low]: AlertClass.Medium,
+    [Medium]: AlertClass.High,
+    [High]: AlertClass.High,
+  },
+};
 
 interface TimeIntervalGroup {
   readonly start: string;
@@ -51,7 +102,7 @@ export class AlertClassificationService {
     config: AlertConfigResponseDto,
   ): ClassificationResult {
     const timeIntervalGroups = this.groupByTimeInterval(severityData);
-    const alertClassPerTimeInterval = new Map<string, string | null>();
+    const alertClassPerTimeInterval = new Map<string, AlertClass | null>();
     const sortedSeverityLevels = this.sortByThresholdDescending(
       config.severityClassLevels,
     );
@@ -67,7 +118,6 @@ export class AlertClassificationService {
         group,
         sortedSeverityLevels,
         sortedProbabilityLevels,
-        config.alertClassMatrix,
       );
       alertClassPerTimeInterval.set(group.start, alertClassForTimeInterval);
 
@@ -81,10 +131,7 @@ export class AlertClassificationService {
       }
     }
 
-    const alertClass = this.computeAlertClass(
-      alertClassPerTimeInterval,
-      config.alertClassOrder,
-    );
+    const alertClass = this.computeAlertClass(alertClassPerTimeInterval);
 
     const reachesPeakAlertClassAt = this.computeReachesPeakAlertClassAt(
       alertClassPerTimeInterval,
@@ -147,8 +194,7 @@ export class AlertClassificationService {
     group: TimeIntervalGroup,
     sortedSeverityLevels: ClassLevelDto[],
     sortedProbabilityLevels: ClassLevelDto[],
-    alertClassMatrix: Record<string, Record<string, string | null>>,
-  ): string | null {
+  ): AlertClass | null {
     const severityClass = this.classifyValue(
       group.medianValue,
       sortedSeverityLevels,
@@ -172,13 +218,13 @@ export class AlertClassificationService {
       return null;
     }
 
-    return alertClassMatrix[severityClass]?.[probabilityClass] ?? null;
+    return ALERT_CLASS_MATRIX[severityClass]?.[probabilityClass] ?? null;
   }
 
   private classifyValue(
     value: number,
     sortedLevelsDescending: ClassLevelDto[],
-  ): string | null {
+  ): AlertClassificationLevel | null {
     for (const level of sortedLevelsDescending) {
       if (value >= level.threshold) {
         return level.label;
@@ -199,11 +245,12 @@ export class AlertClassificationService {
   }
 
   private computeAlertClass(
-    alertClassPerTimeInterval: Map<string, string | null>,
-    alertClassOrder: readonly string[],
-  ): string | null {
-    let highest: string | null = null;
+    alertClassPerTimeInterval: Map<string, AlertClass | null>,
+  ): AlertClass | null {
+    let highest: AlertClass | null = null;
     let highestOrder = -1;
+
+    const alertClassOrder = Object.values(AlertClass);
 
     for (const alertClass of alertClassPerTimeInterval.values()) {
       if (alertClass === null) {
@@ -219,8 +266,8 @@ export class AlertClassificationService {
   }
 
   private computeReachesPeakAlertClassAt(
-    alertClassPerTimeInterval: Map<string, string | null>,
-    overallAlertClass: string | null,
+    alertClassPerTimeInterval: Map<string, AlertClass | null>,
+    overallAlertClass: AlertClass | null,
     fallback: Date,
   ): Date {
     if (overallAlertClass === null) {
@@ -240,7 +287,7 @@ export class AlertClassificationService {
   }
 
   private computeTrigger(
-    alertClass: string | null,
+    alertClass: AlertClass | null,
     reachesPeakAlertClassAt: Date,
     issuedAt: Date,
     config: AlertConfigResponseDto,
@@ -249,9 +296,10 @@ export class AlertClassificationService {
       return false;
     }
 
-    const alertClassRank = config.alertClassOrder.indexOf(alertClass) + 1;
+    const alertClassOrder = Object.values(AlertClass);
+    const alertClassRank = alertClassOrder.indexOf(alertClass) + 1;
     const triggerRank =
-      config.alertClassOrder.indexOf(config.triggerAlertClass) + 1;
+      alertClassOrder.indexOf(config.triggerAlertClass as AlertClass) + 1;
 
     if (alertClassRank < triggerRank) {
       return false;
