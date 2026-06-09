@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import base64
+import io
 import logging
 import os
 
+import numpy as np
 import xarray as xr
+from PIL import Image
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
@@ -79,3 +83,20 @@ def get_raster_extent(raster: RasterData) -> dict[str, float]:
         "xmax": max(xs),
         "ymax": max(ys),
     }
+
+
+def raster_to_base64_png(raster: RasterData) -> str:
+    array = raster.array.copy()
+    array = np.where(np.isnan(array), 0, array)
+    array = np.clip(array, 0, None)
+
+    max_val = array.max()
+    if max_val > 0:
+        normalized = (array / max_val * 255).astype(np.uint8)
+    else:
+        normalized = array.astype(np.uint8)
+
+    img = Image.fromarray(normalized, mode="L")
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode("ascii")

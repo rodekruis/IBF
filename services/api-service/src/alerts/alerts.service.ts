@@ -219,6 +219,19 @@ export class AlertsService {
           `Alert '${alert.eventName}' raster '${raster.layer}': invalid extent (xmin=${ext.xmin}, ymin=${ext.ymin}, xmax=${ext.xmax}, ymax=${ext.ymax})`,
         );
       }
+
+      if (!raster.valueBlackWhite) {
+        errors.push(
+          `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is empty`,
+        );
+      } else {
+        const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+        if (!base64Regex.test(raster.valueBlackWhite)) {
+          errors.push(
+            `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is not valid base64`,
+          );
+        }
+      }
     }
 
     return errors;

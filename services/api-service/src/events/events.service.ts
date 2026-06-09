@@ -3,6 +3,7 @@ import { Event } from '@prisma/client';
 
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
+import { MapLayerDetailsDto } from '@api-service/src/events/dto/map-layer-details.dto';
 import {
   EventsRepository,
   ExposedAdminAreaRecord,
@@ -11,6 +12,9 @@ import {
   AlertClass,
   ForecastSource,
   HazardType,
+  Layer,
+  MapLayerDisplayType,
+  MapLayerInfoType,
 } from '@api-service/src/shared-enums';
 
 @Injectable()
@@ -22,15 +26,17 @@ export class EventsService {
     active?: boolean,
   ): Promise<EventResponseDto[]> {
     const events = await this.eventsRepository.getEvents(viewTime, active);
+    const eventIds = events.map((event) => event.id);
     const exposedAdminAreasByEventId =
-      await this.eventsRepository.getExposedAdminAreasForLatestAlerts(
-        events.map((event) => event.id),
-      );
+      await this.eventsRepository.getExposedAdminAreasForLatestAlerts(eventIds);
+    const rastersByEventId =
+      await this.eventsRepository.getRasterIdsForLatestAlerts(eventIds);
     return events.map((event) =>
       this.mapEventToResponse(
         event,
         viewTime,
         exposedAdminAreasByEventId.get(event.id) ?? [],
+        rastersByEventId.get(event.id) ?? [],
       ),
     );
   }
@@ -39,6 +45,7 @@ export class EventsService {
     event: Event,
     viewTime: Date,
     exposedAdminAreas: ExposedAdminAreaRecord[],
+    rasters: { id: number; layer: string }[],
   ): EventResponseDto {
     return {
       eventId: event.id,
@@ -59,7 +66,7 @@ export class EventsService {
         event.endAt > viewTime &&
         event.closedAt === null,
       exposedAdminAreas: this.mapExposedAdminAreas(exposedAdminAreas),
-      availableLayers: [], // TODO AB#42226: re-evaluate naming/structure/etc based on actual usage when putting 'flood extent' in here
+      availableLayers: this.mapAvailableLayers(rasters),
     };
   }
 
@@ -81,5 +88,26 @@ export class EventsService {
   private deriveEventLabel(eventName: string): string {
     const parts = eventName.split('_');
     return parts.slice(2).join(' ') || eventName;
+  }
+
+  private mapAvailableLayers(
+    rasters: { id: number; layer: string }[],
+  ): MapLayerDetailsDto[] {
+    // TODO: extend with non-raster layers (e.g. RedCrossBranches, Clinics) once available
+    return [...this.mapRasterLayers(rasters)];
+  }
+
+  private mapRasterLayers(
+    rasters: { id: number; layer: string }[],
+  ): MapLayerDetailsDto[] {
+    const layerInfoMap: Record<string, MapLayerInfoType> = {
+      [Layer.alertExtent]: MapLayerInfoType.EventExtent,
+    };
+
+    return rasters.map((raster) => ({
+      resourceId: String(raster.id),
+      dataType: layerInfoMap[raster.layer] ?? MapLayerInfoType.EventExtent,
+      displayType: MapLayerDisplayType.Raster,
+    }));
   }
 }

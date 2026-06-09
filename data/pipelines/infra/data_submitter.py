@@ -149,7 +149,7 @@ class DataSubmitter:
         self,
         event_name: str,
         layer: Layer,
-        value: str,
+        value_black_white: str,
         extent: dict[str, float],
     ) -> None:
         alert = self._get_alert(event_name, "add_raster_exposure")
@@ -159,7 +159,7 @@ class DataSubmitter:
         alert.exposure.rasters.append(
             ExposureRaster(
                 layer=layer,
-                value=value,
+                value_black_white=value_black_white,
                 extent=RasterExtent(
                     xmin=extent["xmin"],
                     ymin=extent["ymin"],

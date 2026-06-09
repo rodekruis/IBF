@@ -14,6 +14,7 @@ from pipelines.infra.data_types.dtos import (
     SeverityKey,
 )
 from pipelines.infra.utils.api_client import ApiClient
+from pipelines.infra.utils.scenario_alert_generator import PLACEHOLDER_RASTER_BASE64
 
 EVENT_NAME = "ETH_floods_station-test"
 
@@ -56,7 +57,7 @@ def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
         layer=Layer.ALERT_EXTENT,
-        value="alert_extent.tif",
+        value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
     return submitter

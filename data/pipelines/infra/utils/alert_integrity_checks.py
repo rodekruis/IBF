@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from datetime import datetime
+import base64
 import re
+from datetime import datetime
 
 from pipelines.infra.data_types.dtos import (
     Alert,
     Centroid,
     EnsembleMemberType,
-    Layer,
     HazardType,
+    Layer,
 )
 
 # This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
@@ -16,6 +17,7 @@ from pipelines.infra.data_types.dtos import (
 EVENT_NAME_PATTERN = re.compile(
     r"^[A-Z]{3}_(" + "|".join(re.escape(h.value) for h in HazardType) + r")_.+$"
 )
+
 
 def check_event_name_format(event_name: str) -> list[str]:
     if not EVENT_NAME_PATTERN.match(event_name):
@@ -129,4 +131,17 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
                 f"invalid extent (xmin={ext.xmin}, ymin={ext.ymin}, "
                 f"xmax={ext.xmax}, ymax={ext.ymax})"
             )
+        if not raster.value_black_white:
+            errors.append(
+                f"Alert '{event_name}' raster '{raster.layer}': "
+                f"valueBlackWhite is empty"
+            )
+        else:
+            try:
+                base64.b64decode(raster.value_black_white, validate=True)
+            except Exception:
+                errors.append(
+                    f"Alert '{event_name}' raster '{raster.layer}': "
+                    f"valueBlackWhite is not valid base64"
+                )
     return errors

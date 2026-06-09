@@ -27,6 +27,7 @@ from pipelines.infra.utils.exposure import aggregate_population_exposed
 from pipelines.infra.utils.raster import (
     get_bounding_box,
     get_raster_extent,
+    raster_to_base64_png,
     slice_netcdf_to_bounds,
 )
 
@@ -204,11 +205,10 @@ def calculate_flood_forecasts(
             #     attributes={"river_discharge": 0},
             # )
 
-            # TODO AB#42226: currently nothing happens with this yet, upload to API to be done.
             data_submitter.add_raster_exposure(
                 event_name=event_name,
                 layer=Layer.ALERT_EXTENT,
-                value="alert_extent.tif",
+                value_black_white=raster_to_base64_png(clipped_flood_extent),
                 extent=get_raster_extent(clipped_flood_extent),
             )
 

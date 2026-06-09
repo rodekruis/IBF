@@ -39,6 +39,7 @@ describe('EventsService', () => {
           useValue: {
             getEvents: jest.fn(),
             getExposedAdminAreasForLatestAlerts: jest.fn(),
+            getRasterIdsForLatestAlerts: jest.fn(),
           },
         },
       ],
@@ -46,6 +47,7 @@ describe('EventsService', () => {
 
     service = module.get(EventsService);
     repository = module.get(EventsRepository);
+    repository.getRasterIdsForLatestAlerts.mockResolvedValue(new Map());
   });
 
   describe('getEvents', () => {

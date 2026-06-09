@@ -129,14 +129,15 @@ model AlertExposureRasterData {
   @@schema("api-service")
   @@map("alert-exposure-raster-data")
 
-  id      Int      @id @default(autoincrement())
-  created DateTime @default(now())
-  updated DateTime @updatedAt
-  alertId Int
-  alert   Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  layer   String
-  value   String
-  extent  Json
+  id              Int      @id @default(autoincrement())
+  created         DateTime @default(now())
+  updated         DateTime @updatedAt
+  alertId         Int
+  alert           Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  layer           String
+  valueBlackWhite String
+  valueColoured   String   @default("")
+  extent          Json
 
   @@index([alertId])
 }

@@ -20,6 +20,9 @@ from pipelines.infra.data_types.dtos import (
 
 HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
 
+# Minimal 1x1 grayscale PNG used as placeholder raster data in synthetic scenarios
+PLACEHOLDER_RASTER_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGNoAAAAggCBd81ytgAAAABJRU5ErkJggg=="
+
 
 def make_scenario_hazard_function(
     scenario: Scenario, hazard_type: HazardType
@@ -100,9 +103,10 @@ def _generate_alert_scenarios(
             },
         )
 
+        # Empty value: scenario alerts are synthetic; no actual raster data is available.
         data_submitter.add_raster_exposure(
             event_name=event_name,
             layer=Layer.ALERT_EXTENT,
-            value=f"scenario_alert_extent_{i + 1}.tif",
+            value_black_white=PLACEHOLDER_RASTER_BASE64,
             extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
         )

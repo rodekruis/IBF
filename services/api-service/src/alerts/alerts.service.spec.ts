@@ -65,7 +65,7 @@ function createMockValidAlert(
       rasters: [
         {
           layer: Layer.alertExtent,
-          value: 'base64',
+          valueBlackWhite: 'base64',
           extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },
       ],
@@ -287,7 +287,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.alertExtent,
-                value: 'base64',
+                valueBlackWhite: 'base64',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -335,7 +335,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.alertExtent,
-                value: 'base64',
+                valueBlackWhite: 'base64',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -373,7 +373,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.populationExposed, // invalid raster layer
-                value: 'base64',
+                valueBlackWhite: 'base64',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -409,7 +409,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.alertExtent,
-                value: 'base64',
+                valueBlackWhite: 'base64',
                 extent: { xmin: 10, ymin: 5, xmax: 5, ymax: 1 },
               },
             ],
@@ -473,7 +473,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.alertExtent,
-                value: 'base64',
+                valueBlackWhite: 'base64',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
