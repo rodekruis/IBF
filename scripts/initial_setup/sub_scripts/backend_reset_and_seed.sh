@@ -25,12 +25,13 @@ echo "✅ Backend is running"
 
 print_header "Resetting IBF instance"
 
-curl -X 'POST' \
+curl --silent --show-error --fail -X 'POST' \
   'http://localhost:4000/api/instance/reset?script=initial-state' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
   -d '{
-  "secret": "fill_in_secret"
+     -d '{"secret":"fill_in_secret"}' \
+   > /dev/null
 }'
 
 print_header "Running test test/events/events-rich-seed.test.ts to get mock events in database"
