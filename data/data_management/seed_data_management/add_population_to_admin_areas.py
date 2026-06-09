@@ -17,7 +17,6 @@ from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
-from data_management.utils.geo_utils import normalize_polygon_to_multipolygon
 from rasterio.transform import Affine
 from rasterstats import zonal_stats
 from shared.data_helpers import get_seed_data_repo_path
@@ -94,15 +93,6 @@ def add_population_to_admin_file(
     if not features:
         print(f"  WARNING: No features found in {admin_file.name}, skipping")
         return
-
-    # Normalize geometries to multipolygon format if needed.
-    # This is needed both for zonal_stats and for the DB upload and pipelines to correctly handle these.
-    # Some of our admin areas (from IBF v1) are also incorrectly in polygon nesting format,
-    # even though they are actually multipolygon.
-    for feature in features:
-        geometry = feature.get("geometry")
-        if isinstance(geometry, dict) and geometry.get("type") == "Polygon":
-            feature["geometry"] = normalize_polygon_to_multipolygon(geometry)
 
     geometries = [feature["geometry"] for feature in features]
 

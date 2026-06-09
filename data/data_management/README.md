@@ -30,7 +30,7 @@ Shared util files
 
 ## Admin areas update process
 
-(June 2026) This process is still under development. The scripts here are used for development/prototyping purposes. The current steps are the following:
+(June 2026) This process is still under development. The scripts here are used for development/prototyping purposes until this can be streamlined (See [Task 42632](https://dev.azure.com/redcrossnl/National%20Risk%20Watch/_workitems/edit/42632)). See the summaries in each file for additional notes. The current steps are the following:
 
 #### 1. Process IBF v1 admin area data
 
@@ -42,7 +42,11 @@ We need higher resolution admin areas than the IBF v1 files, and we also need ad
 
 We will need to get more sources though and set up a processing flow. See [PBI 41181](https://dev.azure.com/redcrossnl/IBF/_workitems/edit/41181) for more info.
 
-#### 3. Add population data
+#### 3. Clean again, and assure parents are added.
+
+Any remaining formatting issues that were not picked up in previous steps are cleaned with `clean_all_processed_admin_areas.py`. This processes directly on files in `admin-areas/processed` in your local copy of the seed repo.
+
+#### 4. Add population data
 
 The population changes are operated directly on admin area data files in `admin-areas/processed` in your local copy of the seed repo.
 
@@ -51,6 +55,6 @@ The process may simplify in the future, but the steps are:
 1. If you need new population rasters that are not already in the seed repo, fetch and preprocess them with `seed_data_management/fetch_population_raster.py`
 2. Apply these fetched rasters to the admin areas with `seed_data_management/add_population_to_admin_areas.py`
 
-#### 4. Check in seed repo changes
+#### 5. Check in seed repo changes
 
 To save your data changes, commit them to the seed repo.
