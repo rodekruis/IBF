@@ -9,7 +9,7 @@ print_header() {
 
     echo ""
     printf "%${width}s\n" | tr ' ' '='
-    printf "%${padding}s%s%${padding}s\n" "" "$title" ""
+    printf "%${padding}s%s%${padding}s\n" "" "${title}" ""
     printf "%${width}s\n" | tr ' ' '='
     echo ""
 }
@@ -17,7 +17,7 @@ print_header() {
 check_command_availability() {
   if ! command -v "$1" &> /dev/null; then
 	  echo "❌ '$1' is required but not installed"
-    if [ -n "${2:-}" ]; then
+    if [[ -n "${2:-}" ]]; then
         echo "To install: ${2:-}"
     fi
 	  exit 1
@@ -30,11 +30,11 @@ assert_minimal_node_version() {
     local current_version
     current_version=$(node -v | sed 's/v//' | cut -d'.' -f1)
 
-    if [ "$current_version" -lt "$min_version" ]; then
-        echo "Error: Node.js version $min_version or higher is required. Found version: $current_version"
+    if [[ "${current_version}" -lt "${min_version}" ]]; then
+        echo "Error: Node.js version ${min_version} or higher is required. Found version: ${current_version}"
         exit 1
     fi
-    echo "✅ Node $current_version found"
+    echo "✅ Node ${current_version} found"
 }
 
 check_python_version() {
@@ -42,14 +42,14 @@ check_python_version() {
     local current_version
     local current_major_minor
     current_version=$(python --version 2>&1 | cut -d' ' -f2)
-    current_major_minor=$(echo "$current_version" | cut -d'.' -f1-2)
+    current_major_minor=$(echo "${current_version}" | cut -d'.' -f1-2)
 
     # Very ugly, but we can't rely on the macOS (BSD) sort command to reliably compare version numbers, so we do it in Python.
-    if ! python -c 'import sys; min_v = tuple(map(int, sys.argv[1].split("."))); cur_v = tuple(map(int, sys.argv[2].split("."))); sys.exit(0 if cur_v >= min_v else 1)' "$min_version" "$current_major_minor"; then
-        echo "Error: Python version $min_version or higher is required. Found version: $current_version"
+    if ! python -c 'import sys; min_v = tuple(map(int, sys.argv[1].split("."))); cur_v = tuple(map(int, sys.argv[2].split("."))); sys.exit(0 if cur_v >= min_v else 1)' "${min_version}" "${current_major_minor}"; then
+        echo "Error: Python version ${min_version} or higher is required. Found version: ${current_version}"
         exit 1
     fi
-    echo "✅ Python $current_version found"
+    echo "✅ Python ${current_version} found"
 }
 
 check_docker_running() {
@@ -72,22 +72,23 @@ check_gdal_installed() {
 }
 
 # Check if we've received an argument for the target directory
-if [ "$#" -ne 1 ]; then
+if [[ "$#" -ne 1 ]]; then
     echo "Usage: $0 <target_directory>"
     exit 1
 fi
 
 print_header "Checking/creating target directory"
 TARGET_DIR="$1"
-echo "Target directory: $TARGET_DIR"
-if [ -d "$TARGET_DIR" ]; then
-    if [ "$(ls -A "$TARGET_DIR")" ]; then
-        echo "Error: Directory '$TARGET_DIR' is not empty. Please choose an empty directory or remove its contents."
+echo "Target directory: ${TARGET_DIR}"
+if [[ -d "${TARGET_DIR}" ]]; then
+    dir_contents=$(ls -A "${TARGET_DIR}")
+    if [[ -n "${dir_contents}" ]]; then
+        echo "Error: Directory '${TARGET_DIR}' is not empty. Please choose an empty directory or remove its contents."
         exit 1
     fi
 else
-    echo "Directory '$TARGET_DIR' does not exist. It will be created."
-    mkdir -p "$TARGET_DIR"
+    echo "Directory '${TARGET_DIR}' does not exist. It will be created."
+    mkdir -p "${TARGET_DIR}"
 fi
 # Save full path of the target directory
 TARGET_DIR=$(realpath "$1")
@@ -95,6 +96,7 @@ TARGET_DIR=$(realpath "$1")
 print_header "Checking System Requirements"
 
 check_command_availability "git"
+check_command_availability "curl"
 
 # Node stuff
 check_command_availability "node"
@@ -112,7 +114,7 @@ check_docker_running
 
 check_gdal_installed
 
-cd "$TARGET_DIR"
+cd "${TARGET_DIR}"
 
 print_header "Cloning Repositories"
 git clone git@github.com:rodekruis/IBF.git
@@ -124,71 +126,31 @@ print_header "Backend"
 cd IBF
 cp services/.env.example services/.env
 npm install
-cd "$TARGET_DIR"
+cd "${TARGET_DIR}"
 
 print_header "Frontend"
 cd go-web-app
 git submodule update --init --remote
 pnpm install
 cp app/sample.env app/.env
-cd "$TARGET_DIR"
+cd "${TARGET_DIR}"
 
 print_header "Pipelines"
 cd IBF/data
 ./uv-sync.sh
 cp .env.example .env
-cd "$TARGET_DIR"
+cd "${TARGET_DIR}"
 
 print_header "Installing helper scripts"
-cat > "$TARGET_DIR/backend_start.sh" << 'EOF'
-#!/bin/bash
-set -Eeuo pipefail
-
-cd IBF
-npm run start:services
-EOF
-
-cat > "$TARGET_DIR/frontend_start.sh" << 'EOF'
-#!/bin/bash
-set -Eeuo pipefail
-
-function listening() {
-    echo "for more results use sudo"
-    if [ $# -eq 0 ]; then
-        lsof -iTCP -sTCP:LISTEN -n -P
-    elif [ $# -eq 1 ]; then
-        lsof -iTCP -sTCP:LISTEN -n -P | grep -i --color "$1"
-    else
-        echo "Usage: listening [pattern]"
-    fi
-}
-
-# If port 3000 is in use: say so.
-if lsof -iTCP:3000 -sTCP:LISTEN -n -P | grep -q "LISTEN"; then
-    echo "Port 3000 is already in use. Please free it before starting the frontend."
-    listening 3000
-    exit 1
-fi
-
-cd go-web-app
-pnpm start
-EOF
-
-cat > "$TARGET_DIR/open_urls.sh" << 'EOF'
-#!/bin/bash
-set -Eeuo pipefail
-
-open http://localhost:4000/docs # OpenAPI docs
-open http://localhost:9000/ # pg_featureserv
-open http://localhost:7800/ # pg_tileserv
-open http://localhost:3000/ # Frontend
-EOF
-
-chmod +x "$TARGET_DIR/backend_start.sh" "$TARGET_DIR/frontend_start.sh" "$TARGET_DIR/open_urls.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cp "${SCRIPT_DIR}/sub_scripts/"*.sh "${TARGET_DIR}/"
+chmod +x "${TARGET_DIR}/"*.sh
 
 print_header "Done!"
 
-echo "The IBF application has been set up in '$TARGET_DIR'."
+echo "The IBF application has been set up in '${TARGET_DIR}'."
 echo "Run 'frontend_start.sh' to start the frontend"
 echo "Run 'backend_start.sh' to start the backend services"
+echo "Run 'backend_reset_and_seed.sh' to reset and seed the database with mock data (make sure backend is running first)"
 echo "Run 'open_urls.sh' to open the application URLs in your browser"
+echo "There are some other shell scripts in that directory as well"
