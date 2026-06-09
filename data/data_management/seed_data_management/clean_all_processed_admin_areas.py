@@ -48,7 +48,7 @@ def clean_admin_area_file(json_file: str) -> None:
     if not features:
         print(f"WARNING: No features in {basename}, skipping.")
         return
-    
+
     # Special processing for adm0 to check for extra adm0 areas
     if re.match(r"^.+_adm0\.json$", basename):
         features = remove_adm0_disputed_territories(features)
