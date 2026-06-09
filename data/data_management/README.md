@@ -65,6 +65,6 @@ The process may simplify in the future, but the steps are:
 
 Any remaining formatting issues that were not picked up in previous steps are cleaned with `clean_all_processed_admin_areas.py`. This processes directly on files in `admin-areas/processed` in your local copy of the seed repo.
 
-#### 4. Check in seed repo changes
+#### 5. Check in seed repo changes
 
 To save your data changes, commit them to the seed repo.
