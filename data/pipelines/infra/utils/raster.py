@@ -14,6 +14,9 @@ from pipelines.infra.data_types.location_point import LocationPoint
 
 BoundingBox = tuple[float, float, float, float]  # (min_lon, min_lat, max_lon, max_lat)
 
+# Minimal 1x1 grayscale PNG used as placeholder raster data in scenarios and tests
+PLACEHOLDER_RASTER_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGNoAAAAggCBd81ytgAAAABJRU5ErkJggg=="
+
 
 def get_bounding_box(
     admin_areas: AdminAreasSet,

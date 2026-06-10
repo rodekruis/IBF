@@ -17,11 +17,9 @@ from pipelines.infra.data_types.dtos import (
     Layer,
     SeverityKey,
 )
+from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
 
 HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
-
-# Minimal 1x1 grayscale PNG used as placeholder raster data in synthetic scenarios
-PLACEHOLDER_RASTER_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGNoAAAAggCBd81ytgAAAABJRU5ErkJggg=="
 
 
 def make_scenario_hazard_function(

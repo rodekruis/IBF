@@ -1,29 +1,77 @@
 import { PNG } from 'pngjs';
 
-type Rgba = [number, number, number, number];
+type Rgb = [number, number, number];
 
-const COLOR_START: Rgba = [255, 200, 0, 0];
-const COLOR_END: Rgba = [255, 0, 100, 255];
-const COLOR_STEPS = 6;
+// ─── Colorization configuration ───────────────────────────────────────────────
+// These parameters control how grayscale raster values are mapped to colors.
+// Adjust these to change the visual output without altering the algorithm.
 
-export function colorizeGrayscalePng(base64Grayscale: string): string {
+interface ColorizationConfig {
+  // Color for the lowest non-zero values (RGB, each 0–255).
+  colorLow: Rgb;
+
+  // Color for the highest values (RGB, each 0–255).
+  colorHigh: Rgb;
+
+  // Opacity for all non-zero pixels (0 = fully transparent, 1 = fully opaque).
+  opacity: number;
+
+  // Whether zero-value pixels are fully transparent.
+  // true: zero pixels are invisible (typical for flood extents on a map).
+  // false: zero pixels are rendered using colorLow.
+  zeroIsTransparent: boolean;
+
+  // Number of discrete color bands between colorLow and colorHigh.
+  // Higher = smoother gradient; lower = more banded/posterized appearance.
+  steps: number;
+
+  // Whether to apply log1p scaling before normalizing.
+  // true: compresses high dynamic range, revealing detail in low values.
+  // false: linear mapping (uniform spread from min to max).
+  useLogScale: boolean;
+}
+
+const DEFAULT_CONFIG: ColorizationConfig = {
+  colorLow: [173, 216, 230], // Light blue
+  colorHigh: [0, 0, 139], // Dark blue
+  opacity: 0.5,
+  zeroIsTransparent: true,
+  steps: 6,
+  useLogScale: true,
+};
+// ──────────────────────────────────────────────────────────────────────────────
+
+export function colorizeGrayscalePng(
+  base64Grayscale: string,
+  config: ColorizationConfig = DEFAULT_CONFIG,
+): string {
   if (!base64Grayscale) {
     return '';
   }
+
+  const {
+    colorLow,
+    colorHigh,
+    opacity,
+    zeroIsTransparent,
+    steps,
+    useLogScale,
+  } = config;
+  const alpha = Math.round(opacity * 255);
 
   const inputBuffer = Buffer.from(base64Grayscale, 'base64');
   const grayscalePng = PNG.sync.read(inputBuffer);
   const { width, height } = grayscalePng;
 
   const grayscalePixels = extractGrayscaleValues(grayscalePng);
-  const logScaled = applyLogScale(grayscalePixels);
-  const normalized = normalize(logScaled);
-  const stepped = applyColorSteps(normalized, COLOR_STEPS);
+  const scaled = useLogScale ? applyLogScale(grayscalePixels) : grayscalePixels;
+  const normalized = normalize(scaled);
+  const stepped = applyColorSteps(normalized, steps);
 
   const outputPng = new PNG({ width, height });
   for (let i = 0; i < width * height; i++) {
     const idx = i * 4;
-    if (grayscalePixels[i] === 0) {
+    if (grayscalePixels[i] === 0 && zeroIsTransparent) {
       outputPng.data[idx] = 0;
       outputPng.data[idx + 1] = 0;
       outputPng.data[idx + 2] = 0;
@@ -31,17 +79,15 @@ export function colorizeGrayscalePng(base64Grayscale: string): string {
     } else {
       const n = stepped[i];
       outputPng.data[idx] = Math.round(
-        COLOR_START[0] * (1 - n) + COLOR_END[0] * n,
+        colorLow[0] * (1 - n) + colorHigh[0] * n,
       );
       outputPng.data[idx + 1] = Math.round(
-        COLOR_START[1] * (1 - n) + COLOR_END[1] * n,
+        colorLow[1] * (1 - n) + colorHigh[1] * n,
       );
       outputPng.data[idx + 2] = Math.round(
-        COLOR_START[2] * (1 - n) + COLOR_END[2] * n,
+        colorLow[2] * (1 - n) + colorHigh[2] * n,
       );
-      outputPng.data[idx + 3] = Math.round(
-        COLOR_START[3] * (1 - n) + COLOR_END[3] * n,
-      );
+      outputPng.data[idx + 3] = alpha;
     }
   }
 

@@ -12,7 +12,7 @@ from pipelines.infra.data_types.dtos import (
     Layer,
     SeverityKey,
 )
-from pipelines.infra.utils.scenario_alert_generator import PLACEHOLDER_RASTER_BASE64
+from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
 
 EVENT_NAME = "ETH_floods_station-test"
 

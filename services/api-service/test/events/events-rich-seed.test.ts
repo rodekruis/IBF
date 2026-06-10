@@ -16,6 +16,7 @@ import {
   resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
+// TODO: refine these mock flood extents to more accurately reflect the actual flood footprint, rather than just being a generic placeholder raster for testing the presence of raster data and multi-level admin areas in the seeded events. This will enhance the realism of the seed data for demo and debugging purposes, especially when visualizing the raster data in the frontend.
 // 15x20 grayscale PNG simulating a river flood corridor (Awash River, ETH)
 const AWASH_RIVER_RASTER_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAA8AAAAUCAYAAABSx2cSAAAA0ElEQVR4AaXBsW0jQRREwXezedDpNNpmTDTXZEy0OxLa7fwIpFvgCAjCeVP153a7fd3vdy6Px4OP5/PJ5fV68X6/+Z/FhmNmzrZIIgm2udgmCZJoy8zw22LDYsMBnDNDWySRBNtcbJMESbRlZvhpsWGxYbHhAE7+mhnaIokk2OZimyRIoi0zw8diw2LDAZz8MzO0RRJJsM3FNkmQRFtmhstiw2LDAZz8MDO0RRJJsM3FNkmQRFtmhsWGxYbFhgM4+WVmaIskkmCbi22SIIm2fANUaHZa8hEamQAAAABJRU5ErkJggg==';

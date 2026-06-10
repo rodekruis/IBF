@@ -8,7 +8,7 @@ from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.enums import EnsembleMemberType, Layer, SeverityKey
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.utils.exposure import get_place_codes_for_alert_config
-from pipelines.infra.utils.scenario_alert_generator import PLACEHOLDER_RASTER_BASE64
+from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
 
 
 def calculate_drought_forecasts(

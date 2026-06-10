@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Event, Prisma } from '@prisma/client';
 
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
@@ -224,32 +224,6 @@ export class EventsRepository {
       data: { closedAt: issuedAt, lastUpdatedAt: issuedAt },
     });
     return result.count;
-  }
-
-  public async getRastersForLatestAlertOrThrow(
-    eventId: number,
-  ): Promise<{ id: number; layer: string }[]> {
-    const event = await this.prisma.event.findUnique({
-      where: { id: eventId },
-    });
-    if (!event) {
-      throw new NotFoundException(`Event with id ${eventId} not found`);
-    }
-
-    const latestAlert = await this.prisma.alert.findFirst({
-      where: { eventId },
-      orderBy: { issuedAt: 'desc' },
-      select: {
-        exposureRasterData: {
-          select: {
-            id: true,
-            layer: true,
-          },
-        },
-      },
-    });
-
-    return latestAlert?.exposureRasterData ?? [];
   }
 
   public async getRasterIdsForLatestAlerts(

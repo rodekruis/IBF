@@ -11,6 +11,7 @@ export class RastersRepository {
 
   // TODO AB#42339: currently only serves alert-related rasters from AlertExposureRasterData;
   // static rasters (e.g. population) will come from a separate static raster table
+  // whereby resourceId pointing to alert-exposure-raster-data primary key id, will no longer be sufficient to identify the raster
   public async getRasterOrThrow(id: number): Promise<RasterResponseDto> {
     const raster = await this.prisma.alertExposureRasterData.findUnique({
       where: { id },

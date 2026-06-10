@@ -177,9 +177,12 @@ export class AlertsService {
       return errors;
     }
 
-    const layers = new Map<string, number>();
+    const levels = new Map<number, Map<Layer, number>>();
     for (const entry of adminAreas) {
-      layers.set(entry.layer, (layers.get(entry.layer) ?? 0) + 1);
+      const levelLayers =
+        levels.get(entry.adminLevel) ?? new Map<Layer, number>();
+      levelLayers.set(entry.layer, (levelLayers.get(entry.layer) ?? 0) + 1);
+      levels.set(entry.adminLevel, levelLayers);
 
       if (entry.value < 0) {
         errors.push(
@@ -188,14 +191,27 @@ export class AlertsService {
       }
     }
 
-    const counts = [...layers.values()];
-    if (new Set(counts).size > 1) {
-      const detail = [...layers.entries()]
-        .map(([layer, count]) => `${layer}=${count}`)
-        .join(', ');
-      errors.push(
-        `Alert '${alert.eventName}' admin-area: record count differs across layers (${detail})`,
-      );
+    const requiredLayers = [Layer.populationExposed];
+    for (const [level, layerCounts] of [...levels.entries()].sort(
+      (a, b) => a[0] - b[0],
+    )) {
+      for (const required of requiredLayers) {
+        if (!layerCounts.has(required)) {
+          errors.push(
+            `Alert '${alert.eventName}' admin-area level ${level}: missing required layer '${required}'`,
+          );
+        }
+      }
+
+      const counts = [...layerCounts.values()];
+      if (new Set(counts).size > 1) {
+        const detail = [...layerCounts.entries()]
+          .map(([layer, count]) => `${layer}=${count}`)
+          .join(', ');
+        errors.push(
+          `Alert '${alert.eventName}' admin-area level ${level}: record count differs across layers (${detail})`,
+        );
+      }
     }
 
     return errors;

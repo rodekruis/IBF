@@ -136,7 +136,7 @@ model AlertExposureRasterData {
   alert           Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   layer           String
   valueBlackWhite String
-  valueColoured   String   @default("")
+  valueColoured   String
   extent          Json
 
   @@index([alertId])

@@ -13,9 +13,9 @@ import {
   Layer,
   SeverityKey,
 } from '@api-service/src/shared-enums';
+import { TEST_RASTER_BASE64 } from '@api-service/test/helpers/alert.helper';
 
-const TEST_RASTER_BASE64 =
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWNoaGj4DwAFhAKAfr3l1AAAAABJRU5ErkJggg==';
+jest.mock('@api-service/src/env', () => ({})); // needed because of the import from alert.helper, which imports env
 
 function createMockValidForecast(
   alerts: AlertCreateDto[],
@@ -311,6 +311,44 @@ describe('AlertsService', () => {
       );
     });
 
+    it('should reject admin-area missing required population_exposed layer', async () => {
+      const alerts = [
+        createMockValidAlert({
+          exposure: {
+            adminAreas: [
+              {
+                placeCode: 'A',
+                adminLevel: 3,
+                layer: Layer.glofasStations,
+                value: 1,
+              },
+            ],
+            rasters: [
+              {
+                layer: Layer.alertExtent,
+                valueBlackWhite: TEST_RASTER_BASE64,
+                extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
+              },
+            ],
+          },
+        }),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining(
+            "missing required layer 'population_exposed'",
+          ),
+        ]),
+      );
+    });
+
     it('should reject unequal record counts across layers', async () => {
       const alerts = [
         createMockValidAlert({
@@ -354,7 +392,9 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('record count differs across layers'),
+          expect.stringContaining(
+            'admin-area level 3: record count differs across layers',
+          ),
         ]),
       );
     });
