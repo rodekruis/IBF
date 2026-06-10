@@ -106,7 +106,7 @@ export class EventsService {
 
     return rasters.map((raster) => ({
       resourceId: String(raster.id),
-      dataType: layerInfoMap[raster.layer] ?? MapLayerInfoType.EventExtent,
+      dataType: layerInfoMap[raster.layer] ?? MapLayerInfoType.EventExtent, // TODO: refactor out the need for this fallback
       displayType: MapLayerDisplayType.Raster,
     }));
   }
