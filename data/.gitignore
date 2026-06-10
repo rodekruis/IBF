@@ -12,6 +12,9 @@ logs/
 debug/
 africa/
 
+# Allow config files that end in .env
+!deploy/config.test.env
+
 # Generated files
 dist
 coverage
