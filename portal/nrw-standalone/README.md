@@ -54,3 +54,19 @@ To match styling, these files outside the submodule had styling copied from Go:
 - `/nrw-standalone/src/index.css`
 - `/nrw-standalone/src/main.tsx`
 - `/nrw-standalone/index.html`
+
+## Deployment
+
+The app is deployed to Azure Static Web Apps by the GitHub Actions workflows in [`.github/workflows`](../../.github/workflows):
+
+- `deploy_test_portal.yml` — deploys to the `test` environment on pushes to `main`, and deploys a preview environment for every pull request that changes the frontend.
+- `deploy_staging_portal.yml` — deploys to the `staging` environment, triggered via `deploy_staging_all.yml` (on a published release) or manually.
+
+Both workflows build the app with the shared [`build-frontend`](../../.github/actions/build-frontend/action.yml) action: it checks out the `go-web-app` submodule (sparse), installs dependencies with pnpm, and runs `pnpm build`. The build reads its configuration (see `sample.env`) from the GitHub environment instead of an `.env` file:
+
+- `APP_IBF_API_BACKEND` — environment variable, URL of the deployed `api-service`
+- `APP_SEED_DATA_REPO` — environment variable, base URL of the seed-data repository
+- `APP_MAPTILER_API_KEY` — environment secret
+- `AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL` — environment secret, deployment token of the Azure Static Web App
+
+[`public/staticwebapp.config.json`](./public/staticwebapp.config.json) configures the Static Web App (SPA fallback to `index.html`, caching and security headers). Vite copies it to the root of the `dist/` build output.
