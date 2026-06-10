@@ -1,0 +1,70 @@
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+# More specific about composite actions: https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions
+
+name: 'Build: Frontend'
+description: Builds the NRW standalone frontend.
+
+inputs:
+  frontendPath:
+    description: Location of the frontend code.
+    required: true
+
+outputs:
+  build_version:
+    description: Specific version of the built frontend.
+    value: ${{ steps.build-version.outputs.build_version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v6
+      with:
+        version: 9
+
+    - name: Set up Node.js version
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: ${{ inputs.frontendPath }}/.node-version
+        cache: pnpm
+        cache-dependency-path: ${{ inputs.frontendPath }}/pnpm-lock.yaml
+
+    - name: Set VERSION of build/deployment
+      shell: bash
+      id: build-version
+      run: |
+        echo "build_version=$(git describe --tags --dirty --broken)" >> $GITHUB_OUTPUT
+
+    - name: Check out the go-web-app submodule (sparse)
+      shell: bash
+      run: |
+        git submodule update --init ${{ inputs.frontendPath }}/src/go-web-app
+        cd ${{ inputs.frontendPath }}/src/go-web-app
+        git sparse-checkout set --no-cone '/app/src/utils/nrw/' '/app/src/components/NrwMap/'
+
+    - name: Install
+      shell: bash
+      working-directory: ${{ inputs.frontendPath }}
+      run: |
+        pnpm install --frozen-lockfile
+
+    # The APP_* build-time variables are read from the environment of the calling job.
+    # See the sample.env of the frontend for the full list.
+    - name: Build Frontend
+      shell: bash
+      working-directory: ${{ inputs.frontendPath }}
+      run: |
+        pnpm build
+
+    - name: Add VERSION to deployment
+      shell: bash
+      working-directory: ${{ inputs.frontendPath }}
+      run: |
+        echo "${{ steps.build-version.outputs.build_version }}" >> dist/VERSION.txt
+        echo '{"schemaVersion": 1,"label":"build","message":"${{ steps.build-version.outputs.build_version }}"}' >> dist/VERSION.json
+
+    - name: Output build contents
+      shell: bash
+      working-directory: ${{ inputs.frontendPath }}
+      run: |
+        ls -la dist/
