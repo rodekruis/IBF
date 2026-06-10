@@ -101,7 +101,6 @@ def _generate_alert_scenarios(
             },
         )
 
-        # Empty value: scenario alerts are synthetic; no actual raster data is available.
         data_submitter.add_raster_exposure(
             event_name=event_name,
             layer=Layer.ALERT_EXTENT,

@@ -13,9 +13,10 @@ import {
   Layer,
   SeverityKey,
 } from '@api-service/src/shared-enums';
-import { TEST_RASTER_BASE64 } from '@api-service/test/helpers/alert.helper';
 
-jest.mock('@api-service/src/env', () => ({})); // needed because of the import from alert.helper, which imports env
+// Minimal 1x1 grayscale PNG — structural placeholder for tests that only need a valid raster
+const TEST_RASTER_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWNoaGj4DwAFhAKAfr3l1AAAAABJRU5ErkJggg==';
 
 function createMockValidForecast(
   alerts: AlertCreateDto[],
@@ -497,6 +498,117 @@ describe('AlertsService', () => {
       expect(response.errors).toEqual(
         expect.arrayContaining([
           expect.stringContaining("missing required 'alert_extent' layer"),
+        ]),
+      );
+    });
+
+    it('should reject raster with invalid base64 characters', async () => {
+      const alerts = [
+        createMockValidAlert({
+          exposure: {
+            adminAreas: [
+              {
+                placeCode: 'A',
+                adminLevel: 3,
+                layer: Layer.populationExposed,
+                value: 1,
+              },
+            ],
+            rasters: [
+              {
+                layer: Layer.alertExtent,
+                valueBlackWhite: '!!!not-base64!!!',
+                extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
+              },
+            ],
+          },
+        }),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('valueBlackWhite is not valid base64'),
+        ]),
+      );
+    });
+
+    it('should reject raster with base64 of invalid length', async () => {
+      const alerts = [
+        createMockValidAlert({
+          exposure: {
+            adminAreas: [
+              {
+                placeCode: 'A',
+                adminLevel: 3,
+                layer: Layer.populationExposed,
+                value: 1,
+              },
+            ],
+            rasters: [
+              {
+                layer: Layer.alertExtent,
+                valueBlackWhite: 'AQI',
+                extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
+              },
+            ],
+          },
+        }),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('valueBlackWhite is not valid base64'),
+        ]),
+      );
+    });
+
+    it('should reject raster with valid base64 but not a PNG', async () => {
+      const notPngBase64 = Buffer.from('this is not a png file').toString(
+        'base64',
+      );
+      const alerts = [
+        createMockValidAlert({
+          exposure: {
+            adminAreas: [
+              {
+                placeCode: 'A',
+                adminLevel: 3,
+                layer: Layer.populationExposed,
+                value: 1,
+              },
+            ],
+            rasters: [
+              {
+                layer: Layer.alertExtent,
+                valueBlackWhite: notPngBase64,
+                extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
+              },
+            ],
+          },
+        }),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('valueBlackWhite is not a valid PNG'),
         ]),
       );
     });

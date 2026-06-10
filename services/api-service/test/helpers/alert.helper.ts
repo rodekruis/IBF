@@ -15,7 +15,7 @@ import {
 import { getServer } from '@api-service/test/helpers/utility.helper';
 
 // Minimal 1x1 grayscale PNG — structural placeholder for tests that only need a valid raster
-export const TEST_RASTER_BASE64 =
+const TEST_RASTER_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWNoaGj4DwAFhAKAfr3l1AAAAABJRU5ErkJggg==';
 
 export async function createAlerts(

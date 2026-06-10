@@ -221,6 +221,7 @@ export class AlertsService {
     const errors: string[] = [];
     const rasters = alert.exposure.rasters;
 
+    // Verify the required alert_extent layer is present
     const rasterLayers = new Set(rasters.map((r) => r.layer));
     if (!rasterLayers.has(Layer.alertExtent)) {
       errors.push(
@@ -229,6 +230,7 @@ export class AlertsService {
     }
 
     for (const raster of rasters) {
+      // Validate geographic extent is non-degenerate
       const ext = raster.extent;
       if (ext.xmin >= ext.xmax || ext.ymin >= ext.ymax) {
         errors.push(
@@ -241,12 +243,17 @@ export class AlertsService {
           `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is empty`,
         );
       } else {
+        // Check base64 structure: valid characters and correct padding length
         const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
-        if (!base64Regex.test(raster.valueBlackWhite)) {
+        if (
+          raster.valueBlackWhite.length % 4 !== 0 ||
+          !base64Regex.test(raster.valueBlackWhite)
+        ) {
           errors.push(
             `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is not valid base64`,
           );
         } else {
+          // Verify decoded bytes start with the 8-byte PNG magic number
           const bytes = Buffer.from(raster.valueBlackWhite, 'base64');
           const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
           const hasPngSignature =
