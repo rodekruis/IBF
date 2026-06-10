@@ -14,6 +14,9 @@ import {
   SeverityKey,
 } from '@api-service/src/shared-enums';
 
+const TEST_RASTER_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWNoaGj4DwAFhAKAfr3l1AAAAABJRU5ErkJggg==';
+
 function createMockValidForecast(
   alerts: AlertCreateDto[],
   overrides: Partial<ForecastCreateDto> = {},
@@ -65,7 +68,7 @@ function createMockValidAlert(
       rasters: [
         {
           layer: Layer.alertExtent,
-          valueBlackWhite: 'base64',
+          valueBlackWhite: TEST_RASTER_BASE64,
           extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },
       ],
@@ -287,7 +290,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.alertExtent,
-                valueBlackWhite: 'base64',
+                valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -335,7 +338,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.alertExtent,
-                valueBlackWhite: 'base64',
+                valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -373,7 +376,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.populationExposed, // invalid raster layer
-                valueBlackWhite: 'base64',
+                valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -409,7 +412,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.alertExtent,
-                valueBlackWhite: 'base64',
+                valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 10, ymin: 5, xmax: 5, ymax: 1 },
               },
             ],
@@ -473,7 +476,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.alertExtent,
-                valueBlackWhite: 'base64',
+                valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],

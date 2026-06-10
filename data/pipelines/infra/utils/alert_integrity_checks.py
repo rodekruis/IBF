@@ -138,10 +138,17 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
             )
         else:
             try:
-                base64.b64decode(raster.value_black_white, validate=True)
+                decoded = base64.b64decode(raster.value_black_white, validate=True)
             except Exception:
                 errors.append(
                     f"Alert '{event_name}' raster '{raster.layer}': "
                     f"valueBlackWhite is not valid base64"
                 )
+            else:
+                png_signature = b"\x89PNG\r\n\x1a\n"
+                if not decoded.startswith(png_signature):
+                    errors.append(
+                        f"Alert '{event_name}' raster '{raster.layer}': "
+                        f"valueBlackWhite is not a valid PNG"
+                    )
     return errors

@@ -230,6 +230,17 @@ export class AlertsService {
           errors.push(
             `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is not valid base64`,
           );
+        } else {
+          const bytes = Buffer.from(raster.valueBlackWhite, 'base64');
+          const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+          const hasPngSignature =
+            bytes.length >= pngSignature.length &&
+            pngSignature.every((b, i) => bytes[i] === b);
+          if (!hasPngSignature) {
+            errors.push(
+              `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is not a valid PNG`,
+            );
+          }
         }
       }
     }
