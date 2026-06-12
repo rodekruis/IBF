@@ -21,7 +21,7 @@ function NrwPage(props: Props) {
           <span className={styles.avatar}>WW</span>
         </button>
       </header>
-      <main className={styles.content}>{children}</main>
+      <main>{children}</main>
     </div>
   );
 }
