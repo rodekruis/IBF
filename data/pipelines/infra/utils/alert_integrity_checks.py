@@ -145,6 +145,7 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
                     f"value_black_white is not valid base64"
                 )
             else:
+                # Look at the first few bytes to verify it is a b/w png
                 png_signature = b"\x89PNG\r\n\x1a\n"
                 if not decoded.startswith(png_signature):
                     errors.append(

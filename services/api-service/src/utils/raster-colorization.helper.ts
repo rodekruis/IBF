@@ -65,7 +65,7 @@ export function colorizeGrayscalePng(
 
   const grayscalePixels = extractGrayscaleValues(grayscalePng);
   const scaled = useLogScale ? applyLogScale(grayscalePixels) : grayscalePixels;
-  const normalized = normalize(scaled);
+  const normalized = normalizeBetween0And1(scaled);
   const stepped = applyColorSteps(normalized, steps);
 
   const outputPng = new PNG({ width, height });
@@ -112,7 +112,7 @@ function applyLogScale(values: Float64Array): Float64Array {
   return result;
 }
 
-function normalize(values: Float64Array): Float64Array {
+function normalizeBetween0And1(values: Float64Array): Float64Array {
   let max = 0;
   for (const value of values) {
     if (value > max) {

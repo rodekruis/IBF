@@ -574,7 +574,7 @@ describe('AlertsService', () => {
       );
     });
 
-    it('should reject raster with valid base64 but not a PNG', async () => {
+    it('should reject raster with valid base64 that is not a PNG', async () => {
       const notPngBase64 = Buffer.from('this is not a png file').toString(
         'base64',
       );
