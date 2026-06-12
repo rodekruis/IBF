@@ -1,0 +1,40 @@
+:root {
+    --nrw-standalone-color-light: #ffffff;
+    --nrw-standalone-color-dark: #000000;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 40px;
+    background-color: var(--nrw-standalone-color-light);
+    color: var(--nrw-standalone-color-dark);
+}
+
+.title {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 600;
+}
+
+.userButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+}
+
+.avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--nrw-standalone-color-dark);
+    color: var(--nrw-standalone-color-dark);
+    font-size: 14px;
+    font-weight: 600;
+}

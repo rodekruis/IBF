@@ -45,6 +45,14 @@ Check `.vscode/extensions.json` for the complete list of recommended extensions 
 - **Testing**: pytest
 - **CI**: GitHub Actions (`test_pipelines.yml`)
 
+### Portal Front End (React)
+
+- **Location**: `portal/nrw-standalone`
+- **Purpose**: Wrapper around the IFRC Go core NRW code (which is included as a sparsely checked-out git submodule) to serve as a standalone app.
+- **Framework**: React 19 with Vite
+- **Package Manager**: pnpm
+- **Submodule**: Core code lives in the git submodule `portal/nrw-standalone/src/go-web-app`. Never edit inside the submodule — keep changes outside it, or offer submodule changes only as a suggestion for the `go-web-app` repo.
+
 ### Development Tools
 
 - **Code Quality**: ESLint, Prettier, Husky pre-commit hooks
