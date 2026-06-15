@@ -18,6 +18,8 @@ on:
         required: true
       APP_MAPTILER_API_KEY:
         required: true
+      FONTAWESOME_NPM_AUTH_TOKEN:
+        required: true
   workflow_dispatch:
   push:
     branches:
@@ -51,6 +53,7 @@ jobs:
       APP_IBF_API_BACKEND: ${{ vars.APP_IBF_API_BACKEND }}
       APP_SEED_DATA_REPO: ${{ vars.APP_SEED_DATA_REPO }}
       APP_MAPTILER_API_KEY: ${{ secrets.APP_MAPTILER_API_KEY }}
+      FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
     outputs:
       preview_url: ${{ steps.deploy_to_aswa.outputs.static_web_app_url }}
     steps:

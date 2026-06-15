@@ -19,6 +19,7 @@ jobs:
     secrets:
       AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL }}
       APP_MAPTILER_API_KEY: ${{ secrets.APP_MAPTILER_API_KEY }}
+      FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
 
   deploy_service:
     name: 'Build + Deploy: api-Service'
