@@ -18,6 +18,7 @@ env:
   e2eTestsPath: './e2e'
   frontendPath: './portal/nrw-standalone'
   frontendUrl: 'http://localhost:5173'
+  FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
 
 jobs:
   path-filter:
