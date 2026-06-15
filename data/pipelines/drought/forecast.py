@@ -8,6 +8,7 @@ from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.enums import EnsembleMemberType, Layer, SeverityKey
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.utils.exposure import get_place_codes_for_alert_config
+from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
 
 
 def calculate_drought_forecasts(
@@ -94,6 +95,6 @@ def calculate_drought_forecasts(
             data_submitter.add_raster_exposure(
                 event_name=event_name,
                 layer=Layer.ALERT_EXTENT,
-                value=f"alert_extent_{config.spatial_extent_name}.tif",
+                value_black_white=PLACEHOLDER_RASTER_BASE64,
                 extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
             )

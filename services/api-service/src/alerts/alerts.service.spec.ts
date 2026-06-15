@@ -14,6 +14,10 @@ import {
   SeverityKey,
 } from '@api-service/src/shared-enums';
 
+// Minimal 1x1 grayscale PNG — structural placeholder for tests that only need a valid raster
+const TEST_RASTER_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWNoaGj4DwAFhAKAfr3l1AAAAABJRU5ErkJggg==';
+
 function createMockValidForecast(
   alerts: AlertCreateDto[],
   overrides: Partial<ForecastCreateDto> = {},
@@ -65,7 +69,7 @@ function createMockValidAlert(
       rasters: [
         {
           layer: Layer.alertExtent,
-          value: 'base64',
+          valueBlackWhite: TEST_RASTER_BASE64,
           extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },
       ],
@@ -287,7 +291,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.alertExtent,
-                value: 'base64',
+                valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -304,6 +308,44 @@ describe('AlertsService', () => {
       expect(response.errors).toEqual(
         expect.arrayContaining([
           expect.stringContaining('expected at least 1 record'),
+        ]),
+      );
+    });
+
+    it('should reject admin-area missing required population_exposed layer', async () => {
+      const alerts = [
+        createMockValidAlert({
+          exposure: {
+            adminAreas: [
+              {
+                placeCode: 'A',
+                adminLevel: 3,
+                layer: Layer.glofasStations,
+                value: 1,
+              },
+            ],
+            rasters: [
+              {
+                layer: Layer.alertExtent,
+                valueBlackWhite: TEST_RASTER_BASE64,
+                extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
+              },
+            ],
+          },
+        }),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining(
+            "missing required layer 'population_exposed'",
+          ),
         ]),
       );
     });
@@ -335,7 +377,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.alertExtent,
-                value: 'base64',
+                valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -351,7 +393,9 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('record count differs across layers'),
+          expect.stringContaining(
+            'admin-area level 3: record count differs across layers',
+          ),
         ]),
       );
     });
@@ -373,7 +417,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.populationExposed, // invalid raster layer
-                value: 'base64',
+                valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -409,7 +453,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.alertExtent,
-                value: 'base64',
+                valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 10, ymin: 5, xmax: 5, ymax: 1 },
               },
             ],
@@ -458,6 +502,117 @@ describe('AlertsService', () => {
       );
     });
 
+    it('should reject raster with invalid base64 characters', async () => {
+      const alerts = [
+        createMockValidAlert({
+          exposure: {
+            adminAreas: [
+              {
+                placeCode: 'A',
+                adminLevel: 3,
+                layer: Layer.populationExposed,
+                value: 1,
+              },
+            ],
+            rasters: [
+              {
+                layer: Layer.alertExtent,
+                valueBlackWhite: '!!!not-base64!!!',
+                extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
+              },
+            ],
+          },
+        }),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('valueBlackWhite is not valid base64'),
+        ]),
+      );
+    });
+
+    it('should reject raster with base64 of invalid length', async () => {
+      const alerts = [
+        createMockValidAlert({
+          exposure: {
+            adminAreas: [
+              {
+                placeCode: 'A',
+                adminLevel: 3,
+                layer: Layer.populationExposed,
+                value: 1,
+              },
+            ],
+            rasters: [
+              {
+                layer: Layer.alertExtent,
+                valueBlackWhite: 'AQI',
+                extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
+              },
+            ],
+          },
+        }),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('valueBlackWhite is not valid base64'),
+        ]),
+      );
+    });
+
+    it('should reject raster with valid base64 that is not a PNG', async () => {
+      const notPngBase64 = Buffer.from('this is not a png file').toString(
+        'base64',
+      );
+      const alerts = [
+        createMockValidAlert({
+          exposure: {
+            adminAreas: [
+              {
+                placeCode: 'A',
+                adminLevel: 3,
+                layer: Layer.populationExposed,
+                value: 1,
+              },
+            ],
+            rasters: [
+              {
+                layer: Layer.alertExtent,
+                valueBlackWhite: notPngBase64,
+                extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
+              },
+            ],
+          },
+        }),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast(alerts))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('valueBlackWhite is not a valid PNG'),
+        ]),
+      );
+    });
+
     it('should accept rasters with valid alert_extent', async () => {
       const alerts = [
         createMockValidAlert({
@@ -473,7 +628,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: Layer.alertExtent,
-                value: 'base64',
+                valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],

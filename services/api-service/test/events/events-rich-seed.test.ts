@@ -16,6 +16,15 @@ import {
   resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
+// TODO: refine these mock flood extents to more accurately reflect the actual flood footprint, rather than just being a generic placeholder raster for testing the presence of raster data and multi-level admin areas in the seeded events. This will enhance the realism of the seed data for demo and debugging purposes, especially when visualizing the raster data in the frontend.
+// 15x20 grayscale PNG simulating a river flood corridor (Awash River, ETH)
+const AWASH_RIVER_RASTER_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAA8AAAAUCAYAAABSx2cSAAAA0ElEQVR4AaXBsW0jQRREwXezedDpNNpmTDTXZEy0OxLa7fwIpFvgCAjCeVP153a7fd3vdy6Px4OP5/PJ5fV68X6/+Z/FhmNmzrZIIgm2udgmCZJoy8zw22LDYsMBnDNDWySRBNtcbJMESbRlZvhpsWGxYbHhAE7+mhnaIokk2OZimyRIoi0zw8diw2LDAZz8MzO0RRJJsM3FNkmQRFtmhstiw2LDAZz8MDO0RRJJsM3FNkmQRFtmhsWGxYbFhgM4+WVmaIskkmCbi22SIIm2fANUaHZa8hEamQAAAABJRU5ErkJggg==';
+
+// 15x15 grayscale PNG simulating a broad floodplain (Gambella, ETH)
+const GAMBELLA_RASTER_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAAkElEQVR4AaXB0WkEAQxDwRfXpcJUggpTXwmGO1hM/nbmB/jlQRLLNlcSVlvWcLRlJeGyzZLEGv7RlpWEyzZLEsMLwwvDPySxbHMlYbVlOCSxbHMlYbVlDQ+SWLa5krDa8jV8SGLZ5krCasvT8MLwwvDRlpWEyzZLEk/DC8NDW1YSLtssSXwNR1tWEi7bLEmsP2VPPR0QvluXAAAAAElFTkSuQmCC';
+
 // Awash River zone hierarchy (station: AWASH G5305)
 // Admin 3 (woredas) → Admin 2 (zones) → Admin 1 (region) → Admin 0 (country)
 const AWASH_RIVER_ADMIN_AREAS: ExposureAdminAreaDto[] = [
@@ -158,7 +167,7 @@ describe('GET /events - rich seed data for demo/debugging', () => {
         rasters: [
           {
             layer: Layer.alertExtent,
-            value: 'base64-awash-river',
+            valueBlackWhite: AWASH_RIVER_RASTER_BASE64,
             extent: { xmin: 39.0, ymin: 8.0, xmax: 40.5, ymax: 10.0 },
           },
         ],
@@ -180,7 +189,7 @@ describe('GET /events - rich seed data for demo/debugging', () => {
         rasters: [
           {
             layer: Layer.alertExtent,
-            value: 'base64-gambella',
+            valueBlackWhite: GAMBELLA_RASTER_BASE64,
             extent: { xmin: 33.5, ymin: 7.5, xmax: 35.0, ymax: 9.0 },
           },
         ],

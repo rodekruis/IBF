@@ -17,6 +17,7 @@ from pipelines.infra.data_types.dtos import (
     Layer,
     SeverityKey,
 )
+from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
 
 HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
 
@@ -103,6 +104,6 @@ def _generate_alert_scenarios(
         data_submitter.add_raster_exposure(
             event_name=event_name,
             layer=Layer.ALERT_EXTENT,
-            value=f"scenario_alert_extent_{i + 1}.tif",
+            value_black_white=PLACEHOLDER_RASTER_BASE64,
             extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
         )

@@ -225,4 +225,36 @@ export class EventsRepository {
     });
     return result.count;
   }
+
+  public async getRasterIdsForLatestAlerts(
+    eventIds: number[],
+  ): Promise<Map<number, { id: number; layer: string }[]>> {
+    const result = new Map<number, { id: number; layer: string }[]>();
+    if (eventIds.length === 0) {
+      return result;
+    }
+
+    const latestAlerts = await this.prisma.alert.findMany({
+      where: { eventId: { in: eventIds } },
+      orderBy: [{ eventId: 'asc' }, { issuedAt: 'desc' }],
+      distinct: ['eventId'],
+      select: {
+        eventId: true,
+        exposureRasterData: {
+          select: {
+            id: true,
+            layer: true,
+          },
+        },
+      },
+    });
+
+    for (const alert of latestAlerts) {
+      if (alert.eventId !== null) {
+        result.set(alert.eventId, alert.exposureRasterData);
+      }
+    }
+
+    return result;
+  }
 }

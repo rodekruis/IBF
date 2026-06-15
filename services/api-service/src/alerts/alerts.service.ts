@@ -177,9 +177,12 @@ export class AlertsService {
       return errors;
     }
 
-    const layers = new Map<string, number>();
+    const levels = new Map<number, Map<Layer, number>>();
     for (const entry of adminAreas) {
-      layers.set(entry.layer, (layers.get(entry.layer) ?? 0) + 1);
+      const levelLayers =
+        levels.get(entry.adminLevel) ?? new Map<Layer, number>();
+      levelLayers.set(entry.layer, (levelLayers.get(entry.layer) ?? 0) + 1);
+      levels.set(entry.adminLevel, levelLayers);
 
       if (entry.value < 0) {
         errors.push(
@@ -188,14 +191,27 @@ export class AlertsService {
       }
     }
 
-    const counts = [...layers.values()];
-    if (new Set(counts).size > 1) {
-      const detail = [...layers.entries()]
-        .map(([layer, count]) => `${layer}=${count}`)
-        .join(', ');
-      errors.push(
-        `Alert '${alert.eventName}' admin-area: record count differs across layers (${detail})`,
-      );
+    const requiredLayers = [Layer.populationExposed];
+    for (const [level, layerCounts] of [...levels.entries()].sort(
+      (a, b) => a[0] - b[0],
+    )) {
+      for (const required of requiredLayers) {
+        if (!layerCounts.has(required)) {
+          errors.push(
+            `Alert '${alert.eventName}' admin-area level ${level}: missing required layer '${required}'`,
+          );
+        }
+      }
+
+      const counts = [...layerCounts.values()];
+      if (new Set(counts).size > 1) {
+        const detail = [...layerCounts.entries()]
+          .map(([layer, count]) => `${layer}=${count}`)
+          .join(', ');
+        errors.push(
+          `Alert '${alert.eventName}' admin-area level ${level}: record count differs across layers (${detail})`,
+        );
+      }
     }
 
     return errors;
@@ -205,6 +221,7 @@ export class AlertsService {
     const errors: string[] = [];
     const rasters = alert.exposure.rasters;
 
+    // Verify the required alert_extent layer is present
     const rasterLayers = new Set(rasters.map((r) => r.layer));
     if (!rasterLayers.has(Layer.alertExtent)) {
       errors.push(
@@ -213,11 +230,41 @@ export class AlertsService {
     }
 
     for (const raster of rasters) {
+      // Validate geographic extent is non-degenerate
       const ext = raster.extent;
       if (ext.xmin >= ext.xmax || ext.ymin >= ext.ymax) {
         errors.push(
           `Alert '${alert.eventName}' raster '${raster.layer}': invalid extent (xmin=${ext.xmin}, ymin=${ext.ymin}, xmax=${ext.xmax}, ymax=${ext.ymax})`,
         );
+      }
+
+      if (!raster.valueBlackWhite) {
+        errors.push(
+          `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is empty`,
+        );
+      } else {
+        // Check base64 structure: valid characters and correct padding length
+        const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+        if (
+          raster.valueBlackWhite.length % 4 !== 0 ||
+          !base64Regex.test(raster.valueBlackWhite)
+        ) {
+          errors.push(
+            `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is not valid base64`,
+          );
+        } else {
+          // Verify decoded bytes start with the 8-byte PNG magic number
+          const bytes = Buffer.from(raster.valueBlackWhite, 'base64');
+          const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+          const hasPngSignature =
+            bytes.length >= pngSignature.length &&
+            pngSignature.every((b, i) => bytes[i] === b);
+          if (!hasPngSignature) {
+            errors.push(
+              `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is not a valid PNG`,
+            );
+          }
+        }
       }
     }
 

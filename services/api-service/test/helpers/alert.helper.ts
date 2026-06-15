@@ -14,6 +14,10 @@ import {
 } from '@api-service/src/shared-enums';
 import { getServer } from '@api-service/test/helpers/utility.helper';
 
+// Minimal 1x1 grayscale PNG — structural placeholder for tests that only need a valid raster
+const TEST_RASTER_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWNoaGj4DwAFhAKAfr3l1AAAAABJRU5ErkJggg==';
+
 export async function createAlerts(
   forecast: ForecastCreateDto,
   apiKey: string = env.PIPELINE_API_KEY!,
@@ -81,7 +85,7 @@ export function buildAlert(
       rasters: [
         {
           layer: Layer.alertExtent,
-          value: 'base64',
+          valueBlackWhite: TEST_RASTER_BASE64,
           extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },
       ],

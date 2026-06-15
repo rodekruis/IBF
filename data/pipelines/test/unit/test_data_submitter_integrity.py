@@ -12,6 +12,7 @@ from pipelines.infra.data_types.dtos import (
     Layer,
     SeverityKey,
 )
+from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
 
 EVENT_NAME = "ETH_floods_station-test"
 
@@ -129,7 +130,7 @@ def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
         layer=Layer.POPULATION_EXPOSED,
-        value="alert_extent.tif",
+        value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
 
@@ -176,7 +177,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
         layer=Layer.ALERT_EXTENT,
-        value="alert_extent.tif",
+        value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
 
@@ -194,7 +195,7 @@ def test_raster_invalid_extent_is_rejected(
     valid_submitter.add_raster_exposure(
         event_name=EVENT_NAME,
         layer=Layer.ALERT_EXTENT,
-        value="alert_extent.tif",
+        value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 38.0, "ymin": 2.0, "xmax": 36.0, "ymax": 0.0},
     )
 
@@ -254,7 +255,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
         layer=Layer.ALERT_EXTENT,
-        value="alert_extent.tif",
+        value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
 

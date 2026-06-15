@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
+
 from pipelines.infra.utils.api_client import ApiClient
 
 
@@ -107,32 +108,50 @@ class TestGetAdminAreas:
         """Successful 200 response returns the parsed FeatureCollection dict."""
         feature_collection = {
             "type": "FeatureCollection",
-            "features": [{"type": "Feature", "properties": {"placeCode": "ETH001", "adminLevel": 1}, "geometry": None}],
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {"placeCode": "ETH001", "adminLevel": 1},
+                    "geometry": None,
+                }
+            ],
         }
-        mock_get.return_value = MagicMock(status_code=200, json=lambda: feature_collection)
+        mock_get.return_value = MagicMock(
+            status_code=200, json=lambda: feature_collection
+        )
         result = self.client.get_admin_areas("ETH")
         assert result == feature_collection
 
     @patch.object(requests.Session, "get")
     def test_sends_cql_filter_with_country_code(self, mock_get: MagicMock) -> None:
         """countryCodeIso3 is encoded as a CQL filter param."""
-        mock_get.return_value = MagicMock(status_code=200, json=lambda: {"type": "FeatureCollection", "features": []})
+        mock_get.return_value = MagicMock(
+            status_code=200, json=lambda: {"type": "FeatureCollection", "features": []}
+        )
         self.client.get_admin_areas("PHL")
         _args, kwargs = mock_get.call_args
         assert kwargs["params"]["filter"] == "countryCodeIso3='PHL'"
 
     @patch.object(requests.Session, "get")
-    def test_sends_cql_filter_with_admin_level_when_provided(self, mock_get: MagicMock) -> None:
+    def test_sends_cql_filter_with_admin_level_when_provided(
+        self, mock_get: MagicMock
+    ) -> None:
         """adminLevel is appended to the CQL filter when provided."""
-        mock_get.return_value = MagicMock(status_code=200, json=lambda: {"type": "FeatureCollection", "features": []})
+        mock_get.return_value = MagicMock(
+            status_code=200, json=lambda: {"type": "FeatureCollection", "features": []}
+        )
         self.client.get_admin_areas("PHL", admin_level=2)
         _args, kwargs = mock_get.call_args
         assert kwargs["params"]["filter"] == "countryCodeIso3='PHL' AND adminLevel=2"
 
     @patch.object(requests.Session, "get")
-    def test_omits_admin_level_from_filter_when_not_provided(self, mock_get: MagicMock) -> None:
+    def test_omits_admin_level_from_filter_when_not_provided(
+        self, mock_get: MagicMock
+    ) -> None:
         """adminLevel is not included in the CQL filter when not provided."""
-        mock_get.return_value = MagicMock(status_code=200, json=lambda: {"type": "FeatureCollection", "features": []})
+        mock_get.return_value = MagicMock(
+            status_code=200, json=lambda: {"type": "FeatureCollection", "features": []}
+        )
         self.client.get_admin_areas("PHL")
         _args, kwargs = mock_get.call_args
         assert "adminLevel" not in kwargs["params"]["filter"]
@@ -141,7 +160,9 @@ class TestGetAdminAreas:
     def test_returns_empty_dict_on_empty_features(self, mock_get: MagicMock) -> None:
         """200 response with empty features list returns the FeatureCollection with no features."""
         empty_collection = {"type": "FeatureCollection", "features": []}
-        mock_get.return_value = MagicMock(status_code=200, json=lambda: empty_collection)
+        mock_get.return_value = MagicMock(
+            status_code=200, json=lambda: empty_collection
+        )
         result = self.client.get_admin_areas("ETH")
         assert result == empty_collection
 
