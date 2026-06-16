@@ -17,7 +17,6 @@ export class RastersRepository {
       where: { id },
       select: {
         layer: true,
-        valueColoured: true,
         extent: true,
       },
     });
@@ -28,8 +27,22 @@ export class RastersRepository {
 
     return {
       layer: raster.layer as Layer,
-      valueColoured: raster.valueColoured,
       extent: raster.extent as unknown as RasterExtentDto,
     };
+  }
+
+  public async getRasterImageOrThrow(id: number): Promise<Buffer> {
+    const raster = await this.prisma.alertExposureRasterData.findUnique({
+      where: { id },
+      select: {
+        valueColoured: true,
+      },
+    });
+
+    if (!raster) {
+      throw new NotFoundException(`Raster with id ${id} not found`);
+    }
+
+    return Buffer.from(raster.valueColoured, 'base64');
   }
 }

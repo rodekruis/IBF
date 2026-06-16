@@ -17,7 +17,15 @@ const alertInclude: Prisma.AlertInclude = {
   severity: true,
   exposureAdminArea: true,
   exposureGeoFeature: true,
-  exposureRasterData: true,
+  exposureRasterData: {
+    select: {
+      id: true,
+      created: true,
+      updated: true,
+      layer: true,
+      extent: true,
+    },
+  },
 };
 
 type AlertWithRelations = Prisma.AlertGetPayload<{

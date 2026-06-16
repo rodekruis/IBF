@@ -186,5 +186,12 @@
       "id"
     ],
     "returnType": "RasterResponseDto"
+  },
+  {
+    "method": "get",
+    "path": "/api/rasters/{id}/image",
+    "params": [
+      "id"
+    ]
   }
 ]

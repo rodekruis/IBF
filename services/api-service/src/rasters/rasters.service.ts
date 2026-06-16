@@ -10,4 +10,8 @@ export class RastersService {
   public async getRasterOrThrow(id: number): Promise<RasterResponseDto> {
     return this.rastersRepository.getRasterOrThrow(id);
   }
+
+  public async getRasterImageOrThrow(id: number): Promise<Buffer> {
+    return this.rastersRepository.getRasterImageOrThrow(id);
+  }
 }
