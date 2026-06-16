@@ -5,6 +5,10 @@ on:
     types: [submodule-update]
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -17,7 +21,7 @@ jobs:
 
       - name: Update submodule to latest ibf-main
         run: |
-          git submodule update --remote portal/nrw-standalone/src/go-web-app
+          git submodule update --init --remote portal/nrw-standalone/src/go-web-app
 
       - name: Check for changes
         id: check
