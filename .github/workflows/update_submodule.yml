@@ -62,7 +62,23 @@ jobs:
           commit-message: 'chore: update go-web-app submodule'
           branch: automated/update-go-web-app-submodule
           title: 'chore: update go-web-app submodule'
-          body: Automated submodule update triggered by a merge to `ibf-main` in go-web-app.
+          body: |
+            Automated submodule update triggered by a merge to `ibf-main` in rodekruis/go-web-app.
+
+            ## Checklist after merging
+
+            - [ ] Copy over any changes in `sample.env` to `nrw-standalone/sample.env` and to Github secrets if applicable.
+            - [ ] Update dependencies in `package.json` if the submodule introduced new imports
+            - [ ] Create/update any other `/nrw-standalone` code if applicable.
+
+            ## Portal preview-deployment
+
+            <!-- start deployment url -->
+
+            This PR does not have any preview deployments yet.
+
+            <!-- end deployment url -->
+          labels: chore
           add-paths: |
             portal/nrw-standalone/src/go-web-app
             portal/nrw-standalone/pnpm-lock.yaml
