@@ -1,42 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from enum import StrEnum
 
 from pipelines.infra.data_types.enums import HazardType
 from shared.country_data import CountryCodeIso3
 
 
-class ScenarioType(StrEnum):
-    """Infra-level override that replaces the hazard-specific forecast logic in
-    forecast.py with a predetermined outcome. This is orthogonal to run_target:
-    run_target selects the environment config (countries, data sources, output),
-    while scenario controls *what the pipeline produces* without running any
-    hazard logic."""
-
-    NO_ALERT = "no-alert"
-    ALERT = "alert"
-    MULTI_ALERT = "multi-alert"
-
-
-@dataclass
-class Scenario:
-    type: ScenarioType
-    issued_at: datetime | None = None
-
-
-class RunTargetType(StrEnum):
+class RunTarget(StrEnum):
     """
-    Enum of the different types of run targets.
-    The string value (case insensitive) must match the "run_target" field in the config YAML.
-    Add to this as needed.
+    Which forecast data source to load for a run.
+    Must match the "run_target" tag of a data source in the hazard config yaml
     """
 
-    MOCK_ALERT = "mock_alert"
-    MOCK_NO_ALERT = "mock_no_alert"
-    SCENARIO = "scenario"
-    LIVE = "live"
+    LIVE = "live"  # --mock flag not set, for production runs with live data
+    MOCK_ALERT = "mock_alert"  # --mock 1
+    MOCK_NO_ALERT = "mock_no_alert"  # --mock 0
 
 
 class DataSource(StrEnum):
@@ -71,11 +50,15 @@ class OutputMode(StrEnum):
 class DataSourceConfig:
     """
     Config for a specific data source, as described in the config file.
+
+    Data Sources tagged with `run_target` are loaded only for the run target
+    and skipped for --infra-only runs.  Untagged sources are loaded for any run.
     """
 
     country_code_iso_3: CountryCodeIso3
     source: DataSource
     hazard_type: HazardType
+    run_target: RunTarget | None = None
 
 
 @dataclass
@@ -87,9 +70,6 @@ class CountryRunConfig:
     country_code_iso_3: CountryCodeIso3
     target_admin_level: int
     data_sources: list[DataSourceConfig]
-    output_mode: OutputMode
-    output_path: str
-    scenario: Scenario | None = None
 
 
 @dataclass
@@ -98,6 +78,5 @@ class PipelineRunConfig:
     Top level class for a pipeline run config file.
     """
 
-    run_target: RunTargetType
     hazard_type: HazardType
     country_configs: dict[CountryCodeIso3, CountryRunConfig]
