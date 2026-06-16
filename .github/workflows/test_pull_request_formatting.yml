@@ -35,6 +35,8 @@ jobs:
 
             if (prLabels.includes('dependencies')) {
               core.notice('✅ PR contains a "dependencies" label. Do not check on AB#XXXX.');
+            } else if (pr.data.head.ref.startsWith('automated/')) {
+              core.notice('✅ PR is from an automated branch. Do not check on AB#XXXX.');
             } else if (!/AB#\d{5}/.test(prDescription)) {
               errors.push('Please make sure you have replaced AB#XXXX with a valid DevOps ID in your PR description');
             } else {
