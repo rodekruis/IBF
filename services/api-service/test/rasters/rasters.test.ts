@@ -13,6 +13,10 @@ function readRasterById(id: number) {
   return getServer().get(`/rasters/${id}`);
 }
 
+function readRasterImageById(id: number) {
+  return getServer().get(`/rasters/${id}/image`);
+}
+
 describe('/rasters', () => {
   let rasterId: number;
 
@@ -25,13 +29,12 @@ describe('/rasters', () => {
   });
 
   describe('GET /rasters/:id – success', () => {
-    it('should return the raster with layer, valueColoured, and extent', async () => {
+    it('should return the raster metadata with layer and extent', async () => {
       const response = await readRasterById(rasterId);
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.layer).toBe(Layer.alertExtent);
-      expect(response.body.valueColoured).toBeDefined();
-      expect(response.body.valueColoured.length).toBeGreaterThan(0);
+      expect(response.body.valueColoured).toBeUndefined();
       expect(response.body.extent).toEqual(
         expect.objectContaining({
           xmin: expect.any(Number),
@@ -40,6 +43,25 @@ describe('/rasters', () => {
           ymax: expect.any(Number),
         }),
       );
+    });
+  });
+
+  describe('GET /rasters/:id/image – success', () => {
+    it('should return a PNG image with correct content-type', async () => {
+      const response = await readRasterImageById(rasterId);
+
+      expect(response.status).toBe(HttpStatus.OK);
+      expect(response.headers['content-type']).toBe('image/png');
+      expect(response.body).toBeInstanceOf(Buffer);
+      expect(response.body.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('GET /rasters/:id/image – not found', () => {
+    it('should return 404 for a non-existent raster id', async () => {
+      const response = await readRasterImageById(999999);
+
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });
   });
 
