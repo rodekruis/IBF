@@ -67,9 +67,9 @@ jobs:
 
             ## Checklist after merging
 
-            - [ ] Copy over any changes in `sample.env` to `nrw-standalone/sample.env` and to Github secrets if applicable.
-            - [ ] Update dependencies in `package.json` if the submodule introduced new imports
-            - [ ] Create/update any other `/nrw-standalone` code if applicable.
+            - [ ] Copy over any changes in `sample.env` to `portal/nrw-standalone/sample.env` and to GitHub secrets if applicable.
+            - [ ] Update dependencies in `portal/nrw-standalone/package.json` if the submodule introduced new imports.
+            - [ ] Create/update any other `portal/nrw-standalone` code if applicable.
 
             ## Portal preview-deployment
 
