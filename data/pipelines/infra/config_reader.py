@@ -109,7 +109,7 @@ class ConfigReader:
         config: dict,
         hazard_type: HazardType,
     ) -> bool:
-        """Parse countries from run target config and add to provided dict."""
+        """Parse countries from config and add to provided dict."""
         success = True
 
         for country_raw in config.get("countries", []):
