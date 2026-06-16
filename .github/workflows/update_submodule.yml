@@ -1,0 +1,62 @@
+name: 'Update go-web-app submodule'
+
+on:
+  repository_dispatch:
+    types: [submodule-update]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Update submodule to latest ibf-main
+        run: |
+          git submodule update --init --remote portal/nrw-standalone/src/go-web-app
+
+      - name: Check for changes
+        id: check
+        run: |
+          if git diff --quiet portal/nrw-standalone/src/go-web-app; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up pnpm
+        if: steps.check.outputs.changed == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        if: steps.check.outputs.changed == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: portal/nrw-standalone/.node-version
+
+      - name: Update lockfile
+        if: steps.check.outputs.changed == 'true'
+        working-directory: portal/nrw-standalone
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Create Pull Request
+        if: steps.check.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: 'chore: update go-web-app submodule'
+          branch: automated/update-go-web-app-submodule
+          title: 'chore: update go-web-app submodule'
+          body: Automated submodule update triggered by a merge to `ibf-main` in go-web-app.
+          add-paths: |
+            portal/nrw-standalone/src/go-web-app
+            portal/nrw-standalone/pnpm-lock.yaml
