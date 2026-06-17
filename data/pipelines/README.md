@@ -48,9 +48,10 @@ flowchart TD
     Mock -->|no| Live["LIVE<br/>real data sources (GloFAS FTP)"]
     Live --> Forecast
 
-    Mock -->|yes, --mock| Infra{--infra-only?}
+    Mock -->|yes| J(( ))
+    J --> Infra{--infra-only?} & IssuedAt
 
-    Infra -->|no: run forecast.py| Seed{N value}
+    Infra -->|no: run forecast.py| Seed{--mock value}
     Seed -->|0| SeedNo["load run_target: mock_no_alert source"]
     Seed -->|1| SeedYes["load run_target: mock_alert source"]
     Seed -->|other| Err["ERROR: only 0 or 1"]
