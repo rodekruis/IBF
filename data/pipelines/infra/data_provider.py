@@ -8,16 +8,14 @@ This file can be run directly to help debug data loading issues.
 from __future__ import annotations
 
 import logging
-import sys
 from pathlib import Path
 from typing import TypeVar
 
 from dotenv import load_dotenv
-from shared.country_data import CountryCodeIso3
 
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.data_config_types import DataSource, RunTargetType
+from pipelines.infra.data_types.data_config_types import CountryRunConfig, DataSource
 from pipelines.infra.data_types.loaded_data_types import (
     DataType,
     LoadedDataSource,
@@ -36,24 +34,11 @@ class DataProvider:
         self.loaded_data: dict[DataSource, LoadedDataSource] = {}
         self.api_client = api_client
 
-    def try_load_data(
-        self,
-        config_reader: ConfigReader,
-        country_name: CountryCodeIso3,
-        run_target: RunTargetType,
-    ) -> bool:
-        country_config = config_reader.get_country_config(country_name, run_target)
-        if not country_config:
-            logger.error(
-                f"Country '{country_name}' not found in config for run_target '{run_target}'"
-            )
-            return False
-
+    def try_load_data(self, country_config: CountryRunConfig) -> bool:
+        country_name = country_config.country_code_iso_3
         data_sources = country_config.data_sources
         if not data_sources:
-            logger.warning(
-                f"No data sources configured for country '{country_name}' in run_target '{run_target}'"
-            )
+            logger.warning(f"No data sources configured for country '{country_name}'")
             return False
 
         success = True
@@ -102,26 +87,19 @@ if __name__ == "__main__":
     # load the env vars here so our debug code below can use them in the data loader.
     load_dotenv()
 
-    config_reader = ConfigReader()
+    config_reader = ConfigReader(run_target=None, infra_only=False)
     config_path = Path(__file__).parent / "configs" / "floods.yaml"
     success = config_reader.load_all(config_path)
-    if not success:
+    if not success or config_reader.config is None:
         print(f"Failed to load config from path {config_path}")
     else:
-        data = config_reader.run_targets.get(RunTargetType.MOCK_ALERT)
-        if data is None:
-            print("No MOCK_ALERT run target found in config")
-            sys.exit(1)
-        print(
-            f"Data sources for MOCK_ALERT run target: {data.hazard_type} - {data.country_configs}"
-        )
+        data = config_reader.config
+        print(f"Data sources for floods: {data.hazard_type} - {data.country_configs}")
 
         api_client = ApiClient()
         provider = DataProvider(api_client)
-        for country_code in data.country_configs:
-            provider.try_load_data(
-                config_reader, country_code, RunTargetType.MOCK_ALERT
-            )
+        for country_config in data.country_configs.values():
+            provider.try_load_data(country_config)
 
         # For the loaded data, print out some of the printable fields to verify it loaded
         for container in provider.loaded_data.values():

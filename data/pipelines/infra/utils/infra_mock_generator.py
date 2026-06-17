@@ -5,11 +5,7 @@ from typing import Callable
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.data_config_types import (
-    DataSource,
-    Scenario,
-    ScenarioType,
-)
+from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
@@ -22,20 +18,23 @@ from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
 HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
 
 
-def make_scenario_hazard_function(
-    scenario: Scenario, hazard_type: HazardType
+def make_infra_mock_hazard_function(
+    alert_count: int, hazard_type: HazardType
 ) -> HazardFunction:
-    def _scenario_hazard_fn(
+    """Build a hazard function that bypasses forecast.py and generates
+    ``alert_count`` alerts. Used by ``--infra-only`` to test pipeline infra
+    without any hazard logic. ``alert_count`` 0 returns void for no-alert."""
+
+    def _infra_mock_hazard_fn(
         data_provider: DataProvider,
         data_submitter: DataSubmitter,
         country: str,
         target_admin_level: int,
     ) -> None:
-        if scenario.type == ScenarioType.NO_ALERT:
+        if alert_count <= 0:
             return
 
-        alert_count = 1 if scenario.type == ScenarioType.ALERT else 2
-        _generate_alert_scenarios(
+        _generate_mock_alerts(
             data_provider,
             data_submitter,
             country,
@@ -44,10 +43,10 @@ def make_scenario_hazard_function(
             alert_count,
         )
 
-    return _scenario_hazard_fn
+    return _infra_mock_hazard_fn
 
 
-def _generate_alert_scenarios(
+def _generate_mock_alerts(
     data_provider: DataProvider,
     data_submitter: DataSubmitter,
     country: str,
@@ -59,13 +58,13 @@ def _generate_alert_scenarios(
         DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
     )
     if not target_admin_areas:
-        data_submitter.add_error("Missing admin area data for alert scenario")
+        data_submitter.add_error("Missing admin area data for mock alert")
         return
 
     place_codes = list(target_admin_areas.admin_areas.keys())
 
     for i in range(alert_count):
-        event_name = f"{country}_{hazard_type}_scenario-alert-{i + 1}"
+        event_name = f"{country}_{hazard_type}_mock-alert-{i + 1}"
         exposed_pcodes = place_codes[i * 2 : (i + 1) * 2] or place_codes[:2]
 
         data_submitter.create_alert(

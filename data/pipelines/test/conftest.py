@@ -1,5 +1,10 @@
+import os
+import subprocess
+import sys
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable
 from unittest.mock import MagicMock
 
 import pytest
@@ -76,3 +81,44 @@ def valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
 @pytest.fixture()
 def tmp_output(tmp_path: Path) -> Path:
     return tmp_path / "output"
+
+
+def _run_pipeline(
+    config: str,
+    mock: int | None = None,
+    infra_only: bool = False,
+    issued_at: str | None = None,
+    country: str | None = None,
+) -> subprocess.CompletedProcess[str]:
+    cmd = [
+        sys.executable,
+        "-m",
+        "pipelines.infra.run_forecasts",
+        "--config",
+        config,
+    ]
+    if mock is not None:
+        cmd.extend(["--mock", str(mock)])
+    if infra_only:
+        cmd.append("--infra-only")
+    if issued_at:
+        cmd.extend(["--issued-at", issued_at])
+    if country:
+        cmd.extend(["--country", country])
+
+    return subprocess.run(
+        cmd,
+        env=os.environ.copy(),
+        capture_output=True,
+        text=True,
+    )
+
+
+@dataclass(frozen=True)
+class PipelineRunner:
+    run_pipeline: Callable[..., subprocess.CompletedProcess[str]]
+
+
+@pytest.fixture()
+def pipeline() -> PipelineRunner:
+    return PipelineRunner(run_pipeline=_run_pipeline)
