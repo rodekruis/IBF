@@ -2,9 +2,7 @@
 // When adding enums here, follow the full updating flow.
 // See `Updating Shared Enums` in the README for details.
 
-// HazardType is defined as a PostgreSQL enum in the Prisma schema; re-exported here
-// so it flows through the same single-hub pattern as the other shared enums.
-export { HazardType } from '@prisma/client';
+export { AlertClass, HazardType } from '@prisma/client';
 
 export enum EnsembleMemberType {
   median = 'median',
@@ -49,13 +47,3 @@ export enum AlertClassificationLevel {
   medium = 'medium',
   high = 'high',
 }
-
-// Allowed classification levels for alertClass
-// (derived from severityClass and probabilityClass according to ALERT_CLASS_MATRIX)
-// NOTE: do not change order, as this is used functionally
-export enum AlertClass {
-  low = 'low',
-  medium = 'medium',
-  high = 'high',
-}
-// END: Alert classification related enums
