@@ -7,6 +7,13 @@ datasource db {
   schemas  = ["api-service"]
 }
 
+enum HazardType {
+  floods
+  drought
+
+  @@schema("api-service")
+}
+
 model User {
   @@schema("api-service")
   @@map("user")
@@ -36,7 +43,7 @@ model Alert {
   eventName       String
   issuedAt        DateTime
   centroid        Json
-  hazardType      String
+  hazardType      HazardType
   forecastSources String[]
   eventId         Int?
   event           Event?   @relation(fields: [eventId], references: [id])
@@ -57,7 +64,7 @@ model Event {
   created                   DateTime  @default(now())
   updated                   DateTime  @updatedAt
   eventName                 String
-  hazardType                String
+  hazardType                HazardType
   forecastSources           String[]
   alertClass                String
   trigger                   Boolean
@@ -228,7 +235,7 @@ model AlertConfig {
   updated                   DateTime @updatedAt
   countryCodeIso3           String
   country                   Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
-  hazardType                String
+  hazardType                HazardType
   spatialExtentName         String
   spatialExtentPlaceCodes   String[] // soft FK to admin-area.placeCode
   temporalExtents           Json

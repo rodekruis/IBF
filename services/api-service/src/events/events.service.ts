@@ -11,7 +11,6 @@ import {
 import {
   AlertClass,
   ForecastSource,
-  HazardType,
   LayerName,
   LayerType,
 } from '@api-service/src/shared-enums';
@@ -55,7 +54,7 @@ export class EventsService {
       eventId: event.id,
       eventName: event.eventName,
       eventLabel: this.deriveEventLabel(event.eventName),
-      hazardType: event.hazardType as HazardType,
+      hazardType: event.hazardType,
       forecastSources: event.forecastSources as ForecastSource[],
       alertClass: event.alertClass as AlertClass,
       trigger: event.trigger,

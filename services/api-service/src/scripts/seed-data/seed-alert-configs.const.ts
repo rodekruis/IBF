@@ -11,7 +11,7 @@ interface ClassLevel {
 
 export interface SeedAlertConfig {
   readonly countryCodeIso3: string;
-  readonly hazardType: string;
+  readonly hazardType: HazardType;
   readonly spatialExtentName: string;
   readonly spatialExtentPlaceCodes: string[];
   readonly temporalExtents: Record<string, string[] | number[]>[];

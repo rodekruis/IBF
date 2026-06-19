@@ -23,7 +23,7 @@ export class AlertConfigsRepository {
       created: row.created,
       updated: row.updated,
       countryCodeIso3: row.countryCodeIso3,
-      hazardType: row.hazardType as HazardType,
+      hazardType: row.hazardType,
       spatialExtentName: row.spatialExtentName,
       spatialExtentPlaceCodes: row.spatialExtentPlaceCodes,
       temporalExtents: row.temporalExtents as unknown as Record<
