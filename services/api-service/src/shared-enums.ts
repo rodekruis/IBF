@@ -2,7 +2,10 @@
 // When adding enums here, follow the full updating flow.
 // See `Updating Shared Enums` in the README for details.
 
-// Not used by FE
+// HazardType is defined as a PostgreSQL enum in the Prisma schema; re-exported here
+// so it flows through the same single-hub pattern as the other shared enums.
+export { HazardType } from '@prisma/client';
+
 export enum EnsembleMemberType {
   median = 'median',
   run = 'run',
@@ -11,11 +14,6 @@ export enum EnsembleMemberType {
 export enum ForecastSource {
   glofas = 'glofas',
   ecmwf = 'ECMWF',
-}
-
-export enum HazardType {
-  floods = 'floods',
-  drought = 'drought',
 }
 
 export enum LayerName {

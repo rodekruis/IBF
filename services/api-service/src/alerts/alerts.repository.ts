@@ -10,7 +10,7 @@ import { ExposureRasterReadDto } from '@api-service/src/alerts/dto/exposure-rast
 import { SeverityReadDto } from '@api-service/src/alerts/dto/severity-read.dto';
 import { ForecastMetadata } from '@api-service/src/events/alert-to-event.service';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
-import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
+import { ForecastSource } from '@api-service/src/shared-enums';
 import { colorizeGrayscalePng } from '@api-service/src/utils/raster-colorization.helper';
 
 const alertInclude: Prisma.AlertInclude = {
@@ -44,7 +44,7 @@ export class AlertsRepository {
       eventName: alert.eventName,
       issuedAt: alert.issuedAt,
       centroid: alert.centroid as unknown as CentroidDto,
-      hazardType: alert.hazardType as HazardType,
+      hazardType: alert.hazardType,
       forecastSources: alert.forecastSources as ForecastSource[],
       severity: alert.severity as unknown as SeverityReadDto[],
       exposure: {
