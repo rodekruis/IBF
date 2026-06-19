@@ -9,7 +9,7 @@ import { AlertConfigCreateDto } from '@api-service/src/alert-configs/dto/alert-c
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
-import { AlertClass, HazardType } from '@api-service/src/shared-enums';
+import { HazardType } from '@api-service/src/shared-enums';
 
 type AlertConfigRow = Prisma.AlertConfigGetPayload<null>;
 
@@ -34,7 +34,7 @@ export class AlertConfigsRepository {
         row.severityClassLevels as unknown as ClassLevelDto[],
       probabilityClassLevels:
         row.probabilityClassLevels as unknown as ClassLevelDto[],
-      triggerAlertClass: row.triggerAlertClass as AlertClass | null,
+      triggerAlertClass: row.triggerAlertClass,
       triggerLeadTimeDuration: row.triggerLeadTimeDuration,
     };
   }

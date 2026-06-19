@@ -298,8 +298,7 @@ export class AlertClassificationService {
 
     const alertClassOrder = Object.values(AlertClass);
     const alertClassRank = alertClassOrder.indexOf(alertClass) + 1;
-    const triggerRank =
-      alertClassOrder.indexOf(config.triggerAlertClass as AlertClass) + 1;
+    const triggerRank = alertClassOrder.indexOf(config.triggerAlertClass) + 1;
 
     if (alertClassRank < triggerRank) {
       return false;

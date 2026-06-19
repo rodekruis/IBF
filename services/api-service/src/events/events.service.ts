@@ -9,7 +9,6 @@ import {
   ExposedAdminAreaRecord,
 } from '@api-service/src/events/events.repository';
 import {
-  AlertClass,
   ForecastSource,
   LayerName,
   LayerType,
@@ -56,7 +55,7 @@ export class EventsService {
       eventLabel: this.deriveEventLabel(event.eventName),
       hazardType: event.hazardType,
       forecastSources: event.forecastSources as ForecastSource[],
-      alertClass: event.alertClass as AlertClass,
+      alertClass: event.alertClass,
       trigger: event.trigger,
       centroid: event.centroid as { latitude: number; longitude: number },
       startAt: event.startAt.toISOString(),

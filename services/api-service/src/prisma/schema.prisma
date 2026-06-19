@@ -14,6 +14,15 @@ enum HazardType {
   @@schema("api-service")
 }
 
+enum AlertClass {
+  // NOTE: do not change order — used functionally for ranking in AlertClassificationService
+  low
+  medium
+  high
+
+  @@schema("api-service")
+}
+
 model User {
   @@schema("api-service")
   @@map("user")
@@ -66,7 +75,7 @@ model Event {
   eventName                 String
   hazardType                HazardType
   forecastSources           String[]
-  alertClass                String
+  alertClass                AlertClass
   trigger                   Boolean
   centroid                  Json
   startAt                   DateTime
@@ -242,7 +251,7 @@ model AlertConfig {
   severityClassLevels       Json
   // TODO: the classification fields below are currently duplicated per row (they are hazard-type-level, not per-station). Handle differently later.
   probabilityClassLevels    Json
-  triggerAlertClass         String?
+  triggerAlertClass         AlertClass?
   triggerLeadTimeDuration   String?
 
   @@index([countryCodeIso3])
