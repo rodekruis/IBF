@@ -35,10 +35,10 @@ runs:
       run: |
         echo "build_version=$(git describe --tags --dirty --broken)" >> $GITHUB_OUTPUT
 
-    - name: Check out the go-web-app submodule (sparse)
+    - name: Check out the go-web-app submodule (sparse, latest ibf-main)
       shell: bash
       run: |
-        git submodule update --init ${{ inputs.frontendPath }}/src/go-web-app
+        git submodule update --init --remote ${{ inputs.frontendPath }}/src/go-web-app
         cd ${{ inputs.frontendPath }}/src/go-web-app
         git sparse-checkout set --no-cone '/app/src/utils/nrw/' '/app/src/components/NrwMap/'
 
