@@ -579,6 +579,29 @@ describe('AlertsService', () => {
         }),
       );
     });
+
+    it('should accept alert with rasters omitted', async () => {
+      const alerts = [
+        createMockValidAlert({
+          exposure: {
+            adminAreas: [
+              {
+                placeCode: 'A',
+                adminLevel: 3,
+                layer: Layer.populationExposed,
+                value: 1,
+              },
+            ],
+          },
+        }),
+      ];
+      await service.createAlerts(createMockValidForecast(alerts));
+      expect(repository.createAlerts).toHaveBeenCalledWith(
+        expect.objectContaining({
+          alertCreateDtos: alerts,
+        }),
+      );
+    });
   });
 
   describe('createAlerts – error response format', () => {

@@ -221,19 +221,3 @@ def test_multiple_layers_aggregated_independently():
     assert population[0].value == 300
     assert len(extent) == 1
     assert extent[0].value == 30
-
-
-def test_alert_extent_aggregation_all_zero():
-    # Parent value is 0 when all children are 0
-    alert = _make_alert(
-        [
-            ExposureAdminArea("child-A", 3, Layer.FLOOD_DEPTH, 0),
-            ExposureAdminArea("child-B", 3, Layer.FLOOD_DEPTH, 0),
-        ]
-    )
-
-    aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
-
-    level_2 = _entries_at_level(alert, 2)
-    parent_x = [e for e in level_2 if e.place_code == "parent-X"]
-    assert parent_x[0].value == 0

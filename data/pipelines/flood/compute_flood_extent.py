@@ -7,7 +7,7 @@ from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import RasterData
 
 
-def compute_flood_depth(
+def compute_flood_extent(
     time_interval_severities: list[TimeIntervalSeverity],
     flood_extent_provider: FloodExtentProvider,
 ) -> RasterData:
