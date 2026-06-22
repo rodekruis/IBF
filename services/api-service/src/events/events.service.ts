@@ -78,7 +78,7 @@ export class EventsService {
       adminLevel: area.adminLevel,
       name: area.name,
       exposure: area.exposure.map((exp) => ({
-        type: exp.type,
+        layerName: exp.type,
         total: null,
         exposed: exp.exposed,
       })),

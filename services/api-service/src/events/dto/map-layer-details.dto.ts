@@ -1,9 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import {
-  MapLayerDisplayType,
-  MapLayerInfoType,
-} from '@api-service/src/shared-enums';
+import { LayerName, MapLayerDisplayType } from '@api-service/src/shared-enums';
 
 export class MapLayerDetailsDto {
   @ApiProperty({
@@ -12,11 +9,11 @@ export class MapLayerDetailsDto {
   public readonly resourceId: string;
 
   @ApiProperty({
-    enum: MapLayerInfoType,
+    enum: LayerName,
     description:
       'The type of data on this layer. Used to label and style the layer in the UI.',
   })
-  public readonly dataType: MapLayerInfoType;
+  public readonly dataType: LayerName;
 
   @ApiProperty({
     enum: MapLayerDisplayType,

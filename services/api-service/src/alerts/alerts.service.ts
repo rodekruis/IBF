@@ -8,7 +8,7 @@ import { AlertToEventService } from '@api-service/src/events/alert-to-event.serv
 import {
   EnsembleMemberType,
   HazardType,
-  Layer,
+  LayerName,
 } from '@api-service/src/shared-enums';
 
 // This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
@@ -223,9 +223,9 @@ export class AlertsService {
 
     // Verify the required alert_extent layer is present
     const rasterLayers = new Set(rasters.map((r) => r.layer));
-    if (!rasterLayers.has(Layer.alertExtent)) {
+    if (!rasterLayers.has(LayerName.alertExtent)) {
       errors.push(
-        `Alert '${alert.eventName}' rasters: missing required '${Layer.alertExtent}' layer`,
+        `Alert '${alert.eventName}' rasters: missing required '${LayerName.alertExtent}' layer`,
       );
     }
 

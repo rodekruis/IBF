@@ -3,7 +3,7 @@ import { addDays } from 'date-fns';
 
 import { ExposureAdminAreaDto } from '@api-service/src/alerts/dto/exposure-admin-area.dto';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { Layer } from '@api-service/src/shared-enums';
+import { LayerName } from '@api-service/src/shared-enums';
 import {
   buildAlert,
   buildForecast,
@@ -32,76 +32,76 @@ const AWASH_RIVER_ADMIN_AREAS: ExposureAdminAreaDto[] = [
   {
     placeCode: 'ET0040180088',
     adminLevel: 3,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 12400,
   },
   {
     placeCode: 'ET0040180089',
     adminLevel: 3,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 8300,
   },
   {
     placeCode: 'ET0040180091',
     adminLevel: 3,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 5600,
   },
   {
     placeCode: 'ET0040190092',
     adminLevel: 3,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 15200,
   },
   {
     placeCode: 'ET0040190093',
     adminLevel: 3,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 9100,
   },
   {
     placeCode: 'ET0040190094',
     adminLevel: 3,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 3400,
   },
   {
     placeCode: 'ET0040200096',
     adminLevel: 3,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 7800,
   },
   // Admin level 2 — zones
   {
     placeCode: 'ET004018',
     adminLevel: 2,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 26300,
   },
   {
     placeCode: 'ET004019',
     adminLevel: 2,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 27700,
   },
   {
     placeCode: 'ET004020',
     adminLevel: 2,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 7800,
   },
   // Admin level 1 — Afar region
   {
     placeCode: 'ET004',
     adminLevel: 1,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 61800,
   },
   // Admin level 0 — Ethiopia
   {
     placeCode: 'ET',
     adminLevel: 0,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 61800,
   },
 ];
@@ -111,31 +111,31 @@ const GAMBELLA_ADMIN_AREAS: ExposureAdminAreaDto[] = [
   {
     placeCode: 'ET0402301149',
     adminLevel: 3,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 4200,
   },
   {
     placeCode: 'ET0402301150',
     adminLevel: 3,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 3100,
   },
   {
     placeCode: 'ET040230',
     adminLevel: 2,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 7300,
   },
   {
     placeCode: 'ET040',
     adminLevel: 1,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 7300,
   },
   {
     placeCode: 'ET',
     adminLevel: 0,
-    layer: Layer.populationExposed,
+    layer: LayerName.populationExposed,
     value: 7300,
   },
 ];
@@ -166,7 +166,7 @@ describe('GET /events - rich seed data for demo/debugging', () => {
         adminAreas: AWASH_RIVER_ADMIN_AREAS,
         rasters: [
           {
-            layer: Layer.alertExtent,
+            layer: LayerName.alertExtent,
             valueBlackWhite: AWASH_RIVER_RASTER_BASE64,
             extent: { xmin: 39.0, ymin: 8.0, xmax: 40.5, ymax: 10.0 },
           },
@@ -188,7 +188,7 @@ describe('GET /events - rich seed data for demo/debugging', () => {
         adminAreas: GAMBELLA_ADMIN_AREAS,
         rasters: [
           {
-            layer: Layer.alertExtent,
+            layer: LayerName.alertExtent,
             valueBlackWhite: GAMBELLA_RASTER_BASE64,
             extent: { xmin: 33.5, ymin: 7.5, xmax: 35.0, ymax: 9.0 },
           },

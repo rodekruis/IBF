@@ -9,7 +9,7 @@ import {
   EnsembleMemberType,
   ForecastSource,
   HazardType,
-  Layer,
+  LayerName,
   SeverityKey,
 } from '@api-service/src/shared-enums';
 import { getServer } from '@api-service/test/helpers/utility.helper';
@@ -78,13 +78,13 @@ export function buildAlert(
         {
           placeCode: 'ETH_01',
           adminLevel: 3,
-          layer: Layer.populationExposed,
+          layer: LayerName.populationExposed,
           value: 1000,
         },
       ],
       rasters: [
         {
-          layer: Layer.alertExtent,
+          layer: LayerName.alertExtent,
           valueBlackWhite: TEST_RASTER_BASE64,
           extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },

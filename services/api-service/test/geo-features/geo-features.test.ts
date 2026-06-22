@@ -2,7 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 
 import { GeoFeatureType } from '@api-service/src/geo-features/enum/geo-feature-type.enum';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { Layer } from '@api-service/src/shared-enums';
+import { LayerName } from '@api-service/src/shared-enums';
 import {
   getAccessToken,
   getServer,
@@ -22,7 +22,7 @@ describe('/ Geo Features', () => {
       const response = await getServer()
         .get('/geo-features')
         .query({
-          filter: `countryCodeIso3='ETH' AND layer='${Layer.glofasStations}'`,
+          filter: `countryCodeIso3='ETH' AND layer='${LayerName.glofasStations}'`,
         })
         .set('Cookie', [accessToken]);
 
@@ -35,14 +35,14 @@ describe('/ Geo Features', () => {
       expect(feature.type).toBe('Feature');
       expect(feature.geometry).toBeDefined();
       expect(feature.properties.countryCodeIso3).toBe('ETH');
-      expect(feature.properties.layer).toBe(Layer.glofasStations);
+      expect(feature.properties.layer).toBe(LayerName.glofasStations);
     });
   });
 
   const validGeoFeature = {
     countryCodeIso3: 'ETH',
     featureType: GeoFeatureType.point,
-    layer: Layer.glofasStations,
+    layer: LayerName.glofasStations,
     referenceId: 'TEST_STATION_01',
     geometry: { type: 'Point', coordinates: [38.5, 9.0] },
     attributes: { name: 'Test Station' },

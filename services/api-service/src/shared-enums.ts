@@ -17,22 +17,18 @@ export enum HazardType {
   drought = 'drought',
 }
 
-export enum Layer {
-  // raster layers
+// Layers are "buckets" of real-world data. We name those buckets.
+export enum LayerName {
   alertExtent = 'alert_extent',
-  // admin-area layers
-  populationExposed = 'population_exposed',
-  // geo-feature layers
+  clinics = 'clinics',
+  eventExtent = 'event_extent',
   glofasStations = 'glofas_stations',
-}
-
-// Key to identify the type of map layer info being shown.
-// This is used to style/label it on the frontend.
-export enum MapLayerInfoType {
-  Population = 'population',
-  EventExtent = 'event_extent',
-  RedCrossBranches = 'red_cross_branches',
-  Clinics = 'clinics',
+  population = 'population',
+  populationExposed = 'population_exposed',
+  redCrossBranches = 'red_cross_branches',
+  buildings = 'buildings',
+  schools = 'schools',
+  roads = 'roads',
 }
 
 export enum MapLayerDisplayType {

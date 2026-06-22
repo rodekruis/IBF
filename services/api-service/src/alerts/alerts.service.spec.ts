@@ -10,7 +10,7 @@ import {
   EnsembleMemberType,
   ForecastSource,
   HazardType,
-  Layer,
+  LayerName,
   SeverityKey,
 } from '@api-service/src/shared-enums';
 
@@ -62,13 +62,13 @@ function createMockValidAlert(
         {
           placeCode: 'ETH_01_001',
           adminLevel: 3,
-          layer: Layer.populationExposed,
+          layer: LayerName.populationExposed,
           value: 1,
         },
       ],
       rasters: [
         {
-          layer: Layer.alertExtent,
+          layer: LayerName.alertExtent,
           valueBlackWhite: TEST_RASTER_BASE64,
           extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },
@@ -290,7 +290,7 @@ describe('AlertsService', () => {
             adminAreas: [],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: LayerName.alertExtent,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -320,13 +320,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.glofasStations,
+                layer: LayerName.glofasStations,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: LayerName.alertExtent,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -358,25 +358,26 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.glofasStations, // not actually admin-area layer, but works to test the record count validation
+                layer: LayerName.glofasStations, // not actually admin-area layer, but works to test the record count validation
                 value: 1,
               },
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 100,
               },
               {
                 placeCode: 'B',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 200,
               },
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: LayerName.alertExtent,
+
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -410,13 +411,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.populationExposed, // invalid raster layer
+                layer: LayerName.populationExposed, // invalid raster layer
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -446,13 +447,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: LayerName.alertExtent,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 10, ymin: 5, xmax: 5, ymax: 1 },
               },
@@ -480,7 +481,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
@@ -510,13 +511,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: LayerName.alertExtent,
                 valueBlackWhite: '!!!not-base64!!!',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -546,13 +547,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: LayerName.alertExtent,
                 valueBlackWhite: 'AQI',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -585,13 +586,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: LayerName.alertExtent,
                 valueBlackWhite: notPngBase64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -621,13 +622,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: LayerName.alertExtent,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
