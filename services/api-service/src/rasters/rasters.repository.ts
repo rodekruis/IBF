@@ -3,7 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { RasterExtentDto } from '@api-service/src/alerts/dto/raster-extent.dto';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import { RasterResponseDto } from '@api-service/src/rasters/dto/raster-response.dto';
-import { Layer } from '@api-service/src/shared-enums';
+import { LayerName } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class RastersRepository {
@@ -26,7 +26,7 @@ export class RastersRepository {
     }
 
     return {
-      layer: raster.layer as Layer,
+      layer: raster.layer as LayerName,
       extent: raster.extent as unknown as RasterExtentDto,
     };
   }

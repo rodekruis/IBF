@@ -12,9 +12,8 @@ import {
   AlertClass,
   ForecastSource,
   HazardType,
-  Layer,
+  LayerName,
   MapLayerDisplayType,
-  MapLayerInfoType,
 } from '@api-service/src/shared-enums';
 
 @Injectable()
@@ -100,13 +99,13 @@ export class EventsService {
   private mapRasterLayers(
     rasters: { id: number; layer: string }[],
   ): MapLayerDetailsDto[] {
-    const layerInfoMap: Record<string, MapLayerInfoType> = {
-      [Layer.alertExtent]: MapLayerInfoType.EventExtent,
+    const layerInfoMap: Record<string, LayerName> = {
+      [LayerName.alertExtent]: LayerName.eventExtent,
     };
 
     return rasters.map((raster) => ({
       resourceId: String(raster.id),
-      dataType: layerInfoMap[raster.layer] ?? MapLayerInfoType.EventExtent, // TODO: refactor out the need for this fallback
+      dataType: layerInfoMap[raster.layer] ?? LayerName.eventExtent, // TODO: refactor out the need for this fallback
       displayType: MapLayerDisplayType.Raster,
     }));
   }

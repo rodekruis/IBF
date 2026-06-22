@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { Layer } from '@api-service/src/shared-enums';
+import { LayerName } from '@api-service/src/shared-enums';
 import {
   buildAlert,
   buildForecast,
@@ -33,7 +33,7 @@ describe('/rasters', () => {
       const response = await readRasterById(rasterId);
 
       expect(response.status).toBe(HttpStatus.OK);
-      expect(response.body.layer).toBe(Layer.alertExtent);
+      expect(response.body.layer).toBe(LayerName.alertExtent);
       expect(response.body.valueColoured).toBeUndefined();
       expect(response.body.extent).toEqual(
         expect.objectContaining({
