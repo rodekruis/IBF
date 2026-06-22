@@ -17,7 +17,7 @@ from pipelines.infra.data_types.data_config_types import (
     DataSource,
     DataSourceConfig,
     PipelineRunConfig,
-    RunTarget,
+    SourceTarget,
 )
 from pipelines.infra.data_types.enums import HazardType
 
@@ -28,11 +28,11 @@ class ConfigReader:
     def __init__(
         self,
         *,
-        run_target: RunTarget | None,
+        source_target: SourceTarget | None,
         infra_only: bool,
     ) -> None:
         self.config: PipelineRunConfig | None = None
-        self.run_target = run_target
+        self.source_target = source_target
         self.infra_only = infra_only
 
     def load_all(self, path: str | Path) -> bool:
@@ -155,17 +155,17 @@ class ConfigReader:
                 success = False
                 # Continue processing - still validate rest of country config
 
-            # Require a forecast source for the selected run target. Skipped under
+            # Require a forecast source for the selected source target. Skipped under
             # --infra-only (forecast.py is bypassed) and for unfiltered debug
-            # loads (run_target is None, all sources kept).
+            # loads (source_target is None, all sources kept).
             if (
                 not self.infra_only
-                and self.run_target is not None
-                and not any(source.run_target is not None for source in data_sources)
+                and self.source_target is not None
+                and not any(source.source_target is not None for source in data_sources)
             ):
                 logger.error(
-                    f"No forecast data source configured for run target"
-                    f" '{self.run_target}' for country '{iso_3_code}'"
+                    f"No forecast data source configured for source target"
+                    f" '{self.source_target}' for country '{iso_3_code}'"
                 )
                 success = False
                 continue
@@ -202,29 +202,32 @@ class ConfigReader:
         success = True
 
         for source_entry in data_sources_raw:
-            # Parse the optional run_target tag
-            source_run_target: RunTarget | None = None
-            run_target_raw = source_entry.get("run_target")
+            # Parse the optional source_target tag
+            parsed_source_target: SourceTarget | None = None
+            source_target_raw = source_entry.get("source_target")
 
-            if run_target_raw is not None:
+            if source_target_raw is not None:
                 try:
-                    source_run_target = RunTarget(str(run_target_raw).lower())
+                    parsed_source_target = SourceTarget(str(source_target_raw).lower())
                 except ValueError:
                     logger.error(
-                        f"Invalid run_target '{run_target_raw}' for data source"
+                        f"Invalid source_target '{source_target_raw}' for data source"
                         f" '{source_entry.get('source')}' in country '{iso_3_code}',"
-                        f" expected one of: {[e.value for e in RunTarget]}"
+                        f" expected one of: {[e.value for e in SourceTarget]}"
                     )
                     success = False
                     continue
 
-            # Skip data sources with run target
-            if source_run_target is not None:
+            # Skip data sources with source target
+            if parsed_source_target is not None:
                 if self.infra_only:
-                    # Skip all run target data sources in infra-only
+                    # Skip all source target data sources in infra-only
                     continue
-                if self.run_target is not None and source_run_target != self.run_target:
-                    # Skip run target data sources that do not match the pipeline run target
+                if (
+                    self.source_target is not None
+                    and parsed_source_target != self.source_target
+                ):
+                    # Skip source target data sources that do not match the pipeline source target
                     continue
 
             # Initialize the data sources
@@ -243,7 +246,7 @@ class ConfigReader:
                     country_code_iso_3=iso_3_code,
                     source=data_source,
                     hazard_type=hazard_type,
-                    run_target=source_run_target,
+                    source_target=parsed_source_target,
                 )
             )
 
@@ -253,7 +256,7 @@ class ConfigReader:
 # If the file is run as main, load one of the default config files and print it out.
 # This is used for debugging
 if __name__ == "__main__":
-    reader = ConfigReader(run_target=None, infra_only=False)
+    reader = ConfigReader(source_target=None, infra_only=False)
     config_path = Path(__file__).parent / "configs" / "drought.yaml"
     if reader.load_all(config_path) and reader.config is not None:
         print(f"== Hazard: {reader.config.hazard_type}")

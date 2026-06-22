@@ -2,8 +2,8 @@ hazard_type: floods
 
 # Pipeline Run Configs per country
 
-# Data sources without `run_target` are loaded for every run.
-# Entries with `run_target` are loaded only for that run target
+# Data sources without `source_target` are loaded for every run.
+# Entries with `source_target` are loaded only for that source target
 # Selected by --mock and skipped when --infra-only is set
 _data_sources: &data_sources
   - source: alert_configs_ibf_api
@@ -12,11 +12,11 @@ _data_sources: &data_sources
   - source: population_seed_repo
   - source: flood_extents_seed_repo
   - source: glofas_discharge_ftp
-    run_target: live # production (GloFAS FTP)
+    source_target: live # production (GloFAS FTP)
   - source: glofas_discharge_seed_repo_alert # over-threshold mock seed
-    run_target: mock_alert # --mock 1
+    source_target: mock_alert # --mock 1
   - source: glofas_discharge_seed_repo_no_alert # under-threshold mock seed
-    run_target: mock_no_alert # --mock 0
+    source_target: mock_no_alert # --mock 0
 
 countries:
   - iso_3_code: ETH

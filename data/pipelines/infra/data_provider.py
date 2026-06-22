@@ -87,7 +87,7 @@ if __name__ == "__main__":
     # load the env vars here so our debug code below can use them in the data loader.
     load_dotenv()
 
-    config_reader = ConfigReader(run_target=None, infra_only=False)
+    config_reader = ConfigReader(source_target=None, infra_only=False)
     config_path = Path(__file__).parent / "configs" / "floods.yaml"
     success = config_reader.load_all(config_path)
     if not success or config_reader.config is None:
