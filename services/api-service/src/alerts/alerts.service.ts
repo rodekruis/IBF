@@ -219,15 +219,7 @@ export class AlertsService {
 
   private checkExposureRasters(alert: AlertCreateDto): string[] {
     const errors: string[] = [];
-    const rasters = alert.exposure.rasters;
-
-    // Verify the required alert_extent layer is present
-    const rasterLayers = new Set(rasters.map((r) => r.layer));
-    if (!rasterLayers.has(Layer.alertExtent)) {
-      errors.push(
-        `Alert '${alert.eventName}' rasters: missing required '${Layer.alertExtent}' layer`,
-      );
-    }
+    const rasters = alert.exposure.rasters ?? [];
 
     for (const raster of rasters) {
       // Validate geographic extent is non-degenerate

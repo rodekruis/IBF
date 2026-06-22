@@ -33,9 +33,10 @@ export class ExposureDto {
   @Type(() => ExposureGeoFeatureDto)
   public readonly geoFeatures?: ExposureGeoFeatureDto[];
 
-  @ApiProperty({ type: [ExposureRasterDto] })
+  @ApiProperty({ type: [ExposureRasterDto], required: false })
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ExposureRasterDto)
-  public readonly rasters: ExposureRasterDto[];
+  public readonly rasters?: ExposureRasterDto[];
 }

@@ -166,7 +166,7 @@ describe('GET /events - rich seed data for demo/debugging', () => {
         adminAreas: AWASH_RIVER_ADMIN_AREAS,
         rasters: [
           {
-            layer: Layer.alertExtent,
+            layer: Layer.floodDepth,
             valueBlackWhite: AWASH_RIVER_RASTER_BASE64,
             extent: { xmin: 39.0, ymin: 8.0, xmax: 40.5, ymax: 10.0 },
           },
@@ -188,7 +188,7 @@ describe('GET /events - rich seed data for demo/debugging', () => {
         adminAreas: GAMBELLA_ADMIN_AREAS,
         rasters: [
           {
-            layer: Layer.alertExtent,
+            layer: Layer.floodDepth,
             valueBlackWhite: GAMBELLA_RASTER_BASE64,
             extent: { xmin: 33.5, ymin: 7.5, xmax: 35.0, ymax: 9.0 },
           },

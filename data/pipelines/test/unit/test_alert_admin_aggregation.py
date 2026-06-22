@@ -205,9 +205,9 @@ def test_multiple_layers_aggregated_independently():
     alert = _make_alert(
         [
             ExposureAdminArea("child-A", 3, Layer.POPULATION_EXPOSED, 100),
-            ExposureAdminArea("child-A", 3, Layer.ALERT_EXTENT, 10),
+            ExposureAdminArea("child-A", 3, Layer.FLOOD_DEPTH, 10),
             ExposureAdminArea("child-B", 3, Layer.POPULATION_EXPOSED, 200),
-            ExposureAdminArea("child-B", 3, Layer.ALERT_EXTENT, 20),
+            ExposureAdminArea("child-B", 3, Layer.FLOOD_DEPTH, 20),
         ]
     )
 
@@ -215,7 +215,7 @@ def test_multiple_layers_aggregated_independently():
 
     level_2 = _entries_at_level(alert, 2)
     population = [e for e in level_2 if e.layer == Layer.POPULATION_EXPOSED]
-    extent = [e for e in level_2 if e.layer == Layer.ALERT_EXTENT]
+    extent = [e for e in level_2 if e.layer == Layer.FLOOD_DEPTH]
 
     assert len(population) == 1
     assert population[0].value == 300
@@ -227,8 +227,8 @@ def test_alert_extent_aggregation_all_zero():
     # Parent value is 0 when all children are 0
     alert = _make_alert(
         [
-            ExposureAdminArea("child-A", 3, Layer.ALERT_EXTENT, 0),
-            ExposureAdminArea("child-B", 3, Layer.ALERT_EXTENT, 0),
+            ExposureAdminArea("child-A", 3, Layer.FLOOD_DEPTH, 0),
+            ExposureAdminArea("child-B", 3, Layer.FLOOD_DEPTH, 0),
         ]
     )
 

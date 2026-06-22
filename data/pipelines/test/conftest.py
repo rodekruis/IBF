@@ -61,7 +61,7 @@ def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
     )
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
-        layer=Layer.ALERT_EXTENT,
+        layer=Layer.FLOOD_DEPTH,
         value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )

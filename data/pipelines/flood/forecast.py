@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import cast
 
-from pipelines.flood.compute_alert_extent import compute_alert_extent
+from pipelines.flood.compute_flood_depth import compute_flood_depth
 from pipelines.flood.determine_alerts import (
     determine_temporal_extent,
     ReturnPeriodThresholds,
@@ -120,7 +120,7 @@ def calculate_flood_forecasts(
                 continue
 
             ### Step 5 - Compute alert extent ###
-            flood_extent = compute_alert_extent(
+            flood_extent = compute_flood_depth(
                 time_interval_severities=time_interval_severities,
                 flood_extent_provider=flood_extent_provider,
             )
@@ -207,7 +207,7 @@ def calculate_flood_forecasts(
 
             data_submitter.add_raster_exposure(
                 event_name=event_name,
-                layer=Layer.ALERT_EXTENT,
+                layer=Layer.FLOOD_DEPTH,
                 value_black_white=raster_to_base64_png(clipped_flood_extent),
                 extent=get_raster_extent(clipped_flood_extent),
             )
