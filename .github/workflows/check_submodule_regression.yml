@@ -1,0 +1,44 @@
+name: Check submodule pointer regression
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check submodule pointer is not regressed
+        run: |
+          SUBMODULE_PATH="portal/nrw-standalone/src/go-web-app"
+
+          MAIN_COMMIT=$(git ls-tree origin/main "$SUBMODULE_PATH" | awk '{print $3}')
+          PR_COMMIT=$(git ls-tree HEAD "$SUBMODULE_PATH" | awk '{print $3}')
+
+          if [ -z "$MAIN_COMMIT" ] || [ -z "$PR_COMMIT" ]; then
+            echo "::error::Unable to resolve submodule commit for $SUBMODULE_PATH (main=$MAIN_COMMIT pr=$PR_COMMIT)."
+            exit 1
+          fi
+
+          if [ "$MAIN_COMMIT" = "$PR_COMMIT" ]; then
+            echo "Submodule pointer unchanged. OK."
+            exit 0
+          fi
+
+          git submodule update --init "$SUBMODULE_PATH"
+          cd "$SUBMODULE_PATH"
+          git fetch --quiet origin "$MAIN_COMMIT" "$PR_COMMIT"
+
+          if git merge-base --is-ancestor "$MAIN_COMMIT" "$PR_COMMIT"; then
+            echo "Submodule pointer advanced. OK."
+          else
+            echo "::error::Submodule pointer has regressed! main is at $MAIN_COMMIT but this PR sets it to $PR_COMMIT. Please rebase or run: git submodule update --init && git add $SUBMODULE_PATH"
+            exit 1
+          fi
