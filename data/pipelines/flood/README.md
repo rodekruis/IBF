@@ -15,7 +15,7 @@ This folder contains the flood-specific forecast logic used by the pipeline fram
   - Samples GloFAS discharge values from (sliced) NetCDF rasters at station coordinates.
   - Produces per-station, per-lead-time ensemble discharge series.
 
-- `compute_alert_extent.py`
+- `compute_flood_depth.py`
   - Resolves the flood extent raster to use for an alert from the available flood extent files.
   - Selects the highest matched return period, falls back to the closest lower return period, then to `*_empty.tif`.
 
