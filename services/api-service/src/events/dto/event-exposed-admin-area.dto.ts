@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { LayerName } from '@api-service/src/shared-enums';
 
 class AdminAreaExposureDto {
-  @ApiProperty({ example: LayerName.population })
+  @ApiProperty({ enum: LayerName, example: LayerName.population })
   public readonly layerName: LayerName;
 
   @ApiProperty({ example: 20_000 })
