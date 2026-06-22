@@ -22,6 +22,8 @@ jobs:
           MAIN_COMMIT=$(git ls-tree origin/main "$SUBMODULE_PATH" | awk '{print $3}')
           PR_COMMIT=$(git ls-tree HEAD "$SUBMODULE_PATH" | awk '{print $3}')
 
+          [ -n "$MAIN_COMMIT" ] && [ -n "$PR_COMMIT" ] || { echo "::error::Unable to resolve submodule commit for $SUBMODULE_PATH (main=$MAIN_COMMIT pr=$PR_COMMIT)."; exit 1; }
+
           if [ "$MAIN_COMMIT" = "$PR_COMMIT" ]; then
             echo "Submodule pointer unchanged. OK."
             exit 0
@@ -29,6 +31,7 @@ jobs:
 
           git submodule update --init "$SUBMODULE_PATH"
           cd "$SUBMODULE_PATH"
+          git fetch --quiet origin "$MAIN_COMMIT" "$PR_COMMIT"
 
           if git merge-base --is-ancestor "$MAIN_COMMIT" "$PR_COMMIT"; then
             echo "Submodule pointer advanced. OK."
