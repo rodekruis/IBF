@@ -109,7 +109,6 @@ jobs:
 
       - name: Run test shard
         env:
-          BLOB_ACCOUNT_KEY: ${{ secrets.PIPELINES_BLOB_ACCOUNT_KEY }}
           COSMOS_KEY: ${{ secrets.PIPELINES_COSMOS_KEY }}
           CDSAPI_KEY: ${{ secrets.PIPELINES_CDSAPI_KEY }}
           PYTHONFAULTHANDLER: '1'

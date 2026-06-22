@@ -7,6 +7,12 @@
 # via `az acr build`, so a local Docker daemon is not required.
 # See deploy/pipelines_deploy.md for full instructions.
 
+# TODO: When adding blob-upload code to the pipelines, use
+#   DefaultAzureCredential (managed identity in Azure, `az login` for local
+#   dev) and the BLOB_ACCOUNT_NAME / BLOB_CONTAINER_{30D,90D,PERMANENT} env
+#   vars injected by the job below. Shared-key auth is disabled on this
+#   storage account.
+
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -43,12 +49,96 @@ az provider register --namespace Microsoft.App --wait >/dev/null
 az provider register --namespace Microsoft.OperationalInsights --wait >/dev/null
 az provider register --namespace Microsoft.ContainerRegistry --wait >/dev/null
 az provider register --namespace Microsoft.Insights --wait >/dev/null
+az provider register --namespace Microsoft.Storage --wait >/dev/null
 
 # ---------------------------------------------------------------------------
 # 1. Resource group
 # ---------------------------------------------------------------------------
 log "Resource group: $RESOURCE_GROUP"
 az group create -n "$RESOURCE_GROUP" -l "$AZURE_LOCATION" --tags "${TAGS[@]}" -o none
+
+# ---------------------------------------------------------------------------
+# 1b. Storage account + blob containers + lifecycle policy
+# ---------------------------------------------------------------------------
+log "Storage account: $STORAGE_ACCOUNT_NAME"
+az storage account create \
+  -g "$RESOURCE_GROUP" -n "$STORAGE_ACCOUNT_NAME" -l "$AZURE_LOCATION" \
+  --sku Standard_LRS --kind StorageV2 \
+  --min-tls-version TLS1_2 \
+  --allow-blob-public-access false \
+  --allow-shared-key-access false \
+  --default-action Allow \
+  --tags "${TAGS[@]}" -o none
+
+STORAGE_ACCOUNT_ID="$(az storage account show \
+  -g "$RESOURCE_GROUP" -n "$STORAGE_ACCOUNT_NAME" --query id -o tsv)"
+
+# Containers use Azure AD auth (shared keys are disabled above).
+for container in "$BLOB_CONTAINER_30D" "$BLOB_CONTAINER_90D" "$BLOB_CONTAINER_PERMANENT"; do
+  log "Blob container: $container"
+  az storage container create \
+    --account-name "$STORAGE_ACCOUNT_NAME" \
+    --name "$container" \
+    --auth-mode login \
+    --public-access off \
+    -o none
+done
+
+# Lifecycle policy: delete blobs in the 30d / 90d containers after their
+# retention window. The "permanent" container has no rule, so blobs there are
+# never auto-deleted.
+log "Lifecycle management policy"
+LIFECYCLE_POLICY_JSON=$(cat <<JSON
+{
+  "rules": [
+    {
+      "enabled": true,
+      "name": "delete-after-30d",
+      "type": "Lifecycle",
+      "definition": {
+        "filters": {
+          "blobTypes": ["blockBlob", "appendBlob"],
+          "prefixMatch": ["${BLOB_CONTAINER_30D}/"]
+        },
+        "actions": {
+          "baseBlob": { "delete": { "daysAfterModificationGreaterThan": 30 } }
+        }
+      }
+    },
+    {
+      "enabled": true,
+      "name": "delete-after-90d",
+      "type": "Lifecycle",
+      "definition": {
+        "filters": {
+          "blobTypes": ["blockBlob", "appendBlob"],
+          "prefixMatch": ["${BLOB_CONTAINER_90D}/"]
+        },
+        "actions": {
+          "baseBlob": { "delete": { "daysAfterModificationGreaterThan": 90 } }
+        }
+      }
+    }
+  ]
+}
+JSON
+)
+az storage account management-policy create \
+  --account-name "$STORAGE_ACCOUNT_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --policy "$LIFECYCLE_POLICY_JSON" \
+  -o none
+
+# Optional: grant a user/group data-plane read access (portal blob browsing
+# requires a data-plane role; subscription Reader alone is not enough).
+if [[ -n "${BLOB_DATA_READER_PRINCIPAL_ID:-}" ]]; then
+  log "Granting Storage Blob Data Reader to $BLOB_DATA_READER_PRINCIPAL_ID"
+  az role assignment create \
+    --assignee "$BLOB_DATA_READER_PRINCIPAL_ID" \
+    --role "Storage Blob Data Reader" \
+    --scope "$STORAGE_ACCOUNT_ID" \
+    -o none 2>/dev/null || true
+fi
 
 # ---------------------------------------------------------------------------
 # 2. Log Analytics workspace
@@ -135,6 +225,10 @@ create_or_update_job() {
       --registry-identity system \
       --secrets $SECRETS \
       --env-vars $ENV_REFS PIPELINE_CONFIG="${config_path}" PIPELINE_RUN_TARGET="${run_target}" \
+        BLOB_ACCOUNT_NAME="${STORAGE_ACCOUNT_NAME}" \
+        BLOB_CONTAINER_30D="${BLOB_CONTAINER_30D}" \
+        BLOB_CONTAINER_90D="${BLOB_CONTAINER_90D}" \
+        BLOB_CONTAINER_PERMANENT="${BLOB_CONTAINER_PERMANENT}" \
       --tags "${TAGS[@]}" \
       -o none
   else
@@ -146,6 +240,10 @@ create_or_update_job() {
       --image "${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${IMAGE_TAG}" \
       --cpu "$CPU" --memory "$MEMORY" \
       --set-env-vars $ENV_REFS PIPELINE_CONFIG="${config_path}" PIPELINE_RUN_TARGET="${run_target}" \
+        BLOB_ACCOUNT_NAME="${STORAGE_ACCOUNT_NAME}" \
+        BLOB_CONTAINER_30D="${BLOB_CONTAINER_30D}" \
+        BLOB_CONTAINER_90D="${BLOB_CONTAINER_90D}" \
+        BLOB_CONTAINER_PERMANENT="${BLOB_CONTAINER_PERMANENT}" \
       -o none
     az containerapp job secret set \
       -g "$RESOURCE_GROUP" -n "$job_name" \
@@ -165,6 +263,13 @@ create_or_update_job() {
     --assignee "$principal_id" \
     --role AcrPull \
     --scope "$acr_id" \
+    -o none 2>/dev/null || true
+
+  # And the right to read/write blobs in the storage account.
+  az role assignment create \
+    --assignee "$principal_id" \
+    --role "Storage Blob Data Contributor" \
+    --scope "$STORAGE_ACCOUNT_ID" \
     -o none 2>/dev/null || true
 }
 
