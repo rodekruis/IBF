@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import cast
 
 from pipelines.flood.compute_flood_extent import compute_flood_extent
@@ -24,6 +25,10 @@ from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.exposure import aggregate_population_exposed
+from pipelines.infra.utils.path_helpers import (
+    archive_alert_glofas_files,
+    get_glofas_country_split_path,
+)
 from pipelines.infra.utils.raster import (
     get_bounding_box,
     get_raster_extent,
@@ -86,8 +91,15 @@ def calculate_flood_forecasts(
     # Slice NetCDF files to country bounds once before processing stations
     country_sliced_netcdf_paths: list[str] = []
     for netcdf_path in glofas_netcdf_paths:
-        country_sliced_path = slice_netcdf_to_bounds(netcdf_path, country_bounds)
+        output_path = get_glofas_country_split_path(
+            country, os.path.basename(netcdf_path)
+        )
+        country_sliced_path = slice_netcdf_to_bounds(
+            netcdf_path, country_bounds, output_path
+        )
         country_sliced_netcdf_paths.append(country_sliced_path)
+
+    alert_generated = False
 
     ### Step 3 - Loop through alert configs (spatial extents / stations) ###
     # REQUIRED: loop over spatial extents (alert configs)
@@ -118,6 +130,8 @@ def calculate_flood_forecasts(
             if not time_interval_severities:
                 logging.info(f"No alerts for station {station_code}")
                 continue
+
+            alert_generated = True
 
             ### Step 5 - Compute flood extent
             flood_extent = compute_flood_extent(
@@ -211,6 +225,10 @@ def calculate_flood_forecasts(
                 value_black_white=raster_to_base64_png(clipped_flood_extent),
                 extent=get_raster_extent(clipped_flood_extent),
             )
+
+    if alert_generated:
+        # Save the data to a folder with longer retention
+        archive_alert_glofas_files(country, country_sliced_netcdf_paths)
 
 
 def _get_glofas_discharge_paths(data_provider: DataProvider) -> list[str]:

@@ -3,10 +3,38 @@ Helper files for working with directories for both blob storage and local file s
 """
 
 import os
+import shutil
 from datetime import datetime, timezone
 
 # Raw data directly from GloFAS
 GLOFAS_RAW_DATA_DIR = "glofas/raw"
+GLOFAS_COUNTRY_SPLIT_DATA_DIR = "glofas/country_split"
+GLOFAS_COUNTRY_SPLIT_ALERT_DATA_DIR = "glofas/country_split_alert"
+
+
+def get_glofas_country_split_path(country: str, netcdf_filename: str) -> str:
+    """
+    Get resolved output path for a country-split (sliced) GloFAS NetCDF file.
+    """
+    cache_base = os.environ.get("DATA_CACHE_DIR")
+    if not cache_base:
+        raise ValueError("DATA_CACHE_DIR environment variable is required.")
+    basename = os.path.splitext(netcdf_filename)[0]
+    output_dir = os.path.join(cache_base, GLOFAS_COUNTRY_SPLIT_DATA_DIR, country)
+    os.makedirs(output_dir, exist_ok=True)
+    return os.path.join(output_dir, f"{basename}_sliced.nc")
+
+
+def get_glofas_country_split_alert_path(country: str, netcdf_filename: str) -> str:
+    """
+    Get resolved output path for storing alert-triggering country-split GloFAS data.
+    """
+    cache_base = os.environ.get("DATA_CACHE_DIR")
+    if not cache_base:
+        raise ValueError("DATA_CACHE_DIR environment variable is required.")
+    output_dir = os.path.join(cache_base, GLOFAS_COUNTRY_SPLIT_ALERT_DATA_DIR, country)
+    os.makedirs(output_dir, exist_ok=True)
+    return os.path.join(output_dir, os.path.basename(netcdf_filename))
 
 
 def get_glofas_raw_data_dir(forecast_date: str) -> str:
@@ -21,10 +49,10 @@ def get_glofas_raw_data_dir(forecast_date: str) -> str:
     return output_dir
 
 
-def get_cached_glofas_files(forecast_date: str, max_age_hours: int) -> list[str] | None:
+def get_cached_glofas_files(forecast_date: str) -> list[str] | None:
     """
     Return cached GloFAS NetCDF files for the given forecast_date if they exist
-    and the oldest file is no older than max_age_hours. Returns None otherwise.
+    and were downloaded on the current (UTC) calendar day. Returns None otherwise.
     """
     cache_base = os.environ.get("DATA_CACHE_DIR")
     if not cache_base:
@@ -40,7 +68,21 @@ def get_cached_glofas_files(forecast_date: str, max_age_hours: int) -> list[str]
     if not files:
         return None
     oldest_mtime = min(os.path.getmtime(f) for f in files)
-    age_hours = (datetime.now(timezone.utc).timestamp() - oldest_mtime) / 3600
-    if age_hours <= max_age_hours:
+    oldest_date = datetime.fromtimestamp(oldest_mtime, timezone.utc).date()
+    if oldest_date == datetime.now(timezone.utc).date():
         return files
     return None
+
+
+def archive_alert_glofas_files(
+    country: str, country_sliced_netcdf_paths: list[str]
+) -> None:
+    """
+    Archive country-sliced GloFAS NetCDF files to alert storage with longer retention.
+    """
+
+    for country_sliced_path in country_sliced_netcdf_paths:
+        alert_path = get_glofas_country_split_alert_path(
+            country, os.path.basename(country_sliced_path)
+        )
+        shutil.copy2(country_sliced_path, alert_path)

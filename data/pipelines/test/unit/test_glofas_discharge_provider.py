@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -17,7 +18,6 @@ from pipelines.infra.utils.path_helpers import (
 )
 
 FORECAST_DATE = "2026032600"
-REUSE_PERIOD_HOURS = 12
 
 
 def _write_cached_files(
@@ -67,7 +67,7 @@ def test_validate_ensemble_count_raises_on_empty() -> None:
 
 
 # ---------------------------------------------------------------------------
-# get_cached_glofas_files (GLOFAS_DATA_REUSE_PERIOD_HOURS logic)
+# get_cached_glofas_files (same-day reuse logic)
 # ---------------------------------------------------------------------------
 
 
@@ -77,34 +77,43 @@ def test_cached_files_returned_when_fresh(
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
     expected = _write_cached_files(tmp_path, FORECAST_DATE, count=51, age_hours=1.0)
 
-    result = get_cached_glofas_files(FORECAST_DATE, REUSE_PERIOD_HOURS)
+    result = get_cached_glofas_files(FORECAST_DATE)
 
     assert result == expected
 
 
-def test_cached_files_returned_at_age_boundary(
+def test_cached_files_returned_earlier_same_day(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
-    # Just under the reuse window so it stays valid despite timing jitter.
+    # Aged earlier in the same UTC day so it stays valid.
+    seconds_since_midnight = (
+        datetime.now(timezone.utc)
+        - datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    ).total_seconds()
+    age_hours = max(seconds_since_midnight / 3600 - 0.5, 0.0)
     expected = _write_cached_files(
-        tmp_path, FORECAST_DATE, count=51, age_hours=REUSE_PERIOD_HOURS - 0.01
+        tmp_path, FORECAST_DATE, count=51, age_hours=age_hours
     )
 
-    result = get_cached_glofas_files(FORECAST_DATE, REUSE_PERIOD_HOURS)
+    result = get_cached_glofas_files(FORECAST_DATE)
 
     assert result == expected
 
 
-def test_cached_files_none_when_stale(
+def test_cached_files_none_when_from_previous_day(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
-    _write_cached_files(
-        tmp_path, FORECAST_DATE, count=51, age_hours=REUSE_PERIOD_HOURS + 1
-    )
+    # Aged into the previous UTC day so it is no longer reused.
+    seconds_since_midnight = (
+        datetime.now(timezone.utc)
+        - datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    ).total_seconds()
+    age_hours = seconds_since_midnight / 3600 + 1
+    _write_cached_files(tmp_path, FORECAST_DATE, count=51, age_hours=age_hours)
 
-    result = get_cached_glofas_files(FORECAST_DATE, REUSE_PERIOD_HOURS)
+    result = get_cached_glofas_files(FORECAST_DATE)
 
     assert result is None
 
@@ -114,7 +123,7 @@ def test_cached_files_none_when_dir_missing(
 ) -> None:
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
 
-    result = get_cached_glofas_files(FORECAST_DATE, REUSE_PERIOD_HOURS)
+    result = get_cached_glofas_files(FORECAST_DATE)
 
     assert result is None
 
@@ -127,7 +136,7 @@ def test_cached_files_none_when_no_netcdf_files(
     cache_dir.mkdir(parents=True, exist_ok=True)
     (cache_dir / "not-a-netcdf.txt").write_bytes(b"")
 
-    result = get_cached_glofas_files(FORECAST_DATE, REUSE_PERIOD_HOURS)
+    result = get_cached_glofas_files(FORECAST_DATE)
 
     assert result is None
 
@@ -137,7 +146,7 @@ def test_cached_files_none_when_cache_dir_env_unset(
 ) -> None:
     monkeypatch.delenv("DATA_CACHE_DIR", raising=False)
 
-    result = get_cached_glofas_files(FORECAST_DATE, REUSE_PERIOD_HOURS)
+    result = get_cached_glofas_files(FORECAST_DATE)
 
     assert result is None
 

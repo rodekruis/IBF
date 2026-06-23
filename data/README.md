@@ -27,6 +27,8 @@ Classes and utils shared between the python projects.
 
 - **GDAL library** This has a lot of dependencies, so it will take a long time to download this.For Mac users: run this in terminal: `brew install gdal`. For Windows users, you can get this via the [OSGeo4W installer](https://trac.osgeo.org/osgeo4w/)
 
+- **ecCodes library** Required by the `cfgrib` package for reading GRIB files (used by GloFAS data). For Mac users: `brew install eccodes`.
+
 ## Setup
 
 1. Navigate to the <repo root>/data/ directory and install all python dependencies with `./uv-sync.sh`.

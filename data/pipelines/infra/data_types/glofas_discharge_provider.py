@@ -24,14 +24,6 @@ GLOFAS_FTP_BASE_PATH = "DATA/CEMS_Flood_Glofas/fc_netcdf"
 # and do not run the forecast pipeline.
 GLOFAS_MIN_ENSEMBLE_COUNT = 34  # 2/3 of the total number of ensemble members
 
-# Number of hours to reuse existing GloFAS data before downloading new data.
-# The time of the data is set based on when the download starts.
-# The download is expected to take between one and three hours.
-# We expect to be running the data pipelines once a day.
-# We mainly want to assure we fetch new data on the first run of the day, and not need
-# to re-download it for subsequent forecast runs (for other countries).
-GLOFAS_DATA_REUSE_PERIOD_HOURS = 12
-
 
 def download_glofas_discharge_from_ftp(country: str) -> list[str]:
     """
@@ -60,21 +52,30 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
             "Set GLOFAS_FTP_HOST, GLOFAS_FTP_USER, and GLOFAS_FTP_PASSWORD."
         )
 
-    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d%H")
+    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d")
     forecast_date = _resolve_forecast_date(forecast_date, user, password, host)
 
-    cached_files = get_cached_glofas_files(
-        forecast_date, GLOFAS_DATA_REUSE_PERIOD_HOURS
-    )
+    # Get cached files
+    # If there is a partial set, set the highestEnsembleIndex so the download can resume
+    # The resume downloading flow isn't expected to be used on cloud deployments, but
+    # it's useful when running this locally.
+    cached_files = get_cached_glofas_files(forecast_date)
+    highestEnsembleIndex = -1
     if cached_files is not None:
+        highestEnsembleIndex = _get_highest_ensemble_index(cached_files)
+        if len(cached_files) >= GLOFAS_MIN_ENSEMBLE_COUNT:
+            logger.info(
+                f"Reusing {len(cached_files)} cached GloFAS ensemble files for {forecast_date}"
+            )
+            return cached_files
         logger.info(
-            f"Reusing {len(cached_files)} cached GloFAS ensemble files for {forecast_date}"
+            f"Found {len(cached_files)} cached GloFAS ensemble files for {forecast_date}, "
+            f"below minimum of {GLOFAS_MIN_ENSEMBLE_COUNT}. "
+            f"Resuming download from ensemble index {highestEnsembleIndex + 1}."
         )
-        _validate_ensemble_count(cached_files, forecast_date)
-        return cached_files
 
     output_dir = get_glofas_raw_data_dir(forecast_date)
-    downloaded_paths: list[str] = []
+    downloaded_paths: list[str] = list(cached_files) if cached_files is not None else []
     remote_dir = f"{GLOFAS_FTP_BASE_PATH}/{forecast_date}"
 
     download_start = time.monotonic()
@@ -83,7 +84,8 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
     ftp.cwd(remote_dir)
 
     try:
-        for ensemble_index in range(ensemble_count):
+        # Grab new ensemble files, starting from the highest index found in cached files
+        for ensemble_index in range(highestEnsembleIndex + 1, ensemble_count):
             ensemble_label = f"{ensemble_index:02d}"
             filename = f"dis_{ensemble_label}_{forecast_date}00.nc"
 
@@ -150,7 +152,7 @@ def download_glofas_discharge_from_seed_repo(
     if content is None:
         raise FileNotFoundError(f"Failed to download GloFAS discharge from '{url}'")
 
-    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d%H")
+    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d")
     local_filename = f"dis_00_{forecast_date}00.nc"
     output_dir = tempfile.mkdtemp(prefix=f"glofas_{country}_mock_")
     local_path = os.path.join(output_dir, local_filename)
@@ -167,6 +169,22 @@ def _validate_ensemble_count(files: list[str], forecast_date: str) -> None:
             f"Insufficient GloFAS ensemble files for {forecast_date}: "
             f"found {len(files)}, minimum required is {GLOFAS_MIN_ENSEMBLE_COUNT}."
         )
+
+
+def _get_highest_ensemble_index(files: list[str]) -> int:
+    """Return the highest ensemble index found in GloFAS NetCDF filenames.
+
+    Filenames follow the pattern ``dis_{ensemble_index:02d}_{forecast_date}00.nc``.
+    Returns -1 when no parsable ensemble index is found.
+    """
+    highest_index = -1
+    for file_path in files:
+        basename = os.path.basename(file_path)
+        parts = basename.split("_")
+        if len(parts) < 2 or not parts[1].isdigit():
+            continue
+        highest_index = max(highest_index, int(parts[1]))
+    return highest_index
 
 
 def _connect_ftp(host: str, user: str, password: str, timeout: int = 60) -> ftplib.FTP:
