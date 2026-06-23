@@ -65,6 +65,8 @@ jobs:
           body: |
             Automated submodule update triggered by a merge to `ibf-main` in rodekruis/go-web-app.
 
+            **Source PR:** ${{ github.event.client_payload.pr_url || 'N/A (manual trigger)' }}
+
             ## Checklist after merging
 
             - [ ] Copy over any changes in `sample.env` to `portal/nrw-standalone/sample.env` and to GitHub secrets if applicable.
