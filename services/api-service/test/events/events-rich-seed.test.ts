@@ -25,74 +25,68 @@ const AWASH_RIVER_RASTER_BASE64 =
 const GAMBELLA_RASTER_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAAkElEQVR4AaXB0WkEAQxDwRfXpcJUggpTXwmGO1hM/nbmB/jlQRLLNlcSVlvWcLRlJeGyzZLEGv7RlpWEyzZLEsMLwwvDPySxbHMlYbVlOCSxbHMlYbVlDQ+SWLa5krDa8jV8SGLZ5krCasvT8MLwwvDRlpWEyzZLEk/DC8NDW1YSLtssSXwNR1tWEi7bLEmsP2VPPR0QvluXAAAAAElFTkSuQmCC';
 
-// Awash River zone hierarchy (station: AWASH G5305)
+// Awash River zone hierarchy (Afar region)
 // Admin 3 (woredas) → Admin 2 (zones) → Admin 1 (region) → Admin 0 (country)
 const AWASH_RIVER_ADMIN_AREAS: ExposureAdminAreaDto[] = [
-  // Admin level 3 — woredas along the Awash River
+  // Admin level 3 — woredas along the Awash River (Gabi/Zone 3 + Awsi/Zone 1)
   {
-    placeCode: 'ET0040180088',
+    placeCode: 'ET020301',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 12400,
   },
   {
-    placeCode: 'ET0040180089',
+    placeCode: 'ET020302',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 8300,
   },
   {
-    placeCode: 'ET0040180091',
+    placeCode: 'ET020303',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 5600,
   },
   {
-    placeCode: 'ET0040190092',
+    placeCode: 'ET020101',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 15200,
   },
   {
-    placeCode: 'ET0040190093',
+    placeCode: 'ET020103',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 9100,
   },
   {
-    placeCode: 'ET0040190094',
+    placeCode: 'ET020104',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 3400,
   },
   {
-    placeCode: 'ET0040200096',
+    placeCode: 'ET020105',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 7800,
   },
   // Admin level 2 — zones
   {
-    placeCode: 'ET004018',
+    placeCode: 'ET0203',
     adminLevel: 2,
     layer: Layer.populationExposed,
     value: 26300,
   },
   {
-    placeCode: 'ET004019',
+    placeCode: 'ET0201',
     adminLevel: 2,
     layer: Layer.populationExposed,
-    value: 27700,
-  },
-  {
-    placeCode: 'ET004020',
-    adminLevel: 2,
-    layer: Layer.populationExposed,
-    value: 7800,
+    value: 35500,
   },
   // Admin level 1 — Afar region
   {
-    placeCode: 'ET004',
+    placeCode: 'ET02',
     adminLevel: 1,
     layer: Layer.populationExposed,
     value: 61800,
@@ -106,28 +100,28 @@ const AWASH_RIVER_ADMIN_AREAS: ExposureAdminAreaDto[] = [
   },
 ];
 
-// Gambella region — second event with smaller footprint
+// Gambella region — second event with smaller footprint (Agnewak zone)
 const GAMBELLA_ADMIN_AREAS: ExposureAdminAreaDto[] = [
   {
-    placeCode: 'ET0402301149',
+    placeCode: 'ET120201',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 4200,
   },
   {
-    placeCode: 'ET0402301150',
+    placeCode: 'ET120202',
     adminLevel: 3,
     layer: Layer.populationExposed,
     value: 3100,
   },
   {
-    placeCode: 'ET040230',
+    placeCode: 'ET1202',
     adminLevel: 2,
     layer: Layer.populationExposed,
     value: 7300,
   },
   {
-    placeCode: 'ET040',
+    placeCode: 'ET12',
     adminLevel: 1,
     layer: Layer.populationExposed,
     value: 7300,
