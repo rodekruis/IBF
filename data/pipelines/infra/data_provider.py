@@ -34,15 +34,16 @@ class DataProvider:
         self.loaded_data: dict[DataSource, LoadedDataSource] = {}
         self.api_client = api_client
 
-    def try_load_data(self, country_config: CountryRunConfig) -> list[str]:
+    def try_load_data(self, country_config: CountryRunConfig) -> tuple[bool, list[str]]:
         """Load all data sources for a country.
 
-        Returns a list of error messages (empty on success).
+        Returns a tuple of (success, error messages). Success is True when no
+        errors occurred.
         """
         country_name = country_config.country_code_iso_3
         data_sources = country_config.data_sources
         if not data_sources:
-            return [f"No data sources configured for country '{country_name}'"]
+            return False, [f"No data sources configured for country '{country_name}'"]
 
         errors: list[str] = []
         for source_config in data_sources:
@@ -70,7 +71,7 @@ class DataProvider:
 
             self.loaded_data[source_config.source] = data_container
 
-        return errors
+        return not errors, errors
 
     def get_data(self, source: DataSource, expected_type: type[_T]) -> _T:
         if source not in self.loaded_data:

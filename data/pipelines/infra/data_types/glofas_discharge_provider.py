@@ -5,11 +5,32 @@ import io
 import logging
 import os
 import tempfile
+import time
 from datetime import datetime, timedelta, timezone
+from fileinput import filename
+
+from pipelines.infra.utils.nrw_logger import log_with_tag, LogTag
+from pipelines.infra.utils.path_helpers import (
+    get_cached_glofas_files,
+    get_glofas_raw_data_dir,
+)
 
 logger = logging.getLogger(__name__)
 
 GLOFAS_FTP_BASE_PATH = "DATA/CEMS_Flood_Glofas/fc_netcdf"
+
+# Minimum allowed number of 'ensemble' forecast files in the GloFAS data.
+# If fewer than this, fail the data load (which alerts the team of an error)
+# and do not run the forecast pipeline.
+GLOFAS_MIN_ENSEMBLE_COUNT = 34  # 2/3 of the total number of ensemble members
+
+# Number of hours to reuse existing GloFAS data before downloading new data.
+# The time of the data is set based on when the download starts.
+# The download is expected to take between one and three hours.
+# We expect to be running the data pipelines once a day.
+# We mainly want to assure we fetch new data on the first run of the day, and not need
+# to re-download it for subsequent forecast runs (for other countries).
+GLOFAS_DATA_REUSE_PERIOD_HOURS = 12
 
 
 def download_glofas_discharge_from_ftp(country: str) -> list[str]:
@@ -19,11 +40,6 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
     Downloads one file per ensemble member. Each file contains global discharge
     data with bands per lead time. The pipeline slices these to country bounds
     before processing.
-
-    TODO AB#42516: These files are global (~600MB each). Download once and share
-    across country runs instead of re-downloading per country.
-
-    TODO AB#42516: allow to proceed if a few ensemble run files are missing, as long as we have a minimum number to work with.
 
     Required env vars:
         GLOFAS_FTP_HOST: FTP host (e.g. "aux.ecmwf.int")
@@ -44,14 +60,27 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
             "Set GLOFAS_FTP_HOST, GLOFAS_FTP_USER, and GLOFAS_FTP_PASSWORD."
         )
 
-    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d%H")
     forecast_date = _resolve_forecast_date(forecast_date, user, password, host)
 
-    output_dir = tempfile.mkdtemp(prefix=f"glofas_{country}_{forecast_date}_")
+    cached_files = get_cached_glofas_files(
+        forecast_date, GLOFAS_DATA_REUSE_PERIOD_HOURS
+    )
+    if cached_files is not None:
+        logger.info(
+            f"Reusing {len(cached_files)} cached GloFAS ensemble files for {forecast_date}"
+        )
+        _validate_ensemble_count(cached_files, forecast_date)
+        return cached_files
+
+    output_dir = get_glofas_raw_data_dir(forecast_date)
     downloaded_paths: list[str] = []
+    remote_dir = f"{GLOFAS_FTP_BASE_PATH}/{forecast_date}"
+
+    download_start = time.monotonic()
 
     ftp = _connect_ftp(host, user, password)
-    ftp.cwd(f"{GLOFAS_FTP_BASE_PATH}/{forecast_date}")
+    ftp.cwd(remote_dir)
 
     try:
         for ensemble_index in range(ensemble_count):
@@ -62,7 +91,9 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
                 f"Downloading GloFAS ensemble {ensemble_label}/{ensemble_count} for {country}"
             )
 
-            content = _download_ftp_file(ftp, filename)
+            content, ftp = _download_ftp_file(
+                ftp, filename, host, user, password, remote_dir
+            )
 
             local_path = os.path.join(output_dir, filename)
             with open(local_path, "wb") as f:
@@ -70,11 +101,23 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
 
             downloaded_paths.append(local_path)
     finally:
-        ftp.quit()
+        try:
+            ftp.quit()
+        except ftplib.all_errors:
+            ftp.close()
+
+    download_duration_seconds = time.monotonic() - download_start
+    log_with_tag(
+        logger,
+        LogTag.DOWNLOAD_TIMER,
+        f"Downloaded {len(downloaded_paths)} GloFAS ensemble files for {country} "
+        f"in {download_duration_seconds:.1f}s",
+    )
 
     logger.info(
         f"Downloaded {len(downloaded_paths)} GloFAS ensemble files to {output_dir}"
     )
+    _validate_ensemble_count(downloaded_paths, forecast_date)
     return downloaded_paths
 
 
@@ -107,7 +150,7 @@ def download_glofas_discharge_from_seed_repo(
     if content is None:
         raise FileNotFoundError(f"Failed to download GloFAS discharge from '{url}'")
 
-    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d%H")
     local_filename = f"dis_00_{forecast_date}00.nc"
     output_dir = tempfile.mkdtemp(prefix=f"glofas_{country}_mock_")
     local_path = os.path.join(output_dir, local_filename)
@@ -118,19 +161,40 @@ def download_glofas_discharge_from_seed_repo(
     return [local_path]
 
 
+def _validate_ensemble_count(files: list[str], forecast_date: str) -> None:
+    if len(files) < GLOFAS_MIN_ENSEMBLE_COUNT:
+        raise ValueError(
+            f"Insufficient GloFAS ensemble files for {forecast_date}: "
+            f"found {len(files)}, minimum required is {GLOFAS_MIN_ENSEMBLE_COUNT}."
+        )
+
+
 def _connect_ftp(host: str, user: str, password: str, timeout: int = 60) -> ftplib.FTP:
     ftp = ftplib.FTP(host, timeout=timeout)
     ftp.login(user, password)
     return ftp
 
 
-def _download_ftp_file(ftp: ftplib.FTP, filename: str) -> bytes:
+def _download_ftp_file(
+    ftp: ftplib.FTP,
+    filename: str,
+    host: str,
+    user: str,
+    password: str,
+    remote_dir: str,
+) -> tuple[bytes, ftplib.FTP]:
+    """Download a single file, reconnecting on transient errors.
+    Returns the file content together with the (possibly re-established) FTP
+    connection, so the caller continues with a live connection.
+    """
+    # attempt n waits RETRY_BACKOFF_SECONDS * n before reconnecting.
+    retry_backoff_seconds = 5
     max_retries = 3
     for attempt in range(1, max_retries + 1):
         try:
             buffer = io.BytesIO()
             ftp.retrbinary(f"RETR {filename}", buffer.write)
-            return buffer.getvalue()
+            return buffer.getvalue(), ftp
         except ftplib.error_perm as exc:
             raise FileNotFoundError(f"FTP server rejected '{filename}': {exc}") from exc
         except ftplib.all_errors as exc:
@@ -141,6 +205,17 @@ def _download_ftp_file(ftp: ftplib.FTP, filename: str) -> bytes:
                 raise ConnectionError(
                     f"Failed to download '{filename}' after {max_retries} attempts"
                 ) from exc
+
+            # The connection might be dead
+            # Rebuild it before retrying
+            try:
+                ftp.close()
+            except ftplib.all_errors:
+                pass
+            time.sleep(retry_backoff_seconds * attempt)
+            ftp = _connect_ftp(host, user, password)
+            ftp.cwd(remote_dir)
+
     raise ConnectionError(
         f"Failed to download '{filename}' after {max_retries} attempts"
     )
