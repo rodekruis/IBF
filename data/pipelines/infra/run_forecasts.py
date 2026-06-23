@@ -23,7 +23,6 @@ from pipelines.infra.data_types.data_config_types import (
     SourceTarget,
 )
 from pipelines.infra.data_types.enums import ForecastSource, HazardType
-from pipelines.infra.data_types.loaded_data_types import DataType
 from pipelines.infra.utils.alert_admin_aggregation import (
     aggregate_to_parent_admin_levels,
 )

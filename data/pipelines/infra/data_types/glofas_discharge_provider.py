@@ -7,7 +7,6 @@ import os
 import tempfile
 import time
 from datetime import datetime, timedelta, timezone
-from fileinput import filename
 
 from pipelines.infra.utils.nrw_logger import log_with_tag, LogTag
 from pipelines.infra.utils.path_helpers import (
