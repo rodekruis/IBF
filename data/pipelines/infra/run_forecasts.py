@@ -64,8 +64,9 @@ def _run_country(
     api_client: ApiClient,
 ) -> list[str]:
     data_provider = DataProvider(api_client)
-    if not data_provider.try_load_data(country):
-        return [f"Failed to load data for {country.country_code_iso_3}"]
+    load_errors = data_provider.try_load_data(country)
+    if load_errors:
+        return load_errors
 
     try:
         data_submitter = DataSubmitter(api_client)
