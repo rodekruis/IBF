@@ -118,11 +118,6 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
 
 def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
     errors: list[str] = []
-    raster_layers = {r.layer for r in alert.exposure.rasters}
-    if Layer.ALERT_EXTENT not in raster_layers:
-        errors.append(
-            f"Alert '{event_name}' rasters: missing required 'alert_extent' layer"
-        )
     for raster in alert.exposure.rasters:
         ext = raster.extent
         if ext.xmin >= ext.xmax or ext.ymin >= ext.ymax:

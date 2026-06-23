@@ -83,60 +83,13 @@ def test_admin_area_unequal_layer_counts_is_rejected(
     valid_submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
         admin_level=3,
-        layer=Layer.ALERT_EXTENT,  # not actually an admin-area layer, but works to test the record count validation
+        layer=Layer.FLOOD_DEPTH,  # not actually an admin-area layer, but works to test the record count validation
         values_by_place_code={"PC001": 1, "PC002": 1},
     )
 
     errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("record count differs across layers" in e for e in errors)
-    assert not (tmp_output / "forecast.json").exists()
-
-
-def test_raster_missing_alert_extent_is_rejected(tmp_output: Path):
-    """Raster exposure without the required 'alert_extent' layer is rejected."""
-    submitter = DataSubmitter(MagicMock())
-    submitter.set_forecast_metadata(
-        issued_at=datetime.now(timezone.utc),
-        hazard_type=HazardType.FLOODS,
-        forecast_sources=[ForecastSource.GLOFAS],
-    )
-    submitter.create_alert(
-        event_name=EVENT_NAME,
-        centroid=Centroid(latitude=1.0, longitude=37.0),
-    )
-    submitter.add_severity_data(
-        event_name=EVENT_NAME,
-        time_interval_start="2026-03-20T00:00:00Z",
-        time_interval_end="2026-03-20T23:59:59Z",
-        ensemble_member_type=EnsembleMemberType.RUN,
-        severity_key=SeverityKey.RETURN_PERIOD,
-        severity_value=0,
-    )
-    submitter.add_severity_data(
-        event_name=EVENT_NAME,
-        time_interval_start="2026-03-20T00:00:00Z",
-        time_interval_end="2026-03-20T23:59:59Z",
-        ensemble_member_type=EnsembleMemberType.MEDIAN,
-        severity_key=SeverityKey.RETURN_PERIOD,
-        severity_value=0,
-    )
-    submitter.add_admin_area_exposure(
-        event_name=EVENT_NAME,
-        admin_level=3,
-        layer=Layer.POPULATION_EXPOSED,
-        values_by_place_code={"PC001": 0},
-    )
-    submitter.add_raster_exposure(
-        event_name=EVENT_NAME,
-        layer=Layer.POPULATION_EXPOSED,
-        value_black_white=PLACEHOLDER_RASTER_BASE64,
-        extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
-    )
-
-    errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
-
-    assert any("missing required 'alert_extent' layer" in e for e in errors)
     assert not (tmp_output / "forecast.json").exists()
 
 
@@ -176,7 +129,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     )
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
-        layer=Layer.ALERT_EXTENT,
+        layer=Layer.FLOOD_DEPTH,
         value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
@@ -194,7 +147,7 @@ def test_raster_invalid_extent_is_rejected(
     """A raster whose xmin >= xmax or ymin >= ymax is rejected."""
     valid_submitter.add_raster_exposure(
         event_name=EVENT_NAME,
-        layer=Layer.ALERT_EXTENT,
+        layer=Layer.FLOOD_DEPTH,
         value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 38.0, "ymin": 2.0, "xmax": 36.0, "ymax": 0.0},
     )
@@ -254,7 +207,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
     )
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
-        layer=Layer.ALERT_EXTENT,
+        layer=Layer.FLOOD_DEPTH,
         value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )

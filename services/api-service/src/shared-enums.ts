@@ -18,21 +18,24 @@ export enum HazardType {
 }
 
 export enum Layer {
-  // raster layers
-  alertExtent = 'alert_extent',
-  // admin-area layers
+  // --- generic layers (cross-hazard) ---
   populationExposed = 'population_exposed',
-  // geo-feature layers
+
+  // --- floods-specific layers ---
+  floodDepth = 'flood_depth',
   glofasStations = 'glofas_stations',
 }
 
 // Key to identify the type of map layer info being shown.
 // This is used to style/label it on the frontend.
 export enum MapLayerInfoType {
+  // --- generic (cross-hazard) ---
   Population = 'population',
-  EventExtent = 'event_extent',
   RedCrossBranches = 'red_cross_branches',
   Clinics = 'clinics',
+
+  // --- floods-specific ---
+  FloodDepth = 'flood_depth',
 }
 
 export enum MapLayerDisplayType {

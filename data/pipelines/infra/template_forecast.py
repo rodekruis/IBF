@@ -95,12 +95,12 @@ def calculate_forecasts(
                 },
             )
 
-            # Step 5 - Submit raster exposure (alert extent).
+            # Step 5 - Submit raster exposure (if applicable)
             # Placeholder value: template forecasts are used only to validate the
             # pipeline structure; replace with actual encoded raster data.
             data_submitter.add_raster_exposure(
                 event_name=event_name,
-                layer=Layer.ALERT_EXTENT,
+                layer=Layer.FLOOD_DEPTH,  # replace with your hazard's raster layer
                 value_black_white=PLACEHOLDER_RASTER_BASE64,
                 extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
             )

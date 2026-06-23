@@ -33,7 +33,7 @@ describe('/rasters', () => {
       const response = await readRasterById(rasterId);
 
       expect(response.status).toBe(HttpStatus.OK);
-      expect(response.body.layer).toBe(Layer.alertExtent);
+      expect(response.body.layer).toBe(Layer.floodDepth);
       expect(response.body.valueColoured).toBeUndefined();
       expect(response.body.extent).toEqual(
         expect.objectContaining({

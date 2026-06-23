@@ -15,7 +15,7 @@ This folder contains the flood-specific forecast logic used by the pipeline fram
   - Samples GloFAS discharge values from (sliced) NetCDF rasters at station coordinates.
   - Produces per-station, per-lead-time ensemble discharge series.
 
-- `compute_alert_extent.py`
+- `compute_flood_extent.py`
   - Resolves the flood extent raster to use for an alert from the available flood extent files.
   - Selects the highest matched return period, falls back to the closest lower return period, then to `*_empty.tif`.
 
@@ -57,7 +57,7 @@ GloFAS discharge NetCDF files are sourced either from:
    - Skip stations with no threshold exceedance.
 
 4. Build alert payload
-   - Select the alert extent raster based on the matched return periods.
+   - Select the flood extent raster based on the matched return periods.
    - Clip the flood extent to mapped admin areas and collect exposed place codes.
    - Compute the exposed-population raster and aggregate exposed population per place code.
 
@@ -65,7 +65,7 @@ GloFAS discharge NetCDF files are sourced either from:
    - Create one alert event per alerting station.
    - Add severity time-series data for ensemble runs and the median discharge.
    - Add admin-area population exposure per place code.
-   - Add raster exposure metadata for the generated `alert_extent_{station_code}.tif`.
+   - Add raster exposure metadata for the generated `flood_extent_{station_code}.tif`.
 
 6. Write final output to local forecast folder
    - `forecast.py` fills `DataSubmitter`.

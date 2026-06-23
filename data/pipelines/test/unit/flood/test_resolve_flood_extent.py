@@ -4,9 +4,9 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from pipelines.flood.compute_alert_extent import (
+from pipelines.flood.compute_flood_extent import (
     _resolve_flood_extent,
-    compute_alert_extent,
+    compute_flood_extent,
 )
 from pipelines.flood.determine_alerts import TimeIntervalSeverity
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
@@ -48,7 +48,7 @@ def test_returns_exact_matching_return_period():
     time_interval_severities = _build_time_interval_severities(50)
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
-        selected = compute_alert_extent(
+        selected = compute_flood_extent(
             time_interval_severities=time_interval_severities,
             flood_extent_provider=provider,
         )
@@ -62,7 +62,7 @@ def test_falls_back_to_closest_lower_return_period():
     time_interval_severities = _build_time_interval_severities(50)
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
-        selected = compute_alert_extent(
+        selected = compute_flood_extent(
             time_interval_severities=time_interval_severities,
             flood_extent_provider=provider,
         )
@@ -76,7 +76,7 @@ def test_falls_back_to_empty_when_no_lower_return_period_exists():
     time_interval_severities = _build_time_interval_severities(10)
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
-        selected = compute_alert_extent(
+        selected = compute_flood_extent(
             time_interval_severities=time_interval_severities,
             flood_extent_provider=provider,
         )
@@ -93,7 +93,7 @@ def test_raises_when_no_available_return_periods():
     time_interval_severities = _build_time_interval_severities(10)
 
     with pytest.raises(FileNotFoundError, match="no available return period"):
-        compute_alert_extent(
+        compute_flood_extent(
             time_interval_severities=time_interval_severities,
             flood_extent_provider=provider,
         )

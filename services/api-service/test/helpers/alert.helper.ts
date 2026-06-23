@@ -84,7 +84,7 @@ export function buildAlert(
       ],
       rasters: [
         {
-          layer: Layer.alertExtent,
+          layer: Layer.floodDepth,
           valueBlackWhite: TEST_RASTER_BASE64,
           extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },

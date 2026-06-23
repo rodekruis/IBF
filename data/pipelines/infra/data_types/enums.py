@@ -24,8 +24,11 @@ class HazardType(StrEnum):
 
 
 class Layer(StrEnum):
-    ALERT_EXTENT = "alert_extent"
+    # --- generic layers (cross-hazard) ---
     POPULATION_EXPOSED = "population_exposed"
+
+    # --- floods-specific layers ---
+    FLOOD_DEPTH = "flood_depth"
     GLOFAS_STATIONS = "glofas_stations"
 
 

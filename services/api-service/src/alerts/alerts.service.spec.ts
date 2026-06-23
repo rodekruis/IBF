@@ -68,7 +68,7 @@ function createMockValidAlert(
       ],
       rasters: [
         {
-          layer: Layer.alertExtent,
+          layer: Layer.floodDepth,
           valueBlackWhite: TEST_RASTER_BASE64,
           extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },
@@ -290,7 +290,7 @@ describe('AlertsService', () => {
             adminAreas: [],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: Layer.floodDepth,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -326,7 +326,7 @@ describe('AlertsService', () => {
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: Layer.floodDepth,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -376,7 +376,7 @@ describe('AlertsService', () => {
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: Layer.floodDepth,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -402,42 +402,6 @@ describe('AlertsService', () => {
   });
 
   describe('createAlerts – raster validation', () => {
-    it('should reject rasters missing alert_extent layer', async () => {
-      const alerts = [
-        createMockValidAlert({
-          exposure: {
-            adminAreas: [
-              {
-                placeCode: 'A',
-                adminLevel: 3,
-                layer: Layer.populationExposed,
-                value: 1,
-              },
-            ],
-            rasters: [
-              {
-                layer: Layer.populationExposed, // invalid raster layer
-                valueBlackWhite: TEST_RASTER_BASE64,
-                extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
-              },
-            ],
-          },
-        }),
-      ];
-      const error = await service
-        .createAlerts(createMockValidForecast(alerts))
-        .catch((e: unknown) => e);
-      expect(error).toBeInstanceOf(HttpException);
-      const response = (error as HttpException).getResponse() as {
-        errors: string[];
-      };
-      expect(response.errors).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining("missing required 'alert_extent' layer"),
-        ]),
-      );
-    });
-
     it('should reject raster with invalid extent', async () => {
       const alerts = [
         createMockValidAlert({
@@ -452,7 +416,7 @@ describe('AlertsService', () => {
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: Layer.floodDepth,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 10, ymin: 5, xmax: 5, ymax: 1 },
               },
@@ -472,36 +436,6 @@ describe('AlertsService', () => {
       );
     });
 
-    it('should reject alert with empty rasters array', async () => {
-      const alerts = [
-        createMockValidAlert({
-          exposure: {
-            adminAreas: [
-              {
-                placeCode: 'A',
-                adminLevel: 3,
-                layer: Layer.populationExposed,
-                value: 1,
-              },
-            ],
-            rasters: [],
-          },
-        }),
-      ];
-      const error = await service
-        .createAlerts(createMockValidForecast(alerts))
-        .catch((e: unknown) => e);
-      expect(error).toBeInstanceOf(HttpException);
-      const response = (error as HttpException).getResponse() as {
-        errors: string[];
-      };
-      expect(response.errors).toEqual(
-        expect.arrayContaining([
-          expect.stringContaining("missing required 'alert_extent' layer"),
-        ]),
-      );
-    });
-
     it('should reject raster with invalid base64 characters', async () => {
       const alerts = [
         createMockValidAlert({
@@ -516,7 +450,7 @@ describe('AlertsService', () => {
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: Layer.floodDepth,
                 valueBlackWhite: '!!!not-base64!!!',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -552,7 +486,7 @@ describe('AlertsService', () => {
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: Layer.floodDepth,
                 valueBlackWhite: 'AQI',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -591,7 +525,7 @@ describe('AlertsService', () => {
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: Layer.floodDepth,
                 valueBlackWhite: notPngBase64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -613,7 +547,7 @@ describe('AlertsService', () => {
       );
     });
 
-    it('should accept rasters with valid alert_extent', async () => {
+    it('should accept rasters with valid flood_depth', async () => {
       const alerts = [
         createMockValidAlert({
           exposure: {
@@ -627,7 +561,7 @@ describe('AlertsService', () => {
             ],
             rasters: [
               {
-                layer: Layer.alertExtent,
+                layer: Layer.floodDepth,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -642,6 +576,29 @@ describe('AlertsService', () => {
           forecastMetadata: expect.objectContaining({
             hazardType: HazardType.floods,
           }),
+        }),
+      );
+    });
+
+    it('should accept alert with rasters omitted', async () => {
+      const alerts = [
+        createMockValidAlert({
+          exposure: {
+            adminAreas: [
+              {
+                placeCode: 'A',
+                adminLevel: 3,
+                layer: Layer.populationExposed,
+                value: 1,
+              },
+            ],
+          },
+        }),
+      ];
+      await service.createAlerts(createMockValidForecast(alerts));
+      expect(repository.createAlerts).toHaveBeenCalledWith(
+        expect.objectContaining({
+          alertCreateDtos: alerts,
         }),
       );
     });

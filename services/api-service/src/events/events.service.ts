@@ -101,12 +101,12 @@ export class EventsService {
     rasters: { id: number; layer: string }[],
   ): MapLayerDetailsDto[] {
     const layerInfoMap: Record<string, MapLayerInfoType> = {
-      [Layer.alertExtent]: MapLayerInfoType.EventExtent,
+      [Layer.floodDepth]: MapLayerInfoType.FloodDepth,
     };
 
     return rasters.map((raster) => ({
       resourceId: String(raster.id),
-      dataType: layerInfoMap[raster.layer] ?? MapLayerInfoType.EventExtent, // TODO: refactor out the need for this fallback
+      dataType: layerInfoMap[raster.layer] ?? MapLayerInfoType.FloodDepth,
       displayType: MapLayerDisplayType.Raster,
     }));
   }
