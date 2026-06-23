@@ -52,8 +52,8 @@ flowchart TD
     J --> Infra{--infra-only?} & IssuedAt
 
     Infra -->|no: run forecast.py| Seed{--mock value}
-    Seed -->|0| SeedNo["load run_target: mock_no_alert source"]
-    Seed -->|1| SeedYes["load run_target: mock_alert source"]
+    Seed -->|0| SeedNo["load source_target: mock_no_alert source"]
+    Seed -->|1| SeedYes["load source_target: mock_alert source"]
     Seed -->|other| Err["ERROR: only 0 or 1"]
     SeedNo --> Forecast["forecast.py<br/>computes alerts from data"]
     SeedYes --> Forecast
@@ -109,7 +109,7 @@ hazard_type                      # HazardType enum (e.g. "floods", "drought")
 _data_sources: &data_sources     # Anchor: data sources for this hazard
   - source                       # DataSource enum showing where to fetch this data
   - source                       # A forecast source...
-    run_target                   # ...tagged with the run target it serves (live / mock_alert / mock_no_alert)
+    source_target                   # ...tagged with the source target it serves (live / mock_alert / mock_no_alert)
 
 countries:
   - iso_3_code                   # ISO alpha-3 country code (e.g. "KEN", "ETH")

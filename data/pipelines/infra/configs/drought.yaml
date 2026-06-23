@@ -2,15 +2,15 @@ hazard_type: drought
 
 # Pipeline Run Configs per country
 
-# Data sources without `run_target` are loaded for every run.
-# Entries with `run_target` are loaded only for that run target
+# Data sources without `source_target` are loaded for every run.
+# Entries with `source_target` are loaded only for that source target
 # Selected by --mock and skipped when --infra-only is set
 _data_sources: &data_sources
   - source: alert_configs_ibf_api
   - source: admin_area_ibf_api
   - source: population_seed_repo
   - source: todo_ecmwf_forecast
-    run_target: mock_alert # --mock 1
+    source_target: mock_alert # --mock 1
 
 countries:
   - iso_3_code: ETH

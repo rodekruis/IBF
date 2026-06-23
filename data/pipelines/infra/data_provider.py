@@ -34,14 +34,17 @@ class DataProvider:
         self.loaded_data: dict[DataSource, LoadedDataSource] = {}
         self.api_client = api_client
 
-    def try_load_data(self, country_config: CountryRunConfig) -> bool:
+    def try_load_data(self, country_config: CountryRunConfig) -> list[str]:
+        """Load all data sources for a country.
+
+        Returns a list of error messages (empty on success).
+        """
         country_name = country_config.country_code_iso_3
         data_sources = country_config.data_sources
         if not data_sources:
-            logger.warning(f"No data sources configured for country '{country_name}'")
-            return False
+            return [f"No data sources configured for country '{country_name}'"]
 
-        success = True
+        errors: list[str] = []
         for source_config in data_sources:
 
             data_container = LoadedDataSource(
@@ -58,14 +61,16 @@ class DataProvider:
                 )
             except Exception as exc:
                 data_container.error = str(exc)
-                logger.error(
-                    f"Failed to load data source '{source_config.source}': {exc}"
+                error_msg = (
+                    f"Failed to load data source '{source_config.source}'"
+                    f" for {country_name}: {exc}"
                 )
-                success = False
+                logger.error(error_msg)
+                errors.append(error_msg)
 
             self.loaded_data[source_config.source] = data_container
 
-        return success
+        return errors
 
     def get_data(self, source: DataSource, expected_type: type[_T]) -> _T:
         if source not in self.loaded_data:
@@ -87,7 +92,7 @@ if __name__ == "__main__":
     # load the env vars here so our debug code below can use them in the data loader.
     load_dotenv()
 
-    config_reader = ConfigReader(run_target=None, infra_only=False)
+    config_reader = ConfigReader(source_target=None, infra_only=False)
     config_path = Path(__file__).parent / "configs" / "floods.yaml"
     success = config_reader.load_all(config_path)
     if not success or config_reader.config is None:

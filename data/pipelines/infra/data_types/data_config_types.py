@@ -7,10 +7,10 @@ from pipelines.infra.data_types.enums import HazardType
 from shared.country_data import CountryCodeIso3
 
 
-class RunTarget(StrEnum):
+class SourceTarget(StrEnum):
     """
     Which forecast data source to load for a run.
-    Must match the "run_target" tag of a data source in the hazard config yaml
+    Must match the "source_target" tag of a data source in the hazard config yaml
     """
 
     LIVE = "live"  # --mock flag not set, for production runs with live data
@@ -51,14 +51,14 @@ class DataSourceConfig:
     """
     Config for a specific data source, as described in the config file.
 
-    Data Sources tagged with `run_target` are loaded only for the run target
+    Data Sources tagged with `source_target` are loaded only for the source target
     and skipped for --infra-only runs.  Untagged sources are loaded for any run.
     """
 
     country_code_iso_3: CountryCodeIso3
     source: DataSource
     hazard_type: HazardType
-    run_target: RunTarget | None = None
+    source_target: SourceTarget | None = None
 
 
 @dataclass

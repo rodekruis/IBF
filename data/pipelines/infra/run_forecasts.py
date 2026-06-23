@@ -23,7 +23,7 @@ from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
     OutputMode,
-    RunTarget,
+    SourceTarget,
 )
 from pipelines.infra.data_types.enums import ForecastSource, HazardType
 from pipelines.infra.data_types.loaded_data_types import DataType
@@ -64,8 +64,9 @@ def _run_country(
     api_client: ApiClient,
 ) -> list[str]:
     data_provider = DataProvider(api_client)
-    if not data_provider.try_load_data(country):
-        return [f"Failed to load data for {country.country_code_iso_3}"]
+    load_errors = data_provider.try_load_data(country)
+    if load_errors:
+        return load_errors
 
     try:
         data_submitter = DataSubmitter(api_client)
@@ -141,16 +142,16 @@ def _resolve_countries(
     return countries
 
 
-def _resolve_run_target(mock: int | None) -> RunTarget:
-    """Map the --mock flag value to a run target"""
+def _resolve_source_target(mock: int | None) -> SourceTarget:
+    """Map the --mock flag value to a source target"""
     if mock is None:
         # No --mock means a live run
-        return RunTarget.LIVE
+        return SourceTarget.LIVE
     if mock == 0:
         # --mock value 0 means no alert
-        return RunTarget.MOCK_NO_ALERT
+        return SourceTarget.MOCK_NO_ALERT
     # --mock > 0 means alert or multi-alert
-    return RunTarget.MOCK_ALERT
+    return SourceTarget.MOCK_ALERT
 
 
 def run_forecasts(
@@ -164,9 +165,9 @@ def run_forecasts(
 ) -> list[str]:
     _register_hazard_functions()
 
-    run_target = _resolve_run_target(mock)
+    source_target = _resolve_source_target(mock)
 
-    config_reader = ConfigReader(run_target=run_target, infra_only=infra_only)
+    config_reader = ConfigReader(source_target=source_target, infra_only=infra_only)
     if not config_reader.load_all(config_path) or config_reader.config is None:
         return ["Failed to load config"]
 
@@ -198,7 +199,7 @@ def run_forecasts(
         )
 
     logger.info(
-        f"Start '{hazard_type}' pipeline for '{", ".join(c.country_code_iso_3 for c in countries)}' (run target: '{run_target}'{', infra-only' if infra_only else ''})"
+        f"Start '{hazard_type}' pipeline for '{", ".join(c.country_code_iso_3 for c in countries)}' (source target: '{source_target}'{', infra-only' if infra_only else ''})"
     )
 
     for country in countries:
