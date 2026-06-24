@@ -11,6 +11,8 @@ GLOFAS_RAW_DATA_DIR = "glofas/raw"
 GLOFAS_COUNTRY_SPLIT_DATA_DIR = "glofas/country_split"
 GLOFAS_COUNTRY_SPLIT_ALERT_DATA_DIR = "glofas/country_split_alert"
 
+GLOFAS_FILE_SUFFIX = ".nc"
+
 
 def get_glofas_country_split_path(country: str, netcdf_filename: str) -> str:
     """
@@ -22,7 +24,7 @@ def get_glofas_country_split_path(country: str, netcdf_filename: str) -> str:
     basename = os.path.splitext(netcdf_filename)[0]
     output_dir = os.path.join(cache_base, GLOFAS_COUNTRY_SPLIT_DATA_DIR, country)
     os.makedirs(output_dir, exist_ok=True)
-    return os.path.join(output_dir, f"{basename}_sliced.nc")
+    return os.path.join(output_dir, f"{basename}_sliced{GLOFAS_FILE_SUFFIX}")
 
 
 def get_glofas_country_split_alert_path(country: str, netcdf_filename: str) -> str:
@@ -51,8 +53,8 @@ def get_glofas_raw_data_dir(forecast_date: str) -> str:
 
 def get_cached_glofas_files(forecast_date: str) -> list[str] | None:
     """
-    Return cached GloFAS NetCDF files for the given forecast_date if they exist
-    and were downloaded on the current (UTC) calendar day. Returns None otherwise.
+    Return cached GloFAS NetCDF files for the given forecast_date if they exist.
+    Returns None otherwise.
     """
     cache_base = os.environ.get("DATA_CACHE_DIR")
     if not cache_base:
@@ -60,18 +62,23 @@ def get_cached_glofas_files(forecast_date: str) -> list[str] | None:
     cache_dir = os.path.join(cache_base, GLOFAS_RAW_DATA_DIR, forecast_date)
     if not os.path.isdir(cache_dir):
         return None
-    files = sorted(
-        os.path.join(cache_dir, name)
-        for name in os.listdir(cache_dir)
-        if name.endswith(".nc")
-    )
+
+    files = []
+    for name in sorted(os.listdir(cache_dir)):
+        # Only grab files of the correct type
+        if not name.endswith(GLOFAS_FILE_SUFFIX):
+            continue
+        file_path = os.path.join(cache_dir, name)
+        # Remove empty files (incomplete or failed downloads)
+        if os.path.getsize(file_path) == 0:
+            os.remove(file_path)
+            continue
+        files.append(file_path)
+
     if not files:
         return None
-    oldest_mtime = min(os.path.getmtime(f) for f in files)
-    oldest_date = datetime.fromtimestamp(oldest_mtime, timezone.utc).date()
-    if oldest_date == datetime.now(timezone.utc).date():
-        return files
-    return None
+
+    return files
 
 
 def archive_alert_glofas_files(
