@@ -99,8 +99,6 @@ def calculate_flood_forecasts(
         )
         country_sliced_netcdf_paths.append(country_sliced_path)
 
-    alert_generated = False
-
     ### Step 3 - Loop through alert configs (spatial extents / stations) ###
     # REQUIRED: loop over spatial extents (alert configs)
     for config in alert_configs:
@@ -130,8 +128,6 @@ def calculate_flood_forecasts(
             if not time_interval_severities:
                 logging.info(f"No alerts for station {station_code}")
                 continue
-
-            alert_generated = True
 
             ### Step 5 - Compute flood extent
             flood_extent = compute_flood_extent(
@@ -226,9 +222,9 @@ def calculate_flood_forecasts(
                 extent=get_raster_extent(clipped_flood_extent),
             )
 
-    if alert_generated:
-        # Save the data to a folder with longer retention
-        archive_alert_glofas_files(country, country_sliced_netcdf_paths)
+            ### Step 9 - Actions after alert submitted ###
+            # Save the source GloFAS data to a folder with longer retention
+            archive_alert_glofas_files(country, country_sliced_netcdf_paths)
 
 
 def _get_glofas_discharge_paths(data_provider: DataProvider) -> list[str]:

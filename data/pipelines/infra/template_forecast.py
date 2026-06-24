@@ -104,3 +104,6 @@ def calculate_forecasts(
                 value_black_white=PLACEHOLDER_RASTER_BASE64,
                 extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
             )
+
+            # Step N - Actions after alert submitted (optional)
+            # This is a good place to archive source data for longer retention if needed.
