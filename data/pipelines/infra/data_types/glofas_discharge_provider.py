@@ -4,13 +4,13 @@ import ftplib
 import io
 import logging
 import os
-import tempfile
 import time
 from datetime import datetime, timedelta, timezone
 
 from pipelines.infra.utils.nrw_logger import log_with_tag, LogTag
 from pipelines.infra.utils.path_helpers import (
     get_cached_glofas_files,
+    get_glofas_mock_data_dir,
     get_glofas_raw_data_dir,
 )
 
@@ -153,7 +153,7 @@ def download_glofas_discharge_from_seed_repo(
 
     forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d")
     local_filename = f"dis_00_{forecast_date}00.nc"
-    output_dir = tempfile.mkdtemp(prefix=f"glofas_{country}_mock_")
+    output_dir = get_glofas_mock_data_dir(country)
     local_path = os.path.join(output_dir, local_filename)
     with open(local_path, "wb") as f:
         f.write(content)

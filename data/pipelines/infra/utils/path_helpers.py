@@ -8,8 +8,15 @@ from datetime import datetime, timezone
 
 # Raw data directly from GloFAS
 GLOFAS_RAW_DATA_DIR = "glofas/raw"
+
+# Country-sliced GloFAS data
 GLOFAS_COUNTRY_SPLIT_DATA_DIR = "glofas/country_split"
+
+# Country-sliced GloFAS data that has triggered an alert
 GLOFAS_COUNTRY_SPLIT_ALERT_DATA_DIR = "glofas/country_split_alert"
+
+# Country-sliced mock GloFAS data
+GLOFAS_MOCK_DATA_DIR = "glofas/country_mock_data"
 
 GLOFAS_FILE_SUFFIX = ".nc"
 
@@ -47,6 +54,18 @@ def get_glofas_raw_data_dir(forecast_date: str) -> str:
     if not cache_base:
         raise ValueError("DATA_CACHE_DIR environment variable is required.")
     output_dir = os.path.join(cache_base, GLOFAS_RAW_DATA_DIR, forecast_date)
+    os.makedirs(output_dir, exist_ok=True)
+    return output_dir
+
+
+def get_glofas_mock_data_dir(country: str) -> str:
+    """
+    Get resolved path to the GLOFAS_MOCK_DATA_DIR for a country.
+    """
+    cache_base = os.environ.get("DATA_CACHE_DIR")
+    if not cache_base:
+        raise ValueError("DATA_CACHE_DIR environment variable is required.")
+    output_dir = os.path.join(cache_base, GLOFAS_MOCK_DATA_DIR, country)
     os.makedirs(output_dir, exist_ok=True)
     return output_dir
 
