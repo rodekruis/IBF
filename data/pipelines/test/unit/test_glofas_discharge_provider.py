@@ -17,7 +17,7 @@ from pipelines.infra.utils.path_helpers import (
     GLOFAS_RAW_DATA_DIR,
 )
 
-FORECAST_DATE = "2026032600"
+FORECAST_DATE = "20260326"
 
 
 def _write_cached_files(
