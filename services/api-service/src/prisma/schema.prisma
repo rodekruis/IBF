@@ -142,6 +142,24 @@ model AlertExposureRasterData {
   @@index([alertId])
 }
 
+model StaticRasterData {
+  @@schema("api-service")
+  @@map("static-raster-data")
+
+  id              Int      @id @default(autoincrement())
+  created         DateTime @default(now())
+  updated         DateTime @updatedAt
+  countryCodeIso3 String
+  country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
+  layer           String
+  valueBlackWhite String
+  valueColoured   String
+  extent          Json
+
+  @@unique([countryCodeIso3, layer])
+  @@index([countryCodeIso3])
+}
+
 model Country {
   @@schema("api-service")
   @@map("country")
@@ -156,6 +174,7 @@ model Country {
   adminAreas       AdminArea[]
   alertConfigs     AlertConfig[]
   geoFeatures      GeoFeature[]
+  staticRasterData StaticRasterData[]
 }
 
 model AdminArea {

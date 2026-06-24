@@ -152,8 +152,8 @@ def calculate_flood_forecasts(
             # TODO: this is not actually lazy-loading at the moment, only lazy-reading earlier downloaded data. Consider true lazy loading.
             if population_raster is None:
                 population_raster = data_provider.get_data(
-                    DataSource.POPULATION_SEED_REPO, RasterData
-                )  # TODO AB#42339: switch to loading population raster from IBF API (geo-features).
+                    DataSource.POPULATION_IBF_API, RasterData
+                )
 
             population_exposed_raster = compute_population_exposed(
                 population_raster,

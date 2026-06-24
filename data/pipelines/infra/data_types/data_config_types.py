@@ -28,7 +28,7 @@ class DataSource(StrEnum):
     ADMIN_AREA_IBF_API = "admin_area_ibf_api"
     ALERT_CONFIGS_IBF_API = "alert_configs_ibf_api"
     GLOFAS_STATIONS_IBF_API = "glofas_stations_ibf_api"
-    POPULATION_SEED_REPO = "population_seed_repo"  # TODO AB#42339: switch to loading population raster from IBF API (geo-features).
+    POPULATION_IBF_API = "population_ibf_api"
     FLOOD_EXTENTS_SEED_REPO = "flood_extents_seed_repo"
     GLOFAS_DISCHARGE_FTP = "glofas_discharge_ftp"
     GLOFAS_DISCHARGE_SEED_REPO_ALERT = "glofas_discharge_seed_repo_alert"

@@ -25,6 +25,7 @@ class HazardType(StrEnum):
 
 class Layer(StrEnum):
     # --- generic layers (cross-hazard) ---
+    POPULATION = "population"
     POPULATION_EXPOSED = "population_exposed"
 
     # --- floods-specific layers ---
