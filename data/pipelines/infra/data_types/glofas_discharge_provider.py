@@ -8,7 +8,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 from pipelines.infra.utils.nrw_logger import log_with_tag, LogTag
-from pipelines.infra.utils.path_helpers import (
+from pipelines.infra.utils.storage_helpers import (
     get_cached_glofas_files,
     get_glofas_mock_data_dir,
     get_glofas_raw_data_dir,

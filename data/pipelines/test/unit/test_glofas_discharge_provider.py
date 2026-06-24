@@ -11,7 +11,7 @@ from pipelines.infra.data_types.glofas_discharge_provider import (
     _validate_ensemble_count,
     GLOFAS_MIN_ENSEMBLE_COUNT,
 )
-from pipelines.infra.utils.path_helpers import (
+from pipelines.infra.utils.storage_helpers import (
     get_cached_glofas_files,
     get_glofas_raw_data_dir,
     GLOFAS_RAW_DATA_DIR,

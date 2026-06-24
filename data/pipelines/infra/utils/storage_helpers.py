@@ -21,29 +21,36 @@ GLOFAS_MOCK_DATA_DIR = "glofas/country_mock_data"
 GLOFAS_FILE_SUFFIX = ".nc"
 
 
-def get_glofas_country_split_path(country: str, netcdf_filename: str) -> str:
+def get_glofas_country_split_path(country: str, netcdf_path: str) -> str:
     """
     Get resolved output path for a country-split (sliced) GloFAS NetCDF file.
     """
     cache_base = os.environ.get("DATA_CACHE_DIR")
     if not cache_base:
         raise ValueError("DATA_CACHE_DIR environment variable is required.")
-    basename = os.path.splitext(netcdf_filename)[0]
-    output_dir = os.path.join(cache_base, GLOFAS_COUNTRY_SPLIT_DATA_DIR, country)
+    # Split the text to remove the file extension from the string
+    basename = os.path.splitext(os.path.basename(netcdf_path))[0]
+    # Use a dir name for this data that matches the date stamp folder used for the source data
+    date_stamp = os.path.basename(os.path.dirname(netcdf_path))
+    output_dir = os.path.join(cache_base, GLOFAS_COUNTRY_SPLIT_DATA_DIR, date_stamp)
     os.makedirs(output_dir, exist_ok=True)
-    return os.path.join(output_dir, f"{basename}_sliced{GLOFAS_FILE_SUFFIX}")
+    return os.path.join(output_dir, f"{basename}_sliced_{country}{GLOFAS_FILE_SUFFIX}")
 
 
-def get_glofas_country_split_alert_path(country: str, netcdf_filename: str) -> str:
+def get_glofas_country_split_alert_path(netcdf_path: str) -> str:
     """
     Get resolved output path for storing alert-triggering country-split GloFAS data.
     """
     cache_base = os.environ.get("DATA_CACHE_DIR")
     if not cache_base:
         raise ValueError("DATA_CACHE_DIR environment variable is required.")
-    output_dir = os.path.join(cache_base, GLOFAS_COUNTRY_SPLIT_ALERT_DATA_DIR, country)
+    # Use a dir name for this data that matches the date stamp folder used for the source data
+    date_stamp = os.path.basename(os.path.dirname(netcdf_path))
+    output_dir = os.path.join(
+        cache_base, GLOFAS_COUNTRY_SPLIT_ALERT_DATA_DIR, date_stamp
+    )
     os.makedirs(output_dir, exist_ok=True)
-    return os.path.join(output_dir, os.path.basename(netcdf_filename))
+    return os.path.join(output_dir, os.path.basename(netcdf_path))
 
 
 def get_glofas_raw_data_dir(forecast_date: str) -> str:
@@ -100,15 +107,11 @@ def get_cached_glofas_files(forecast_date: str) -> list[str] | None:
     return files
 
 
-def archive_alert_glofas_files(
-    country: str, country_sliced_netcdf_paths: list[str]
-) -> None:
+def archive_alert_glofas_files(country_sliced_netcdf_paths: list[str]) -> None:
     """
     Archive country-sliced GloFAS NetCDF files to alert storage with longer retention.
     """
 
     for country_sliced_path in country_sliced_netcdf_paths:
-        alert_path = get_glofas_country_split_alert_path(
-            country, os.path.basename(country_sliced_path)
-        )
+        alert_path = get_glofas_country_split_alert_path(country_sliced_path)
         shutil.copy2(country_sliced_path, alert_path)
