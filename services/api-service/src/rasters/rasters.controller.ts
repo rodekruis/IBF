@@ -2,13 +2,16 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   HttpStatus,
   Param,
   ParseIntPipe,
   Put,
   Res,
   StreamableFile,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -18,6 +21,8 @@ import {
 } from '@nestjs/swagger';
 import { Response } from 'express';
 
+import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
+import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 import { AlertRasterResponseDto } from '@api-service/src/rasters/dto/alert-raster-response.dto';
 import { StaticRasterResponseDto } from '@api-service/src/rasters/dto/static-raster-response.dto';
 import { StaticRasterUploadDto } from '@api-service/src/rasters/dto/static-raster-upload.dto';
@@ -88,6 +93,8 @@ export class RastersController {
   }
 
   @Get('static/:countryCodeIso3/:layer/data')
+  @UseGuards(AuthenticatedUserGuard)
+  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @ApiOperation({
     summary: 'Get the static raster raw data PNG (RGBA-encoded float values)',
   })
@@ -119,6 +126,8 @@ export class RastersController {
   }
 
   @Put('static')
+  @UseGuards(AuthenticatedUserGuard)
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @ApiOperation({ summary: 'Upload or update a static raster (upsert)' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -129,6 +138,27 @@ export class RastersController {
     @Body() dto: StaticRasterUploadDto,
   ): Promise<StaticRasterResponseDto> {
     return this.rastersService.upsertStaticRaster(dto);
+  }
+
+  @Delete('static/:countryCodeIso3/:layer')
+  @UseGuards(AuthenticatedUserGuard)
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a static raster' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Static raster deleted successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Static raster not found',
+  })
+  public async deleteStaticRaster(
+    @Param('countryCodeIso3') countryCodeIso3: string,
+    @Param('layer') layerParam: string,
+  ): Promise<void> {
+    const layer = this.parseLayerOrThrow(layerParam);
+    await this.rastersService.deleteStaticRasterOrThrow(countryCodeIso3, layer);
   }
 
   @Get('alert/:id')

@@ -14,6 +14,7 @@ from pipelines.infra.data_types.data_config_types import (
     DataSource,
     DataSourceConfig,
 )
+from pipelines.infra.data_types.enums import Layer
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.glofas_discharge_provider import (
     download_glofas_discharge_from_ftp,
@@ -161,7 +162,7 @@ def _load_ibf_api_population_data(
 ):
     container.data_type = DataType.RASTER_DATA
 
-    layer = "population"
+    layer = Layer.POPULATION
     raster_info = api_client.get_static_raster_metadata(
         config.country_code_iso_3, layer
     )

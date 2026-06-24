@@ -190,6 +190,14 @@
     "returnType": "StaticRasterResponseDto"
   },
   {
+    "method": "delete",
+    "path": "/api/rasters/static/{countryCodeIso3}/{layer}",
+    "params": [
+      "countryCodeIso3",
+      "layer"
+    ]
+  },
+  {
     "method": "get",
     "path": "/api/rasters/static/{countryCodeIso3}/{layer}/image",
     "params": [

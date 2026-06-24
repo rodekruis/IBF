@@ -55,4 +55,14 @@ export class RastersService {
   ): Promise<StaticRasterResponseDto> {
     return this.rastersRepository.upsertStaticRaster(dto);
   }
+
+  public async deleteStaticRasterOrThrow(
+    countryCodeIso3: string,
+    layer: Layer,
+  ): Promise<void> {
+    await this.rastersRepository.deleteStaticRasterOrThrow(
+      countryCodeIso3,
+      layer,
+    );
+  }
 }

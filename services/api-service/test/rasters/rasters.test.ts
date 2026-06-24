@@ -1,5 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
+import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { Layer } from '@api-service/src/shared-enums';
 import {
@@ -7,7 +8,13 @@ import {
   buildForecast,
   createAlerts,
 } from '@api-service/test/helpers/alert.helper';
-import { getServer, resetDB } from '@api-service/test/helpers/utility.helper';
+import {
+  getAccessToken,
+  getServer,
+  resetDB,
+} from '@api-service/test/helpers/utility.helper';
+
+const apiKey = env.PIPELINE_API_KEY!;
 
 function readRasterById(id: number) {
   return getServer().get(`/rasters/alert/${id}`);
@@ -75,9 +82,9 @@ describe('/rasters', () => {
 
   describe('GET /rasters/alert/:id – invalid id', () => {
     it('should return 400 for a non-numeric id', async () => {
-      const response = getServer().get('/rasters/alert/not-a-number');
+      const response = await getServer().get('/rasters/alert/not-a-number');
 
-      expect((await response).status).toBe(HttpStatus.BAD_REQUEST);
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
   });
 });
@@ -85,9 +92,11 @@ describe('/rasters', () => {
 describe('/rasters/static', () => {
   const country = 'ETH';
   const layer = Layer.population;
+  let accessToken: string;
 
   beforeAll(async () => {
     await resetDB(SeedScript.test, __filename);
+    accessToken = await getAccessToken();
   });
 
   describe('GET /rasters/static/:countryCodeIso3/:layer – success', () => {
@@ -150,6 +159,7 @@ describe('/rasters/static', () => {
     it('should return a raw data PNG with correct content-type', async () => {
       const response = await getServer()
         .get(`/rasters/static/${country}/${layer}/data`)
+        .set('x-api-key', apiKey)
         .buffer(true)
         .parse((res, callback) => {
           const chunks: Buffer[] = [];
@@ -161,6 +171,42 @@ describe('/rasters/static', () => {
       expect(response.headers['content-type']).toBe('image/png');
       expect(response.body).toBeInstanceOf(Buffer);
       expect(response.body.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('DELETE /rasters/static/:countryCodeIso3/:layer – success', () => {
+    it('should delete the static raster and return 204', async () => {
+      const response = await getServer()
+        .delete(`/rasters/static/${country}/${layer}`)
+        .set('Cookie', [accessToken]);
+
+      expect(response.status).toBe(HttpStatus.NO_CONTENT);
+
+      const getResponse = await getServer().get(
+        `/rasters/static/${country}/${layer}`,
+      );
+
+      expect(getResponse.status).toBe(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe('DELETE /rasters/static/:countryCodeIso3/:layer – not found', () => {
+    it('should return 404 for a non-existent static raster', async () => {
+      const response = await getServer()
+        .delete(`/rasters/static/XXX/${layer}`)
+        .set('Cookie', [accessToken]);
+
+      expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe('DELETE /rasters/static/:countryCodeIso3/:layer – unauthorized', () => {
+    it('should return 401 without auth', async () => {
+      const response = await getServer().delete(
+        `/rasters/static/${country}/${layer}`,
+      );
+
+      expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
     });
   });
 });

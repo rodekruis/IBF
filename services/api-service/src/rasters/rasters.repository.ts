@@ -154,4 +154,26 @@ export class RastersRepository {
       extent: raster.extent as unknown as RasterExtentDto,
     };
   }
+
+  public async deleteStaticRasterOrThrow(
+    countryCodeIso3: string,
+    layer: Layer,
+  ): Promise<void> {
+    const raster = await this.prisma.staticRasterData.findUnique({
+      where: {
+        countryCodeIso3_layer: { countryCodeIso3, layer },
+      },
+      select: { id: true },
+    });
+
+    if (!raster) {
+      throw new NotFoundException(
+        `Static raster for ${countryCodeIso3}/${layer} not found`,
+      );
+    }
+
+    await this.prisma.staticRasterData.delete({
+      where: { id: raster.id },
+    });
+  }
 }

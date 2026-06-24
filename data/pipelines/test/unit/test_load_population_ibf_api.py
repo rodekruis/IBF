@@ -8,7 +8,7 @@ from PIL import Image
 from shared.country_data import CountryCodeIso3
 
 from pipelines.infra.data_types.data_config_types import DataSource, DataSourceConfig
-from pipelines.infra.data_types.enums import HazardType
+from pipelines.infra.data_types.enums import HazardType, Layer
 from pipelines.infra.data_types.loaded_data_types import (
     DataType,
     LoadedDataSource,
@@ -52,7 +52,7 @@ def _make_rgba_png_bytes(values: np.ndarray) -> bytes:
 def _make_api_metadata_response() -> dict:
     return {
         "id": 1,
-        "layer": "population",
+        "layer": Layer.POPULATION,
         "extent": {"xmin": 0.0, "ymin": -200.0, "xmax": 200.0, "ymax": 0.0},
     }
 
