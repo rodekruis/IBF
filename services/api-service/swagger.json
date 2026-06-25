@@ -184,8 +184,7 @@
     "path": "/api/rasters/{id}",
     "params": [
       "id"
-    ],
-    "returnType": "RasterResponseDto"
+    ]
   },
   {
     "method": "get",

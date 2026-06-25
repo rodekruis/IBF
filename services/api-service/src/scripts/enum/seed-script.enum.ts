@@ -1,4 +1,5 @@
 export enum SeedScript {
-  initialState = 'initial-state',
-  test = 'test',
+  allCountries = 'all-countries',
+  ethiopiaOnly = 'ethiopia-only',
+  ethiopiaWithEvents = 'ethiopia-with-events',
 }

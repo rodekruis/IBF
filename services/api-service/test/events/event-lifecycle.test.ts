@@ -22,7 +22,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
   let accessToken: string;
 
   beforeEach(async () => {
-    await resetDB(SeedScript.test, __filename);
+    await resetDB(SeedScript.ethiopiaOnly, __filename);
     accessToken = await getAccessToken();
   });
 

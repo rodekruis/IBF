@@ -3,12 +3,14 @@ import { SeedConfigurationDto } from '@api-service/src/scripts/seed-configuratio
 
 export const SEED_CONFIGURATION_SETTINGS: SeedConfigurationDto[] = [
   {
-    name: SeedScript.initialState,
-    seedAdminOnly: true,
+    name: SeedScript.allCountries,
   },
   {
-    name: SeedScript.test,
-    seedAdminOnly: true,
+    name: SeedScript.ethiopiaOnly,
+    countryCodes: ['ETH'],
+  },
+  {
+    name: SeedScript.ethiopiaWithEvents,
     countryCodes: ['ETH'],
   },
 ];
