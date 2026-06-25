@@ -135,7 +135,6 @@ describe('GET /events', () => {
 
   describe('event label derivation', () => {
     it('should derive event label from event name', async () => {
-      // Seed an event with a name that has multiple parts
       const droughtEventName = 'ETH_drought_Meher_MAM';
       await createAlerts(
         buildForecast([
@@ -151,6 +150,44 @@ describe('GET /events', () => {
       );
 
       expect(event.eventLabel).toBe('Meher MAM');
+    });
+  });
+
+  describe('countryCodeIso3 filter', () => {
+    beforeEach(async () => {
+      await seedEventsForReadTests();
+    });
+
+    it('should return only events for the specified country', async () => {
+      const response = await readEvents(accessToken, 'ETH', {
+        timestamp: viewTimestamp,
+      });
+
+      expect(response.status).toBe(HttpStatus.OK);
+      expect(response.body).toHaveLength(3);
+      expect(
+        response.body.every((event: { eventName: string }) =>
+          event.eventName.startsWith('ETH_'),
+        ),
+      ).toBe(true);
+    });
+
+    it('should return no events for a country with no events', async () => {
+      const response = await readEvents(accessToken, 'KEN', {
+        timestamp: viewTimestamp,
+      });
+
+      expect(response.status).toBe(HttpStatus.OK);
+      expect(response.body).toHaveLength(0);
+    });
+
+    it('should return all events when countryCodeIso3 is omitted', async () => {
+      const response = await readEvents(accessToken, undefined, {
+        timestamp: viewTimestamp,
+      });
+
+      expect(response.status).toBe(HttpStatus.OK);
+      expect(response.body).toHaveLength(3);
     });
   });
 });
