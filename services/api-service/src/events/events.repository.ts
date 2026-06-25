@@ -36,17 +36,27 @@ export interface ExposedAdminAreaRecord {
 export class EventsRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  public async getEvents(viewTime: Date, active?: boolean): Promise<Event[]> {
+  public async getEvents(
+    viewTime: Date,
+    active?: boolean,
+    countryCodeIso3?: string,
+  ): Promise<Event[]> {
+    const countryFilter = countryCodeIso3
+      ? { eventName: { startsWith: `${countryCodeIso3}_` } }
+      : {};
+
     if (active === undefined) {
-      return await this.prisma.event.findMany();
+      return await this.prisma.event.findMany({ where: countryFilter });
     }
 
     const where = active
       ? {
+          ...countryFilter,
           closedAt: null,
           endAt: { gt: viewTime },
         }
       : {
+          ...countryFilter,
           OR: [{ closedAt: { not: null } }, { endAt: { lte: viewTime } }],
         };
 
