@@ -30,6 +30,7 @@ export class ScriptsService {
 
     await this.seedInit.run({ countryCodes: seedConfig.countryCodes });
 
+    // TODO: move event seeding to a separate proper functionality
     if (seedConfig.name === SeedScript.ethiopiaWithEvents) {
       await this.alertsService.createAlerts(buildDemoForecast());
     }
