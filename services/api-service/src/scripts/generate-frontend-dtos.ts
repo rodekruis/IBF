@@ -49,7 +49,7 @@ const convertClassesToInterfaces = (
     const visit: ts.Visitor = (node) => {
       if (ts.isClassDeclaration(node) && node.name) {
         // Always export the generated interface so the frontend can import
-        // every shared DTO, even nested ones that are not exported in source.
+        // referenced DTOs that are not exported in source.
         const interfaceModifiers = [
           factory.createModifier(ts.SyntaxKind.ExportKeyword),
         ];
