@@ -73,7 +73,7 @@ describe('GET /events', () => {
     });
 
     it('should return all events when active is omitted', async () => {
-      const response = await readEvents(accessToken, {
+      const response = await readEvents(accessToken, 'ETH', {
         timestamp: viewTimestamp,
       });
 
@@ -91,7 +91,7 @@ describe('GET /events', () => {
     });
 
     it('should return only ongoing open events when active is true', async () => {
-      const response = await readEvents(accessToken, {
+      const response = await readEvents(accessToken, 'ETH', {
         active: true,
         timestamp: viewTimestamp,
       });
@@ -106,7 +106,7 @@ describe('GET /events', () => {
     });
 
     it('should return closed or expired events when active is false', async () => {
-      const response = await readEvents(accessToken, {
+      const response = await readEvents(accessToken, 'ETH', {
         active: false,
         timestamp: viewTimestamp,
       });
@@ -145,7 +145,7 @@ describe('GET /events', () => {
         ]),
       );
 
-      const response = await readEvents(accessToken);
+      const response = await readEvents(accessToken, 'ETH');
       const event = response.body.find(
         (event: { eventName: string }) => event.eventName === droughtEventName,
       );

@@ -87,6 +87,7 @@
     "method": "get",
     "path": "/api/events",
     "params": [
+      "countryCodeIso3",
       "active",
       "timestamp"
     ]

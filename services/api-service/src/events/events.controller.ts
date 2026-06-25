@@ -18,6 +18,13 @@ export class EventsController {
   @Get()
   @ApiOperation({ summary: 'Get all active or all closed events' })
   @ApiQuery({
+    name: 'countryCodeIso3',
+    type: String,
+    required: false,
+    description:
+      'ISO 3166-1 alpha-3 country code to filter events by. If omitted, returns events for all countries.',
+  })
+  @ApiQuery({
     name: 'active',
     type: Boolean,
     required: false,
@@ -39,10 +46,11 @@ export class EventsController {
     type: [EventResponseDto],
   })
   public async getEvents(
+    @Query('countryCodeIso3') countryCodeIso3?: string,
     @Query('active', new ParseBoolPipe({ optional: true })) active?: boolean,
     @Query('timestamp') timestamp?: string,
   ): Promise<EventResponseDto[]> {
     const viewTime = timestamp ? new Date(timestamp) : new Date();
-    return this.eventsService.getEvents(viewTime, active);
+    return this.eventsService.getEvents(viewTime, active, countryCodeIso3);
   }
 }

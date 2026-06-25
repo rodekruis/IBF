@@ -4,11 +4,13 @@ import { getServer } from '@api-service/test/helpers/utility.helper';
 
 export async function readEvents(
   accessToken: string,
+  countryCodeIso3: string,
   query?: { active?: boolean; timestamp?: string },
 ): Promise<request.Response> {
   const requestBuilder = getServer()
     .get('/events')
-    .set('Cookie', [accessToken]);
+    .set('Cookie', [accessToken])
+    .query({ countryCodeIso3 });
 
   if (query) {
     requestBuilder.query(query);
@@ -19,7 +21,8 @@ export async function readEvents(
 
 export async function getActiveEvents(
   accessToken: string,
+  countryCodeIso3 = 'ETH',
   timestamp?: string,
 ): Promise<request.Response> {
-  return readEvents(accessToken, { active: true, timestamp });
+  return readEvents(accessToken, countryCodeIso3, { active: true, timestamp });
 }
