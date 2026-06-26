@@ -2,6 +2,7 @@ import { Body, Controller, HttpStatus, Post, Query, Res } from '@nestjs/common';
 import { ApiOperation, ApiProperty, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
+import { IS_PRODUCTION } from '@api-service/src/config';
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { ScriptsService } from '@api-service/src/scripts/scripts.service';
@@ -40,6 +41,11 @@ export class ScriptsController {
     @Query('resetIdentifier') resetIdentifier: string,
     @Res() res,
   ): Promise<string> {
+    if (IS_PRODUCTION) {
+      return res
+        .status(HttpStatus.FORBIDDEN)
+        .send('Reset is not allowed in production');
+    }
     if (body.secret !== env.RESET_SECRET) {
       return res.status(HttpStatus.FORBIDDEN).send('Not allowed');
     }
