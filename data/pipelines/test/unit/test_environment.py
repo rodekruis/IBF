@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 from pipelines.infra.environment import IbfEnvironment, load_environment_settings
@@ -8,6 +6,11 @@ from pipelines.infra.environment import IbfEnvironment, load_environment_setting
 class TestLoadEnvironmentSettings:
     def test_raises_when_unset(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("IBF_ENVIRONMENT", raising=False)
+        with pytest.raises(ValueError, match="IBF_ENVIRONMENT must be set"):
+            load_environment_settings()
+
+    def test_raises_when_empty(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("IBF_ENVIRONMENT", "")
         with pytest.raises(ValueError, match="IBF_ENVIRONMENT must be set"):
             load_environment_settings()
 
@@ -34,5 +37,5 @@ class TestLoadEnvironmentSettings:
 
     def test_invalid_value_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("IBF_ENVIRONMENT", "staging")
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="got 'staging'"):
             load_environment_settings()

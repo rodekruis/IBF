@@ -40,14 +40,16 @@ export class ScriptsController {
     @Query('script') script: WrapperType<SeedScript>,
     @Query('resetIdentifier') resetIdentifier: string,
     @Res() res,
-  ): Promise<string> {
+  ): Promise<void> {
     if (IS_PRODUCTION) {
-      return res
+      res
         .status(HttpStatus.FORBIDDEN)
         .send('Reset is not allowed in production');
+      return;
     }
     if (body.secret !== env.RESET_SECRET) {
-      return res.status(HttpStatus.FORBIDDEN).send('Not allowed');
+      res.status(HttpStatus.FORBIDDEN).send('Not allowed');
+      return;
     }
 
     await this.scriptsService.loadSeedScenario({
@@ -55,7 +57,7 @@ export class ScriptsController {
       seedScript: script,
     });
 
-    return res
+    res
       .status(HttpStatus.ACCEPTED)
       .send('Request received. Database should be reset.');
   }

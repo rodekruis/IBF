@@ -22,8 +22,16 @@ class EnvironmentSettings:
 
 def load_environment_settings() -> EnvironmentSettings:
     raw = os.environ.get("IBF_ENVIRONMENT")
-    if raw is None:
+    if not raw:
         raise ValueError(
             "IBF_ENVIRONMENT must be set to 'development', 'test' or 'production'"
         )
-    return EnvironmentSettings(environment=IbfEnvironment(raw))
+
+    try:
+        environment = IbfEnvironment(raw)
+    except ValueError as exc:
+        raise ValueError(
+            f"IBF_ENVIRONMENT must be 'development', 'test' or 'production' (got {raw!r})"
+        ) from exc
+
+    return EnvironmentSettings(environment=environment)

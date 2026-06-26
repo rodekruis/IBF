@@ -295,7 +295,10 @@ def main(
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
 
-    env = load_environment_settings()
+    try:
+        env = load_environment_settings()
+    except ValueError as exc:
+        raise click.UsageError(str(exc)) from exc
 
     if mock is not None and env.is_production:
         raise click.UsageError("--mock is not allowed in production")
