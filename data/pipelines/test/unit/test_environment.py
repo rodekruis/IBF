@@ -2,11 +2,7 @@ import os
 
 import pytest
 
-from pipelines.infra.environment import (
-    EnvironmentSettings,
-    IbfEnvironment,
-    load_environment_settings,
-)
+from pipelines.infra.environment import IbfEnvironment, load_environment_settings
 
 
 class TestLoadEnvironmentSettings:
