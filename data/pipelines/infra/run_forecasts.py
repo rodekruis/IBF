@@ -27,6 +27,7 @@ from pipelines.infra.data_types.data_config_types import (
 )
 from pipelines.infra.data_types.enums import ForecastSource, HazardType
 from pipelines.infra.data_types.loaded_data_types import DataType
+from pipelines.infra.environment import load_environment_settings
 from pipelines.infra.utils.alert_admin_aggregation import (
     aggregate_to_parent_admin_levels,
 )
@@ -294,6 +295,10 @@ def main(
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
 
+    env = load_environment_settings()
+
+    if mock is not None and env.is_production:
+        raise click.UsageError("--mock is not allowed in production")
     if infra_only and mock is None:
         raise click.UsageError("--infra-only requires --mock")
     if mock is not None and not infra_only and mock not in (0, 1):
