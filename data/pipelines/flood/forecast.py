@@ -140,6 +140,7 @@ def calculate_flood_forecasts(
             ### Step 7 - Compute exposure within the flood extent ###
             # Load here instead of at the top since this is a costly operation and only needed if there is exposure to compute.
             # the 'if' makes sure, it's only loaded once for the first alert-station
+            # TODO: this is not actually lazy-loading at the moment, only lazy-reading earlier downloaded data. Consider true lazy loading.
             if population_raster is None:
                 population_raster = data_provider.get_data(
                     DataSource.POPULATION_SEED_REPO, RasterData

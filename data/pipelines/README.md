@@ -19,6 +19,9 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --country ETH
 # Run with mock data that triggers alerts
 uv run pipeline --config pipelines/infra/configs/floods.yaml --country ETH --mock 1
 
+# Run with mock data for multiple configured countries (comma-separated without spaces)
+uv run pipeline --config pipelines/infra/configs/floods.yaml --country ETH,KEN --mock 1
+
 # Run with mock data for all configured countries (no --country flag)
 uv run pipeline --config pipelines/infra/configs/floods.yaml --mock 1
 
