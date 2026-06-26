@@ -4,7 +4,6 @@ Helper files for working with directories for both blob storage and local file s
 
 import os
 import shutil
-from datetime import datetime, timezone
 
 # Raw data directly from GloFAS
 GLOFAS_RAW_DATA_DIR = "glofas/raw"
