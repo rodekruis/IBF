@@ -126,7 +126,7 @@ def _resolve_countries(
     """Determine which countries to run.
 
     When country_filter is provided (--country CLI flag), run only those
-    countries. Multiple countries can be comma-separated. Otherwise run all
+    countries (country_filter is a list of ISO 3 codes). Otherwise run all
     configured countries.
     Returns an error message string if resolution fails.
     """
@@ -203,7 +203,7 @@ def run_forecasts(
         )
 
     logger.info(
-        f"Start '{hazard_type}' pipeline for '{", ".join(c.country_code_iso_3 for c in countries)}' (source target: '{source_target}'{', infra-only' if infra_only else ''})"
+        f"Start '{hazard_type}' pipeline for '{', '.join(c.country_code_iso_3 for c in countries)}' (source target: '{source_target}'{', infra-only' if infra_only else ''})"
     )
 
     for country in countries:
@@ -315,7 +315,9 @@ def main(
             parsed = parsed.replace(tzinfo=timezone.utc)
         issued_at = parsed.astimezone(timezone.utc)
 
-    parsed_countries = country_filter.split(",") if country_filter else None
+    parsed_countries: list[str] | None = None
+    if country_filter:
+        parsed_countries = [c.strip() for c in country_filter.split(",") if c.strip()]
 
     errors = run_forecasts(
         config_path,
