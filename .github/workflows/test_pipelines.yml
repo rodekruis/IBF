@@ -77,7 +77,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gdal-bin libgdal-dev libeccodes-dev
+          sudo apt-get install -y gdal-bin libgdal-dev
           sudo chown -R "$(id -u)" /var/cache/apt/archives
 
       - name: Set up uv
