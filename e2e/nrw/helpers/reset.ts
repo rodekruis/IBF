@@ -6,15 +6,16 @@ import { env } from '@ibf-e2e/env';
  * e2e package stays decoupled from the api-service source and its test deps.
  */
 export const SeedScript = {
-  initialState: 'initial-state',
-  test: 'test',
+  allCountries: 'all-countries',
+  ethiopiaOnly: 'ethiopia-only',
+  ethiopiaWithEvents: 'ethiopia-with-events',
 } as const;
 
 export type SeedScript = (typeof SeedScript)[keyof typeof SeedScript];
 
 // Reset and seed the api-service database with mock data.
 export async function resetDb(
-  seedScript: SeedScript = SeedScript.test,
+  seedScript: SeedScript = SeedScript.ethiopiaOnly,
   resetIdentifier = 'e2e',
 ): Promise<void> {
   const url = new URL(`${env.API_SERVICE_URL}/api/instance/reset`);

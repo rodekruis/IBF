@@ -21,7 +21,7 @@ describe('/rasters', () => {
   let rasterId: number;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.test, __filename);
+    await resetDB(SeedScript.ethiopiaOnly, __filename);
     const alert = buildAlert({ eventName: 'ETH_floods_raster-test' });
     const createResponse = await createAlerts(buildForecast([alert]));
     const createdAlert = createResponse.body[0];

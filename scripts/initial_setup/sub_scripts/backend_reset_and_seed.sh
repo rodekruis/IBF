@@ -26,17 +26,10 @@ echo "✅ Backend is running"
 print_header "Resetting IBF instance"
 
 curl --silent --show-error --fail -X 'POST' \
-  'http://localhost:4000/api/instance/reset?script=initial-state' \
+  'http://localhost:4000/api/instance/reset?script=ethiopia-with-events' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
-  -d '{
-     -d '{"secret":"fill_in_secret"}' \
-   > /dev/null
-}'
-
-print_header "Running test test/events/events-rich-seed.test.ts to get mock events in database"
-# Later we can use dedicated seeding scripts, but for now this is a quick and easy way to get some events in the database.
-docker exec api-service npm run test:integration:all test/events/events-rich-seed.test.ts
-
+  -d '{"secret":"fill_in_secret"}' \
+  > /dev/null
 
 print_header "Done"

@@ -19,47 +19,6 @@
   },
   {
     "method": "get",
-    "path": "/api/users",
-    "params": []
-  },
-  {
-    "method": "post",
-    "path": "/api/users/login",
-    "params": []
-  },
-  {
-    "method": "post",
-    "path": "/api/users/logout",
-    "params": []
-  },
-  {
-    "method": "get",
-    "path": "/api/users/current",
-    "params": []
-  },
-  {
-    "method": "get",
-    "path": "/api/alert-configs",
-    "params": [
-      "countryCodeIso3",
-      "hazardType"
-    ]
-  },
-  {
-    "method": "post",
-    "path": "/api/alert-configs",
-    "params": [],
-    "returnType": "AlertConfigResponseDto"
-  },
-  {
-    "method": "delete",
-    "path": "/api/alert-configs/{id}",
-    "params": [
-      "id"
-    ]
-  },
-  {
-    "method": "get",
     "path": "/api/alerts",
     "params": []
   },
@@ -91,6 +50,47 @@
       "active",
       "timestamp"
     ]
+  },
+  {
+    "method": "get",
+    "path": "/api/alert-configs",
+    "params": [
+      "countryCodeIso3",
+      "hazardType"
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/alert-configs",
+    "params": [],
+    "returnType": "AlertConfigResponseDto"
+  },
+  {
+    "method": "delete",
+    "path": "/api/alert-configs/{id}",
+    "params": [
+      "id"
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/users",
+    "params": []
+  },
+  {
+    "method": "post",
+    "path": "/api/users/login",
+    "params": []
+  },
+  {
+    "method": "post",
+    "path": "/api/users/logout",
+    "params": []
+  },
+  {
+    "method": "get",
+    "path": "/api/users/current",
+    "params": []
   },
   {
     "method": "get",

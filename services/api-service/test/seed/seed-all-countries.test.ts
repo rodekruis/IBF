@@ -14,7 +14,7 @@ describe('Seed – all countries', () => {
 
   beforeAll(async () => {
     // This intentionally uses the all-country seed, unlike other tests. With the purpose of doing a basic comprehensive check on this, which outweighs the downside of longer seeding time.
-    await resetDB(SeedScript.initialState, __filename);
+    await resetDB(SeedScript.allCountries, __filename);
     accessToken = await getAccessToken();
   }, 120_000);
 
