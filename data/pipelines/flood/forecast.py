@@ -90,9 +90,10 @@ def calculate_flood_forecasts(
     # Slice NetCDF files to country bounds once before processing stations
     country_sliced_netcdf_paths: list[str] = []
     for netcdf_path in glofas_netcdf_paths:
-        output_path = get_glofas_country_split_path(country, netcdf_path)
         country_sliced_path = slice_netcdf_to_bounds(
-            netcdf_path, country_bounds, output_path
+            netcdf_path,
+            country_bounds,
+            get_glofas_country_split_path(country, netcdf_path),
         )
         country_sliced_netcdf_paths.append(country_sliced_path)
 
