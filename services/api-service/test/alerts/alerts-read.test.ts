@@ -20,7 +20,7 @@ describe('/ Alerts', () => {
   let seededAlertId: number;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.test, __filename);
+    await resetDB(SeedScript.ethiopiaOnly, __filename);
     const alert = buildAlert({ eventName: ALERT_NAME });
     await createAlerts(buildForecast([alert]));
     adminAccessToken = await getAccessToken();

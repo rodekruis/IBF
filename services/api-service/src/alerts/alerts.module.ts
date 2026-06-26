@@ -10,5 +10,6 @@ import { PrismaModule } from '@api-service/src/prisma/prisma.module';
   imports: [PrismaModule, EventsModule],
   providers: [AlertsService, AlertsRepository],
   controllers: [AlertsController],
+  exports: [AlertsService],
 })
 export class AlertsModule {}

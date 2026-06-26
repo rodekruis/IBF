@@ -22,7 +22,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
   let accessToken: string;
 
   beforeEach(async () => {
-    await resetDB(SeedScript.test, __filename);
+    await resetDB(SeedScript.ethiopiaOnly, __filename);
     accessToken = await getAccessToken();
   });
 
@@ -70,7 +70,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     await createAlerts(
       buildForecast([alertA], { issuedAt: new Date('2026-03-23T12:00:00Z') }),
     );
-    let response = await getActiveEvents(accessToken, viewTimestamp);
+    let response = await getActiveEvents(accessToken, 'ETH', viewTimestamp);
     expect(response.status).toBe(HttpStatus.OK);
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
@@ -99,7 +99,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         issuedAt: new Date('2026-03-24T12:00:00Z'),
       }),
     );
-    response = await getActiveEvents(accessToken, viewTimestamp);
+    response = await getActiveEvents(accessToken, 'ETH', viewTimestamp);
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
       eventName: 'ETH_floods_station-A',
@@ -123,7 +123,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         issuedAt: new Date('2026-03-24T12:00:00Z'),
       }),
     );
-    response = await getActiveEvents(accessToken, viewTimestamp);
+    response = await getActiveEvents(accessToken, 'ETH', viewTimestamp);
     expect(response.body).toHaveLength(2);
     const names = response.body
       .map((e: { eventName: string }) => e.eventName)
@@ -134,7 +134,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     await createAlerts(
       buildForecast([alertB], { issuedAt: new Date('2026-03-24T12:00:00Z') }),
     );
-    response = await getActiveEvents(accessToken, laterViewTimestamp);
+    response = await getActiveEvents(accessToken, 'ETH', laterViewTimestamp);
     expect(response.body).toHaveLength(1);
     expect(response.body[0].eventName).toBe('ETH_floods_station-B');
     expect(response.body[0].isOngoing).toBe(true);
@@ -163,6 +163,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       const responseBeforeStart = await getActiveEvents(
         accessToken,
+        'ETH',
         viewTimestamp,
       );
       expect(responseBeforeStart.status).toBe(HttpStatus.OK);
@@ -176,6 +177,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       const responseOnStartDay = await getActiveEvents(
         accessToken,
+        'ETH',
         laterViewTimestamp,
       );
       expect(responseOnStartDay.status).toBe(HttpStatus.OK);
@@ -210,6 +212,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       const responseBeforeExpiry = await getActiveEvents(
         accessToken,
+        'ETH',
         viewTimestamp,
       );
       expect(responseBeforeExpiry.status).toBe(HttpStatus.OK);
@@ -223,6 +226,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       const responseAfterExpiry = await getActiveEvents(
         accessToken,
+        'ETH',
         laterViewTimestamp,
       );
       expect(responseAfterExpiry.status).toBe(HttpStatus.OK);
@@ -279,7 +283,11 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       }),
     );
 
-    const response = await getActiveEvents(accessToken, '2026-03-29T00:00:00Z');
+    const response = await getActiveEvents(
+      accessToken,
+      'ETH',
+      '2026-03-29T00:00:00Z',
+    );
     expect(response.status).toBe(HttpStatus.OK);
 
     const pinnedStartEvent = response.body.find(
@@ -329,7 +337,11 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       }),
     );
 
-    const response = await getActiveEvents(accessToken, '2026-04-03T00:00:00Z');
+    const response = await getActiveEvents(
+      accessToken,
+      'ETH',
+      '2026-04-03T00:00:00Z',
+    );
     expect(response.status).toBe(HttpStatus.OK);
 
     const eventWithLatestStartAt = response.body.find(
@@ -393,6 +405,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     // Assert: Get events immediately after forecast
     const response = await getActiveEvents(
       accessToken,
+      'ETH',
       currentForecastTimestamp,
     );
     expect(response.status).toBe(HttpStatus.OK);
