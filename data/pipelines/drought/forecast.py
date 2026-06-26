@@ -90,3 +90,6 @@ def calculate_drought_forecasts(
                     place_code: 0 for place_code in spatial_extent_place_codes
                 },
             )
+
+    # Step N - Actions after alert submitted (optional)
+    # This is a good place to archive source data for longer retention if needed.

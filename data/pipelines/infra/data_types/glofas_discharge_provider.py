@@ -7,6 +7,7 @@ import os
 import time
 from datetime import datetime, timedelta, timezone
 
+from pipelines.flood.settings import GLOFAS_MIN_ENSEMBLE_COUNT
 from pipelines.infra.utils.nrw_logger import log_with_tag, LogTag
 from pipelines.infra.utils.storage_helpers import (
     get_cached_glofas_files,
@@ -17,11 +18,6 @@ from pipelines.infra.utils.storage_helpers import (
 logger = logging.getLogger(__name__)
 
 GLOFAS_FTP_BASE_PATH = "DATA/CEMS_Flood_Glofas/fc_netcdf"
-
-# Minimum allowed number of 'ensemble' forecast files in the GloFAS data.
-# If fewer than this, fail the data load (which alerts the team of an error)
-# and do not run the forecast pipeline.
-GLOFAS_MIN_ENSEMBLE_COUNT = 34  # 2/3 of the total number of ensemble members
 
 
 def download_glofas_discharge_from_ftp(country: str) -> list[str]:
@@ -58,6 +54,7 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
     # If there is a partial set, set the highestEnsembleIndex so the download can resume
     # The resume downloading flow isn't expected to be used on cloud deployments, but
     # it's useful when running this locally.
+    # TODO: break this into cleaner, simpler code. TODO task #43105
     cached_files = get_cached_glofas_files(forecast_date)
     highestEnsembleIndex = -1
     if cached_files is not None:
