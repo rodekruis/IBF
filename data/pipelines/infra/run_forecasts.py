@@ -98,20 +98,24 @@ def _run_country(
 
 def _resolve_countries(
     country_configs: dict[CountryCodeIso3, CountryRunConfig],
-    country_filter: str | None,
+    country_filter: list[str] | None,
 ) -> list[CountryRunConfig] | str:
     """Determine which countries to run.
 
-    When country_filter is provided (--country CLI flag), run only that single
-    country. Otherwise run all configured countries.
+    When country_filter is provided (--country CLI flag), run only those
+    countries (country_filter is a list of ISO 3 codes). Otherwise run all
+    configured countries.
     Returns an error message string if resolution fails.
     """
     if country_filter:
-        country_code = CountryCodeIso3(country_filter.upper())
-        country = country_configs.get(country_code)
-        if country is None:
-            return f"Country '{country_code}' not found in config"
-        return [country]
+        resolved: list[CountryRunConfig] = []
+        for code in country_filter:
+            country_code = CountryCodeIso3(code.upper())
+            country = country_configs.get(country_code)
+            if country is None:
+                return f"Country '{country_code}' not found in config"
+            resolved.append(country)
+        return resolved
 
     countries = list(country_configs.values())
     if not countries:
@@ -136,7 +140,7 @@ def run_forecasts(
     mock: int | None = None,
     infra_only: bool = False,
     issued_at: datetime | None = None,
-    country_filter: str | None = None,
+    country_filter: list[str] | None = None,
     output_mode: OutputMode = OutputMode.API,
     output_path: str = DEFAULT_OUTPUT_PATH,
 ) -> list[str]:
@@ -176,7 +180,7 @@ def run_forecasts(
         )
 
     logger.info(
-        f"Start '{hazard_type}' pipeline for '{", ".join(c.country_code_iso_3 for c in countries)}' (source target: '{source_target}'{', infra-only' if infra_only else ''})"
+        f"Start '{hazard_type}' pipeline for '{', '.join(c.country_code_iso_3 for c in countries)}' (source target: '{source_target}'{', infra-only' if infra_only else ''})"
     )
 
     for country in countries:
@@ -239,7 +243,7 @@ def run_forecasts(
     "--country",
     "country_filter",
     default=None,
-    help="Run only this country (ISO 3 code, e.g. KEN). Omit to run all.",
+    help="Run only these countries (comma-separated ISO 3 codes, e.g. KEN,ETH). Omit to run all.",
 )
 @click.option(
     "--output-mode",
@@ -288,12 +292,16 @@ def main(
             parsed = parsed.replace(tzinfo=timezone.utc)
         issued_at = parsed.astimezone(timezone.utc)
 
+    parsed_countries: list[str] | None = None
+    if country_filter:
+        parsed_countries = [c.strip() for c in country_filter.split(",") if c.strip()]
+
     errors = run_forecasts(
         config_path,
         mock=mock,
         infra_only=infra_only,
         issued_at=issued_at,
-        country_filter=country_filter,
+        country_filter=parsed_countries,
         output_mode=OutputMode(output_mode_str),
         output_path=output_path,
     )
