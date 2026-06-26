@@ -66,7 +66,8 @@ export enum AlertClassificationLevel {
   High = 'high',
 }
 
-// Allowed classification levels for alertClass (derived from severityClass and probabilityClass according to ALERT_CLASS_MATRIX)
+// Allowed classification levels for alertClass
+// (derived from severityClass and probabilityClass according to ALERT_CLASS_MATRIX)
 // NOTE: do not change order, as this is used functionally
 export enum AlertClass {
   Low = 'low',

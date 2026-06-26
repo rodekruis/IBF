@@ -48,12 +48,11 @@ const convertClassesToInterfaces = (
     const { factory } = context;
     const visit: ts.Visitor = (node) => {
       if (ts.isClassDeclaration(node) && node.name) {
-        const exportModifier = node.modifiers?.find(
-          (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
-        ) as ts.Modifier | undefined;
-        const interfaceModifiers = exportModifier
-          ? [exportModifier]
-          : undefined;
+        // Always export the generated interface so the frontend can import
+        // referenced DTOs that are not exported in source.
+        const interfaceModifiers = [
+          factory.createModifier(ts.SyntaxKind.ExportKeyword),
+        ];
 
         const propertySignatures: ts.PropertySignature[] = [];
         for (const member of node.members) {
@@ -144,9 +143,13 @@ const generate = (): void => {
     }
   }
 
+  // Make the import line with proper formatting/indentation
   const importLine =
     sharedEnumImports.size > 0
-      ? `import type { ${[...sharedEnumImports].sort().join(', ')} } from '${SHARED_ENUMS_OUTPUT_IMPORT}';\n\n`
+      ? `import type {\n${[...sharedEnumImports]
+          .sort()
+          .map((name) => `    ${name},`)
+          .join('\n')}\n} from '${SHARED_ENUMS_OUTPUT_IMPORT}';\n\n`
       : '';
 
   const fileContents =
