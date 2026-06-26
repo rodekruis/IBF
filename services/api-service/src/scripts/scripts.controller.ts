@@ -2,6 +2,7 @@ import { Body, Controller, HttpStatus, Post, Query, Res } from '@nestjs/common';
 import { ApiOperation, ApiProperty, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
+import { IS_PRODUCTION } from '@api-service/src/config';
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { ScriptsService } from '@api-service/src/scripts/scripts.service';
@@ -39,9 +40,16 @@ export class ScriptsController {
     @Query('script') script: WrapperType<SeedScript>,
     @Query('resetIdentifier') resetIdentifier: string,
     @Res() res,
-  ): Promise<string> {
+  ): Promise<void> {
+    if (IS_PRODUCTION) {
+      res
+        .status(HttpStatus.FORBIDDEN)
+        .send('Reset is not allowed in production');
+      return;
+    }
     if (body.secret !== env.RESET_SECRET) {
-      return res.status(HttpStatus.FORBIDDEN).send('Not allowed');
+      res.status(HttpStatus.FORBIDDEN).send('Not allowed');
+      return;
     }
 
     await this.scriptsService.loadSeedScenario({
@@ -49,7 +57,7 @@ export class ScriptsController {
       seedScript: script,
     });
 
-    return res
+    res
       .status(HttpStatus.ACCEPTED)
       .send('Request received. Database should be reset.');
   }
