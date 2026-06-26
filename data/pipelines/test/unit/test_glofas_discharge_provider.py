@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import os
-import time
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -24,17 +22,15 @@ def _write_cached_files(
     cache_base: Path,
     forecast_date: str,
     count: int,
-    age_hours: float = 0.0,
 ) -> list[str]:
-    """Create `count` NetCDF cache files for `forecast_date`, aged `age_hours`."""
+    """Create `count` non-empty NetCDF cache files for `forecast_date`."""
     cache_dir = cache_base / GLOFAS_RAW_DATA_DIR / forecast_date
     cache_dir.mkdir(parents=True, exist_ok=True)
     paths: list[str] = []
-    mtime = time.time() - age_hours * 3600
     for ensemble_index in range(count):
         path = cache_dir / f"dis_{ensemble_index:02d}_{forecast_date}00.nc"
-        path.write_bytes(b"")
-        os.utime(path, (mtime, mtime))
+        # Write content to the file since empty files are ignored.
+        path.write_bytes(b"fake_NetCDF_content")
         paths.append(str(path))
     return sorted(paths)
 
@@ -67,55 +63,35 @@ def test_validate_ensemble_count_raises_on_empty() -> None:
 
 
 # ---------------------------------------------------------------------------
-# get_cached_glofas_files (same-day reuse logic)
+# get_cached_glofas_files (date-keyed cache reuse)
 # ---------------------------------------------------------------------------
 
 
-def test_cached_files_returned_when_fresh(
+def test_cached_files_returned_when_present(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
-    expected = _write_cached_files(tmp_path, FORECAST_DATE, count=51, age_hours=1.0)
+    expected = _write_cached_files(tmp_path, FORECAST_DATE, count=51)
 
     result = get_cached_glofas_files(FORECAST_DATE)
 
     assert result == expected
 
 
-def test_cached_files_returned_earlier_same_day(
+def test_cached_empty_files_removed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
-    # Aged earlier in the same UTC day so it stays valid.
-    seconds_since_midnight = (
-        datetime.now(timezone.utc)
-        - datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    ).total_seconds()
-    age_hours = max(seconds_since_midnight / 3600 - 0.5, 0.0)
-    expected = _write_cached_files(
-        tmp_path, FORECAST_DATE, count=51, age_hours=age_hours
-    )
+    expected = _write_cached_files(tmp_path, FORECAST_DATE, count=51)
+    # An incomplete/failed download leaves a zero-byte file that must be pruned.
+    cache_dir = tmp_path / GLOFAS_RAW_DATA_DIR / FORECAST_DATE
+    empty_file = cache_dir / f"dis_51_{FORECAST_DATE}00.nc"
+    empty_file.write_bytes(b"")
 
     result = get_cached_glofas_files(FORECAST_DATE)
 
     assert result == expected
-
-
-def test_cached_files_none_when_from_previous_day(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
-    # Aged into the previous UTC day so it is no longer reused.
-    seconds_since_midnight = (
-        datetime.now(timezone.utc)
-        - datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    ).total_seconds()
-    age_hours = seconds_since_midnight / 3600 + 1
-    _write_cached_files(tmp_path, FORECAST_DATE, count=51, age_hours=age_hours)
-
-    result = get_cached_glofas_files(FORECAST_DATE)
-
-    assert result is None
+    assert not empty_file.exists()
 
 
 def test_cached_files_none_when_dir_missing(
