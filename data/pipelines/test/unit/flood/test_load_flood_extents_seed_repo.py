@@ -5,6 +5,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 from PIL import Image
+from pipelines.constants import DEFAULT_CRS
 from pipelines.infra.data_types.data_config_types import DataSource, DataSourceConfig
 from pipelines.infra.data_types.enums import HazardType
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
@@ -55,7 +56,7 @@ def _make_rgba_png_bytes(values: np.ndarray) -> bytes:
 
 def _make_metadata(width: int, height: int) -> dict:
     return {
-        "crs": "EPSG:4326",
+        "crs": DEFAULT_CRS,
         "transform": [0.01, 0.0, 33.0, 0.0, -0.01, 12.0, 0.0, 0.0, 1.0],
         "width": width,
         "height": height,
@@ -120,8 +121,8 @@ class TestFloodExtentProviderGetRaster:
 
         provider = FloodExtentProvider(
             available_return_periods=[10, 20],
-            _base_url=MOCK_FLOOD_EXTENT_BASE_URL,
-            _country="KEN",
+            base_url=MOCK_FLOOD_EXTENT_BASE_URL,
+            country="KEN",
         )
 
         with patch(
@@ -134,7 +135,7 @@ class TestFloodExtentProviderGetRaster:
             raster = provider.get_raster(10)
 
         assert isinstance(raster, RasterData)
-        assert raster.crs == "EPSG:4326"
+        assert raster.crs == DEFAULT_CRS
         assert raster.array.shape == (2, 2)
         np.testing.assert_allclose(raster.array, flood_values, atol=0.01)
 
@@ -145,8 +146,8 @@ class TestFloodExtentProviderGetRaster:
 
         provider = FloodExtentProvider(
             available_return_periods=[10],
-            _base_url=MOCK_FLOOD_EXTENT_BASE_URL,
-            _country="KEN",
+            base_url=MOCK_FLOOD_EXTENT_BASE_URL,
+            country="KEN",
         )
 
         with patch(
@@ -165,8 +166,8 @@ class TestFloodExtentProviderGetRaster:
     def test_raises_when_png_download_fails(self):
         provider = FloodExtentProvider(
             available_return_periods=[10],
-            _base_url=MOCK_FLOOD_EXTENT_BASE_URL,
-            _country="KEN",
+            base_url=MOCK_FLOOD_EXTENT_BASE_URL,
+            country="KEN",
         )
 
         with patch(

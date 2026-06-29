@@ -8,12 +8,14 @@ import logging
 import os
 
 import numpy as np
+from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
     DataSourceConfig,
 )
+from pipelines.infra.data_types.enums import Layer
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.glofas_discharge_provider import (
     download_glofas_discharge_from_ftp,
@@ -28,12 +30,11 @@ from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.dummy_data import DUMMY_DATA
 from rasterio.transform import Affine
-from shared.download_helpers import download_json_source, download_object
+from shared.download_helpers import download_json_source
 from shared.image_helpers import rgba_png_to_float_array
 
 logger = logging.getLogger(__name__)
 
-SEED_REPO_POPULATION_DATA_PNG_PATH = "/raster-data/population/data-png/"
 SEED_REPO_FLOOD_EXTENTS_DATA_PNG_PATH = "/raster-data/flood-extents/data-png/"
 
 
@@ -67,8 +68,8 @@ def load_data_container(
                 api_client,
                 data_config,
             )
-        case DataSource.POPULATION_SEED_REPO:
-            return _load_seed_repo_population_data(data_config, container)
+        case DataSource.POPULATION_IBF_API:
+            return _load_ibf_api_population_data(data_config, container, api_client)
         case DataSource.FLOOD_EXTENTS_SEED_REPO:
             return _load_seed_repo_flood_extents(data_config, container)
 
@@ -157,37 +158,39 @@ def _load_ibf_api_alert_configs(
     )
 
 
-# TODO AB#42339: switch to loading population raster from IBF API (geo-features).
-def _load_seed_repo_population_data(
-    config: DataSourceConfig, container: LoadedDataSource
+def _load_ibf_api_population_data(
+    config: DataSourceConfig, container: LoadedDataSource, api_client: ApiClient
 ):
     container.data_type = DataType.RASTER_DATA
 
-    png_filename = f"{config.country_code_iso_3}_population.png"
-    json_filename = f"{config.country_code_iso_3}_population_metadata.json"
-    png_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_DATA_PNG_PATH + png_filename
-    json_uri = _get_seed_repo_uri() + SEED_REPO_POPULATION_DATA_PNG_PATH + json_filename
-
-    png_bytes = download_object(png_uri)
-    if png_bytes is None:
-        container.error = f"Failed to download PNG data from '{png_uri}'"
+    layer = Layer.POPULATION
+    raster_info = api_client.get_static_raster_metadata(
+        config.country_code_iso_3, layer
+    )
+    if raster_info is None:
+        container.error = f"Failed to download population raster metadata from API for {config.country_code_iso_3}"
         raise ValueError(container.error)
 
-    json_data = download_json_source(json_uri, check_count=False)
-    if json_data is None:
-        container.error = f"Failed to download metadata JSON from '{json_uri}'"
+    png_bytes = api_client.get_static_raster_data_image(
+        config.country_code_iso_3, layer
+    )
+    if png_bytes is None:
+        container.error = f"Failed to download population raster data from API for {config.country_code_iso_3}"
         raise ValueError(container.error)
 
     population_array = rgba_png_to_float_array(png_bytes)
-    transform = Affine(*json_data["transform"][:6])
-    crs = json_data["crs"]
-    nodata = json_data["nodata"]
+    extent = raster_info["extent"]
+    width = population_array.shape[1]
+    height = population_array.shape[0]
+    x_res = (extent["xmax"] - extent["xmin"]) / width
+    y_res = (extent["ymax"] - extent["ymin"]) / height
+    transform = Affine(x_res, 0, extent["xmin"], 0, -y_res, extent["ymax"])
 
     container.data = RasterData(
         array=population_array.astype(np.float32),
         transform=transform,
-        crs=crs,
-        nodata=nodata,
+        crs=DEFAULT_CRS,
+        nodata=POPULATION_NODATA_VALUE,
     )
 
 
@@ -209,8 +212,8 @@ def _load_seed_repo_flood_extents(
 
     container.data = FloodExtentProvider(
         available_return_periods=manifest["return_periods"],
-        _base_url=base_url,
-        _country=country,
+        base_url=base_url,
+        country=country,
     )
 
 

@@ -259,6 +259,8 @@ export class ProgramsController {
 }
 ```
 
+- Always place the HTTP verb decorator (`@Get`, `@Post`, `@Put`, `@Delete`, `@Patch`) as the first decorator on an endpoint method
+
 ### Function Signatures & Naming
 
 **Function Naming Conventions:**

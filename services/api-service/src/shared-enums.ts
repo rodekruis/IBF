@@ -19,6 +19,7 @@ export enum HazardType {
 
 export enum Layer {
   // --- generic layers (cross-hazard) ---
+  population = 'population',
   populationExposed = 'population_exposed',
 
   // --- floods-specific layers ---

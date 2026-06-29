@@ -2,6 +2,7 @@
 # Structure approximates real sources but values are synthetic. Will be replaced
 # by actual data loaders (blob, url, local) in a future phase.
 
+from pipelines.constants import DEFAULT_CRS
 from pipelines.infra.data_types.data_config_types import DataSource
 
 DUMMY_DATA: dict[DataSource, object] = {
@@ -39,7 +40,7 @@ DUMMY_DATA: dict[DataSource, object] = {
             },
         },
         "metadata": {
-            "crs": "EPSG:4326",
+            "crs": DEFAULT_CRS,
             "resolution": 0.01,
             "nodata": -9999,
             "unit": "mm/month",

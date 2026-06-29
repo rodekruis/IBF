@@ -5,6 +5,7 @@ import numpy as np
 from PIL import Image
 from rasterio.transform import from_bounds
 
+from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.infra.utils.raster import raster_to_base64_png
 
@@ -12,7 +13,12 @@ from pipelines.infra.utils.raster import raster_to_base64_png
 def _make_raster(array: np.ndarray) -> RasterData:
     rows, cols = array.shape
     transform = from_bounds(36.0, 0.0, 38.0, 2.0, cols, rows)
-    return RasterData(array=array, transform=transform, crs="EPSG:4326", nodata=0.0)
+    return RasterData(
+        array=array,
+        transform=transform,
+        crs=DEFAULT_CRS,
+        nodata=POPULATION_NODATA_VALUE,
+    )
 
 
 def test_output_is_valid_base64_png():

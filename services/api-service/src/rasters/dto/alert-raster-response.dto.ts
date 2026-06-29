@@ -1,0 +1,12 @@
+import { ApiProperty } from '@nestjs/swagger';
+
+import { RasterExtentDto } from '@api-service/src/alerts/dto/raster-extent.dto';
+import { Layer } from '@api-service/src/shared-enums';
+
+export class AlertRasterResponseDto {
+  @ApiProperty({ enum: Layer, example: Layer.floodDepth })
+  public readonly layer: Layer;
+
+  @ApiProperty({ type: RasterExtentDto })
+  public readonly extent: RasterExtentDto;
+}

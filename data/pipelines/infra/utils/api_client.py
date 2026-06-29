@@ -15,6 +15,7 @@ ALERTS_PATH = "/api/alerts"
 ADMIN_AREAS_PATH = "/api/admin-areas"
 ALERT_CONFIGS_PATH = "/api/alert-configs"
 GEO_FEATURES_PATH = "/api/geo-features"
+STATIC_RASTERS_PATH = "/api/rasters/static"
 
 
 class ApiClient:
@@ -132,3 +133,29 @@ class ApiClient:
             )
             stations[station.id] = station
         return stations
+
+    def get_static_raster_metadata(
+        self, country_code_iso_3: str, layer: str
+    ) -> dict | None:
+        url = f"{self._base_url}{STATIC_RASTERS_PATH}/{country_code_iso_3}/{layer}"
+        logger.info(f"Download '{url}'")
+        response = self._session.get(url, timeout=30)
+        if response.status_code == 200:
+            return response.json()
+        logger.error(
+            f"Failed to download static raster metadata for {country_code_iso_3}/{layer}: {response.status_code} {response.text}"
+        )
+        return None
+
+    def get_static_raster_data_image(
+        self, country_code_iso_3: str, layer: str
+    ) -> bytes | None:
+        url = f"{self._base_url}{STATIC_RASTERS_PATH}/{country_code_iso_3}/{layer}/data"
+        logger.info(f"Download '{url}'")
+        response = self._session.get(url, timeout=60)
+        if response.status_code == 200:
+            return response.content
+        logger.error(
+            f"Failed to download static raster data image for {country_code_iso_3}/{layer}: {response.status_code} {response.text}"
+        )
+        return None

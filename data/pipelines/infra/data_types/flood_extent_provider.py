@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FloodExtentProvider:
     available_return_periods: list[int]
-    _base_url: str
-    _country: str
+    base_url: str
+    country: str
     _cache: dict[str, RasterData] = field(default_factory=dict)
 
     def get_raster(self, return_period: int) -> RasterData:
@@ -30,10 +30,10 @@ class FloodExtentProvider:
         return raster
 
     def _fetch_and_decode(self, key: str) -> RasterData:
-        png_filename = f"{self._country}_flood_extent_{key}.png"
-        json_filename = f"{self._country}_flood_extent_{key}_metadata.json"
-        png_url = f"{self._base_url}{png_filename}"
-        json_url = f"{self._base_url}{json_filename}"
+        png_filename = f"{self.country}_flood_extent_{key}.png"
+        json_filename = f"{self.country}_flood_extent_{key}_metadata.json"
+        png_url = f"{self.base_url}{png_filename}"
+        json_url = f"{self.base_url}{json_filename}"
 
         png_bytes = download_object(png_url)
         if png_bytes is None:

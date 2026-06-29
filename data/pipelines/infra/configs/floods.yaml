@@ -9,7 +9,7 @@ _data_sources: &data_sources
   - source: alert_configs_ibf_api
   - source: glofas_stations_ibf_api
   - source: admin_area_ibf_api
-  - source: population_seed_repo
+  - source: population_ibf_api
   - source: flood_extents_seed_repo
   - source: glofas_discharge_ftp
     source_target: live # production (GloFAS FTP)

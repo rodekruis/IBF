@@ -7,7 +7,7 @@ import os
 import time
 from datetime import datetime, timedelta, timezone
 
-from pipelines.flood.settings import GLOFAS_MIN_ENSEMBLE_COUNT
+from pipelines.flood.constants import GLOFAS_MIN_ENSEMBLE_COUNT
 from pipelines.infra.utils.nrw_logger import log_with_tag, LogTag
 from pipelines.infra.utils.storage_helpers import (
     get_cached_glofas_files,
