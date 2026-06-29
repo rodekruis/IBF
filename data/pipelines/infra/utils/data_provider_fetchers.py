@@ -79,7 +79,6 @@ def load_data_container(
                 api_client,
                 data_config,
             )
-        # TODO AB#42516: this will likely move out of this forecast-run, into a shared setup step that downloads the files once
         case DataSource.GLOFAS_DISCHARGE_FTP:
             return _load_glofas_discharge_ftp(data_config, container)
         case DataSource.GLOFAS_DISCHARGE_SEED_REPO_ALERT:

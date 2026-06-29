@@ -96,7 +96,7 @@ def _parse_lead_time_range(temporal_extent: dict[str, list]) -> tuple[int, int]:
 def _extract_forecast_base_datetime(netcdf_path: str) -> datetime:
     """Extract forecast run datetime from a file name like dis_00_2026040800_sliced.nc."""  # TODO: extract date 0 from nc dims instead
     basename = os.path.basename(netcdf_path)
-    match = re.search(r"_(\d{10})_sliced\.nc$", basename)
+    match = re.search(r"_(\d{10})_sliced(?:_[A-Z]{3})?\.nc$", basename)
     if match is None:
         raise ValueError(
             f"Unable to extract forecast date from NetCDF path: {netcdf_path}"

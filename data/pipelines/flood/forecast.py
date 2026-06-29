@@ -30,6 +30,10 @@ from pipelines.infra.utils.raster import (
     raster_to_base64_png,
     slice_netcdf_to_bounds,
 )
+from pipelines.infra.utils.storage_helpers import (
+    archive_alert_glofas_files,
+    get_glofas_country_split_path,
+)
 
 
 def calculate_flood_forecasts(
@@ -86,7 +90,12 @@ def calculate_flood_forecasts(
     # Slice NetCDF files to country bounds once before processing stations
     country_sliced_netcdf_paths: list[str] = []
     for netcdf_path in glofas_netcdf_paths:
-        country_sliced_path = slice_netcdf_to_bounds(netcdf_path, country_bounds)
+        archivable_output_path =get_glofas_country_split_path(country, netcdf_path)
+        country_sliced_path = slice_netcdf_to_bounds(
+            netcdf_path,
+            country_bounds,
+            archivable_output_path,
+        )
         country_sliced_netcdf_paths.append(country_sliced_path)
 
     ### Step 3 - Loop through alert configs (spatial extents / stations) ###
@@ -212,6 +221,10 @@ def calculate_flood_forecasts(
                 value_black_white=raster_to_base64_png(clipped_flood_extent),
                 extent=get_raster_extent(clipped_flood_extent),
             )
+
+            ### Step 9 - Actions after alert submitted ###
+            # Save the source GloFAS data to a folder with longer retention
+            archive_alert_glofas_files(country_sliced_netcdf_paths)
 
 
 def _get_glofas_discharge_paths(data_provider: DataProvider) -> list[str]:

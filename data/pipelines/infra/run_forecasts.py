@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 import logging
-import os
-import shutil
 import sys
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -26,7 +23,6 @@ from pipelines.infra.data_types.data_config_types import (
     SourceTarget,
 )
 from pipelines.infra.data_types.enums import ForecastSource, HazardType
-from pipelines.infra.data_types.loaded_data_types import DataType
 from pipelines.infra.environment import load_environment_settings
 from pipelines.infra.utils.alert_admin_aggregation import (
     aggregate_to_parent_admin_levels,
@@ -65,59 +61,40 @@ def _run_country(
     api_client: ApiClient,
 ) -> list[str]:
     data_provider = DataProvider(api_client)
-    load_errors = data_provider.try_load_data(country)
-    if load_errors:
+    load_success, load_errors = data_provider.try_load_data(country)
+    if not load_success:
         return load_errors
 
-    try:
-        data_submitter = DataSubmitter(api_client)
+    data_submitter = DataSubmitter(api_client)
 
-        # --- Set forecast metadata based on hazard type ---
-        forecast_sources = FORECAST_SOURCES[hazard_type]
-        data_submitter.set_forecast_metadata(
-            issued_at=issued_at or datetime.now(timezone.utc),
-            hazard_type=hazard_type,
-            forecast_sources=forecast_sources,
-        )
+    # --- Set forecast metadata based on hazard type ---
+    forecast_sources = FORECAST_SOURCES[hazard_type]
+    data_submitter.set_forecast_metadata(
+        issued_at=issued_at or datetime.now(timezone.utc),
+        hazard_type=hazard_type,
+        forecast_sources=forecast_sources,
+    )
 
-        # --- Hazard-specific forecast logic (implemented by data scientists) ---
-        hazard_fn(
-            data_provider,
-            data_submitter,
-            country.country_code_iso_3,
-            country.target_admin_level,
-        )
+    # --- Hazard-specific forecast logic (implemented by data scientists) ---
+    hazard_fn(
+        data_provider,
+        data_submitter,
+        country.country_code_iso_3,
+        country.target_admin_level,
+    )
 
-        # --- Post-processing: aggregate deepest-level admin area data upward ---
-        admin_areas = data_provider.get_data(
-            DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
-        )
-        for alert in data_submitter.get_alerts():
-            aggregate_to_parent_admin_levels(alert, admin_areas)
+    # --- Post-processing: aggregate deepest-level admin area data upward ---
+    admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_IBF_API, AdminAreasSet)
+    for alert in data_submitter.get_alerts():
+        aggregate_to_parent_admin_levels(alert, admin_areas)
 
-        # --- Write output ---
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        country_output_path = str(
-            Path(output_path) / hazard_type / country.country_code_iso_3 / timestamp
-        )
+    # --- Write output ---
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    country_output_path = str(
+        Path(output_path) / hazard_type / country.country_code_iso_3 / timestamp
+    )
 
-        return data_submitter.send_all(output_mode, country_output_path)
-    finally:
-        # TODO AB#42516: this will be replaced by an azure-managed clean up policy, once the glofas-download step is isolated from this forecast run.
-        _cleanup_temp_data(data_provider)
-
-
-def _cleanup_temp_data(data_provider: DataProvider) -> None:
-    for container in data_provider.loaded_data.values():
-        if container.data_type != DataType.PATH_LIST or not isinstance(
-            container.data, list
-        ):
-            continue
-        if not container.data:
-            continue
-        parent = os.path.dirname(container.data[0])
-        if parent.startswith(tempfile.gettempdir()):
-            shutil.rmtree(parent, ignore_errors=True)
+    return data_submitter.send_all(output_mode, country_output_path)
 
 
 def _resolve_countries(

@@ -4,8 +4,16 @@ import ftplib
 import io
 import logging
 import os
-import tempfile
+import time
 from datetime import datetime, timedelta, timezone
+
+from pipelines.flood.settings import GLOFAS_MIN_ENSEMBLE_COUNT
+from pipelines.infra.utils.nrw_logger import log_with_tag, LogTag
+from pipelines.infra.utils.storage_helpers import (
+    get_cached_glofas_files,
+    get_glofas_mock_data_dir,
+    get_glofas_raw_data_dir,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +27,6 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
     Downloads one file per ensemble member. Each file contains global discharge
     data with bands per lead time. The pipeline slices these to country bounds
     before processing.
-
-    TODO AB#42516: These files are global (~600MB each). Download once and share
-    across country runs instead of re-downloading per country.
-
-    TODO AB#42516: allow to proceed if a few ensemble run files are missing, as long as we have a minimum number to work with.
 
     Required env vars:
         GLOFAS_FTP_HOST: FTP host (e.g. "aux.ecmwf.int")
@@ -47,14 +50,38 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
     forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d")
     forecast_date = _resolve_forecast_date(forecast_date, user, password, host)
 
-    output_dir = tempfile.mkdtemp(prefix=f"glofas_{country}_{forecast_date}_")
-    downloaded_paths: list[str] = []
+    # Get cached files
+    # If there is a partial set, set the highestEnsembleIndex so the download can resume
+    # The resume downloading flow isn't expected to be used on cloud deployments, but
+    # it's useful when running this locally.
+    # TODO: break this into cleaner, simpler code. TODO task #43105
+    cached_files = get_cached_glofas_files(forecast_date)
+    highestEnsembleIndex = -1
+    if cached_files is not None:
+        highestEnsembleIndex = _get_highest_ensemble_index(cached_files)
+        if len(cached_files) >= GLOFAS_MIN_ENSEMBLE_COUNT:
+            logger.info(
+                f"Reusing {len(cached_files)} cached GloFAS ensemble files for {forecast_date}"
+            )
+            return cached_files
+        logger.info(
+            f"Found {len(cached_files)} cached GloFAS ensemble files for {forecast_date}, "
+            f"below minimum of {GLOFAS_MIN_ENSEMBLE_COUNT}. "
+            f"Resuming download from ensemble index {highestEnsembleIndex + 1}."
+        )
+
+    output_dir = get_glofas_raw_data_dir(forecast_date)
+    downloaded_paths: list[str] = list(cached_files) if cached_files is not None else []
+    remote_dir = f"{GLOFAS_FTP_BASE_PATH}/{forecast_date}"
+
+    download_start = time.monotonic()
 
     ftp = _connect_ftp(host, user, password)
-    ftp.cwd(f"{GLOFAS_FTP_BASE_PATH}/{forecast_date}")
+    ftp.cwd(remote_dir)
 
     try:
-        for ensemble_index in range(ensemble_count):
+        # Grab new ensemble files, starting from the highest index found in cached files
+        for ensemble_index in range(highestEnsembleIndex + 1, ensemble_count):
             ensemble_label = f"{ensemble_index:02d}"
             filename = f"dis_{ensemble_label}_{forecast_date}00.nc"
 
@@ -62,7 +89,9 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
                 f"Downloading GloFAS ensemble {ensemble_label}/{ensemble_count} for {country}"
             )
 
-            content = _download_ftp_file(ftp, filename)
+            content, ftp = _download_ftp_file(
+                ftp, filename, host, user, password, remote_dir
+            )
 
             local_path = os.path.join(output_dir, filename)
             with open(local_path, "wb") as f:
@@ -70,11 +99,23 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
 
             downloaded_paths.append(local_path)
     finally:
-        ftp.quit()
+        try:
+            ftp.quit()
+        except ftplib.all_errors:
+            ftp.close()
+
+    download_duration_seconds = time.monotonic() - download_start
+    log_with_tag(
+        logger,
+        LogTag.DOWNLOAD_TIMER,
+        f"Downloaded {len(downloaded_paths)} GloFAS ensemble files for {country} "
+        f"in {download_duration_seconds:.1f}s",
+    )
 
     logger.info(
         f"Downloaded {len(downloaded_paths)} GloFAS ensemble files to {output_dir}"
     )
+    _validate_ensemble_count(downloaded_paths, forecast_date)
     return downloaded_paths
 
 
@@ -109,7 +150,7 @@ def download_glofas_discharge_from_seed_repo(
 
     forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d")
     local_filename = f"dis_00_{forecast_date}00.nc"
-    output_dir = tempfile.mkdtemp(prefix=f"glofas_{country}_mock_")
+    output_dir = get_glofas_mock_data_dir(country)
     local_path = os.path.join(output_dir, local_filename)
     with open(local_path, "wb") as f:
         f.write(content)
@@ -118,19 +159,56 @@ def download_glofas_discharge_from_seed_repo(
     return [local_path]
 
 
+def _validate_ensemble_count(files: list[str], forecast_date: str) -> None:
+    if len(files) < GLOFAS_MIN_ENSEMBLE_COUNT:
+        raise ValueError(
+            f"Insufficient GloFAS ensemble files for {forecast_date}: "
+            f"found {len(files)}, minimum required is {GLOFAS_MIN_ENSEMBLE_COUNT}."
+        )
+
+
+def _get_highest_ensemble_index(files: list[str]) -> int:
+    """Return the highest ensemble index found in GloFAS NetCDF filenames.
+
+    Filenames follow the pattern ``dis_{ensemble_index:02d}_{forecast_date}00.nc``.
+    Returns -1 when no parsable ensemble index is found.
+    """
+    highest_index = -1
+    for file_path in files:
+        basename = os.path.basename(file_path)
+        parts = basename.split("_")
+        if len(parts) < 2 or not parts[1].isdigit():
+            continue
+        highest_index = max(highest_index, int(parts[1]))
+    return highest_index
+
+
 def _connect_ftp(host: str, user: str, password: str, timeout: int = 60) -> ftplib.FTP:
     ftp = ftplib.FTP(host, timeout=timeout)
     ftp.login(user, password)
     return ftp
 
 
-def _download_ftp_file(ftp: ftplib.FTP, filename: str) -> bytes:
+def _download_ftp_file(
+    ftp: ftplib.FTP,
+    filename: str,
+    host: str,
+    user: str,
+    password: str,
+    remote_dir: str,
+) -> tuple[bytes, ftplib.FTP]:
+    """Download a single file, reconnecting on transient errors.
+    Returns the file content together with the (possibly re-established) FTP
+    connection, so the caller continues with a live connection.
+    """
+    # attempt n waits RETRY_BACKOFF_SECONDS * n before reconnecting.
+    retry_backoff_seconds = 5
     max_retries = 3
     for attempt in range(1, max_retries + 1):
         try:
             buffer = io.BytesIO()
             ftp.retrbinary(f"RETR {filename}", buffer.write)
-            return buffer.getvalue()
+            return buffer.getvalue(), ftp
         except ftplib.error_perm as exc:
             raise FileNotFoundError(f"FTP server rejected '{filename}': {exc}") from exc
         except ftplib.all_errors as exc:
@@ -141,6 +219,17 @@ def _download_ftp_file(ftp: ftplib.FTP, filename: str) -> bytes:
                 raise ConnectionError(
                     f"Failed to download '{filename}' after {max_retries} attempts"
                 ) from exc
+
+            # The connection might be dead
+            # Rebuild it before retrying
+            try:
+                ftp.close()
+            except ftplib.all_errors:
+                pass
+            time.sleep(retry_backoff_seconds * attempt)
+            ftp = _connect_ftp(host, user, password)
+            ftp.cwd(remote_dir)
+
     raise ConnectionError(
         f"Failed to download '{filename}' after {max_retries} attempts"
     )
