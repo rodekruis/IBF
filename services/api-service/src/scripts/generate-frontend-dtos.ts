@@ -7,7 +7,7 @@ import * as ts from 'typescript';
 const SOURCE_DTOS = [
   'services/api-service/src/events/dto/event-exposed-admin-area.dto.ts',
   'services/api-service/src/events/dto/event-response.dto.ts',
-  'services/api-service/src/events/dto/map-layer-details.dto.ts',
+  'services/api-service/src/events/dto/map-layer.dto.ts',
 ];
 
 const SHARED_ENUMS_SOURCE_REL = 'services/api-service/src/shared-enums.ts';

@@ -10,9 +10,10 @@ from datetime import datetime
 
 from pipelines.infra.data_types.enums import (
     EnsembleMemberType,
+    ExposureIndicator,
     ForecastSource,
     HazardType,
-    Layer,
+    MapLayer,
     SeverityKey,
 )
 
@@ -86,14 +87,14 @@ class Severity:
 class ExposureAdminArea:
     place_code: str
     admin_level: int
-    layer: Layer
+    exposure_indicator: ExposureIndicator
     value: int | float
 
     def to_dict(self) -> JsonDict:
         return {
             "placeCode": self.place_code,
             "adminLevel": self.admin_level,
-            "layer": self.layer,
+            "exposureIndicator": self.exposure_indicator,
             "value": self.value,
         }
 
@@ -102,13 +103,13 @@ class ExposureAdminArea:
 @dataclass
 class ExposureGeoFeature:
     geo_feature_id: str
-    layer: Layer
+    map_layer: MapLayer
     attributes: dict[str, bool | str | int | float]
 
     def to_dict(self) -> JsonDict:
         return {
             "geoFeatureId": self.geo_feature_id,
-            "layer": self.layer,
+            "mapLayer": self.map_layer,
             "attributes": self.attributes,
         }
 
@@ -133,13 +134,13 @@ class RasterExtent:
 # Source: services/api-service/src/alerts/dto/exposure-raster.dto.ts
 @dataclass
 class ExposureRaster:
-    layer: Layer
+    map_layer: MapLayer
     value_black_white: str
     extent: RasterExtent
 
     def to_dict(self) -> JsonDict:
         return {
-            "layer": self.layer,
+            "mapLayer": self.map_layer,
             "valueBlackWhite": self.value_black_white,
             "extent": self.extent.to_dict(),
         }

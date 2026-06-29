@@ -100,10 +100,10 @@ model AlertExposureAdminArea {
   updated    DateTime @updatedAt
   alertId    Int
   alert      Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  placeCode  String
-  adminLevel Int
-  layer      String
-  value      Float
+  placeCode           String
+  adminLevel          Int
+  exposureIndicator   String
+  value               Float
 
   @@index([alertId])
   @@index([alertId, adminLevel])
@@ -119,7 +119,7 @@ model AlertExposureGeoFeature {
   alertId      Int
   alert        Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   geoFeatureId String
-  layer        String
+  mapLayer     String
   attributes   Json
 
   @@index([alertId])
@@ -134,7 +134,7 @@ model AlertExposureRasterData {
   updated         DateTime @updatedAt
   alertId         Int
   alert           Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  layer           String
+  mapLayer        String
   valueBlackWhite String
   valueColoured   String
   extent          Json
@@ -151,12 +151,12 @@ model StaticRasterData {
   updated         DateTime @updatedAt
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
-  layer           String
+  mapLayer        String
   valueBlackWhite String
   valueColoured   String
   extent          Json
 
-  @@unique([countryCodeIso3, layer])
+  @@unique([countryCodeIso3, mapLayer])
   @@index([countryCodeIso3])
 }
 
@@ -210,13 +210,13 @@ model GeoFeature {
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
   featureType     String // Point, LineString, Polygon, MultiPolygon
-  layer           String // e.g. "glofas_stations"
+  mapLayer        String // e.g. "glofas_stations"
   referenceId     String // external identifier, e.g. station code
   geometry        Unsupported("geometry(Geometry, 4326)")?
   attributes      Json   @default("{}")
 
-  @@unique([countryCodeIso3, layer, referenceId])
-  @@index([countryCodeIso3, layer])
+  @@unique([countryCodeIso3, mapLayer, referenceId])
+  @@index([countryCodeIso3, mapLayer])
 }
 
 model AlertConfig {

@@ -1,4 +1,4 @@
-import { Layer } from '@api-service/src/shared-enums';
+import { MapLayer } from '@api-service/src/shared-enums';
 import { getServer } from '@api-service/test/helpers/utility.helper';
 
 // 1x1 valid PNG, base64-encoded
@@ -8,14 +8,14 @@ const MINIMAL_PNG_BASE64 =
 export function createStaticRaster(
   accessToken: string,
   countryCodeIso3: string,
-  layer: Layer,
+  mapLayer: MapLayer,
 ) {
   return getServer()
     .put('/rasters/static')
     .set('Cookie', [accessToken])
     .send({
       countryCodeIso3,
-      layer,
+      mapLayer,
       valueBlackWhite: MINIMAL_PNG_BASE64,
       valueColoured: MINIMAL_PNG_BASE64,
       extent: { xmin: 33.0, ymin: 3.0, xmax: 48.0, ymax: 15.0 },

@@ -5,7 +5,11 @@ from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import Centroid
-from pipelines.infra.data_types.enums import EnsembleMemberType, Layer, SeverityKey
+from pipelines.infra.data_types.enums import (
+    EnsembleMemberType,
+    ExposureIndicator,
+    SeverityKey,
+)
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.utils.exposure import get_place_codes_for_alert_config
 
@@ -85,7 +89,7 @@ def calculate_drought_forecasts(
             data_submitter.add_admin_area_exposure(
                 event_name=event_name,
                 admin_level=target_admin_level,
-                layer=Layer.POPULATION_EXPOSED,
+                exposure_indicator=ExposureIndicator.POPULATION_EXPOSED,
                 values_by_place_code={
                     place_code: 0 for place_code in spatial_extent_place_codes
                 },

@@ -13,6 +13,10 @@ class EnsembleMemberType(StrEnum):
     RUN = "run"
 
 
+class ExposureIndicator(StrEnum):
+    POPULATION_EXPOSED = "population_exposed"
+
+
 class ForecastSource(StrEnum):
     GLOFAS = "glofas"
     ECMWF = "ECMWF"
@@ -23,12 +27,10 @@ class HazardType(StrEnum):
     DROUGHT = "drought"
 
 
-class Layer(StrEnum):
-    # --- generic layers (cross-hazard) ---
+class MapLayer(StrEnum):
     POPULATION = "population"
-    POPULATION_EXPOSED = "population_exposed"
-
-    # --- floods-specific layers ---
+    RED_CROSS_BRANCHES = "red_cross_branches"
+    CLINICS = "clinics"
     FLOOD_DEPTH = "flood_depth"
     GLOFAS_STATIONS = "glofas_stations"
 

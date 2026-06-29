@@ -1,10 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { Layer } from '@api-service/src/shared-enums';
+import { ExposureIndicator } from '@api-service/src/shared-enums';
 
 class AdminAreaExposureDto {
-  @ApiProperty({ enum: Layer, example: Layer.populationExposed })
-  public readonly type: Layer; // NOTE: Consider renaming to "layer" for consistency with the rest of the codebase.
+  @ApiProperty({
+    enum: ExposureIndicator,
+    example: ExposureIndicator.populationExposed,
+  })
+  public readonly exposureIndicator: ExposureIndicator;
 
   @ApiProperty({ example: 20_000 })
   public readonly total: number | null; // TODO, make non-nullable again when possible.

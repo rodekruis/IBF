@@ -4,8 +4,8 @@ import { Event, Prisma } from '@prisma/client';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import {
   EnsembleMemberType,
+  ExposureIndicator,
   HazardType,
-  Layer,
   SeverityKey,
 } from '@api-service/src/shared-enums';
 
@@ -29,7 +29,10 @@ export interface ExposedAdminAreaRecord {
   readonly placeCode: string;
   readonly adminLevel: number;
   readonly name: string;
-  readonly exposure: { readonly type: Layer; readonly exposed: number }[];
+  readonly exposure: {
+    readonly exposureIndicator: ExposureIndicator;
+    readonly exposed: number;
+  }[];
 }
 
 @Injectable()
@@ -163,11 +166,11 @@ export class EventsRepository {
       select: {
         eventId: true,
         exposureAdminArea: {
-          where: { layer: Layer.populationExposed },
+          where: { exposureIndicator: ExposureIndicator.populationExposed },
           select: {
             placeCode: true,
             adminLevel: true,
-            layer: true,
+            exposureIndicator: true,
             value: true,
           },
         },
@@ -194,7 +197,12 @@ export class EventsRepository {
           placeCode: row.placeCode,
           adminLevel: row.adminLevel,
           name: nameByPlaceCode.get(row.placeCode) ?? row.placeCode,
-          exposure: [{ type: row.layer as Layer, exposed: row.value }],
+          exposure: [
+            {
+              exposureIndicator: row.exposureIndicator as ExposureIndicator,
+              exposed: row.value,
+            },
+          ],
         }),
       );
       result.set(alert.eventId, entries);
@@ -238,8 +246,8 @@ export class EventsRepository {
 
   public async getRasterIdsForLatestAlerts(
     eventIds: number[],
-  ): Promise<Map<number, { id: number; layer: string }[]>> {
-    const result = new Map<number, { id: number; layer: string }[]>();
+  ): Promise<Map<number, { id: number; mapLayer: string }[]>> {
+    const result = new Map<number, { id: number; mapLayer: string }[]>();
     if (eventIds.length === 0) {
       return result;
     }
@@ -253,7 +261,7 @@ export class EventsRepository {
         exposureRasterData: {
           select: {
             id: true,
-            layer: true,
+            mapLayer: true,
           },
         },
       },

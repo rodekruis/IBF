@@ -4,7 +4,7 @@ import { AlertRasterResponseDto } from '@api-service/src/rasters/dto/alert-raste
 import { StaticRasterResponseDto } from '@api-service/src/rasters/dto/static-raster-response.dto';
 import { StaticRasterUploadDto } from '@api-service/src/rasters/dto/static-raster-upload.dto';
 import { RastersRepository } from '@api-service/src/rasters/rasters.repository';
-import { Layer } from '@api-service/src/shared-enums';
+import { MapLayer } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class RastersService {
@@ -22,31 +22,31 @@ export class RastersService {
 
   public async getStaticRasterOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    mapLayer: MapLayer,
   ): Promise<StaticRasterResponseDto> {
     return this.rastersRepository.getStaticRasterOrThrow(
       countryCodeIso3,
-      layer,
+      mapLayer,
     );
   }
 
   public async getStaticRasterImageOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    mapLayer: MapLayer,
   ): Promise<Buffer> {
     return this.rastersRepository.getStaticRasterImageOrThrow(
       countryCodeIso3,
-      layer,
+      mapLayer,
     );
   }
 
   public async getStaticRasterDataImageOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    mapLayer: MapLayer,
   ): Promise<Buffer> {
     return this.rastersRepository.getStaticRasterDataImageOrThrow(
       countryCodeIso3,
-      layer,
+      mapLayer,
     );
   }
 
@@ -58,11 +58,11 @@ export class RastersService {
 
   public async deleteStaticRasterOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    mapLayer: MapLayer,
   ): Promise<void> {
     await this.rastersRepository.deleteStaticRasterOrThrow(
       countryCodeIso3,
-      layer,
+      mapLayer,
     );
   }
 }

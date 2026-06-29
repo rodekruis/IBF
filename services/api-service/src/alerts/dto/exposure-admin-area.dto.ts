@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsNumber, IsString, Min } from 'class-validator';
 
-import { Layer } from '@api-service/src/shared-enums';
+import { ExposureIndicator } from '@api-service/src/shared-enums';
 
 // The data pipelines also use this definition.
 // If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py
@@ -15,9 +15,12 @@ export class ExposureAdminAreaDto {
   @Min(0)
   public readonly adminLevel: number;
 
-  @ApiProperty({ enum: Layer, example: Layer.populationExposed })
-  @IsEnum(Layer)
-  public readonly layer: Layer;
+  @ApiProperty({
+    enum: ExposureIndicator,
+    example: ExposureIndicator.populationExposed,
+  })
+  @IsEnum(ExposureIndicator)
+  public readonly exposureIndicator: ExposureIndicator;
 
   @ApiProperty({ example: 1 })
   @IsNumber()

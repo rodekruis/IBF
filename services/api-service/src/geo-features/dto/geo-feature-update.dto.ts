@@ -5,7 +5,7 @@ import { GeoFeatureCreateDto } from '@api-service/src/geo-features/dto/geo-featu
 export class GeoFeatureUpdateDto extends PartialType(
   OmitType(GeoFeatureCreateDto, [
     'countryCodeIso3',
-    'layer',
+    'mapLayer',
     'referenceId',
   ] as const),
 ) {}

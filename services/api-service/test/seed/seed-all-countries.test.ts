@@ -2,7 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { SEED_COUNTRIES } from '@api-service/src/scripts/seed-data/seed-countries.const';
-import { HazardType, Layer } from '@api-service/src/shared-enums';
+import { HazardType, MapLayer } from '@api-service/src/shared-enums';
 import {
   getAccessToken,
   getServer,
@@ -112,7 +112,7 @@ describe('Seed – all countries', () => {
         const response = await getServer()
           .get('/geo-features')
           .query({
-            filter: `countryCodeIso3='${countryCodeIso3}' AND layer='${Layer.glofasStations}'`,
+            filter: `countryCodeIso3='${countryCodeIso3}' AND layer='${MapLayer.glofasStations}'`,
           })
           .set('Cookie', [accessToken]);
 
@@ -124,7 +124,7 @@ describe('Seed – all countries', () => {
         expect(feature.type).toBe('Feature');
         expect(feature.geometry).toBeDefined();
         expect(feature.properties.countryCodeIso3).toBe(countryCodeIso3);
-        expect(feature.properties.layer).toBe(Layer.glofasStations);
+        expect(feature.properties.mapLayer).toBe(MapLayer.glofasStations);
       },
     );
   });

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsObject, IsString } from 'class-validator';
 
-import { Layer } from '@api-service/src/shared-enums';
+import { MapLayer } from '@api-service/src/shared-enums';
 
 // The data pipelines also use this definition.
 // If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py
@@ -10,9 +10,9 @@ export class ExposureGeoFeatureDto {
   @IsString()
   public readonly geoFeatureId: string;
 
-  @ApiProperty({ enum: Layer, example: Layer.glofasStations })
-  @IsEnum(Layer)
-  public readonly layer: Layer;
+  @ApiProperty({ enum: MapLayer, example: MapLayer.glofasStations })
+  @IsEnum(MapLayer)
+  public readonly mapLayer: MapLayer;
 
   @ApiProperty({ example: { triggered: true, severity: 0.8 } })
   @IsObject()

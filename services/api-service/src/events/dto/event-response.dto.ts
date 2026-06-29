@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
-import { MapLayerDetailsDto } from '@api-service/src/events/dto/map-layer-details.dto';
+import { MapLayerDto } from '@api-service/src/events/dto/map-layer.dto';
 import {
   AlertClass,
   ForecastSource,
@@ -54,6 +54,6 @@ export class EventResponseDto {
   @ApiProperty({ type: [ExposedAdminAreaDto] })
   public readonly exposedAdminAreas: ExposedAdminAreaDto[];
 
-  @ApiProperty({ type: [MapLayerDetailsDto] })
-  public readonly availableLayers: MapLayerDetailsDto[];
+  @ApiProperty({ type: [MapLayerDto] })
+  public readonly availableLayers: MapLayerDto[];
 }

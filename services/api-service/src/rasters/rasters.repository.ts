@@ -5,7 +5,7 @@ import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import { AlertRasterResponseDto } from '@api-service/src/rasters/dto/alert-raster-response.dto';
 import { StaticRasterResponseDto } from '@api-service/src/rasters/dto/static-raster-response.dto';
 import { StaticRasterUploadDto } from '@api-service/src/rasters/dto/static-raster-upload.dto';
-import { Layer } from '@api-service/src/shared-enums';
+import { MapLayer } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class RastersRepository {
@@ -17,7 +17,7 @@ export class RastersRepository {
     const raster = await this.prisma.alertExposureRasterData.findUnique({
       where: { id },
       select: {
-        layer: true,
+        mapLayer: true,
         extent: true,
       },
     });
@@ -27,7 +27,7 @@ export class RastersRepository {
     }
 
     return {
-      layer: raster.layer as Layer,
+      mapLayer: raster.mapLayer as MapLayer,
       extent: raster.extent as unknown as RasterExtentDto,
     };
   }
@@ -49,62 +49,62 @@ export class RastersRepository {
 
   public async getStaticRasterOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    mapLayer: MapLayer,
   ): Promise<StaticRasterResponseDto> {
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {
-        countryCodeIso3_layer: { countryCodeIso3, layer },
+        countryCodeIso3_mapLayer: { countryCodeIso3, mapLayer },
       },
       select: {
         id: true,
-        layer: true,
+        mapLayer: true,
         extent: true,
       },
     });
 
     if (!raster) {
       throw new NotFoundException(
-        `Static raster for ${countryCodeIso3}/${layer} not found`,
+        `Static raster for ${countryCodeIso3}/${mapLayer} not found`,
       );
     }
 
     return {
       id: raster.id,
-      layer: raster.layer as Layer,
+      mapLayer: raster.mapLayer as MapLayer,
       extent: raster.extent as unknown as RasterExtentDto,
     };
   }
 
   public async getStaticRasterImageOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    mapLayer: MapLayer,
   ): Promise<Buffer> {
     return this.getStaticRasterImageBufferOrThrow(
       countryCodeIso3,
-      layer,
+      mapLayer,
       'valueColoured',
     );
   }
 
   public async getStaticRasterDataImageOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    mapLayer: MapLayer,
   ): Promise<Buffer> {
     return this.getStaticRasterImageBufferOrThrow(
       countryCodeIso3,
-      layer,
+      mapLayer,
       'valueBlackWhite',
     );
   }
 
   private async getStaticRasterImageBufferOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    mapLayer: MapLayer,
     field: 'valueColoured' | 'valueBlackWhite',
   ): Promise<Buffer> {
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {
-        countryCodeIso3_layer: { countryCodeIso3, layer },
+        countryCodeIso3_mapLayer: { countryCodeIso3, mapLayer },
       },
       select: {
         [field]: true,
@@ -113,7 +113,7 @@ export class RastersRepository {
 
     if (!raster) {
       throw new NotFoundException(
-        `Static raster for ${countryCodeIso3}/${layer} not found`,
+        `Static raster for ${countryCodeIso3}/${mapLayer} not found`,
       );
     }
 
@@ -125,9 +125,9 @@ export class RastersRepository {
   ): Promise<StaticRasterResponseDto> {
     const raster = await this.prisma.staticRasterData.upsert({
       where: {
-        countryCodeIso3_layer: {
+        countryCodeIso3_mapLayer: {
           countryCodeIso3: dto.countryCodeIso3,
-          layer: dto.layer,
+          mapLayer: dto.mapLayer,
         },
       },
       update: {
@@ -137,39 +137,39 @@ export class RastersRepository {
       },
       create: {
         countryCodeIso3: dto.countryCodeIso3,
-        layer: dto.layer,
+        mapLayer: dto.mapLayer,
         valueBlackWhite: dto.valueBlackWhite,
         valueColoured: dto.valueColoured,
         extent: dto.extent as unknown as Record<string, number>,
       },
       select: {
         id: true,
-        layer: true,
+        mapLayer: true,
         extent: true,
       },
     });
 
     return {
       id: raster.id,
-      layer: raster.layer as Layer,
+      mapLayer: raster.mapLayer as MapLayer,
       extent: raster.extent as unknown as RasterExtentDto,
     };
   }
 
   public async deleteStaticRasterOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    mapLayer: MapLayer,
   ): Promise<void> {
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {
-        countryCodeIso3_layer: { countryCodeIso3, layer },
+        countryCodeIso3_mapLayer: { countryCodeIso3, mapLayer },
       },
       select: { id: true },
     });
 
     if (!raster) {
       throw new NotFoundException(
-        `Static raster for ${countryCodeIso3}/${layer} not found`,
+        `Static raster for ${countryCodeIso3}/${mapLayer} not found`,
       );
     }
 

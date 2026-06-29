@@ -3,7 +3,7 @@ import { Event } from '@prisma/client';
 
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
-import { MapLayerDetailsDto } from '@api-service/src/events/dto/map-layer-details.dto';
+import { MapLayerDto } from '@api-service/src/events/dto/map-layer.dto';
 import {
   EventsRepository,
   ExposedAdminAreaRecord,
@@ -12,9 +12,8 @@ import {
   AlertClass,
   ForecastSource,
   HazardType,
-  Layer,
-  MapLayerDisplayType,
-  MapLayerInfoType,
+  MapLayer,
+  MapLayerFormat,
 } from '@api-service/src/shared-enums';
 
 @Injectable()
@@ -50,7 +49,7 @@ export class EventsService {
     event: Event,
     viewTime: Date,
     exposedAdminAreas: ExposedAdminAreaRecord[],
-    rasters: { id: number; layer: string }[],
+    rasters: { id: number; mapLayer: string }[],
   ): EventResponseDto {
     return {
       eventId: event.id,
@@ -83,7 +82,7 @@ export class EventsService {
       adminLevel: area.adminLevel,
       name: area.name,
       exposure: area.exposure.map((exp) => ({
-        type: exp.type,
+        exposureIndicator: exp.exposureIndicator,
         total: null,
         exposed: exp.exposed,
       })),
@@ -96,23 +95,18 @@ export class EventsService {
   }
 
   private mapAvailableLayers(
-    rasters: { id: number; layer: string }[],
-  ): MapLayerDetailsDto[] {
-    // TODO: extend with non-raster layers (e.g. RedCrossBranches, Clinics) once available
+    rasters: { id: number; mapLayer: string }[],
+  ): MapLayerDto[] {
     return [...this.mapRasterLayers(rasters)];
   }
 
   private mapRasterLayers(
-    rasters: { id: number; layer: string }[],
-  ): MapLayerDetailsDto[] {
-    const layerInfoMap: Record<string, MapLayerInfoType> = {
-      [Layer.floodDepth]: MapLayerInfoType.FloodDepth,
-    };
-
+    rasters: { id: number; mapLayer: string }[],
+  ): MapLayerDto[] {
     return rasters.map((raster) => ({
       resourceId: String(raster.id),
-      dataType: layerInfoMap[raster.layer] ?? MapLayerInfoType.FloodDepth,
-      displayType: MapLayerDisplayType.Raster,
+      mapLayer: (raster.mapLayer as MapLayer) ?? MapLayer.floodDepth,
+      format: MapLayerFormat.Raster,
     }));
   }
 }

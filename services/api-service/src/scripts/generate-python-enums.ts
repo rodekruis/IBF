@@ -3,9 +3,10 @@ import { resolve } from 'node:path';
 
 import {
   EnsembleMemberType,
+  ExposureIndicator,
   ForecastSource,
   HazardType,
-  Layer,
+  MapLayer,
   SeverityKey,
 } from '@api-service/src/shared-enums';
 
@@ -14,9 +15,10 @@ type EnumObject = Record<string, string | number>;
 // Add new API enums here and run manually to have them propagate into pipeline Python code.
 const enumsToGenerate: { name: string; values: EnumObject }[] = [
   { name: 'EnsembleMemberType', values: EnsembleMemberType },
+  { name: 'ExposureIndicator', values: ExposureIndicator },
   { name: 'ForecastSource', values: ForecastSource },
   { name: 'HazardType', values: HazardType },
-  { name: 'Layer', values: Layer },
+  { name: 'MapLayer', values: MapLayer },
   { name: 'SeverityKey', values: SeverityKey },
 ];
 

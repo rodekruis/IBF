@@ -5,7 +5,7 @@ import os
 from urllib.parse import urlencode
 
 import requests
-from pipelines.infra.data_types.enums import Layer
+from pipelines.infra.data_types.enums import MapLayer
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.data_types.location_point import LocationPoint
 
@@ -98,9 +98,11 @@ class ApiClient:
         )
         return []
 
-    def get_geo_features(self, country_code_iso_3: str, layer: str) -> list[dict]:
+    def get_geo_features(self, country_code_iso_3: str, map_layer: str) -> list[dict]:
         url = f"{self._base_url}{GEO_FEATURES_PATH}"
-        cql_filter = f"countryCodeIso3='{country_code_iso_3}' AND layer='{layer}'"
+        cql_filter = (
+            f"countryCodeIso3='{country_code_iso_3}' AND mapLayer='{map_layer}'"
+        )
         params = {"filter": cql_filter}
         logger.info(f"Download '{url}?{urlencode(params)}'")
         response = self._session.get(url, params=params, timeout=30)
@@ -109,16 +111,16 @@ class ApiClient:
             features = feature_collection.get("features", [])
             if not features:
                 logger.warning(
-                    f"Downloaded 0 geo-features for {country_code_iso_3}/{layer}"
+                    f"Downloaded 0 geo-features for {country_code_iso_3}/{map_layer}"
                 )
             return features
         logger.error(
-            f"Failed to download geo-features for {country_code_iso_3}/{layer}: {response.status_code} {response.text}"
+            f"Failed to download geo-features for {country_code_iso_3}/{map_layer}: {response.status_code} {response.text}"
         )
         return []
 
     def get_glofas_stations(self, country_code_iso_3: str) -> dict[str, LocationPoint]:
-        data = self.get_geo_features(country_code_iso_3, Layer.GLOFAS_STATIONS)
+        data = self.get_geo_features(country_code_iso_3, MapLayer.GLOFAS_STATIONS)
         stations: dict[str, LocationPoint] = {}
         for feature in data:
             properties = feature.get("properties", {})
@@ -135,27 +137,27 @@ class ApiClient:
         return stations
 
     def get_static_raster_metadata(
-        self, country_code_iso_3: str, layer: str
+        self, country_code_iso_3: str, map_layer: str
     ) -> dict | None:
-        url = f"{self._base_url}{STATIC_RASTERS_PATH}/{country_code_iso_3}/{layer}"
+        url = f"{self._base_url}{STATIC_RASTERS_PATH}/{country_code_iso_3}/{map_layer}"
         logger.info(f"Download '{url}'")
         response = self._session.get(url, timeout=30)
         if response.status_code == 200:
             return response.json()
         logger.error(
-            f"Failed to download static raster metadata for {country_code_iso_3}/{layer}: {response.status_code} {response.text}"
+            f"Failed to download static raster metadata for {country_code_iso_3}/{map_layer}: {response.status_code} {response.text}"
         )
         return None
 
     def get_static_raster_data_image(
-        self, country_code_iso_3: str, layer: str
+        self, country_code_iso_3: str, map_layer: str
     ) -> bytes | None:
-        url = f"{self._base_url}{STATIC_RASTERS_PATH}/{country_code_iso_3}/{layer}/data"
+        url = f"{self._base_url}{STATIC_RASTERS_PATH}/{country_code_iso_3}/{map_layer}/data"
         logger.info(f"Download '{url}'")
         response = self._session.get(url, timeout=60)
         if response.status_code == 200:
             return response.content
         logger.error(
-            f"Failed to download static raster data image for {country_code_iso_3}/{layer}: {response.status_code} {response.text}"
+            f"Failed to download static raster data image for {country_code_iso_3}/{map_layer}: {response.status_code} {response.text}"
         )
         return None

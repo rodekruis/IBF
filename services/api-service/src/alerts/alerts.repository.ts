@@ -22,7 +22,7 @@ const alertInclude: Prisma.AlertInclude = {
       id: true,
       created: true,
       updated: true,
-      layer: true,
+      mapLayer: true,
       extent: true,
     },
   },
@@ -115,7 +115,7 @@ export class AlertsRepository {
               create: alertCreateDto.exposure.adminAreas.map((entry) => ({
                 placeCode: entry.placeCode,
                 adminLevel: entry.adminLevel,
-                layer: entry.layer,
+                exposureIndicator: entry.exposureIndicator,
                 value: entry.value,
               })),
             },
@@ -123,7 +123,7 @@ export class AlertsRepository {
               create: (alertCreateDto.exposure.geoFeatures ?? []).map(
                 (entry) => ({
                   geoFeatureId: entry.geoFeatureId,
-                  layer: entry.layer,
+                  mapLayer: entry.mapLayer,
                   attributes: entry.attributes as Record<
                     string,
                     string | number | boolean
@@ -133,7 +133,7 @@ export class AlertsRepository {
             },
             exposureRasterData: {
               create: (alertCreateDto.exposure.rasters ?? []).map((entry) => ({
-                layer: entry.layer,
+                mapLayer: entry.mapLayer,
                 valueBlackWhite: entry.valueBlackWhite,
                 valueColoured: colorizeGrayscalePng(entry.valueBlackWhite),
                 extent: { ...entry.extent },

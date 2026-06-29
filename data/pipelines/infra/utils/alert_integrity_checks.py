@@ -8,8 +8,8 @@ from pipelines.infra.data_types.dtos import (
     Alert,
     Centroid,
     EnsembleMemberType,
+    ExposureIndicator,
     HazardType,
-    Layer,
 )
 
 # This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
@@ -83,34 +83,34 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
         errors.append(f"Alert '{event_name}' admin-area: expected at least 1 record")
         return errors
 
-    levels: dict[int, dict[Layer, int]] = {}
+    levels: dict[int, dict[ExposureIndicator, int]] = {}
     for entry in alert.exposure.admin_areas:
         level_layers = levels.setdefault(entry.admin_level, {})
-        level_layers[entry.layer] = level_layers.get(entry.layer, 0) + 1
+        level_layers[entry.exposure_indicator] = (
+            level_layers.get(entry.exposure_indicator, 0) + 1
+        )
 
         if isinstance(entry.value, (int, float)) and entry.value < 0:
             errors.append(
                 f"Alert '{event_name}' admin-area '{entry.place_code}': "
-                f"layer '{entry.layer}' must be non-negative, got {entry.value}"
+                f"indicator '{entry.exposure_indicator}' must be non-negative, got {entry.value}"
             )
 
-    admin_area_required = (Layer.POPULATION_EXPOSED,)
+    admin_area_required = (ExposureIndicator.POPULATION_EXPOSED,)
     for level, layer_counts in sorted(levels.items()):
         for required in admin_area_required:
             if required not in layer_counts:
                 errors.append(
                     f"Alert '{event_name}' admin-area level {level}: "
-                    f"missing required layer '{required}'"
+                    f"missing required indicator '{required}'"
                 )
 
         counts = list(layer_counts.values())
         if len(set(counts)) > 1:
-            detail = ", ".join(
-                f"{layer}={count}" for layer, count in layer_counts.items()
-            )
+            detail = ", ".join(f"{key}={count}" for key, count in layer_counts.items())
             errors.append(
                 f"Alert '{event_name}' admin-area level {level}: "
-                f"record count differs across layers ({detail})"
+                f"record count differs across indicators ({detail})"
             )
 
     return errors
@@ -122,13 +122,13 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
         ext = raster.extent
         if ext.xmin >= ext.xmax or ext.ymin >= ext.ymax:
             errors.append(
-                f"Alert '{event_name}' raster '{raster.layer}': "
+                f"Alert '{event_name}' raster '{raster.map_layer}': "
                 f"invalid extent (xmin={ext.xmin}, ymin={ext.ymin}, "
                 f"xmax={ext.xmax}, ymax={ext.ymax})"
             )
         if not raster.value_black_white:
             errors.append(
-                f"Alert '{event_name}' raster '{raster.layer}': "
+                f"Alert '{event_name}' raster '{raster.map_layer}': "
                 f"value_black_white is empty"
             )
         else:
@@ -136,7 +136,7 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
                 decoded = base64.b64decode(raster.value_black_white, validate=True)
             except Exception:
                 errors.append(
-                    f"Alert '{event_name}' raster '{raster.layer}': "
+                    f"Alert '{event_name}' raster '{raster.map_layer}': "
                     f"value_black_white is not valid base64"
                 )
             else:
@@ -144,7 +144,7 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
                 png_signature = b"\x89PNG\r\n\x1a\n"
                 if not decoded.startswith(png_signature):
                     errors.append(
-                        f"Alert '{event_name}' raster '{raster.layer}': "
+                        f"Alert '{event_name}' raster '{raster.map_layer}': "
                         f"value_black_white is not a valid PNG"
                     )
     return errors

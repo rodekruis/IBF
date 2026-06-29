@@ -7,8 +7,8 @@ import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.d
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
 import {
   EnsembleMemberType,
+  ExposureIndicator,
   HazardType,
-  Layer,
 } from '@api-service/src/shared-enums';
 
 // This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
@@ -177,28 +177,31 @@ export class AlertsService {
       return errors;
     }
 
-    const levels = new Map<number, Map<Layer, number>>();
+    const levels = new Map<number, Map<ExposureIndicator, number>>();
     for (const entry of adminAreas) {
       const levelLayers =
-        levels.get(entry.adminLevel) ?? new Map<Layer, number>();
-      levelLayers.set(entry.layer, (levelLayers.get(entry.layer) ?? 0) + 1);
+        levels.get(entry.adminLevel) ?? new Map<ExposureIndicator, number>();
+      levelLayers.set(
+        entry.exposureIndicator,
+        (levelLayers.get(entry.exposureIndicator) ?? 0) + 1,
+      );
       levels.set(entry.adminLevel, levelLayers);
 
       if (entry.value < 0) {
         errors.push(
-          `Alert '${alert.eventName}' admin-area '${entry.placeCode}': layer '${entry.layer}' must be non-negative, got ${entry.value}`,
+          `Alert '${alert.eventName}' admin-area '${entry.placeCode}': indicator '${entry.exposureIndicator}' must be non-negative, got ${entry.value}`,
         );
       }
     }
 
-    const requiredLayers = [Layer.populationExposed];
+    const requiredIndicators = [ExposureIndicator.populationExposed];
     for (const [level, layerCounts] of [...levels.entries()].sort(
       (a, b) => a[0] - b[0],
     )) {
-      for (const required of requiredLayers) {
+      for (const required of requiredIndicators) {
         if (!layerCounts.has(required)) {
           errors.push(
-            `Alert '${alert.eventName}' admin-area level ${level}: missing required layer '${required}'`,
+            `Alert '${alert.eventName}' admin-area level ${level}: missing required indicator '${required}'`,
           );
         }
       }
@@ -206,10 +209,10 @@ export class AlertsService {
       const counts = [...layerCounts.values()];
       if (new Set(counts).size > 1) {
         const detail = [...layerCounts.entries()]
-          .map(([layer, count]) => `${layer}=${count}`)
+          .map(([exposureIndicator, count]) => `${exposureIndicator}=${count}`)
           .join(', ');
         errors.push(
-          `Alert '${alert.eventName}' admin-area level ${level}: record count differs across layers (${detail})`,
+          `Alert '${alert.eventName}' admin-area level ${level}: record count differs across indicators (${detail})`,
         );
       }
     }
@@ -226,13 +229,13 @@ export class AlertsService {
       const ext = raster.extent;
       if (ext.xmin >= ext.xmax || ext.ymin >= ext.ymax) {
         errors.push(
-          `Alert '${alert.eventName}' raster '${raster.layer}': invalid extent (xmin=${ext.xmin}, ymin=${ext.ymin}, xmax=${ext.xmax}, ymax=${ext.ymax})`,
+          `Alert '${alert.eventName}' raster '${raster.mapLayer}': invalid extent (xmin=${ext.xmin}, ymin=${ext.ymin}, xmax=${ext.xmax}, ymax=${ext.ymax})`,
         );
       }
 
       if (!raster.valueBlackWhite) {
         errors.push(
-          `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is empty`,
+          `Alert '${alert.eventName}' raster '${raster.mapLayer}': valueBlackWhite is empty`,
         );
       } else {
         // Check base64 structure: valid characters and correct padding length
@@ -242,7 +245,7 @@ export class AlertsService {
           !base64Regex.test(raster.valueBlackWhite)
         ) {
           errors.push(
-            `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is not valid base64`,
+            `Alert '${alert.eventName}' raster '${raster.mapLayer}': valueBlackWhite is not valid base64`,
           );
         } else {
           // Verify decoded bytes start with the 8-byte PNG magic number
@@ -253,7 +256,7 @@ export class AlertsService {
             pngSignature.every((b, i) => bytes[i] === b);
           if (!hasPngSignature) {
             errors.push(
-              `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is not a valid PNG`,
+              `Alert '${alert.eventName}' raster '${raster.mapLayer}': valueBlackWhite is not a valid PNG`,
             );
           }
         }
