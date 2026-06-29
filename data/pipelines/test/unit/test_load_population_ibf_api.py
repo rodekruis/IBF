@@ -7,6 +7,7 @@ import pytest
 from PIL import Image
 from shared.country_data import CountryCodeIso3
 
+from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.infra.data_types.data_config_types import DataSource, DataSourceConfig
 from pipelines.infra.data_types.enums import HazardType, Layer
 from pipelines.infra.data_types.loaded_data_types import (
@@ -74,9 +75,9 @@ class TestLoadIbfApiPopulationData:
 
         assert container.data_type == DataType.RASTER_DATA
         assert isinstance(container.data, RasterData)
-        assert container.data.crs == "EPSG:4326"
+        assert container.data.crs == DEFAULT_CRS
         assert container.data.array.shape == (2, 2)
-        assert container.data.nodata == 0
+        assert container.data.nodata == POPULATION_NODATA_VALUE
         np.testing.assert_allclose(container.data.array, population_values, atol=0.01)
 
     def test_raises_when_metadata_request_fails(self):

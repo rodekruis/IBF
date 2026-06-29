@@ -79,34 +79,35 @@ export class RastersRepository {
     countryCodeIso3: string,
     layer: Layer,
   ): Promise<Buffer> {
-    const raster = await this.prisma.staticRasterData.findUnique({
-      where: {
-        countryCodeIso3_layer: { countryCodeIso3, layer },
-      },
-      select: {
-        valueColoured: true,
-      },
-    });
-
-    if (!raster) {
-      throw new NotFoundException(
-        `Static raster for ${countryCodeIso3}/${layer} not found`,
-      );
-    }
-
-    return Buffer.from(raster.valueColoured, 'base64');
+    return this.getStaticRasterImageBufferOrThrow(
+      countryCodeIso3,
+      layer,
+      'valueColoured',
+    );
   }
 
   public async getStaticRasterDataImageOrThrow(
     countryCodeIso3: string,
     layer: Layer,
   ): Promise<Buffer> {
+    return this.getStaticRasterImageBufferOrThrow(
+      countryCodeIso3,
+      layer,
+      'valueBlackWhite',
+    );
+  }
+
+  private async getStaticRasterImageBufferOrThrow(
+    countryCodeIso3: string,
+    layer: Layer,
+    field: 'valueColoured' | 'valueBlackWhite',
+  ): Promise<Buffer> {
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {
         countryCodeIso3_layer: { countryCodeIso3, layer },
       },
       select: {
-        valueBlackWhite: true,
+        [field]: true,
       },
     });
 
@@ -116,7 +117,7 @@ export class RastersRepository {
       );
     }
 
-    return Buffer.from(raster.valueBlackWhite, 'base64');
+    return Buffer.from(raster[field] as string, 'base64');
   }
 
   public async upsertStaticRaster(

@@ -8,6 +8,7 @@ import logging
 import os
 
 import numpy as np
+from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
@@ -188,8 +189,8 @@ def _load_ibf_api_population_data(
     container.data = RasterData(
         array=population_array.astype(np.float32),
         transform=transform,
-        crs="EPSG:4326",
-        nodata=0.0,
+        crs=DEFAULT_CRS,
+        nodata=POPULATION_NODATA_VALUE,
     )
 
 
@@ -211,8 +212,8 @@ def _load_seed_repo_flood_extents(
 
     container.data = FloodExtentProvider(
         available_return_periods=manifest["return_periods"],
-        _base_url=base_url,
-        _country=country,
+        base_url=base_url,
+        country=country,
     )
 
 

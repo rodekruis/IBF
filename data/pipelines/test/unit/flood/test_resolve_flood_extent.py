@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
+from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.flood.compute_flood_extent import (
     _resolve_flood_extent,
     compute_flood_extent,
@@ -16,16 +17,16 @@ from rasterio.transform import from_origin
 _MOCK_RASTER = RasterData(
     array=np.ones((2, 2), dtype=np.float32),
     transform=from_origin(0, 2, 1, 1),
-    crs="EPSG:4326",
-    nodata=0.0,
+    crs=DEFAULT_CRS,
+    nodata=POPULATION_NODATA_VALUE,
 )
 
 
 def _make_provider(return_periods: list[int]) -> FloodExtentProvider:
     provider = FloodExtentProvider(
         available_return_periods=return_periods,
-        _base_url="http://mock/",
-        _country="UGA",
+        base_url="http://mock/",
+        country="UGA",
     )
     return provider
 

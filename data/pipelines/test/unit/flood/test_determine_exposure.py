@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.flood.determine_exposure import (
     clip_flood_extent_to_admin_areas,
     compute_population_exposed,
@@ -71,14 +72,14 @@ def test_compute_population_exposed_sums_only_flooded_pixels():
     population_data = RasterData(
         array=np.array([[10.0, 20.0], [30.0, 40.0]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
-        crs="EPSG:4326",
+        crs=DEFAULT_CRS,
         nodata=-9999.0,
     )
     flood_extent_data = RasterData(
         array=np.array([[0, 5], [2, 0]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
-        crs="EPSG:4326",
-        nodata=0.0,
+        crs=DEFAULT_CRS,
+        nodata=POPULATION_NODATA_VALUE,
     )
 
     population_exposed_raster = compute_population_exposed(
@@ -100,14 +101,14 @@ def test_compute_population_exposed_returns_zero_for_empty_extent():
     population_data = RasterData(
         array=np.array([[10.0, 20.0], [30.0, 40.0]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
-        crs="EPSG:4326",
+        crs=DEFAULT_CRS,
         nodata=-9999.0,
     )
     flood_extent_data = RasterData(
         array=np.zeros((2, 2), dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
-        crs="EPSG:4326",
-        nodata=0.0,
+        crs=DEFAULT_CRS,
+        nodata=POPULATION_NODATA_VALUE,
     )
 
     population_exposed_raster = compute_population_exposed(
@@ -129,8 +130,8 @@ def test_clip_flood_extent_to_admin_areas_clips_to_geometry():
     flood_extent_data = RasterData(
         array=np.array([[1, 2], [3, 4]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
-        crs="EPSG:4326",
-        nodata=0.0,
+        crs=DEFAULT_CRS,
+        nodata=POPULATION_NODATA_VALUE,
     )
 
     clipped = clip_flood_extent_to_admin_areas(
@@ -152,8 +153,8 @@ def test_determine_spatial_extent_filters_to_valid_place_codes():
     flood_extent_data = RasterData(
         array=np.array([[1, 2], [3, 4]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
-        crs="EPSG:4326",
-        nodata=0.0,
+        crs=DEFAULT_CRS,
+        nodata=POPULATION_NODATA_VALUE,
     )
 
     admin_areas = _build_admin_areas()
@@ -173,8 +174,8 @@ def test_determine_spatial_extent_returns_early_when_all_place_codes_invalid():
     flood_extent_data = RasterData(
         array=np.array([[1, 2], [3, 4]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
-        crs="EPSG:4326",
-        nodata=0.0,
+        crs=DEFAULT_CRS,
+        nodata=POPULATION_NODATA_VALUE,
     )
 
     admin_areas = _build_admin_areas()
@@ -194,8 +195,8 @@ def test_determine_spatial_extent_returns_early_when_place_codes_empty():
     flood_extent_data = RasterData(
         array=np.array([[1, 2], [3, 4]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
-        crs="EPSG:4326",
-        nodata=0.0,
+        crs=DEFAULT_CRS,
+        nodata=POPULATION_NODATA_VALUE,
     )
 
     admin_areas = _build_admin_areas()
