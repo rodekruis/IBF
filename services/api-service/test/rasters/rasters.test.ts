@@ -8,6 +8,7 @@ import {
   buildForecast,
   createAlerts,
 } from '@api-service/test/helpers/alert.helper';
+import { createStaticRaster } from '@api-service/test/helpers/raster.helper';
 import {
   getAccessToken,
   getServer,
@@ -175,15 +176,22 @@ describe('/rasters/static', () => {
   });
 
   describe('DELETE /rasters/static/:countryCodeIso3/:layer – success', () => {
+    // Uses a different layer than the seeded population raster, because tests
+    // run in random order (randomize: true) and deleting the shared raster
+    // would cause other GET tests to fail.
+    const deleteLayer = Layer.populationExposed;
+
     it('should delete the static raster and return 204', async () => {
+      await createStaticRaster(accessToken, country, deleteLayer);
+
       const response = await getServer()
-        .delete(`/rasters/static/${country}/${layer}`)
+        .delete(`/rasters/static/${country}/${deleteLayer}`)
         .set('Cookie', [accessToken]);
 
       expect(response.status).toBe(HttpStatus.NO_CONTENT);
 
       const getResponse = await getServer().get(
-        `/rasters/static/${country}/${layer}`,
+        `/rasters/static/${country}/${deleteLayer}`,
       );
 
       expect(getResponse.status).toBe(HttpStatus.NOT_FOUND);
