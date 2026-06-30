@@ -44,6 +44,15 @@ enum SeverityKey {
   @@schema("api-service")
 }
 
+enum AlertClassificationLevel {
+  singleThreshold
+  low
+  medium
+  high
+
+  @@schema("api-service")
+}
+
 model User {
   @@schema("api-service")
   @@map("user")

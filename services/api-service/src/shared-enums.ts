@@ -4,6 +4,7 @@
 
 export {
   AlertClass,
+  AlertClassificationLevel,
   EnsembleMemberType,
   ForecastSource,
   HazardType,
@@ -27,12 +28,4 @@ export enum LayerType {
   shape = 'shape',
   point = 'point',
   vectorTile = 'vector_tile',
-}
-
-// Allowed classification levels for: severityClass and probabilityClass
-export enum AlertClassificationLevel {
-  singleThreshold = 'single_threshold',
-  low = 'low',
-  medium = 'medium',
-  high = 'high',
 }
