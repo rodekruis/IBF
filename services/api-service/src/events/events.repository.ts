@@ -144,7 +144,7 @@ export class EventsRepository {
       hazardType: alert.hazardType,
       severityData: alert.severity.map((severity) => ({
         timeInterval: severity.timeInterval as { start: string; end: string },
-        ensembleMemberType: severity.ensembleMemberType as EnsembleMemberType,
+        ensembleMemberType: severity.ensembleMemberType,
         severityKey: severity.severityKey as SeverityKey,
         severityValue: severity.severityValue,
       })),

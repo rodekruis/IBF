@@ -2,17 +2,12 @@
 // When adding enums here, follow the full updating flow.
 // See `Updating Shared Enums` in the README for details.
 
-export { AlertClass, HazardType } from '@prisma/client';
-
-export enum EnsembleMemberType {
-  median = 'median',
-  run = 'run',
-}
-
-export enum ForecastSource {
-  glofas = 'glofas',
-  ecmwf = 'ECMWF',
-}
+export {
+  AlertClass,
+  EnsembleMemberType,
+  ForecastSource,
+  HazardType,
+} from '@prisma/client';
 
 export enum LayerName {
   // --- generic (cross-hazard) ---
