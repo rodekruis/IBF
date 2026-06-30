@@ -100,10 +100,10 @@ model AlertExposureAdminArea {
   updated    DateTime @updatedAt
   alertId    Int
   alert      Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  placeCode           String
-  adminLevel          Int
-  layer               String
-  value               Float
+  placeCode  String
+  adminLevel Int
+  layer      String
+  value      Float
 
   @@index([alertId])
   @@index([alertId, adminLevel])

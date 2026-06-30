@@ -3,6 +3,8 @@ import { IsEnum, IsInt, IsNumber, IsString, Min } from 'class-validator';
 
 import { LayerName } from '@api-service/src/shared-enums';
 
+// The data pipelines also use this definition.
+// If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py
 export class ExposureAdminAreaDto {
   @ApiProperty({ example: 'KEN_01_001' })
   @IsString()

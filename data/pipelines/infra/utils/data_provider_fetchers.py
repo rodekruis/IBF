@@ -163,16 +163,16 @@ def _load_ibf_api_population_data(
 ):
     container.data_type = DataType.RASTER_DATA
 
-    map_layer = LayerName.POPULATION
+    layer_name = LayerName.POPULATION
     raster_info = api_client.get_static_raster_metadata(
-        config.country_code_iso_3, map_layer
+        config.country_code_iso_3, layer_name
     )
     if raster_info is None:
         container.error = f"Failed to download population raster metadata from API for {config.country_code_iso_3}"
         raise ValueError(container.error)
 
     png_bytes = api_client.get_static_raster_data_image(
-        config.country_code_iso_3, map_layer
+        config.country_code_iso_3, layer_name
     )
     if png_bytes is None:
         container.error = f"Failed to download population raster data from API for {config.country_code_iso_3}"

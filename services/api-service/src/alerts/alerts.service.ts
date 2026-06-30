@@ -186,19 +186,19 @@ export class AlertsService {
 
       if (entry.value < 0) {
         errors.push(
-          `Alert '${alert.eventName}' admin-area '${entry.placeCode}': indicator '${entry.layer}' must be non-negative, got ${entry.value}`,
+          `Alert '${alert.eventName}' admin-area '${entry.placeCode}': layer '${entry.layer}' must be non-negative, got ${entry.value}`,
         );
       }
     }
 
-    const requiredIndicators = [LayerName.populationExposed];
+    const requiredLayers = [LayerName.populationExposed];
     for (const [level, layerCounts] of [...levels.entries()].sort(
       (a, b) => a[0] - b[0],
     )) {
-      for (const required of requiredIndicators) {
+      for (const required of requiredLayers) {
         if (!layerCounts.has(required)) {
           errors.push(
-            `Alert '${alert.eventName}' admin-area level ${level}: missing required indicator '${required}'`,
+            `Alert '${alert.eventName}' admin-area level ${level}: missing required layer '${required}'`,
           );
         }
       }
@@ -209,7 +209,7 @@ export class AlertsService {
           .map(([layer, count]) => `${layer}=${count}`)
           .join(', ');
         errors.push(
-          `Alert '${alert.eventName}' admin-area level ${level}: record count differs across indicators (${detail})`,
+          `Alert '${alert.eventName}' admin-area level ${level}: record count differs across layers (${detail})`,
         );
       }
     }
@@ -222,6 +222,7 @@ export class AlertsService {
     const rasters = alert.exposure.rasters ?? [];
 
     for (const raster of rasters) {
+      // Validate geographic extent is non-degenerate
       const ext = raster.extent;
       if (ext.xmin >= ext.xmax || ext.ymin >= ext.ymax) {
         errors.push(
@@ -234,6 +235,7 @@ export class AlertsService {
           `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is empty`,
         );
       } else {
+        // Check base64 structure: valid characters and correct padding length
         const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
         if (
           raster.valueBlackWhite.length % 4 !== 0 ||
@@ -243,6 +245,7 @@ export class AlertsService {
             `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is not valid base64`,
           );
         } else {
+          // Verify decoded bytes start with the 8-byte PNG magic number
           const bytes = Buffer.from(raster.valueBlackWhite, 'base64');
           const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
           const hasPngSignature =

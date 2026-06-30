@@ -205,9 +205,9 @@ def test_multiple_layers_aggregated_independently():
     alert = _make_alert(
         [
             ExposureAdminArea("child-A", 3, LayerName.POPULATION_EXPOSED, 100),
-            ExposureAdminArea("child-A", 3, LayerName.FLOOD_DEPTH, 10),  # type: ignore[arg-type]
+            ExposureAdminArea("child-A", 3, LayerName.FLOOD_DEPTH, 10),
             ExposureAdminArea("child-B", 3, LayerName.POPULATION_EXPOSED, 200),
-            ExposureAdminArea("child-B", 3, LayerName.FLOOD_DEPTH, 20),  # type: ignore[arg-type]
+            ExposureAdminArea("child-B", 3, LayerName.FLOOD_DEPTH, 20),
         ]
     )
 

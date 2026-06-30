@@ -1,6 +1,7 @@
 import { LayerName } from '@api-service/src/shared-enums';
 import { getServer } from '@api-service/test/helpers/utility.helper';
 
+// 1x1 valid PNG, base64-encoded
 const MINIMAL_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
 

@@ -97,6 +97,7 @@ export class EventsService {
   private mapAvailableLayers(
     rasters: { id: number; layer: string }[],
   ): LayerDto[] {
+    // TODO: extend with non-raster layers (e.g. RedCrossBranches, Clinics) once available
     return [...this.mapRasterLayers(rasters)];
   }
 
