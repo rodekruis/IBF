@@ -436,7 +436,7 @@ export class SeedInit {
           return Prisma.sql`(
             ${gf.countryCodeIso3},
             ${gf.featureType},
-            ${gf.layer},
+            ${gf.layer}::"api-service"."LayerName",
             ${gf.referenceId},
             public.ST_SetSRID(public.ST_GeomFromGeoJSON(${geojson}), 4326),
             ${attrs}::jsonb,

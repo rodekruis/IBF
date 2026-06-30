@@ -34,7 +34,7 @@ export class GeoFeaturesController {
     summary:
       'Get geo-features; all pg_featureserv query parameters are supported (not shown in Swagger UI, so calling via Swagger is limited)',
     description:
-      "Example current use: GET /geo-features?filter=countryCodeIso3='ETH' AND layer='glofas_stations'",
+      "Example current use: GET /geo-features?filter=countryCodeIso3='ETH' AND layer='glofasStations'",
   })
   @ApiResponse({
     status: HttpStatus.OK,

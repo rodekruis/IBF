@@ -5,7 +5,7 @@
 
 */
 -- CreateEnum
-CREATE TYPE "SeverityKey" AS ENUM ('return_period', 'percentile');
+CREATE TYPE "SeverityKey" AS ENUM ('returnPeriod', 'percentile');
 
 -- AlterTable
 ALTER TABLE "alert-severity" DROP COLUMN "severityKey",

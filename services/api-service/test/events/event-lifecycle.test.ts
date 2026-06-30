@@ -88,7 +88,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         {
           placeCode: 'ETH_01',
           adminLevel: 3,
-          exposure: [{ layerName: 'population_exposed', exposed: 1000 }],
+          exposure: [{ layerName: 'populationExposed', exposed: 1000 }],
         },
       ],
     });
@@ -112,7 +112,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         {
           placeCode: 'ETH_01',
           adminLevel: 3,
-          exposure: [{ layerName: 'population_exposed', exposed: 1000 }],
+          exposure: [{ layerName: 'populationExposed', exposed: 1000 }],
         },
       ],
     });

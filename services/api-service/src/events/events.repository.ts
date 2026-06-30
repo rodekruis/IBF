@@ -199,7 +199,7 @@ export class EventsRepository {
           name: nameByPlaceCode.get(row.placeCode) ?? row.placeCode,
           exposure: [
             {
-              layerName: row.layer as LayerName,
+              layerName: row.layer,
               exposed: row.value,
             },
           ],

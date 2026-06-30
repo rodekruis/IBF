@@ -38,7 +38,7 @@ enum ForecastSource {
 }
 
 enum SeverityKey {
-  returnPeriod @map("return_period")
+  returnPeriod
   percentile
 
   @@schema("api-service")
@@ -49,6 +49,17 @@ enum AlertClassificationLevel {
   low
   medium
   high
+
+  @@schema("api-service")
+}
+
+enum LayerName {
+  population
+  populationExposed
+  redCrossBranches
+  clinics
+  floodDepth
+  glofasStations
 
   @@schema("api-service")
 }
@@ -157,7 +168,7 @@ model AlertExposureAdminArea {
   alert      Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   placeCode  String
   adminLevel Int
-  layer      String
+  layer      LayerName
   value      Float
 
   @@index([alertId])
@@ -174,7 +185,7 @@ model AlertExposureGeoFeature {
   alertId      Int
   alert        Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   geoFeatureId String
-  layer        String
+  layer        LayerName
   attributes   Json
 
   @@index([alertId])
@@ -189,7 +200,7 @@ model AlertExposureRasterData {
   updated         DateTime @updatedAt
   alertId         Int
   alert           Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  layer           String
+  layer           LayerName
   valueBlackWhite String
   valueColoured   String
   extent          Json
@@ -206,7 +217,7 @@ model StaticRasterData {
   updated         DateTime @updatedAt
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
-  layer           String
+  layer           LayerName
   valueBlackWhite String
   valueColoured   String
   extent          Json
@@ -265,7 +276,7 @@ model GeoFeature {
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
   featureType     String // Point, LineString, Polygon, MultiPolygon
-  layer           String // e.g. "glofas_stations"
+  layer           LayerName // e.g. "glofasStations"
   referenceId     String // external identifier, e.g. station code
   geometry        Unsupported("geometry(Geometry, 4326)")?
   attributes      Json   @default("{}")

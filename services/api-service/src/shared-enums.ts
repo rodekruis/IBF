@@ -8,18 +8,7 @@ export {
   EnsembleMemberType,
   ForecastSource,
   HazardType,
+  LayerName,
   LayerType,
   SeverityKey,
 } from '@prisma/client';
-
-export enum LayerName {
-  // --- generic (cross-hazard) ---
-  population = 'population',
-  populationExposed = 'population_exposed',
-  redCrossBranches = 'red_cross_branches',
-  clinics = 'clinics',
-
-  // --- floods-specific ---
-  floodDepth = 'flood_depth',
-  glofasStations = 'glofas_stations',
-}
