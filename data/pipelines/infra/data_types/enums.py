@@ -36,5 +36,5 @@ class LayerName(StrEnum):
 
 
 class SeverityKey(StrEnum):
-    RETURN_PERIOD = "return_period"
+    RETURN_PERIOD = "returnPeriod"
     PERCENTILE = "percentile"
