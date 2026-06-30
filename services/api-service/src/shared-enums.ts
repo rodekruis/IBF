@@ -8,6 +8,7 @@ export {
   EnsembleMemberType,
   ForecastSource,
   HazardType,
+  LayerType,
   SeverityKey,
 } from '@prisma/client';
 
@@ -21,11 +22,4 @@ export enum LayerName {
   // --- floods-specific ---
   floodDepth = 'flood_depth',
   glofasStations = 'glofas_stations',
-}
-
-export enum LayerType {
-  raster = 'raster',
-  shape = 'shape',
-  point = 'point',
-  vectorTile = 'vector_tile',
 }
