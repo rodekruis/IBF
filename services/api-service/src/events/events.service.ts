@@ -8,11 +8,7 @@ import {
   EventsRepository,
   ExposedAdminAreaRecord,
 } from '@api-service/src/events/events.repository';
-import {
-  ForecastSource,
-  LayerName,
-  LayerType,
-} from '@api-service/src/shared-enums';
+import { LayerName, LayerType } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class EventsService {
@@ -54,7 +50,7 @@ export class EventsService {
       eventName: event.eventName,
       eventLabel: this.deriveEventLabel(event.eventName),
       hazardType: event.hazardType,
-      forecastSources: event.forecastSources as ForecastSource[],
+      forecastSources: event.forecastSources,
       alertClass: event.alertClass,
       trigger: event.trigger,
       centroid: event.centroid as { latitude: number; longitude: number },

@@ -127,7 +127,7 @@ export function buildSeverityData({
     },
     ...runValues.map((value) => ({
       timeInterval: { start, end },
-      ensembleMemberType: EnsembleMemberType.run as const,
+      ensembleMemberType: EnsembleMemberType.run,
       severityKey: SeverityKey.returnPeriod,
       severityValue: value,
     })),

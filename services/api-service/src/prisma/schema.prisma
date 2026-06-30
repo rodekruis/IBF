@@ -23,6 +23,20 @@ enum AlertClass {
   @@schema("api-service")
 }
 
+enum EnsembleMemberType {
+  median
+  run
+
+  @@schema("api-service")
+}
+
+enum ForecastSource {
+  glofas
+  ECMWF
+
+  @@schema("api-service")
+}
+
 model User {
   @@schema("api-service")
   @@map("user")
@@ -53,7 +67,7 @@ model Alert {
   issuedAt        DateTime
   centroid        Json
   hazardType      HazardType
-  forecastSources String[]
+  forecastSources ForecastSource[]
   eventId         Int?
   event           Event?   @relation(fields: [eventId], references: [id])
 
@@ -74,7 +88,7 @@ model Event {
   updated                   DateTime  @updatedAt
   eventName                 String
   hazardType                HazardType
-  forecastSources           String[]
+  forecastSources           ForecastSource[]
   alertClass                AlertClass
   trigger                   Boolean
   centroid                  Json
@@ -100,7 +114,7 @@ model AlertSeverity {
   alertId            Int
   alert              Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   timeInterval       Json
-  ensembleMemberType String
+  ensembleMemberType EnsembleMemberType
   severityKey        String
   severityValue      Float
 
