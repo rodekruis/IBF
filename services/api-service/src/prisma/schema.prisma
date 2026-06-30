@@ -37,6 +37,13 @@ enum ForecastSource {
   @@schema("api-service")
 }
 
+enum SeverityKey {
+  returnPeriod @map("return_period")
+  percentile
+
+  @@schema("api-service")
+}
+
 model User {
   @@schema("api-service")
   @@map("user")
@@ -115,7 +122,7 @@ model AlertSeverity {
   alert              Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   timeInterval       Json
   ensembleMemberType EnsembleMemberType
-  severityKey        String
+  severityKey        SeverityKey
   severityValue      Float
 
   @@index([alertId])

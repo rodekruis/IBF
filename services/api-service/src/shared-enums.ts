@@ -7,6 +7,7 @@ export {
   EnsembleMemberType,
   ForecastSource,
   HazardType,
+  SeverityKey,
 } from '@prisma/client';
 
 export enum LayerName {
@@ -28,14 +29,7 @@ export enum LayerType {
   vectorTile = 'vector_tile',
 }
 
-// Not used by FE
-export enum SeverityKey {
-  returnPeriod = 'return_period',
-  percentile = 'percentile',
-}
-
-// START: Alert classification related enums
-// Allowed classification levels for: severityClass and probabilityClass - Not used by FE
+// Allowed classification levels for: severityClass and probabilityClass
 export enum AlertClassificationLevel {
   singleThreshold = 'single_threshold',
   low = 'low',
