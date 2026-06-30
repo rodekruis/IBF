@@ -10,7 +10,7 @@ from pipelines.infra.data_types.dtos import (
     Centroid,
     Exposure,
     ExposureAdminArea,
-    Layer,
+    LayerName,
 )
 from pipelines.infra.utils.alert_admin_aggregation import (
     aggregate_to_parent_admin_levels,
@@ -74,9 +74,9 @@ def test_numeric_aggregation_uses_sum_basic():
     # Parent population = sum of children (100 for parent-X, 50 for parent-Y)
     alert = _make_alert(
         [
-            ExposureAdminArea("child-A", 3, Layer.POPULATION_EXPOSED, 100),
-            ExposureAdminArea("child-B", 3, Layer.POPULATION_EXPOSED, 0),
-            ExposureAdminArea("child-C", 3, Layer.POPULATION_EXPOSED, 50),
+            ExposureAdminArea("child-A", 3, LayerName.POPULATION_EXPOSED, 100),
+            ExposureAdminArea("child-B", 3, LayerName.POPULATION_EXPOSED, 0),
+            ExposureAdminArea("child-C", 3, LayerName.POPULATION_EXPOSED, 50),
         ]
     )
 
@@ -97,9 +97,9 @@ def test_numeric_aggregation_uses_sum():
     # Parent population = sum of children (100 + 250 = 350 for parent-X, 50 for parent-Y)
     alert = _make_alert(
         [
-            ExposureAdminArea("child-A", 3, Layer.POPULATION_EXPOSED, 100),
-            ExposureAdminArea("child-B", 3, Layer.POPULATION_EXPOSED, 250),
-            ExposureAdminArea("child-C", 3, Layer.POPULATION_EXPOSED, 50),
+            ExposureAdminArea("child-A", 3, LayerName.POPULATION_EXPOSED, 100),
+            ExposureAdminArea("child-B", 3, LayerName.POPULATION_EXPOSED, 250),
+            ExposureAdminArea("child-C", 3, LayerName.POPULATION_EXPOSED, 50),
         ]
     )
 
@@ -117,9 +117,9 @@ def test_aggregation_produces_all_levels():
     # admin-level 3 areas should produce entries at levels 3, 2, 1, 0
     alert = _make_alert(
         [
-            ExposureAdminArea("child-A", 3, Layer.POPULATION_EXPOSED, 1),
-            ExposureAdminArea("child-B", 3, Layer.POPULATION_EXPOSED, 1),
-            ExposureAdminArea("child-C", 3, Layer.POPULATION_EXPOSED, 0),
+            ExposureAdminArea("child-A", 3, LayerName.POPULATION_EXPOSED, 1),
+            ExposureAdminArea("child-B", 3, LayerName.POPULATION_EXPOSED, 1),
+            ExposureAdminArea("child-C", 3, LayerName.POPULATION_EXPOSED, 0),
         ]
     )
 
@@ -143,9 +143,9 @@ def test_grandparent_sums_from_deepest_not_from_parents():
     # Each level sums all deepest entries directly (100+200+50=350), not parent subtotals
     alert = _make_alert(
         [
-            ExposureAdminArea("child-A", 3, Layer.POPULATION_EXPOSED, 100),
-            ExposureAdminArea("child-B", 3, Layer.POPULATION_EXPOSED, 200),
-            ExposureAdminArea("child-C", 3, Layer.POPULATION_EXPOSED, 50),
+            ExposureAdminArea("child-A", 3, LayerName.POPULATION_EXPOSED, 100),
+            ExposureAdminArea("child-B", 3, LayerName.POPULATION_EXPOSED, 200),
+            ExposureAdminArea("child-C", 3, LayerName.POPULATION_EXPOSED, 50),
         ]
     )
 
@@ -162,8 +162,8 @@ def test_two_level_hierarchy():
     # Works with only 2 admin levels
     alert = _make_alert(
         [
-            ExposureAdminArea("child-A", 2, Layer.POPULATION_EXPOSED, 10),
-            ExposureAdminArea("child-B", 2, Layer.POPULATION_EXPOSED, 20),
+            ExposureAdminArea("child-A", 2, LayerName.POPULATION_EXPOSED, 10),
+            ExposureAdminArea("child-B", 2, LayerName.POPULATION_EXPOSED, 20),
         ]
     )
 
@@ -191,7 +191,7 @@ def test_unknown_place_code_is_skipped():
     # Place codes not in admin_areas are silently ignored
     alert = _make_alert(
         [
-            ExposureAdminArea("unknown", 3, Layer.POPULATION_EXPOSED, 100),
+            ExposureAdminArea("unknown", 3, LayerName.POPULATION_EXPOSED, 100),
         ]
     )
 
@@ -204,18 +204,18 @@ def test_multiple_layers_aggregated_independently():
     # Two numeric layers are aggregated separately per parent
     alert = _make_alert(
         [
-            ExposureAdminArea("child-A", 3, Layer.POPULATION_EXPOSED, 100),
-            ExposureAdminArea("child-A", 3, Layer.FLOOD_DEPTH, 10),
-            ExposureAdminArea("child-B", 3, Layer.POPULATION_EXPOSED, 200),
-            ExposureAdminArea("child-B", 3, Layer.FLOOD_DEPTH, 20),
+            ExposureAdminArea("child-A", 3, LayerName.POPULATION_EXPOSED, 100),
+            ExposureAdminArea("child-A", 3, LayerName.FLOOD_DEPTH, 10),
+            ExposureAdminArea("child-B", 3, LayerName.POPULATION_EXPOSED, 200),
+            ExposureAdminArea("child-B", 3, LayerName.FLOOD_DEPTH, 20),
         ]
     )
 
     aggregate_to_parent_admin_levels(alert, MOCK_ADMIN_AREAS_LEVEL_3)
 
     level_2 = _entries_at_level(alert, 2)
-    population = [e for e in level_2 if e.layer == Layer.POPULATION_EXPOSED]
-    extent = [e for e in level_2 if e.layer == Layer.FLOOD_DEPTH]
+    population = [e for e in level_2 if e.layer == LayerName.POPULATION_EXPOSED]
+    extent = [e for e in level_2 if e.layer == LayerName.FLOOD_DEPTH]
 
     assert len(population) == 1
     assert population[0].value == 300

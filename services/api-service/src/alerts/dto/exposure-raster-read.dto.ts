@@ -4,11 +4,11 @@ import { ValidateNested } from 'class-validator';
 
 import { RasterExtentDto } from '@api-service/src/alerts/dto/raster-extent.dto';
 import { BaseDto } from '@api-service/src/shared/dto/base.dto';
-import { Layer } from '@api-service/src/shared-enums';
+import { LayerName } from '@api-service/src/shared-enums';
 
 export class ExposureRasterReadDto extends IntersectionType(BaseDto) {
-  @ApiProperty({ enum: Layer, example: Layer.floodDepth })
-  public readonly layer: Layer;
+  @ApiProperty({ enum: LayerName, example: LayerName.floodDepth })
+  public readonly layer: LayerName;
 
   @ApiProperty({ type: RasterExtentDto })
   @ValidateNested()

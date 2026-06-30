@@ -14,7 +14,7 @@ import {
   SEED_COUNTRIES,
   SeedCountry,
 } from '@api-service/src/scripts/seed-data/seed-countries.const';
-import { HazardType, Layer } from '@api-service/src/shared-enums';
+import { HazardType, LayerName } from '@api-service/src/shared-enums';
 import { hashPassword } from '@api-service/src/utils/hash-password.helper';
 
 interface GeoJsonFeature {
@@ -409,7 +409,7 @@ export class SeedInit {
       ([stationCode, station]) => ({
         countryCodeIso3,
         featureType: GeoFeatureType.point,
-        layer: Layer.glofasStations,
+        layer: LayerName.glofasStations,
         referenceId: stationCode,
         geometry: {
           type: 'Point',
@@ -524,7 +524,7 @@ export class SeedInit {
       where: {
         countryCodeIso3_layer: {
           countryCodeIso3,
-          layer: Layer.population,
+          layer: LayerName.population,
         },
       },
       update: {
@@ -534,7 +534,7 @@ export class SeedInit {
       },
       create: {
         countryCodeIso3,
-        layer: Layer.population,
+        layer: LayerName.population,
         valueBlackWhite: dataPngBuffer.toString('base64'),
         valueColoured: colouredPngBuffer.toString('base64'),
         extent,

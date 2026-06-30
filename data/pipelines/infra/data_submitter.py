@@ -17,7 +17,7 @@ from pipelines.infra.data_types.dtos import (
     Forecast,
     ForecastSource,
     HazardType,
-    Layer,
+    LayerName,
     RasterExtent,
     Severity,
     SeverityKey,
@@ -111,7 +111,7 @@ class DataSubmitter:
         self,
         event_name: str,
         admin_level: int,
-        layer: Layer,
+        layer: LayerName,
         values_by_place_code: dict[str, int | float],
     ) -> None:
         alert = self._get_alert(event_name, "add_admin_area_exposure")
@@ -132,7 +132,7 @@ class DataSubmitter:
         self,
         event_name: str,
         geo_feature_id: str,
-        layer: Layer,
+        layer: LayerName,
         attributes: dict[str, bool | str | int | float],
     ) -> None:
         alert = self._get_alert(event_name, "add_geo_feature_exposure")
@@ -141,14 +141,16 @@ class DataSubmitter:
 
         alert.exposure.geo_features.append(
             ExposureGeoFeature(
-                geo_feature_id=geo_feature_id, layer=layer, attributes=attributes
+                geo_feature_id=geo_feature_id,
+                layer=layer,
+                attributes=attributes,
             )
         )
 
     def add_raster_exposure(
         self,
         event_name: str,
-        layer: Layer,
+        layer: LayerName,
         value_black_white: str,
         extent: dict[str, float],
     ) -> None:

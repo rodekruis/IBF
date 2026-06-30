@@ -5,7 +5,7 @@ import os
 from urllib.parse import urlencode
 
 import requests
-from pipelines.infra.data_types.enums import Layer
+from pipelines.infra.data_types.enums import LayerName
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.data_types.location_point import LocationPoint
 
@@ -118,7 +118,7 @@ class ApiClient:
         return []
 
     def get_glofas_stations(self, country_code_iso_3: str) -> dict[str, LocationPoint]:
-        data = self.get_geo_features(country_code_iso_3, Layer.GLOFAS_STATIONS)
+        data = self.get_geo_features(country_code_iso_3, LayerName.GLOFAS_STATIONS)
         stations: dict[str, LocationPoint] = {}
         for feature in data:
             properties = feature.get("properties", {})

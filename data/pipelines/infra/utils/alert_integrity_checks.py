@@ -9,7 +9,7 @@ from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
     HazardType,
-    Layer,
+    LayerName,
 )
 
 # This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
@@ -83,7 +83,7 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
         errors.append(f"Alert '{event_name}' admin-area: expected at least 1 record")
         return errors
 
-    levels: dict[int, dict[Layer, int]] = {}
+    levels: dict[int, dict[LayerName, int]] = {}
     for entry in alert.exposure.admin_areas:
         level_layers = levels.setdefault(entry.admin_level, {})
         level_layers[entry.layer] = level_layers.get(entry.layer, 0) + 1
@@ -94,7 +94,7 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
                 f"layer '{entry.layer}' must be non-negative, got {entry.value}"
             )
 
-    admin_area_required = (Layer.POPULATION_EXPOSED,)
+    admin_area_required = (LayerName.POPULATION_EXPOSED,)
     for level, layer_counts in sorted(levels.items()):
         for required in admin_area_required:
             if required not in layer_counts:
@@ -105,9 +105,7 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
 
         counts = list(layer_counts.values())
         if len(set(counts)) > 1:
-            detail = ", ".join(
-                f"{layer}={count}" for layer, count in layer_counts.items()
-            )
+            detail = ", ".join(f"{key}={count}" for key, count in layer_counts.items())
             errors.append(
                 f"Alert '{event_name}' admin-area level {level}: "
                 f"record count differs across layers ({detail})"

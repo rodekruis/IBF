@@ -2,7 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 
 import { env } from '@api-service/src/env';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
-import { Layer } from '@api-service/src/shared-enums';
+import { LayerName } from '@api-service/src/shared-enums';
 import {
   buildAlert,
   buildForecast,
@@ -41,7 +41,7 @@ describe('/rasters', () => {
       const response = await readRasterById(rasterId);
 
       expect(response.status).toBe(HttpStatus.OK);
-      expect(response.body.layer).toBe(Layer.floodDepth);
+      expect(response.body.layer).toBe(LayerName.floodDepth);
       expect(response.body.valueColoured).toBeUndefined();
       expect(response.body.extent).toEqual(
         expect.objectContaining({
@@ -92,7 +92,7 @@ describe('/rasters', () => {
 
 describe('/rasters/static', () => {
   const country = 'ETH';
-  const layer = Layer.population;
+  const layer = LayerName.population;
   let accessToken: string;
 
   beforeAll(async () => {
@@ -108,7 +108,7 @@ describe('/rasters/static', () => {
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.id).toEqual(expect.any(Number));
-      expect(response.body.layer).toBe(Layer.population);
+      expect(response.body.layer).toBe(LayerName.population);
       expect(response.body.extent).toEqual(
         expect.objectContaining({
           xmin: expect.any(Number),
@@ -179,7 +179,7 @@ describe('/rasters/static', () => {
     // Uses a different layer than the seeded population raster, because tests
     // run in random order (randomize: true) and deleting the shared raster
     // would cause other GET tests to fail.
-    const deleteLayer = Layer.populationExposed;
+    const deleteLayer = LayerName.clinics;
 
     it('should delete the static raster and return 204', async () => {
       await createStaticRaster(accessToken, country, deleteLayer);

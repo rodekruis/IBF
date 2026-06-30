@@ -5,7 +5,7 @@ import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import { AlertRasterResponseDto } from '@api-service/src/rasters/dto/alert-raster-response.dto';
 import { StaticRasterResponseDto } from '@api-service/src/rasters/dto/static-raster-response.dto';
 import { StaticRasterUploadDto } from '@api-service/src/rasters/dto/static-raster-upload.dto';
-import { Layer } from '@api-service/src/shared-enums';
+import { LayerName } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class RastersRepository {
@@ -27,7 +27,7 @@ export class RastersRepository {
     }
 
     return {
-      layer: raster.layer as Layer,
+      layer: raster.layer as LayerName,
       extent: raster.extent as unknown as RasterExtentDto,
     };
   }
@@ -49,7 +49,7 @@ export class RastersRepository {
 
   public async getStaticRasterOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    layer: LayerName,
   ): Promise<StaticRasterResponseDto> {
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {
@@ -70,14 +70,14 @@ export class RastersRepository {
 
     return {
       id: raster.id,
-      layer: raster.layer as Layer,
+      layer: raster.layer as LayerName,
       extent: raster.extent as unknown as RasterExtentDto,
     };
   }
 
   public async getStaticRasterImageOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    layer: LayerName,
   ): Promise<Buffer> {
     return this.getStaticRasterImageBufferOrThrow(
       countryCodeIso3,
@@ -88,7 +88,7 @@ export class RastersRepository {
 
   public async getStaticRasterDataImageOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    layer: LayerName,
   ): Promise<Buffer> {
     return this.getStaticRasterImageBufferOrThrow(
       countryCodeIso3,
@@ -99,7 +99,7 @@ export class RastersRepository {
 
   private async getStaticRasterImageBufferOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    layer: LayerName,
     field: 'valueColoured' | 'valueBlackWhite',
   ): Promise<Buffer> {
     const raster = await this.prisma.staticRasterData.findUnique({
@@ -151,14 +151,14 @@ export class RastersRepository {
 
     return {
       id: raster.id,
-      layer: raster.layer as Layer,
+      layer: raster.layer as LayerName,
       extent: raster.extent as unknown as RasterExtentDto,
     };
   }
 
   public async deleteStaticRasterOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    layer: LayerName,
   ): Promise<void> {
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {

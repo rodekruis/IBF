@@ -5,7 +5,7 @@ import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import {
   EnsembleMemberType,
   HazardType,
-  Layer,
+  LayerName,
   SeverityKey,
 } from '@api-service/src/shared-enums';
 
@@ -29,7 +29,10 @@ export interface ExposedAdminAreaRecord {
   readonly placeCode: string;
   readonly adminLevel: number;
   readonly name: string;
-  readonly exposure: { readonly type: Layer; readonly exposed: number }[];
+  readonly exposure: {
+    readonly layerName: LayerName;
+    readonly exposed: number;
+  }[];
 }
 
 @Injectable()
@@ -163,7 +166,7 @@ export class EventsRepository {
       select: {
         eventId: true,
         exposureAdminArea: {
-          where: { layer: Layer.populationExposed },
+          where: { layer: LayerName.populationExposed },
           select: {
             placeCode: true,
             adminLevel: true,
@@ -194,7 +197,12 @@ export class EventsRepository {
           placeCode: row.placeCode,
           adminLevel: row.adminLevel,
           name: nameByPlaceCode.get(row.placeCode) ?? row.placeCode,
-          exposure: [{ type: row.layer as Layer, exposed: row.value }],
+          exposure: [
+            {
+              layerName: row.layer as LayerName,
+              exposed: row.value,
+            },
+          ],
         }),
       );
       result.set(alert.eventId, entries);

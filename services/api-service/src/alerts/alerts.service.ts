@@ -8,7 +8,7 @@ import { AlertToEventService } from '@api-service/src/events/alert-to-event.serv
 import {
   EnsembleMemberType,
   HazardType,
-  Layer,
+  LayerName,
 } from '@api-service/src/shared-enums';
 
 // This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
@@ -177,10 +177,10 @@ export class AlertsService {
       return errors;
     }
 
-    const levels = new Map<number, Map<Layer, number>>();
+    const levels = new Map<number, Map<LayerName, number>>();
     for (const entry of adminAreas) {
       const levelLayers =
-        levels.get(entry.adminLevel) ?? new Map<Layer, number>();
+        levels.get(entry.adminLevel) ?? new Map<LayerName, number>();
       levelLayers.set(entry.layer, (levelLayers.get(entry.layer) ?? 0) + 1);
       levels.set(entry.adminLevel, levelLayers);
 
@@ -191,7 +191,7 @@ export class AlertsService {
       }
     }
 
-    const requiredLayers = [Layer.populationExposed];
+    const requiredLayers = [LayerName.populationExposed];
     for (const [level, layerCounts] of [...levels.entries()].sort(
       (a, b) => a[0] - b[0],
     )) {

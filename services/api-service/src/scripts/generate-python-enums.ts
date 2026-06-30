@@ -5,7 +5,7 @@ import {
   EnsembleMemberType,
   ForecastSource,
   HazardType,
-  Layer,
+  LayerName,
   SeverityKey,
 } from '@api-service/src/shared-enums';
 
@@ -16,7 +16,7 @@ const enumsToGenerate: { name: string; values: EnumObject }[] = [
   { name: 'EnsembleMemberType', values: EnsembleMemberType },
   { name: 'ForecastSource', values: ForecastSource },
   { name: 'HazardType', values: HazardType },
-  { name: 'Layer', values: Layer },
+  { name: 'LayerName', values: LayerName },
   { name: 'SeverityKey', values: SeverityKey },
 ];
 
