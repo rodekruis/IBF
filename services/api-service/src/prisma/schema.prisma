@@ -53,6 +53,15 @@ enum AlertClassificationLevel {
   @@schema("api-service")
 }
 
+enum LayerType {
+  raster
+  shape
+  point
+  vectorTile
+
+  @@schema("api-service")
+}
+
 model User {
   @@schema("api-service")
   @@map("user")
