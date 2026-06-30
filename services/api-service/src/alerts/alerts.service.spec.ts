@@ -346,7 +346,7 @@ describe('AlertsService', () => {
       expect(response.errors).toEqual(
         expect.arrayContaining([
           expect.stringContaining(
-            "missing required layer 'population_exposed'",
+            "missing required indicator 'population_exposed'",
           ),
         ]),
       );
@@ -397,7 +397,7 @@ describe('AlertsService', () => {
       expect(response.errors).toEqual(
         expect.arrayContaining([
           expect.stringContaining(
-            'admin-area level 3: record count differs across layers',
+            'admin-area level 3: record count differs across indicators',
           ),
         ]),
       );
