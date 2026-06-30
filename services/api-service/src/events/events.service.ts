@@ -82,7 +82,7 @@ export class EventsService {
       adminLevel: area.adminLevel,
       name: area.name,
       exposure: area.exposure.map((exp) => ({
-        layer: exp.layer,
+        layerName: exp.layerName,
         total: null,
         exposed: exp.exposed,
       })),
@@ -105,8 +105,8 @@ export class EventsService {
   ): LayerDto[] {
     return rasters.map((raster) => ({
       resourceId: String(raster.id),
-      layer: (raster.layer as LayerName) ?? LayerName.floodDepth,
-      format: LayerType.Raster,
+      layerName: (raster.layer as LayerName) ?? LayerName.floodDepth,
+      layerType: LayerType.Raster,
     }));
   }
 }

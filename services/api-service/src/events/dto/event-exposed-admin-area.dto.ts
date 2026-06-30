@@ -7,7 +7,7 @@ class AdminAreaExposureDto {
     enum: LayerName,
     example: LayerName.populationExposed,
   })
-  public readonly layer: LayerName;
+  public readonly layerName: LayerName;
 
   @ApiProperty({ example: 20_000 })
   public readonly total: number | null; // TODO, make non-nullable again when possible.

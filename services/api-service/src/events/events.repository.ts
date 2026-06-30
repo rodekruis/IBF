@@ -30,7 +30,7 @@ export interface ExposedAdminAreaRecord {
   readonly adminLevel: number;
   readonly name: string;
   readonly exposure: {
-    readonly layer: LayerName;
+    readonly layerName: LayerName;
     readonly exposed: number;
   }[];
 }
@@ -199,7 +199,7 @@ export class EventsRepository {
           name: nameByPlaceCode.get(row.placeCode) ?? row.placeCode,
           exposure: [
             {
-              layer: row.layer as LayerName,
+              layerName: row.layer as LayerName,
               exposed: row.value,
             },
           ],
