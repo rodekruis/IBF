@@ -53,7 +53,7 @@ def _make_rgba_png_bytes(values: np.ndarray) -> bytes:
 def _make_api_metadata_response() -> dict:
     return {
         "id": 1,
-        "geoDataKey": LayerName.POPULATION,
+        "layerName": LayerName.POPULATION,
         "extent": {"xmin": 0.0, "ymin": -200.0, "xmax": 200.0, "ymax": 0.0},
     }
 

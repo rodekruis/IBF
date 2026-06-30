@@ -358,7 +358,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.glofasStations, // not actually admin-area geoDataKey, but works to test the record count validation
+                layer: LayerName.glofasStations, // not actually admin-area layerName, but works to test the record count validation
                 value: 1,
               },
               {
