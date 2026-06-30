@@ -199,7 +199,7 @@ export class EventsRepository {
           name: nameByPlaceCode.get(row.placeCode) ?? row.placeCode,
           exposure: [
             {
-              layerName: row.layer as LayerName,
+              layerName: row.layer,
               exposed: row.value,
             },
           ],
@@ -246,8 +246,8 @@ export class EventsRepository {
 
   public async getRasterIdsForLatestAlerts(
     eventIds: number[],
-  ): Promise<Map<number, { id: number; layer: string }[]>> {
-    const result = new Map<number, { id: number; layer: string }[]>();
+  ): Promise<Map<number, { id: number; layer: LayerName }[]>> {
+    const result = new Map<number, { id: number; layer: LayerName }[]>();
     if (eventIds.length === 0) {
       return result;
     }

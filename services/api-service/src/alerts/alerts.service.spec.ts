@@ -312,7 +312,7 @@ describe('AlertsService', () => {
       );
     });
 
-    it('should reject admin-area missing required population_exposed layer', async () => {
+    it('should reject admin-area missing required populationExposed layer', async () => {
       const alerts = [
         createMockValidAlert({
           exposure: {
@@ -343,9 +343,7 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining(
-            "missing required layer 'population_exposed'",
-          ),
+          expect.stringContaining("missing required layer 'populationExposed'"),
         ]),
       );
     });
@@ -547,7 +545,7 @@ describe('AlertsService', () => {
       );
     });
 
-    it('should accept rasters with valid flood_depth', async () => {
+    it('should accept rasters with valid floodDepth', async () => {
       const alerts = [
         createMockValidAlert({
           exposure: {

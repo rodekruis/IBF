@@ -26,13 +26,13 @@ class HazardType(StrEnum):
 class LayerName(StrEnum):
     # --- generic layers (cross-hazard) ---
     POPULATION = "population"
-    POPULATION_EXPOSED = "population_exposed"
+    POPULATION_EXPOSED = "populationExposed"
 
     # --- floods-specific layers ---
-    RED_CROSS_BRANCHES = "red_cross_branches"
+    RED_CROSS_BRANCHES = "redCrossBranches"
     CLINICS = "clinics"
-    FLOOD_DEPTH = "flood_depth"
-    GLOFAS_STATIONS = "glofas_stations"
+    FLOOD_DEPTH = "floodDepth"
+    GLOFAS_STATIONS = "glofasStations"
 
 
 class SeverityKey(StrEnum):
