@@ -3,14 +3,12 @@ import { Type } from 'class-transformer';
 import { IsEnum, IsString, ValidateNested } from 'class-validator';
 
 import { RasterExtentDto } from '@api-service/src/alerts/dto/raster-extent.dto';
-import { MapLayer } from '@api-service/src/shared-enums';
+import { LayerName } from '@api-service/src/shared-enums';
 
-// The data pipelines also use this definition.
-// If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py
 export class ExposureRasterDto {
-  @ApiProperty({ enum: MapLayer, example: MapLayer.floodDepth })
-  @IsEnum(MapLayer)
-  public readonly mapLayer: MapLayer;
+  @ApiProperty({ enum: LayerName, example: LayerName.floodDepth })
+  @IsEnum(LayerName)
+  public readonly layer: LayerName;
 
   @ApiProperty({ example: 'base64-encoded-black-white-png' })
   @IsString()

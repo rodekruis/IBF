@@ -9,9 +9,8 @@ from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
-    ExposureIndicator,
     HazardType,
-    MapLayer,
+    LayerName,
     SeverityKey,
 )
 from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
@@ -95,7 +94,7 @@ def _generate_mock_alerts(
         data_submitter.add_admin_area_exposure(
             event_name=event_name,
             admin_level=target_admin_level,
-            exposure_indicator=ExposureIndicator.POPULATION_EXPOSED,
+            layer=LayerName.POPULATION_EXPOSED,
             values_by_place_code={
                 place_code: 50 * (i + 1) for place_code in exposed_pcodes
             },
@@ -103,7 +102,7 @@ def _generate_mock_alerts(
 
         data_submitter.add_raster_exposure(
             event_name=event_name,
-            map_layer=MapLayer.FLOOD_DEPTH,
+            layer=LayerName.FLOOD_DEPTH,
             value_black_white=PLACEHOLDER_RASTER_BASE64,
             extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
         )

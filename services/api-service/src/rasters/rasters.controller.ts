@@ -27,26 +27,26 @@ import { AlertRasterResponseDto } from '@api-service/src/rasters/dto/alert-raste
 import { StaticRasterResponseDto } from '@api-service/src/rasters/dto/static-raster-response.dto';
 import { StaticRasterUploadDto } from '@api-service/src/rasters/dto/static-raster-upload.dto';
 import { RastersService } from '@api-service/src/rasters/rasters.service';
-import { MapLayer } from '@api-service/src/shared-enums';
+import { LayerName } from '@api-service/src/shared-enums';
 
 @ApiTags('rasters')
 @Controller('rasters')
 export class RastersController {
   public constructor(private readonly rastersService: RastersService) {}
 
-  private parseMapLayerOrThrow(value: string): MapLayer {
-    const values = Object.values(MapLayer) as string[];
+  private parseLayerNameOrThrow(value: string): LayerName {
+    const values = Object.values(LayerName) as string[];
     if (!values.includes(value)) {
       throw new BadRequestException(
-        `Invalid mapLayer '${value}'. Allowed values: ${values.join(', ')}`,
+        `Invalid layer '${value}'. Allowed values: ${values.join(', ')}`,
       );
     }
-    return value as MapLayer;
+    return value as LayerName;
   }
 
-  @Get('static/:countryCodeIso3/:mapLayer')
+  @Get('static/:countryCodeIso3/:layer')
   @ApiOperation({
-    summary: 'Get static raster metadata by country and mapLayer',
+    summary: 'Get static raster metadata by country and layer',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -59,16 +59,13 @@ export class RastersController {
   })
   public async getStaticRaster(
     @Param('countryCodeIso3') countryCodeIso3: string,
-    @Param('mapLayer') mapLayerParam: string,
+    @Param('layer') layerParam: string,
   ): Promise<StaticRasterResponseDto> {
-    const mapLayer = this.parseMapLayerOrThrow(mapLayerParam);
-    return this.rastersService.getStaticRasterOrThrow(
-      countryCodeIso3,
-      mapLayer,
-    );
+    const layer = this.parseLayerNameOrThrow(layerParam);
+    return this.rastersService.getStaticRasterOrThrow(countryCodeIso3, layer);
   }
 
-  @Get('static/:countryCodeIso3/:mapLayer/image')
+  @Get('static/:countryCodeIso3/:layer/image')
   @ApiOperation({ summary: 'Get the static raster coloured image as a PNG' })
   @ApiProduces('image/png')
   @ApiResponse({
@@ -81,13 +78,13 @@ export class RastersController {
   })
   public async getStaticRasterImage(
     @Param('countryCodeIso3') countryCodeIso3: string,
-    @Param('mapLayer') mapLayerParam: string,
+    @Param('layer') layerParam: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
-    const mapLayer = this.parseMapLayerOrThrow(mapLayerParam);
+    const layer = this.parseLayerNameOrThrow(layerParam);
     const buffer = await this.rastersService.getStaticRasterImageOrThrow(
       countryCodeIso3,
-      mapLayer,
+      layer,
     );
     res.set({
       'Content-Type': 'image/png',
@@ -97,7 +94,7 @@ export class RastersController {
     return new StreamableFile(buffer);
   }
 
-  @Get('static/:countryCodeIso3/:mapLayer/data')
+  @Get('static/:countryCodeIso3/:layer/data')
   @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @ApiOperation({
@@ -114,13 +111,13 @@ export class RastersController {
   })
   public async getStaticRasterDataImage(
     @Param('countryCodeIso3') countryCodeIso3: string,
-    @Param('mapLayer') mapLayerParam: string,
+    @Param('layer') layerParam: string,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
-    const mapLayer = this.parseMapLayerOrThrow(mapLayerParam);
+    const layer = this.parseLayerNameOrThrow(layerParam);
     const buffer = await this.rastersService.getStaticRasterDataImageOrThrow(
       countryCodeIso3,
-      mapLayer,
+      layer,
     );
     res.set({
       'Content-Type': 'image/png',
@@ -145,7 +142,7 @@ export class RastersController {
     return this.rastersService.upsertStaticRaster(dto);
   }
 
-  @Delete('static/:countryCodeIso3/:mapLayer')
+  @Delete('static/:countryCodeIso3/:layer')
   @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -160,13 +157,10 @@ export class RastersController {
   })
   public async deleteStaticRaster(
     @Param('countryCodeIso3') countryCodeIso3: string,
-    @Param('mapLayer') mapLayerParam: string,
+    @Param('layer') layerParam: string,
   ): Promise<void> {
-    const mapLayer = this.parseMapLayerOrThrow(mapLayerParam);
-    await this.rastersService.deleteStaticRasterOrThrow(
-      countryCodeIso3,
-      mapLayer,
-    );
+    const layer = this.parseLayerNameOrThrow(layerParam);
+    await this.rastersService.deleteStaticRasterOrThrow(countryCodeIso3, layer);
   }
 
   @Get('alert/:id')

@@ -13,10 +13,9 @@ from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
-    ExposureIndicator,
     ForecastSource,
     HazardType,
-    MapLayer,
+    LayerName,
     SeverityKey,
 )
 from pipelines.infra.utils.api_client import ApiClient
@@ -57,12 +56,12 @@ def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
     submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
         admin_level=3,
-        exposure_indicator=ExposureIndicator.POPULATION_EXPOSED,
+        layer=LayerName.POPULATION_EXPOSED,
         values_by_place_code={"PC001": 0},
     )
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
-        map_layer=MapLayer.FLOOD_DEPTH,
+        layer=LayerName.FLOOD_DEPTH,
         value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )

@@ -19,12 +19,7 @@ from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import Centroid
-from pipelines.infra.data_types.enums import (
-    EnsembleMemberType,
-    ExposureIndicator,
-    MapLayer,
-    SeverityKey,
-)
+from pipelines.infra.data_types.enums import EnsembleMemberType, LayerName, SeverityKey
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
@@ -208,7 +203,7 @@ def calculate_flood_forecasts(
             data_submitter.add_admin_area_exposure(
                 event_name=event_name,
                 admin_level=target_admin_level,
-                exposure_indicator=ExposureIndicator.POPULATION_EXPOSED,
+                layer=LayerName.POPULATION_EXPOSED,
                 values_by_place_code=population_exposed,
             )
 
@@ -216,13 +211,13 @@ def calculate_flood_forecasts(
             # data_submitter.add_geo_feature_exposure(
             #     event_name=event_name,
             #     geo_feature_id=station_code,
-            #     map_layer=MapLayer.GLOFAS_STATIONS,
+            #     layer=LayerName.GLOFAS_STATIONS,
             #     attributes={"river_discharge": 0},
             # )
 
             data_submitter.add_raster_exposure(
                 event_name=event_name,
-                map_layer=MapLayer.FLOOD_DEPTH,
+                layer=LayerName.FLOOD_DEPTH,
                 value_black_white=raster_to_base64_png(clipped_flood_extent),
                 extent=get_raster_extent(clipped_flood_extent),
             )

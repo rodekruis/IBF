@@ -1,23 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { MapLayer, MapLayerFormat } from '@api-service/src/shared-enums';
+import { LayerName, LayerType } from '@api-service/src/shared-enums';
 
-export class MapLayerDto {
+export class LayerDto {
   @ApiProperty({
     description: 'ID that can be used to fetch the actual map layer data',
   })
   public readonly resourceId: string;
 
   @ApiProperty({
-    enum: MapLayer,
+    enum: LayerName,
     description:
       'The type of data on this layer. Used to label and style the layer in the UI.',
   })
-  public readonly mapLayer: MapLayer;
+  public readonly layer: LayerName;
 
   @ApiProperty({
-    enum: MapLayerFormat,
+    enum: LayerType,
     description: 'The way this data will be displayed',
   })
-  public readonly format: MapLayerFormat;
+  public readonly format: LayerType;
 }

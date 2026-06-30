@@ -8,10 +8,9 @@ import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.d
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
 import {
   EnsembleMemberType,
-  ExposureIndicator,
   ForecastSource,
   HazardType,
-  MapLayer,
+  LayerName,
   SeverityKey,
 } from '@api-service/src/shared-enums';
 
@@ -63,13 +62,13 @@ function createMockValidAlert(
         {
           placeCode: 'ETH_01_001',
           adminLevel: 3,
-          exposureIndicator: ExposureIndicator.populationExposed,
+          layer: LayerName.populationExposed,
           value: 1,
         },
       ],
       rasters: [
         {
-          mapLayer: MapLayer.floodDepth,
+          layer: LayerName.floodDepth,
           valueBlackWhite: TEST_RASTER_BASE64,
           extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },
@@ -291,7 +290,7 @@ describe('AlertsService', () => {
             adminAreas: [],
             rasters: [
               {
-                mapLayer: MapLayer.floodDepth,
+                layer: LayerName.floodDepth,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -321,14 +320,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                exposureIndicator:
-                  MapLayer.glofasStations as unknown as ExposureIndicator,
+                layer: LayerName.glofasStations,
                 value: 1,
               },
             ],
             rasters: [
               {
-                mapLayer: MapLayer.floodDepth,
+                layer: LayerName.floodDepth,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -360,26 +358,25 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                exposureIndicator:
-                  MapLayer.glofasStations as unknown as ExposureIndicator, // not actually admin-area geoDataKey, but works to test the record count validation
+                layer: LayerName.glofasStations, // not actually admin-area geoDataKey, but works to test the record count validation
                 value: 1,
               },
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                exposureIndicator: ExposureIndicator.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 100,
               },
               {
                 placeCode: 'B',
                 adminLevel: 3,
-                exposureIndicator: ExposureIndicator.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 200,
               },
             ],
             rasters: [
               {
-                mapLayer: MapLayer.floodDepth,
+                layer: LayerName.floodDepth,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -413,13 +410,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                exposureIndicator: ExposureIndicator.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                mapLayer: MapLayer.floodDepth,
+                layer: LayerName.floodDepth,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 10, ymin: 5, xmax: 5, ymax: 1 },
               },
@@ -447,13 +444,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                exposureIndicator: ExposureIndicator.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                mapLayer: MapLayer.floodDepth,
+                layer: LayerName.floodDepth,
                 valueBlackWhite: '!!!not-base64!!!',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -483,13 +480,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                exposureIndicator: ExposureIndicator.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                mapLayer: MapLayer.floodDepth,
+                layer: LayerName.floodDepth,
                 valueBlackWhite: 'AQI',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -522,13 +519,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                exposureIndicator: ExposureIndicator.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                mapLayer: MapLayer.floodDepth,
+                layer: LayerName.floodDepth,
                 valueBlackWhite: notPngBase64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -558,13 +555,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                exposureIndicator: ExposureIndicator.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                mapLayer: MapLayer.floodDepth,
+                layer: LayerName.floodDepth,
                 valueBlackWhite: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
@@ -591,7 +588,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                exposureIndicator: ExposureIndicator.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],

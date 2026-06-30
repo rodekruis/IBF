@@ -182,35 +182,35 @@
   },
   {
     "method": "get",
-    "path": "/api/rasters/static/{countryCodeIso3}/{mapLayer}",
+    "path": "/api/rasters/static/{countryCodeIso3}/{layer}",
     "params": [
       "countryCodeIso3",
-      "mapLayer"
+      "layer"
     ],
     "returnType": "StaticRasterResponseDto"
   },
   {
     "method": "delete",
-    "path": "/api/rasters/static/{countryCodeIso3}/{mapLayer}",
+    "path": "/api/rasters/static/{countryCodeIso3}/{layer}",
     "params": [
       "countryCodeIso3",
-      "mapLayer"
+      "layer"
     ]
   },
   {
     "method": "get",
-    "path": "/api/rasters/static/{countryCodeIso3}/{mapLayer}/image",
+    "path": "/api/rasters/static/{countryCodeIso3}/{layer}/image",
     "params": [
       "countryCodeIso3",
-      "mapLayer"
+      "layer"
     ]
   },
   {
     "method": "get",
-    "path": "/api/rasters/static/{countryCodeIso3}/{mapLayer}/data",
+    "path": "/api/rasters/static/{countryCodeIso3}/{layer}/data",
     "params": [
       "countryCodeIso3",
-      "mapLayer"
+      "layer"
     ]
   },
   {

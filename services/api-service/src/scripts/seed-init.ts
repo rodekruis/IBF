@@ -14,7 +14,7 @@ import {
   SEED_COUNTRIES,
   SeedCountry,
 } from '@api-service/src/scripts/seed-data/seed-countries.const';
-import { HazardType, MapLayer } from '@api-service/src/shared-enums';
+import { HazardType, LayerName } from '@api-service/src/shared-enums';
 import { hashPassword } from '@api-service/src/utils/hash-password.helper';
 
 interface GeoJsonFeature {
@@ -409,7 +409,7 @@ export class SeedInit {
       ([stationCode, station]) => ({
         countryCodeIso3,
         featureType: GeoFeatureType.point,
-        mapLayer: MapLayer.glofasStations,
+        layer: LayerName.glofasStations,
         referenceId: stationCode,
         geometry: {
           type: 'Point',
@@ -436,7 +436,7 @@ export class SeedInit {
           return Prisma.sql`(
             ${gf.countryCodeIso3},
             ${gf.featureType},
-            ${gf.mapLayer},
+            ${gf.layer},
             ${gf.referenceId},
             public.ST_SetSRID(public.ST_GeomFromGeoJSON(${geojson}), 4326),
             ${attrs}::jsonb,
@@ -445,9 +445,9 @@ export class SeedInit {
         });
         await tx.$executeRaw`
           INSERT INTO "api-service"."geo-feature"
-            ("countryCodeIso3", "featureType", "mapLayer", "referenceId", "geometry", "attributes", "updated")
+            ("countryCodeIso3", "featureType", "layer", "referenceId", "geometry", "attributes", "updated")
           VALUES ${Prisma.join(values)}
-          ON CONFLICT ("countryCodeIso3", "mapLayer", "referenceId") DO NOTHING`;
+          ON CONFLICT ("countryCodeIso3", "layer", "referenceId") DO NOTHING`;
       }
     });
 
@@ -522,9 +522,9 @@ export class SeedInit {
     // TODO: move database logic like this to rasters service and repository, same for other entities in this file.
     await this.prisma.staticRasterData.upsert({
       where: {
-        countryCodeIso3_mapLayer: {
+        countryCodeIso3_layer: {
           countryCodeIso3,
-          mapLayer: MapLayer.population,
+          layer: LayerName.population,
         },
       },
       update: {
@@ -534,7 +534,7 @@ export class SeedInit {
       },
       create: {
         countryCodeIso3,
-        mapLayer: MapLayer.population,
+        layer: LayerName.population,
         valueBlackWhite: dataPngBuffer.toString('base64'),
         valueColoured: colouredPngBuffer.toString('base64'),
         extent,

@@ -7,10 +7,9 @@ import { SeverityDto } from '@api-service/src/alerts/dto/severity.dto';
 import { env } from '@api-service/src/env';
 import {
   EnsembleMemberType,
-  ExposureIndicator,
   ForecastSource,
   HazardType,
-  MapLayer,
+  LayerName,
   SeverityKey,
 } from '@api-service/src/shared-enums';
 import { getServer } from '@api-service/test/helpers/utility.helper';
@@ -79,13 +78,13 @@ export function buildAlert(
         {
           placeCode: 'ETH_01',
           adminLevel: 3,
-          exposureIndicator: ExposureIndicator.populationExposed,
+          layer: LayerName.populationExposed,
           value: 1000,
         },
       ],
       rasters: [
         {
-          mapLayer: MapLayer.floodDepth,
+          layer: LayerName.floodDepth,
           valueBlackWhite: TEST_RASTER_BASE64,
           extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },

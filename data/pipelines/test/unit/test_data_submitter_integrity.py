@@ -7,10 +7,9 @@ from pipelines.infra.data_types.data_config_types import OutputMode
 from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
-    ExposureIndicator,
     ForecastSource,
     HazardType,
-    MapLayer,
+    LayerName,
     SeverityKey,
 )
 from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
@@ -83,7 +82,7 @@ def test_admin_area_unequal_layer_counts_is_rejected(
     valid_submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
         admin_level=3,
-        exposure_indicator=MapLayer.FLOOD_DEPTH,  # type: ignore[arg-type] # wrong type on purpose to simulate a second indicator
+        layer=LayerName.FLOOD_DEPTH,  # type: ignore[arg-type] # wrong type on purpose to simulate a second indicator
         values_by_place_code={"PC001": 1, "PC002": 1},
     )
 
@@ -124,12 +123,12 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
         admin_level=3,
-        exposure_indicator=ExposureIndicator.POPULATION_EXPOSED,
+        layer=LayerName.POPULATION_EXPOSED,
         values_by_place_code={"PC001": 0},
     )
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
-        map_layer=MapLayer.FLOOD_DEPTH,
+        layer=LayerName.FLOOD_DEPTH,
         value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
@@ -147,7 +146,7 @@ def test_raster_invalid_extent_is_rejected(
     """A raster whose xmin >= xmax or ymin >= ymax is rejected."""
     valid_submitter.add_raster_exposure(
         event_name=EVENT_NAME,
-        map_layer=MapLayer.FLOOD_DEPTH,
+        layer=LayerName.FLOOD_DEPTH,
         value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 38.0, "ymin": 2.0, "xmax": 36.0, "ymax": 0.0},
     )
@@ -207,7 +206,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
     )
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
-        map_layer=MapLayer.FLOOD_DEPTH,
+        layer=LayerName.FLOOD_DEPTH,
         value_black_white=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
@@ -273,7 +272,7 @@ def test_negative_population_exposed_is_rejected(
     valid_submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
         admin_level=3,
-        exposure_indicator=ExposureIndicator.POPULATION_EXPOSED,
+        layer=LayerName.POPULATION_EXPOSED,
         values_by_place_code={"PC002": -100},
     )
 

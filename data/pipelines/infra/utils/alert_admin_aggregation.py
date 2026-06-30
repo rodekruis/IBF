@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.dtos import Alert, ExposureAdminArea
-from pipelines.infra.data_types.enums import ExposureIndicator
+from pipelines.infra.data_types.enums import LayerName
 
 
 def aggregate_to_parent_admin_levels(
@@ -33,10 +33,8 @@ def aggregate_to_parent_admin_levels(
 
     deepest_level = max(entry.admin_level for entry in deepest_entries)
 
-    # Aggregate upward, for instance level 3 → level 2 → level 1 → level 0
     for target_level in reversed(range(0, deepest_level)):
-        # Group deepest-level values by (ancestor_place_code, layer)
-        grouped: dict[tuple[str, ExposureIndicator], list[int | float]] = {}
+        grouped: dict[tuple[str, LayerName], list[int | float]] = {}
 
         for entry in deepest_entries:
             feature = admin_areas.admin_areas.get(entry.place_code)
@@ -47,17 +45,17 @@ def aggregate_to_parent_admin_levels(
             if ancestor_code is None:
                 continue
 
-            key = (ancestor_code, entry.exposure_indicator)
+            key = (ancestor_code, entry.layer)
             grouped.setdefault(key, []).append(entry.value)
 
-        for (place_code, exposure_indicator), values in grouped.items():
+        for (place_code, layer), values in grouped.items():
             if all(
                 isinstance(v, (int, float)) and not isinstance(v, bool) for v in values
             ):
                 aggregated_value: int | float = sum(values)
             else:
                 raise ValueError(
-                    f"Mixed or unsupported value types for layer {exposure_indicator} at "
+                    f"Mixed or unsupported value types for layer {layer} at "
                     f"place_code={place_code}, admin_level={target_level}: {values}"
                 )
 
@@ -65,7 +63,7 @@ def aggregate_to_parent_admin_levels(
                 ExposureAdminArea(
                     place_code=place_code,
                     admin_level=target_level,
-                    exposure_indicator=exposure_indicator,
+                    layer=layer,
                     value=aggregated_value,
                 )
             )

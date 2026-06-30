@@ -63,7 +63,7 @@ export class GeoFeaturesRepository {
           data: {
             countryCodeIso3: geoFeatureCreateDto.countryCodeIso3,
             featureType: geoFeatureCreateDto.featureType,
-            mapLayer: geoFeatureCreateDto.mapLayer,
+            layer: geoFeatureCreateDto.layer,
             referenceId: geoFeatureCreateDto.referenceId,
             attributes:
               (geoFeatureCreateDto.attributes as Prisma.InputJsonValue) ??
@@ -81,7 +81,7 @@ export class GeoFeaturesRepository {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           throw new ConflictException(
-            `Geo-feature with country '${geoFeatureCreateDto.countryCodeIso3}', layer '${geoFeatureCreateDto.mapLayer}' and referenceId '${geoFeatureCreateDto.referenceId}' already exists`,
+            `Geo-feature with country '${geoFeatureCreateDto.countryCodeIso3}', layer '${geoFeatureCreateDto.layer}' and referenceId '${geoFeatureCreateDto.referenceId}' already exists`,
           );
         }
         if (error.code === 'P2003') {

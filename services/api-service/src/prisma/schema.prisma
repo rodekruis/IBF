@@ -102,7 +102,7 @@ model AlertExposureAdminArea {
   alert      Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   placeCode           String
   adminLevel          Int
-  exposureIndicator   String
+  layer               String
   value               Float
 
   @@index([alertId])
@@ -119,7 +119,7 @@ model AlertExposureGeoFeature {
   alertId      Int
   alert        Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   geoFeatureId String
-  mapLayer     String
+  layer        String
   attributes   Json
 
   @@index([alertId])
@@ -134,7 +134,7 @@ model AlertExposureRasterData {
   updated         DateTime @updatedAt
   alertId         Int
   alert           Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  mapLayer        String
+  layer           String
   valueBlackWhite String
   valueColoured   String
   extent          Json
@@ -151,12 +151,12 @@ model StaticRasterData {
   updated         DateTime @updatedAt
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
-  mapLayer        String
+  layer           String
   valueBlackWhite String
   valueColoured   String
   extent          Json
 
-  @@unique([countryCodeIso3, mapLayer])
+  @@unique([countryCodeIso3, layer])
   @@index([countryCodeIso3])
 }
 
@@ -210,13 +210,13 @@ model GeoFeature {
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
   featureType     String // Point, LineString, Polygon, MultiPolygon
-  mapLayer        String // e.g. "glofas_stations"
+  layer           String // e.g. "glofas_stations"
   referenceId     String // external identifier, e.g. station code
   geometry        Unsupported("geometry(Geometry, 4326)")?
   attributes      Json   @default("{}")
 
-  @@unique([countryCodeIso3, mapLayer, referenceId])
-  @@index([countryCodeIso3, mapLayer])
+  @@unique([countryCodeIso3, layer, referenceId])
+  @@index([countryCodeIso3, layer])
 }
 
 model AlertConfig {

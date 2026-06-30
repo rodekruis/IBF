@@ -13,12 +13,11 @@ from pipelines.infra.data_types.dtos import (
     EnsembleMemberType,
     ExposureAdminArea,
     ExposureGeoFeature,
-    ExposureIndicator,
     ExposureRaster,
     Forecast,
     ForecastSource,
     HazardType,
-    MapLayer,
+    LayerName,
     RasterExtent,
     Severity,
     SeverityKey,
@@ -112,7 +111,7 @@ class DataSubmitter:
         self,
         event_name: str,
         admin_level: int,
-        exposure_indicator: ExposureIndicator,
+        layer: LayerName,
         values_by_place_code: dict[str, int | float],
     ) -> None:
         alert = self._get_alert(event_name, "add_admin_area_exposure")
@@ -124,7 +123,7 @@ class DataSubmitter:
                 ExposureAdminArea(
                     place_code=place_code,
                     admin_level=admin_level,
-                    exposure_indicator=exposure_indicator,
+                    layer=layer,
                     value=value,
                 )
             )
@@ -133,7 +132,7 @@ class DataSubmitter:
         self,
         event_name: str,
         geo_feature_id: str,
-        map_layer: MapLayer,
+        layer: LayerName,
         attributes: dict[str, bool | str | int | float],
     ) -> None:
         alert = self._get_alert(event_name, "add_geo_feature_exposure")
@@ -143,7 +142,7 @@ class DataSubmitter:
         alert.exposure.geo_features.append(
             ExposureGeoFeature(
                 geo_feature_id=geo_feature_id,
-                map_layer=map_layer,
+                layer=layer,
                 attributes=attributes,
             )
         )
@@ -151,7 +150,7 @@ class DataSubmitter:
     def add_raster_exposure(
         self,
         event_name: str,
-        map_layer: MapLayer,
+        layer: LayerName,
         value_black_white: str,
         extent: dict[str, float],
     ) -> None:
@@ -161,7 +160,7 @@ class DataSubmitter:
 
         alert.exposure.rasters.append(
             ExposureRaster(
-                map_layer=map_layer,
+                layer=layer,
                 value_black_white=value_black_white,
                 extent=RasterExtent(
                     xmin=extent["xmin"],

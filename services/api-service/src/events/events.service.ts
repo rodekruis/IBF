@@ -3,7 +3,7 @@ import { Event } from '@prisma/client';
 
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
-import { MapLayerDto } from '@api-service/src/events/dto/map-layer.dto';
+import { LayerDto } from '@api-service/src/events/dto/layer.dto';
 import {
   EventsRepository,
   ExposedAdminAreaRecord,
@@ -12,8 +12,8 @@ import {
   AlertClass,
   ForecastSource,
   HazardType,
-  MapLayer,
-  MapLayerFormat,
+  LayerName,
+  LayerType,
 } from '@api-service/src/shared-enums';
 
 @Injectable()
@@ -49,7 +49,7 @@ export class EventsService {
     event: Event,
     viewTime: Date,
     exposedAdminAreas: ExposedAdminAreaRecord[],
-    rasters: { id: number; mapLayer: string }[],
+    rasters: { id: number; layer: string }[],
   ): EventResponseDto {
     return {
       eventId: event.id,
@@ -82,7 +82,7 @@ export class EventsService {
       adminLevel: area.adminLevel,
       name: area.name,
       exposure: area.exposure.map((exp) => ({
-        exposureIndicator: exp.exposureIndicator,
+        layer: exp.layer,
         total: null,
         exposed: exp.exposed,
       })),
@@ -95,18 +95,18 @@ export class EventsService {
   }
 
   private mapAvailableLayers(
-    rasters: { id: number; mapLayer: string }[],
-  ): MapLayerDto[] {
+    rasters: { id: number; layer: string }[],
+  ): LayerDto[] {
     return [...this.mapRasterLayers(rasters)];
   }
 
   private mapRasterLayers(
-    rasters: { id: number; mapLayer: string }[],
-  ): MapLayerDto[] {
+    rasters: { id: number; layer: string }[],
+  ): LayerDto[] {
     return rasters.map((raster) => ({
       resourceId: String(raster.id),
-      mapLayer: (raster.mapLayer as MapLayer) ?? MapLayer.floodDepth,
-      format: MapLayerFormat.Raster,
+      layer: (raster.layer as LayerName) ?? LayerName.floodDepth,
+      format: LayerType.Raster,
     }));
   }
 }

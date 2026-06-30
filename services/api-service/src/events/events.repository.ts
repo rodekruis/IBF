@@ -4,8 +4,8 @@ import { Event, Prisma } from '@prisma/client';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import {
   EnsembleMemberType,
-  ExposureIndicator,
   HazardType,
+  LayerName,
   SeverityKey,
 } from '@api-service/src/shared-enums';
 
@@ -30,7 +30,7 @@ export interface ExposedAdminAreaRecord {
   readonly adminLevel: number;
   readonly name: string;
   readonly exposure: {
-    readonly exposureIndicator: ExposureIndicator;
+    readonly layer: LayerName;
     readonly exposed: number;
   }[];
 }
@@ -166,11 +166,11 @@ export class EventsRepository {
       select: {
         eventId: true,
         exposureAdminArea: {
-          where: { exposureIndicator: ExposureIndicator.populationExposed },
+          where: { layer: LayerName.populationExposed },
           select: {
             placeCode: true,
             adminLevel: true,
-            exposureIndicator: true,
+            layer: true,
             value: true,
           },
         },
@@ -199,7 +199,7 @@ export class EventsRepository {
           name: nameByPlaceCode.get(row.placeCode) ?? row.placeCode,
           exposure: [
             {
-              exposureIndicator: row.exposureIndicator as ExposureIndicator,
+              layer: row.layer as LayerName,
               exposed: row.value,
             },
           ],
@@ -246,8 +246,8 @@ export class EventsRepository {
 
   public async getRasterIdsForLatestAlerts(
     eventIds: number[],
-  ): Promise<Map<number, { id: number; mapLayer: string }[]>> {
-    const result = new Map<number, { id: number; mapLayer: string }[]>();
+  ): Promise<Map<number, { id: number; layer: string }[]>> {
+    const result = new Map<number, { id: number; layer: string }[]>();
     if (eventIds.length === 0) {
       return result;
     }
@@ -261,7 +261,7 @@ export class EventsRepository {
         exposureRasterData: {
           select: {
             id: true,
-            mapLayer: true,
+            layer: true,
           },
         },
       },

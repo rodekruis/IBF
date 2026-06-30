@@ -18,9 +18,10 @@ export enum HazardType {
   drought = 'drought',
 }
 
-export enum MapLayer {
+export enum LayerName {
   // --- generic (cross-hazard) ---
   population = 'population',
+  populationExposed = 'population_exposed',
   redCrossBranches = 'red_cross_branches',
   clinics = 'clinics',
 
@@ -29,18 +30,10 @@ export enum MapLayer {
   glofasStations = 'glofas_stations',
 }
 
-export enum ExposureIndicator {
-  populationExposed = 'population_exposed',
-}
-
-export enum MapLayerFormat {
-  // Image data, i.e. PNGs
+export enum LayerType {
   Raster = 'raster',
-  // Vector shape data for lines and polygons, including admin areas
   Shape = 'shape',
-  // Vector point data, such as for glofas locations
   Point = 'point',
-  // Vector tiles, used for dense vector information such as many buildings and roads
   VectorTile = 'vector_tile',
 }
 
