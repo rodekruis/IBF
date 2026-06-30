@@ -91,7 +91,7 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
         if isinstance(entry.value, (int, float)) and entry.value < 0:
             errors.append(
                 f"Alert '{event_name}' admin-area '{entry.place_code}': "
-                f"indicator '{entry.layer}' must be non-negative, got {entry.value}"
+                f"layer '{entry.layer}' must be non-negative, got {entry.value}"
             )
 
     admin_area_required = (LayerName.POPULATION_EXPOSED,)
@@ -100,7 +100,7 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
             if required not in layer_counts:
                 errors.append(
                     f"Alert '{event_name}' admin-area level {level}: "
-                    f"missing required indicator '{required}'"
+                    f"missing required layer '{required}'"
                 )
 
         counts = list(layer_counts.values())
@@ -108,7 +108,7 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
             detail = ", ".join(f"{key}={count}" for key, count in layer_counts.items())
             errors.append(
                 f"Alert '{event_name}' admin-area level {level}: "
-                f"record count differs across indicators ({detail})"
+                f"record count differs across layers ({detail})"
             )
 
     return errors
