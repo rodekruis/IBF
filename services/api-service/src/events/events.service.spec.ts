@@ -13,7 +13,7 @@ function buildEvent(overrides: Partial<Event> = {}): Event {
     eventName: 'ETH_floods_station-A',
     hazardType: HazardType.floods,
     forecastSources: ['glofas'],
-    alertClass: AlertClass.Medium,
+    alertClass: AlertClass.medium,
     trigger: false,
     centroid: { latitude: 0.35, longitude: 32.6 },
     startAt: new Date('2026-03-25T00:00:00Z'),

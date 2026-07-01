@@ -77,7 +77,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       eventName: 'ETH_floods_station-A',
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
-      alertClass: AlertClass.Low,
+      alertClass: AlertClass.low,
       trigger: false,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
       lastUpdatedAt: '2026-03-23T12:00:00.000Z',
@@ -103,7 +103,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
       eventName: 'ETH_floods_station-A',
-      alertClass: AlertClass.High,
+      alertClass: AlertClass.high,
       trigger: true,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
       lastUpdatedAt: '2026-03-24T12:00:00.000Z',

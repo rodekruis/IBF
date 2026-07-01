@@ -17,7 +17,7 @@ type AlertClassMatrix = Record<
   Record<AlertClassificationLevel, AlertClass>
 >;
 
-const { SingleThreshold, Low, Medium, High } = AlertClassificationLevel;
+const { singleThreshold, low, medium, high } = AlertClassificationLevel;
 
 // This matrix determines how severityClass and probabilityClass are combined into alertClass.
 // - When one dimension is 'SingleThreshold' the other dimension passes through directly, so matrix[SingleThreshold][x] = x and matrix[x][SingleThreshold] = x.
@@ -32,29 +32,29 @@ const { SingleThreshold, Low, Medium, High } = AlertClassificationLevel;
 // which means: lower severity threshold is easier to exceed > higher probability > higher probability class > potentially higher alert class for less severe alert (depending on exact threshold configurations)
 // TODO AB#41119: resolve this computation problem
 const ALERT_CLASS_MATRIX: AlertClassMatrix = {
-  [SingleThreshold]: {
-    [SingleThreshold]: AlertClass.High, // when both dimensions are 'SingleThreshold', we classify as 'high' for now
-    [Low]: AlertClass.Low,
-    [Medium]: AlertClass.Medium,
-    [High]: AlertClass.High,
+  [singleThreshold]: {
+    [singleThreshold]: AlertClass.high, // when both dimensions are 'SingleThreshold', we classify as 'high' for now
+    [low]: AlertClass.low,
+    [medium]: AlertClass.medium,
+    [high]: AlertClass.high,
   },
-  [Low]: {
-    [SingleThreshold]: AlertClass.Low,
-    [Low]: AlertClass.Low,
-    [Medium]: AlertClass.Low,
-    [High]: AlertClass.Medium,
+  [low]: {
+    [singleThreshold]: AlertClass.low,
+    [low]: AlertClass.low,
+    [medium]: AlertClass.low,
+    [high]: AlertClass.medium,
   },
-  [Medium]: {
-    [SingleThreshold]: AlertClass.Medium,
-    [Low]: AlertClass.Low,
-    [Medium]: AlertClass.Medium,
-    [High]: AlertClass.High,
+  [medium]: {
+    [singleThreshold]: AlertClass.medium,
+    [low]: AlertClass.low,
+    [medium]: AlertClass.medium,
+    [high]: AlertClass.high,
   },
-  [High]: {
-    [SingleThreshold]: AlertClass.High,
-    [Low]: AlertClass.Medium,
-    [Medium]: AlertClass.High,
-    [High]: AlertClass.High,
+  [high]: {
+    [singleThreshold]: AlertClass.high,
+    [low]: AlertClass.medium,
+    [medium]: AlertClass.high,
+    [high]: AlertClass.high,
   },
 };
 

@@ -42,12 +42,7 @@ interface FloodClassificationConfig {
   readonly triggerLeadTimeDuration: string;
 }
 
-const {
-  SingleThreshold: single,
-  Low: low,
-  Medium: med,
-  High: high,
-} = AlertClassificationLevel;
+const { singleThreshold, low, medium, high } = AlertClassificationLevel;
 
 // All configs use 'single' for at least one dimension (severity or probability).
 // This avoids the non-independence issue between severity and probability
@@ -59,55 +54,55 @@ export const FLOOD_CLASSIFICATION_BY_COUNTRY: Record<
   UGA: {
     severityClassLevels: [
       { label: low, threshold: 1.5 },
-      { label: med, threshold: 2 },
+      { label: medium, threshold: 2 },
       { label: high, threshold: 5 },
     ],
-    probabilityClassLevels: [{ label: single, threshold: 0.6 }],
-    triggerAlertClass: AlertClass.High,
+    probabilityClassLevels: [{ label: singleThreshold, threshold: 0.6 }],
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P5D',
   },
   KEN: {
-    severityClassLevels: [{ label: single, threshold: 5 }],
-    probabilityClassLevels: [{ label: single, threshold: 0.85 }],
-    triggerAlertClass: AlertClass.High,
+    severityClassLevels: [{ label: singleThreshold, threshold: 5 }],
+    probabilityClassLevels: [{ label: singleThreshold, threshold: 0.85 }],
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P7D',
   },
   ETH: {
     severityClassLevels: [
       { label: low, threshold: 2 },
-      { label: med, threshold: 5 },
+      { label: medium, threshold: 5 },
       { label: high, threshold: 10 },
     ],
-    probabilityClassLevels: [{ label: single, threshold: 0.75 }],
-    triggerAlertClass: AlertClass.High,
+    probabilityClassLevels: [{ label: singleThreshold, threshold: 0.75 }],
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P7D',
   },
   ZMB: {
-    severityClassLevels: [{ label: single, threshold: 10 }],
+    severityClassLevels: [{ label: singleThreshold, threshold: 10 }],
     probabilityClassLevels: [
       { label: low, threshold: 0.6 },
-      { label: med, threshold: 0.7 },
+      { label: medium, threshold: 0.7 },
       { label: high, threshold: 0.8 },
     ],
-    triggerAlertClass: AlertClass.High,
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P7D',
   },
   SSD: {
-    severityClassLevels: [{ label: single, threshold: 5 }],
-    probabilityClassLevels: [{ label: single, threshold: 0.6 }],
-    triggerAlertClass: AlertClass.High,
+    severityClassLevels: [{ label: singleThreshold, threshold: 5 }],
+    probabilityClassLevels: [{ label: singleThreshold, threshold: 0.6 }],
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P7D',
   },
   MWI: {
-    severityClassLevels: [{ label: single, threshold: 5 }],
-    probabilityClassLevels: [{ label: single, threshold: 0.6 }],
-    triggerAlertClass: AlertClass.High,
+    severityClassLevels: [{ label: singleThreshold, threshold: 5 }],
+    probabilityClassLevels: [{ label: singleThreshold, threshold: 0.6 }],
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P6D',
   },
   PHL: {
-    severityClassLevels: [{ label: single, threshold: 5 }],
-    probabilityClassLevels: [{ label: single, threshold: 0.8 }],
-    triggerAlertClass: AlertClass.High,
+    severityClassLevels: [{ label: singleThreshold, threshold: 5 }],
+    probabilityClassLevels: [{ label: singleThreshold, threshold: 0.8 }],
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P3D',
   },
 };
@@ -116,11 +111,11 @@ export const FLOOD_CLASSIFICATION_BY_COUNTRY: Record<
 // TODO: should some of the below come from a seed-data repo source instead of defined in code?
 
 const DROUGHT_SEVERITY_CLASS_LEVELS: ClassLevel[] = [
-  { label: single, threshold: 0.2 },
+  { label: singleThreshold, threshold: 0.2 },
 ];
 
 const DROUGHT_PROBABILITY_CLASS_LEVELS: ClassLevel[] = [
-  { label: single, threshold: 0 },
+  { label: singleThreshold, threshold: 0 },
 ];
 
 function createDroughtAlertConfig(

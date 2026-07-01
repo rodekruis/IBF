@@ -27,16 +27,16 @@ describe('/ Alert Configs', () => {
     spatialExtentPlaceCodes: ['ET0101'],
     temporalExtents: [{ 'lead-time-spectrum': ['0-day', '1-day', '2-day'] }],
     severityClassLevels: [
-      { label: AlertClassificationLevel.Low, threshold: 100 },
-      { label: AlertClassificationLevel.Medium, threshold: 200 },
-      { label: AlertClassificationLevel.High, threshold: 400 },
+      { label: AlertClassificationLevel.low, threshold: 100 },
+      { label: AlertClassificationLevel.medium, threshold: 200 },
+      { label: AlertClassificationLevel.high, threshold: 400 },
     ],
     probabilityClassLevels: [
-      { label: AlertClassificationLevel.Low, threshold: 0.5 },
-      { label: AlertClassificationLevel.Medium, threshold: 0.65 },
-      { label: AlertClassificationLevel.High, threshold: 0.85 },
+      { label: AlertClassificationLevel.low, threshold: 0.5 },
+      { label: AlertClassificationLevel.medium, threshold: 0.65 },
+      { label: AlertClassificationLevel.high, threshold: 0.85 },
     ],
-    triggerAlertClass: AlertClass.High,
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P7D',
   };
 
