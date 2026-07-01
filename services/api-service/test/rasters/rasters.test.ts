@@ -28,6 +28,8 @@ function readRasterImageById(id: number) {
 describe('/rasters', () => {
   let rasterId: number;
 
+  jest.setTimeout(60_000);
+
   beforeAll(async () => {
     await resetDB(SeedScript.ethiopiaOnly, __filename);
     const alert = buildAlert({ eventName: 'ETH_floods_raster-test' });

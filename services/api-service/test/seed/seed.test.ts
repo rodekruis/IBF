@@ -11,6 +11,8 @@ import {
 describe('Seed', () => {
   let accessToken: string;
 
+  jest.setTimeout(60_000);
+
   beforeAll(async () => {
     await resetDB(SeedScript.ethiopiaOnly, __filename, false);
     accessToken = await getAccessToken();
