@@ -39,6 +39,15 @@ const DEFAULT_CONFIG: ColorizationConfig = {
   steps: 6,
   useLogScale: true,
 };
+
+export const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
+  colorLow: [173, 216, 230], // Light blue
+  colorHigh: [0, 0, 139], // Dark blue
+  opacity: 0.7,
+  zeroIsTransparent: true,
+  steps: 6,
+  useLogScale: false,
+};
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function colorizeGrayscalePng(
@@ -140,4 +149,68 @@ function applyColorSteps(
     result[i] = Math.min(stepIndex, steps) / steps;
   }
   return result;
+}
+
+export interface PopulationRasterResult {
+  colouredBase64: string;
+  metadata: {
+    data: {
+      extent: { xmin: number; ymin: number; xmax: number; ymax: number };
+      crs: string;
+      nodata: number;
+    };
+    coloured: {
+      extent: { xmin: number; ymin: number; xmax: number; ymax: number };
+      crs: string;
+    };
+  };
+}
+
+export function processPopulationRaster(
+  dataPngBuffer: Buffer,
+  metadata: { transform: number[]; crs: string },
+): PopulationRasterResult {
+  const png = PNG.sync.read(dataPngBuffer);
+  const { width, height } = png;
+
+  const transform = metadata.transform.slice(0, 6);
+  const xmin = transform[2];
+  const ymax = transform[5];
+  const xRes = transform[0];
+  const yRes = Math.abs(transform[4]);
+  const xmax = xmin + xRes * width;
+  const ymin = ymax - yRes * height;
+
+  const extent4326 = { xmin, ymin, xmax, ymax };
+  const extent3857 = reproject4326To3857(extent4326);
+
+  const colouredBase64 = colorizeGrayscalePng(dataPngBuffer.toString('base64'));
+
+  return {
+    colouredBase64,
+    metadata: {
+      data: { extent: extent4326, crs: 'EPSG:4326', nodata: 0 },
+      coloured: { extent: extent3857, crs: 'EPSG:3857' },
+    },
+  };
+}
+
+function reproject4326To3857(extent: {
+  xmin: number;
+  ymin: number;
+  xmax: number;
+  ymax: number;
+}): { xmin: number; ymin: number; xmax: number; ymax: number } {
+  const toMercatorX = (lon: number): number => (lon * 20037508.34) / 180;
+  const toMercatorY = (lat: number): number => {
+    const rad = (lat * Math.PI) / 180;
+    return (Math.log(Math.tan(Math.PI / 4 + rad / 2)) / Math.PI) * 20037508.34;
+  };
+
+  return {
+    xmin: toMercatorX(extent.xmin),
+    ymin: toMercatorY(extent.ymin),
+    xmax: toMercatorX(extent.xmax),
+    ymax: toMercatorY(extent.ymax),
+  };
 }

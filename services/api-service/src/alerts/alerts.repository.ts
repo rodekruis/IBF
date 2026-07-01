@@ -11,7 +11,10 @@ import { SeverityReadDto } from '@api-service/src/alerts/dto/severity-read.dto';
 import { ForecastMetadata } from '@api-service/src/events/alert-to-event.service';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
-import { colorizeGrayscalePng } from '@api-service/src/utils/raster-colorization.helper';
+import {
+  colorizeGrayscalePng,
+  FLOOD_DEPTH_CONFIG,
+} from '@api-service/src/utils/raster-colorization.helper';
 
 const alertInclude: Prisma.AlertInclude = {
   severity: true,
@@ -23,7 +26,7 @@ const alertInclude: Prisma.AlertInclude = {
       created: true,
       updated: true,
       layer: true,
-      extent: true,
+      metadata: true,
     },
   },
 };
@@ -134,9 +137,22 @@ export class AlertsRepository {
             exposureRasterData: {
               create: (alertCreateDto.exposure.rasters ?? []).map((entry) => ({
                 layer: entry.layer,
-                valueBlackWhite: entry.valueBlackWhite,
-                valueColoured: colorizeGrayscalePng(entry.valueBlackWhite),
-                extent: { ...entry.extent },
+                valueGreyscale: entry.valueGreyscale,
+                valueColoured: colorizeGrayscalePng(
+                  entry.valueGreyscale,
+                  FLOOD_DEPTH_CONFIG,
+                ),
+                metadata: {
+                  data: {
+                    extent: { ...entry.extent },
+                    crs: 'EPSG:4326',
+                    nodata: 0,
+                  },
+                  coloured: {
+                    extent: { ...entry.extent },
+                    crs: 'EPSG:4326',
+                  },
+                },
               })),
             },
           },

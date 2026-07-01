@@ -16,8 +16,18 @@ export function createStaticRaster(
     .send({
       countryCodeIso3,
       layer,
-      valueBlackWhite: MINIMAL_PNG_BASE64,
+      valueData: MINIMAL_PNG_BASE64,
       valueColoured: MINIMAL_PNG_BASE64,
-      extent: { xmin: 33.0, ymin: 3.0, xmax: 48.0, ymax: 15.0 },
+      metadata: {
+        data: {
+          extent: { xmin: 33.0, ymin: 3.0, xmax: 48.0, ymax: 15.0 },
+          crs: 'EPSG:4326',
+          nodata: 0,
+        },
+        coloured: {
+          extent: { xmin: 33.0, ymin: 3.0, xmax: 48.0, ymax: 15.0 },
+          crs: 'EPSG:4326',
+        },
+      },
     });
 }

@@ -8,7 +8,6 @@ import logging
 import os
 
 import numpy as np
-from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
@@ -179,7 +178,10 @@ def _load_ibf_api_population_data(
         raise ValueError(container.error)
 
     population_array = rgba_png_to_float_array(png_bytes)
-    extent = raster_info["extent"]
+    data_metadata = raster_info["metadata"]["data"]
+    extent = data_metadata["extent"]
+    crs = data_metadata["crs"]
+    nodata = data_metadata["nodata"]
     width = population_array.shape[1]
     height = population_array.shape[0]
     x_res = (extent["xmax"] - extent["xmin"]) / width
@@ -189,8 +191,8 @@ def _load_ibf_api_population_data(
     container.data = RasterData(
         array=population_array.astype(np.float32),
         transform=transform,
-        crs=DEFAULT_CRS,
-        nodata=POPULATION_NODATA_VALUE,
+        crs=crs,
+        nodata=nodata,
     )
 
 

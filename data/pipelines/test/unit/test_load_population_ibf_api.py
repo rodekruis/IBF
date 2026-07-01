@@ -54,7 +54,17 @@ def _make_api_metadata_response() -> dict:
     return {
         "id": 1,
         "layerName": LayerName.POPULATION,
-        "extent": {"xmin": 0.0, "ymin": -200.0, "xmax": 200.0, "ymax": 0.0},
+        "metadata": {
+            "data": {
+                "extent": {"xmin": 0.0, "ymin": -200.0, "xmax": 200.0, "ymax": 0.0},
+                "crs": "EPSG:4326",
+                "nodata": 0,
+            },
+            "coloured": {
+                "extent": {"xmin": 0.0, "ymin": -200.0, "xmax": 200.0, "ymax": 0.0},
+                "crs": "EPSG:3857",
+            },
+        },
     }
 
 

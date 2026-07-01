@@ -130,7 +130,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
         layer=LayerName.FLOOD_DEPTH,
-        value_black_white=PLACEHOLDER_RASTER_BASE64,
+        value_greyscale=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
 
@@ -148,7 +148,7 @@ def test_raster_invalid_extent_is_rejected(
     valid_submitter.add_raster_exposure(
         event_name=EVENT_NAME,
         layer=LayerName.FLOOD_DEPTH,
-        value_black_white=PLACEHOLDER_RASTER_BASE64,
+        value_greyscale=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 38.0, "ymin": 2.0, "xmax": 36.0, "ymax": 0.0},
     )
 
@@ -208,7 +208,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
     submitter.add_raster_exposure(
         event_name=EVENT_NAME,
         layer=LayerName.FLOOD_DEPTH,
-        value_black_white=PLACEHOLDER_RASTER_BASE64,
+        value_greyscale=PLACEHOLDER_RASTER_BASE64,
         extent={"xmin": 36.0, "ymin": 0.0, "xmax": 38.0, "ymax": 2.0},
     )
 

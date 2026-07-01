@@ -218,7 +218,7 @@ def calculate_flood_forecasts(
             data_submitter.add_raster_exposure(
                 event_name=event_name,
                 layer=LayerName.FLOOD_DEPTH,
-                value_black_white=raster_to_base64_png(clipped_flood_extent),
+                value_greyscale=raster_to_base64_png(clipped_flood_extent),
                 extent=get_raster_extent(clipped_flood_extent),
             )
 
