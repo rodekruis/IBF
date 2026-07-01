@@ -1,581 +1,222 @@
-# GitHub Copilot Instructions - IBF Platform
+# GitHub Copilot Instructions - National Risk Watch (NRW)
 
 ## Repository Overview
 
-IBF is a web app to visualize hazard forecasts. It consists of Python pipelines, Nest.js/TypeScript back-end services and a React frontend, which is in a separate repo. This repository contains the pipelines and backend services.
+IBF is a web app to visualize hazard forecasts. This repository contains:
 
-**Key Components:**
+- `services/api-service/` — NestJS backend API (TypeScript, Prisma, PostgreSQL)
+- `data/` — Python code for both hazard forecast pipelines and data management scripts
+- `portal/nrw-standalone/` — React frontend wrapper around the IFRC Go NRW submodule (not edited from this repo — changes go to the `go-web-app` submodule repo)
 
-- `services/api-service`: Main NestJS backend API service
-- `pipelines`: Data pipelines for hazard forecasts in Python
+---
 
-## VSCode Integration
+## General Conventions (all languages)
 
-This file (`.github/copilot-instructions.md`) is automatically recognized by GitHub Copilot in both GitHub and VSCode environments. The repository includes VSCode-specific configurations:
-
-### VSCode Settings
-
-- **Prettier**: Default formatter with automatic formatting on save
-- **ESLint**: Enabled with auto-fix on save and unused import removal
-- **Azure DevOps Integration**: AB# links are automatically detected and made clickable
-- **Tailwind CSS**: Enhanced IntelliSense with pixel equivalents and custom class attributes
-- **TypeScript**: Uses workspace TypeScript version for consistency
-
-### Recommended Extensions
-
-Check `.vscode/extensions.json` for the complete list of recommended extensions that enhance the development experience.
-
-## Architecture & Technology Stack
-
-### Backend Services (Node.js/TypeScript)
-
-- **Framework**: NestJS with TypeScript
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT with role-based access control
-- **API**: RESTful APIs with OpenAPI/Swagger documentation
-- **Testing**: Jest for unit and integration tests
-- **Containerization**: Docker and Docker Compose
-
-### Data Pipelines (Python)
-
-- **Location**: `data/` directory
-- **Language**: Python 3.12+
-- **Package Management**: uv with hatchling build backend
-- **Linting**: ruff, deptry, vulture (via `python-knip.py`)
-- **Testing**: pytest
-- **CI**: GitHub Actions (`test_pipelines.yml`)
-
-### Portal Front End (React)
-
-- **Location**: `portal/nrw-standalone`
-- **Purpose**: Wrapper around the IFRC Go core NRW code (which is included as a sparsely checked-out git submodule) to serve as a standalone app.
-- **Framework**: React 19 with Vite
-- **Package Manager**: pnpm
-- **Submodule**: Core code lives in the git submodule `portal/nrw-standalone/src/go-web-app`. Never edit inside the submodule — keep changes outside it, or offer submodule changes only as a suggestion for the `go-web-app` repo.
-
-### Development Tools
-
-- **Code Quality**: ESLint, Prettier, Husky pre-commit hooks
-- **Package Management**: npm with workspaces
-- **Version Control**: Conventional Commits with Azure DevOps integration
-- **CI/CD**: GitHub Actions workflows
-
-## Code Style & Standards
-
-### General Principles
-
-- Follow existing code patterns and architectural decisions
-- Prioritize readability and maintainability over clever solutions
-- Use TypeScript strictly - avoid `any` types
-- Write self-documenting code with clear naming conventions
-
-### Formatting & Linting
-
-- **Prettier**: Enforced via pre-commit hooks
-  - Single quotes, trailing commas, arrow parentheses always
-  - Single attribute per line in templates
-- **ESLint**: Strict TypeScript configuration with custom rules
-- **Import Organization**:
-  - External packages first
-  - Relative imports last
-  - Use simple-import-sort for consistent ordering
-
-### TypeScript Guidelines
-
-- Use strict TypeScript configuration
-- Prefer explicit return types for public methods
-- Use proper TypeScript patterns (interfaces, enums, generics)
-- Avoid `@typescript-eslint/no-explicit-any` - use proper typing
-- Use object shorthand syntax where applicable
-
-## Development Workflow
+- Use full names, no abbreviations — let IDE auto-complete handle length
+- Avoid `any` (TypeScript) and `Any` (Python) — use proper types everywhere
+- Use type annotations everywhere
+- Do not include "Enum" suffix for enum names (e.g., `HazardType`, not `HazardTypeEnum`)
+- Follow existing code patterns — prioritize readability over cleverness
+- Always include Azure DevOps reference `AB#XXXXX` in commit body
 
 ### Commit Conventions
 
-Follow Conventional Commits with Angular format (strictly enforced):
-
-- `feat:` - New features
-- `fix:` - Bug fixes
-- `docs:` - Documentation changes
-- `style:` - Code formatting (no logic changes)
-- `refactor:` - Code restructuring without feature changes
-- `test:` - Test additions or modifications
-- `chore:` - Build process, dependency updates
-
-**Format Requirements**:
-
-- Use imperative mood: "Add feature" not "Added feature" or "Adds feature"
-- Think: "This commit will..." + your commit message
-- Always include Azure DevOps reference in commit body (not title)
-- Use appropriate labels for release note generation
-
-**Examples**:
+Conventional Commits with Angular format (enforced by CI):
 
 ```
-feat: Add transaction history to profile page
+feat: Add alert raster upload endpoint
 
-See AB#123456
+See AB#12345
 ```
 
-```
-fix: Prevent user from submitting empty form
-
-See AB#789012
-```
-
-### Domain Terminology
-
-**Standard Abbreviations:**
-
-- All other domain concepts must be written in full
-
-### Naming Conventions
-
-**General Rules:**
-
-- Use full names, no abbreviations
-- Let IDE auto-complete instead of typing long names
-- Class names are plural for Modules, Controllers, Services
-- Class names are singular for Entities and Repositories
-- Base folder names of modules are plural
-- Do not include "Enum" suffix for enums
-
-**Examples:**
-
-- Module: `ProgramsModule` → `programs.module.ts`
-- Service: `ProgramsService` → `programs.service.ts`
-- Entity: `ProgramEntity` → `program.entity.ts`
-- Enum: `DefaultUserRole` (not `DefaultUserRoleEnum`)
-
-### Branch Naming
-
-Use pattern: `username/description-of-change` (strongly encouraged)
-
-- Example: `john-doe/add-user-profile-endpoint`
-- Helps maintain clarity and ownership
-- Consistent with single-author branch paradigm
+Prefixes: `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`
+Use imperative mood ("Add feature", not "Added feature").
 
 ### Pull Request Guidelines
 
-- Keep PRs small and focused on single responsibility
-- Include Azure DevOps task references in PR descriptions
-- Follow the PR template for consistency
-- **Draft PRs**: Use draft status until ready for review
-- **Ownership**: Each branch has one owner/maintainer (the PR author)
-- **Review Process**:
-  - Limit to one reviewer unless additional expertise is needed
-  - Same reviewer should handle subsequent reviews
-  - Author merges after approval unless stated otherwise
-  - PRs must be up-to-date with target branch before merging
-- **Content Guidelines**:
-  - Avoid mixing responsibilities in single PR
-  - Prefer non-breaking changes when possible
-  - Add appropriate labels for auto-generating release notes (enhancement, bugfix, other, chore)
-  - Include design team review for UI/UX changes
+- Keep PRs small, single-responsibility
+- Include AB# task reference
+- Add label for release notes: `enhancement`, `bugfix`, `other`, `chore`
+- Author merges after approval
 
-### Pull Request Checklist
+---
 
-Before requesting review, ensure:
+## Backend Service (NestJS/TypeScript)
 
-- [ ] Self-review completed
-- [ ] Tests added or justification for no tests provided
-- [ ] Design team review requested for UI/UX changes
-- [ ] All automated checks pass
-- [ ] No deviation from PR guidelines needed
-- [ ] Azure DevOps task reference included (AB#XXXXX)
-- [ ] Appropriate release notes label added (enhancement, bugfix, other, chore)
-- [ ] Branch is up-to-date with target branch
+Location: `services/api-service/`
 
-## Data Pipeline Patterns (Python)
+### Naming
 
-> _This section covers the `data/` directory. It is a starting point — expand as conventions solidify._
+- **Modules, Controllers, Services**: plural class names (e.g., `AlertsModule`, `AlertsController`, `AlertsService`)
+- **Repositories**: plural class names (e.g., `AlertsRepository`, `EventsRepository`)
+- **Prisma models**: singular (e.g., `Alert`, `Event`, `User` in `schema.prisma`)
+- **DTOs**: `{Entity}{Action}Dto` for input, `{Entity}ReadDto` for output (e.g., `AlertCreateDto`, `AlertReadDto`)
+- **Interfaces**: `Result` suffix for output (e.g., `ClassificationResult`); place in `/interfaces` folder; all attributes `readonly`
+- **Enum member names (keys)**: always camelCase (e.g., `singleThreshold`, `vectorTile`, `low`)
+- **Functions**: prefix with `get` for data retrieval; add `OrThrow` suffix when deliberately throwing (e.g., `getAlertOrThrow`)
+
+File naming matches class: `AlertsModule` → `alerts.module.ts`, `AlertCreateDto` → `alert-create.dto.ts`
+
+### Module Architecture
+
+- Each module has one responsibility; avoid circular dependencies
+- All database interactions go through Repositories — never access Prisma from controllers or services
+- Functions do not accept or return Prisma model types — use DTOs
+- When importing services from other modules, import the full module
+
+### Controller Pattern
+
+```typescript
+@ApiTags('alerts')
+@UseGuards(AuthenticatedUserGuard)
+@Controller('alerts')
+export class AlertsController {
+  public constructor(private readonly alertsService: AlertsService) {}
+
+  @AuthenticatedUser()
+  @Get()
+  @ApiOperation({ summary: 'Get all alerts' })
+  public async getAlerts(): Promise<AlertReadDto[]> {
+    return this.alertsService.getAlerts();
+  }
+}
+```
+
+- HTTP verb decorator (`@Get`, `@Post`, etc.) must be the first decorator on an endpoint method
+- Use `@AuthenticatedUser()` decorator and `AuthenticatedUserGuard` for auth
+
+### Repository Pattern
+
+Repositories wrap `PrismaService` and return DTOs:
+
+```typescript
+@Injectable()
+export class AlertsRepository {
+  public constructor(private readonly prisma: PrismaService) {}
+
+  public async getAlertOrThrow(id: number): Promise<AlertReadDto> {
+    const alert = await this.prisma.alert.findUnique({
+      where: { id },
+      include: alertInclude,
+    });
+    if (!alert) {
+      throw new NotFoundException(`Alert with id ${id} not found`);
+    }
+    return this.getAlertReadDto(alert);
+  }
+}
+```
+
+### DTO Pattern
+
+- Use classes with validation decorators and `@ApiProperty`
+- All attributes `readonly`
+- One DTO per file in module's `dto/` folder
+
+```typescript
+export class AlertCreateDto {
+  @ApiProperty({ example: 'KEN_floods_station-A' })
+  @IsString()
+  public readonly eventName: string;
+
+  @ApiProperty({ enum: HazardType })
+  public readonly hazardType: HazardType;
+}
+```
+
+### API Design
+
+- Organize URLs around entities, not use cases — nouns, not verbs
+- Use proper HTTP methods and status codes
+- 404 for GET to non-existent resource; 200 with empty array for empty collections
+- Limit URL nesting to 2 levels (`/alerts/:id/severity`)
+
+### Database
+
+- ORM: Prisma with PostgreSQL
+- Always include `"api-service"` schema in raw SQL queries
+- Use Prisma migrations for schema changes; keep migrations minimal and focused
+
+### Exception Handling
+
+- Use NestJS `HttpException` with a descriptive string as first argument
+- Exceptions can be used for control flow
+
+### Testing
+
+- **Unit tests** (`*.spec.ts`): mock dependencies, test business logic and edge cases
+- **Integration tests** (`*.test.ts`): test real API interactions, placed in `/test` folder
+- Do not test private methods directly
+
+```bash
+docker exec api-service npm run test:unit:all                       # all unit tests
+docker exec api-service npm run test:unit:all alerts.service        # specific file
+docker exec api-service npm run test:integration:all                # all integration tests
+docker exec api-service npm run test:integration:all login.test     # specific file
+npm run typecheck                                                   # type checking
+npm run lint                                                        # linting
+```
+
+### Import Organization
+
+- External packages first, relative imports last
+- Enforced by simple-import-sort (ESLint plugin)
+
+---
+
+## Data Pipelines (Python)
+
+Location: `data/`
 
 ### Project Structure
 
-- `data/` — root directory for all Python code
-- `data/data_management/` — scripts for managing data (e.g., fetching & processing seed data)
-- `data/pipelines/` — main pipeline code organized by version and type
-- `data/pipelines/infra/` — shared pipeline infrastructure (data submission, integrity checks, configuration)
-- `data/pipelines/<hazard-type>/` — current hazard pipeline implementations (flood, drought)
-- `data/pipelines/test/` — tests: unit, infra-integration and infra-api-integration
+- `data/pipelines/infra/` — shared infrastructure: data submission, integrity checks, configuration
+- `data/pipelines/<hazard-type>/` — hazard-specific pipeline implementations (flood, drought)
+- `data/pipelines/test/` — tests: unit, infra-integration, pipeline-integration
+- `data/data_management/` — scripts for managing seed data
 
-### Python Style
+### Style
 
 - Use dataclasses for data models, `StrEnum` for string enumerations
-- Avoid abbreviations — same principle as the TypeScript codebase
+- Enum member names: UPPER_SNAKE_CASE (standard Python convention)
 - Use type annotations everywhere; avoid `Any`
+- No abbreviations — same principle as the TypeScript codebase
 
 ### Infra vs Hazard Code Separation
 
-- **`pipelines/infra/`** owns all infrastructure concerns: data loading/cleanup, configuration, submission, and resource lifecycle management
-- **`pipelines/<hazard-type>/forecast.py`** contains only hazard-specific logic (data science computations, alert determination, exposure calculation)
-- Never put infrastructure concerns (file cleanup, retry logic, authentication, resource management) in `forecast.py` — these belong in the infra layer
+- `pipelines/infra/` owns all infrastructure concerns: data loading/cleanup, configuration, submission, resource lifecycle
+- `pipelines/<hazard-type>/forecast.py` contains only hazard-specific logic (data science, alert determination, exposure calculation)
+- Never put infrastructure concerns in `forecast.py`
 
 ### Testing
 
 ```bash
 cd data
-uv run pytest pipelines/test/unit/                  # unit tests on individual functions
-uv run pytest pipelines/test/integration_infra/     # test pipeline-infra + integration with API (using scenarios, bypasses hazard-logic in forecast.py)
-uv run pytest pipelines/test/integration_pipeline/  # FUTURE: tests full pipeline, including hazard-logic based on mock-input-forecast-data
+uv run pytest pipelines/test/unit/                  # unit tests
+uv run pytest pipelines/test/unit/ -k test_integrity # specific test
+uv run pytest pipelines/test/integration_infra/     # infra integration tests
 uv run python python-knip.py                        # linting (ruff, deptry, vulture)
 ```
 
 ---
 
-## Backend Service Patterns (NestJS)
+## Portal Frontend (React)
 
-### Module Architecture & Dependencies
+Location: `portal/nrw-standalone/`
 
-**NestJS Module Dependency Structure:**
+- Wrapper around the IFRC Go NRW code (sparsely checked-out git submodule at `portal/nrw-standalone/src/go-web-app`)
+- Never edit inside the submodule — keep changes outside it, or offer submodule changes only as a suggestion for the `go-web-app` repo
+- Uses React 19, Vite, pnpm, Tailwind CSS
 
-- **Single Responsibility Principle**: Each module has one clear responsibility
-- **Minimal Coupling**: Modules should be loosely coupled for reusability and testing
-- **Hierarchical Structure**: Higher-level modules depend on lower-level ones
-- **Feature Modules**: Group related functionality into feature modules
-- **Avoid Circular Dependencies**: Keep module dependencies acyclic
+---
 
-**Module Implementation Rules:**
-
-- All database interactions must be in Repositories
-- Modules only use Repositories from their own module and lower-level modules
-- Functions do not accept or return Entities (use DTOs/interfaces)
-- When importing services from other modules, import the full module, not just the service
-
-### Controller Structure
-
-```typescript
-@Controller('api/programs')
-@UseGuards(AuthenticatedUserGuard)
-@ApiTags('programs')
-export class ProgramsController {
-  constructor(private readonly programsService: ProgramsService) {}
-
-  @Get()
-  @ApiOperation({ summary: 'Get all programs' })
-  async getPrograms(): Promise<ProgramReturnDto[]> {
-    return this.programsService.getPrograms();
-  }
-}
-```
-
-- Always place the HTTP verb decorator (`@Get`, `@Post`, `@Put`, `@Delete`, `@Patch`) as the first decorator on an endpoint method
-
-### Function Signatures & Naming
-
-**Function Naming Conventions:**
-
-- Add `OrThrow` suffix when functions deliberately throw expected errors
-- Functions returning data from IBF start with "get", not "find"
-- External system functions can use "retrieve" or other descriptive verbs
-- Use full names, no abbreviations (except documented domain abbreviations)
-
-**Interface Conventions:**
-
-- **Input Interfaces**: Use "Params" suffix (e.g., `ContactInformationParams`)
-- **Output Interfaces**: Use "Result" suffix (e.g., `ContactInformationResult`)
-- Place interfaces in `/interfaces` folder with descriptive filenames
-- All interface attributes should be `readonly`
-- For 3+ parameters in internal methods, use destructured objects
-
-**Function Organization:**
-
-- Use "step-down" approach: high-level functions first, then implementation details
-- Functions should appear in the order they are called
-- Keep related functions close together
-- Place private/helper functions near the public functions they support
-
-### DTO Conventions
-
-**API Service DTOs:**
-
-- Use classes with "Dto" suffix
-- Input DTOs: Start with entity name, then prefix "Dto" with action verb (e.g., `AddressCreateDto`)
-- Output DTOs: Use "Response" suffix (e.g., `UserResponseDto`)
-- All DTO attributes should be `readonly`
-- One DTO per file in `/dtos` folder
-
-**External API DTOs:**
-
-- Use interfaces with naming format: `{Fsp-name}Api{Operation}{Request|Response}{Body|Headers}`
-- Example: `AirtelApiDisbursementRequestHeaders`
-- Place in subfolders like `/dtos/safaricom-api/`
-- Do not share DTOs between internal and external APIs
-
-### Entity & Data Model
-
-**Entity Guidelines:**
-
-- Use 3rd Normal Form (3NF) for database design
-- Entities belong to specific NestJS modules
-- Only owning module and dependent modules can import entities
-- All data access via Custom Repositories (no Prisma outside repositories)
-- Entities can only be created/updated/deleted within owning module
-
-**Entity Naming:**
-
-- Entity class names are singular (e.g., `ProgramEntity`)
-- Repository class names are singular (e.g., `FinancialServiceProviderRepository`)
-- Properties should not use `JSON` as TypeScript type
-- Include `| null` in type when `nullable: true`
-- For FK properties, use full foreign entity name
-
-### API Design
-
-**API Structure:**
-
-- Organize APIs around entities, not use cases
-- Use proper HTTP methods (GET/POST/DELETE/PUT/PATCH)
-- Apply correct status codes and document them
-- Use nouns, not verbs in URLs (exceptions for actions like /retry, /approve)
-- Limit nesting to 2 levels (`/noun/id/noun/id`)
-- Limit response depth to 2 levels (relation of relation is OK)
-
-### Database Operations
-
-- **SECURITY**: Always use parameterized queries with `Equal()` helper
-- Avoid direct object conditions in `where` clauses (ESLint enforced)
-- Use the scoped repository pattern for data isolation
-- Handle transactions properly for complex operations
-- Encapsulate data access functionality in Custom Repositories
-
-### Exception Handling
-
-- Use NestJS `HTTPException` for control flow and HTTP responses
-- First argument should be a descriptive string
-- Only use arrays/objects for error messages with very good reason
-- Exceptions can be used for control flow in the IBF Platform
-
-### Testing Patterns
-
-**Unit Tests** (`*.spec.ts`):
-
-- Focus on response handling, business logic, and edge cases
-- Mock external dependencies for isolation
-- Fast and reliable execution
-- Use for functions with internal business logic and multiple paths
-- Run with: `npm run test:unit:all`
-
-**Integration Tests** (`*.test.ts`):
-
-- Test real API interactions and component integration
-- Use SuperAgent for API testing
-- Place in `/test` folder
-
-**Testing Strategy:**
-
-- Follow Testing Trophy philosophy over Testing Pyramid
-- Write tests that provide value (cost vs. risk analysis)
-- Unit tests provide breadth (wide range of scenarios)
-- Integration tests provide depth (real-world behavior)
-- Refactor complex units into smaller, testable functions
-
-**Organization Rules:**
-
-- No new top-level folders should be added to `app/`
-- Domain-specific folders go inside `app/pages`
-- `models` folder only contains backend entity representations
-- Create components close to where they're used
-- Move to top-level folders only when used by multiple domains
-
-### Component Guidelines
-
-**Creation Requirements:**
-
-- **Standalone Components**: All components must be standalone (enforced)
-- **Change Detection**: Use OnPush strategy for performance (enforced)
-- **Lifecycle**: Implement proper lifecycle interfaces
-- **Selectors**: Use `app-` prefix with kebab-case
-- Delete auto-generated spec files unless meaningful
-- Do not create (S)CSS files per component
-
-**Component Best Practices:**
-
-- Keep custom components/CSS to minimum
-- Use PrimeNG components whenever possible
-- Use new control flow syntax (`@if`, `@for`) over structural directives
-- Do not abstract by default - only extract when certain of reuse
-- Inline templates OK for templates ≤10 lines
-
-### Component Structure
-
-```typescript
-@Component({
-  selector: 'app-user-profile',
-  standalone: true,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
-  template: `...`,
-})
-export class UserProfileComponent implements OnInit {
-  // Component logic here
-}
-```
-
-### Styling & Templates
-
-**Styling Guidelines:**
-
-- **Tailwind CSS**: Use utility classes instead of custom CSS
-- Follow Tailwind recommendations for reusing styles
-- **PrimeNG**: Prefer PrimeNG components over custom implementations
-- Add global rules to `styles.scss` for PrimeNG components used in multiple places (should be done very sparingly - ideally avoided)
-- Use `*-start`/`*-end` instead of `*-left`/`*-right` for RTL support
-
-## Testing Approach
-
-### Backend Testing
-
-- **Unit Tests**: Jest configuration in `jest.unit.config.mjs`
-- **Integration Tests**: Jest configuration in `jest.integration.config.mjs`
-- **Coverage**: Separate reports for unit and integration tests
-- **Patterns**: Use helper functions, clean test data, mock external dependencies
-- **Guidelines**
-  - Do not test private methods directly
-
-### Testing Commands
+## Local Development
 
 ```bash
-# Check formatting for the whole repository
-npm run test:prettier
-
-# Backend (api-service)
-cd services/api-service
-docker exec api-service npm run test:unit:all                          # all unit tests
-docker exec api-service npm run test:unit:all alerts.service           # specific unit test file
-docker exec api-service npm run test:integration:all                   # all integration tests
-docker exec api-service npm run test:integration:all login.test        # specific integration test file
-npm run typecheck                                                      # type checking
-npm run lint                                                           # linting
-
-# Pipelines (Python)
-cd data
-uv run pytest pipelines/test/unit/                                     # all unit tests
-uv run pytest pipelines/test/unit/ -k test_integrity                   # specific unit test
-uv run pytest pipelines/test/integration_infra/                        # infra integration tests
-uv run python python-knip.py                                           # linting (ruff, deptry, vulture)
+npm run install:all         # install all dependencies
+npm run start:services      # start backend services (Docker)
+npm run fix:all             # fix linting issues
+npm run test:prettier       # check formatting
 ```
 
-## Common Patterns & Utilities
-
-### Authentication & Authorization
-
-- Use `@AuthenticatedUser()` decorator to access current user
-- Implement role-based access control with guards
-- Handle JWT tokens properly in frontend services
-
-### Error Handling
-
-- Backend: Use NestJS HTTP exceptions with proper status codes
-- Frontend: Handle HTTP errors gracefully with user feedback
-- Log errors appropriately for debugging
-
-### API Design
-
-**API Structure:**
-
-- Organize APIs around entities, not use cases
-- Use proper HTTP methods (GET/POST/DELETE/PUT/PATCH)
-- Apply correct status codes and document them
-- Use nouns, not verbs in URLs (exceptions for actions like /retry, /approve)
-- Limit nesting to 2 levels (`/noun/id/noun/id`)
-- Limit response depth to 2 levels (relation of relation is OK)
-
-**HTTP Response Guidelines:**
-
-- 404 Not Found: For GET calls to non-existent resource endpoints
-- 200 OK with empty array: For GET calls to collection endpoints with no resources
-
-### URL and Header Construction
-
-**When using fetch API:**
-
-- Use native `URL` object for constructing URLs and parameters
-- Use native `Headers` object for HTTP headers
-- Pass URL object instance directly to fetch
-- Set Headers object as `headers` property value
-- Exception: Use framework-specific tooling when available
-
-### Database Migrations
-
-- Use Prisma migrations for schema changes
-- Test migrations thoroughly before deployment
-- Keep migration files minimal and focused
-- Always include "api-service" schema in raw SQL queries when referencing tables of the api-service
-
-## Environment & Configuration
-
-### Local Development
-
-```bash
-# Setup
-npm run install:all         # Install all dependencies
-npm run start:services      # Start backend services
-
-# Code Quality
-npm run fix:all            # Fix linting issues
-npm run test:all           # Run all tests
-```
-
-### Environment Variables
-
-- Copy `services/.env.example` to `services/.env`
-- Configure database, API keys, and feature flags
-- Use proper environment-specific configurations
-
-## Things to Avoid
-
-### Security Anti-Patterns
-
-- ❌ Direct SQL query construction without parameterization
-- ❌ Exposing sensitive data in API responses
-- ❌ Missing authentication/authorization checks
-- ❌ Using `any` type
-
-### Code Quality Issues
-
-- ❌ Mixing unrelated changes in single PR
-- ❌ Breaking changes without proper versioning
-- ❌ Skipping tests for new functionality
-- ❌ Hardcoded values instead of configuration
-
-### Backend Specific
-
-- ❌ Direct database access from controllers
-- ❌ Missing error handling in async operations
-- ❌ Circular dependencies between modules
-
-## Additional Resources
-
-- [Contributing Guidelines](../docs/CONTRIBUTING.md)
-- [Service README](../services/api-service/README.md)
-
-## Instructions for Copilot Agents
-
-### Self-Improvement Protocol
-
-**Important**: All Copilot agents (both GitHub and VSCode) must follow this protocol:
-
-1. **When reviewing PRs**: Always check if the changes introduce new patterns, conventions, or insights that should be added to these instructions
-2. **When learning new patterns**: If you discover better practices while working on this codebase, suggest updates to this file
-3. **Continuous improvement**: Regularly evaluate whether these instructions reflect the current state and best practices of the codebase
-4. **Documentation updates**: When adding new features or changing existing patterns, ensure these instructions are updated accordingly
-5. **Error reporting**: When encountering unexpected errors (e.g., inability to access resources, API failures, permission issues), always report these to reviewers so alternative approaches can be tried
-
-### For PR Review Agents
-
-- **Check instruction updates**: Review if the PR introduces patterns that should be documented here
-- **Suggest improvements**: Recommend additions or modifications to these instructions based on code changes
-- **Maintain consistency**: Ensure new code follows the patterns documented in these instructions
-- **Update when needed**: Create follow-up tasks to update these instructions when significant architectural changes are made
-- **Report obstacles**: When unable to access required resources (wikis, documentation, APIs), inform reviewers immediately with specific error details
-
-### For Code Generation Agents
-
-- **Follow current patterns**: Always reference these instructions when generating code suggestions
-- **Learn from feedback**: When suggestions are rejected, consider if the instructions need clarification
-- **Propose enhancements**: Suggest updates to these instructions when you identify gaps or improvements
-- **Stay current**: Regularly re-read these instructions as they evolve with the codebase
-- **Surface issues**: Report any unexpected errors, access issues, or limitations encountered during code analysis or generation
-
-Remember: This platform serves humanitarian aid operations. Code quality and reliability directly impact people in need. Write code that is secure, maintainable, and well-tested.
+Environment: copy `services/.env.example` to `services/.env`.
