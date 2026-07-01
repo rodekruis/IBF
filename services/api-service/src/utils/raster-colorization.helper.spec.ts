@@ -1,6 +1,10 @@
 import { PNG } from 'pngjs';
 
-import { colorizeGrayscalePng } from '@api-service/src/utils/raster-colorization.helper';
+import {
+  colorizeGrayscalePng,
+  processPopulationRaster,
+  reproject4326To3857,
+} from '@api-service/src/utils/raster-colorization.helper';
 
 function createGrayscalePng(
   width: number,
@@ -186,6 +190,134 @@ describe('raster-colorization.helper', () => {
       expect(pixel0.g).toBe(pixel3.g);
       expect(pixel0.b).toBe(pixel3.b);
       expect(pixel0.a).toBe(Math.round(0.8 * 255));
+    });
+  });
+
+  describe('reproject4326To3857', () => {
+    it('should convert (0,0) to (0,0)', () => {
+      const result = reproject4326To3857({
+        xmin: 0,
+        ymin: 0,
+        xmax: 0,
+        ymax: 0,
+      });
+      expect(result.xmin).toBeCloseTo(0);
+      expect(result.ymin).toBeCloseTo(0);
+      expect(result.xmax).toBeCloseTo(0);
+      expect(result.ymax).toBeCloseTo(0);
+    });
+
+    it('should convert known coordinates correctly', () => {
+      const result = reproject4326To3857({
+        xmin: -180,
+        ymin: -85,
+        xmax: 180,
+        ymax: 85,
+      });
+      expect(result.xmin).toBeCloseTo(-20037508.34);
+      expect(result.xmax).toBeCloseTo(20037508.34);
+      expect(result.ymin).toBeLessThan(0);
+      expect(result.ymax).toBeGreaterThan(0);
+    });
+
+    it('should produce symmetric results for symmetric input', () => {
+      const result = reproject4326To3857({
+        xmin: -10,
+        ymin: -10,
+        xmax: 10,
+        ymax: 10,
+      });
+      expect(result.xmin).toBeCloseTo(-result.xmax);
+      expect(result.ymin).toBeCloseTo(-result.ymax);
+    });
+  });
+
+  describe('processPopulationRaster', () => {
+    function createTestPngBuffer(width: number, height: number): Buffer {
+      const png = new PNG({ width, height });
+      for (let i = 0; i < width * height; i++) {
+        const idx = i * 4;
+        png.data[idx] = 128;
+        png.data[idx + 1] = 128;
+        png.data[idx + 2] = 128;
+        png.data[idx + 3] = 255;
+      }
+      return PNG.sync.write(png);
+    }
+
+    it('should compute extent from transform and PNG dimensions', () => {
+      const pngBuffer = createTestPngBuffer(10, 20);
+      const result = processPopulationRaster(pngBuffer, {
+        transform: [0.5, 0, 33.0, 0, -0.25, 5.0],
+        crs: 'EPSG:4326',
+      });
+
+      expect(result.metadata.data.extent.xmin).toBe(33.0);
+      expect(result.metadata.data.extent.xmax).toBe(33.0 + 0.5 * 10);
+      expect(result.metadata.data.extent.ymax).toBe(5.0);
+      expect(result.metadata.data.extent.ymin).toBe(5.0 - 0.25 * 20);
+    });
+
+    it('should set data CRS from input metadata', () => {
+      const pngBuffer = createTestPngBuffer(2, 2);
+      const result = processPopulationRaster(pngBuffer, {
+        transform: [1, 0, 0, 0, -1, 2],
+        crs: 'EPSG:4326',
+      });
+
+      expect(result.metadata.data.crs).toBe('EPSG:4326');
+    });
+
+    it('should set nodata to 0', () => {
+      const pngBuffer = createTestPngBuffer(2, 2);
+      const result = processPopulationRaster(pngBuffer, {
+        transform: [1, 0, 0, 0, -1, 2],
+        crs: 'EPSG:4326',
+      });
+
+      expect(result.metadata.data.nodata).toBe(0);
+    });
+
+    it('should reproject coloured extent to EPSG:3857 when input is EPSG:4326', () => {
+      const pngBuffer = createTestPngBuffer(4, 4);
+      const result = processPopulationRaster(pngBuffer, {
+        transform: [1, 0, 33.0, 0, -1, 5.0],
+        crs: 'EPSG:4326',
+      });
+
+      expect(result.metadata.coloured.crs).toBe('EPSG:3857');
+      expect(result.metadata.coloured.extent.xmin).not.toBe(
+        result.metadata.data.extent.xmin,
+      );
+    });
+
+    it('should keep coloured extent unchanged when input is not EPSG:4326', () => {
+      const pngBuffer = createTestPngBuffer(4, 4);
+      const result = processPopulationRaster(pngBuffer, {
+        transform: [1000, 0, 500000, 0, -1000, 600000],
+        crs: 'EPSG:3857',
+      });
+
+      expect(result.metadata.coloured.crs).toBe('EPSG:3857');
+      expect(result.metadata.coloured.extent).toEqual(
+        result.metadata.data.extent,
+      );
+    });
+
+    it('should return a valid base64 coloured PNG', () => {
+      const pngBuffer = createTestPngBuffer(4, 4);
+      const result = processPopulationRaster(pngBuffer, {
+        transform: [1, 0, 0, 0, -1, 4],
+        crs: 'EPSG:4326',
+      });
+
+      expect(result.colouredBase64).toBeTruthy();
+      const decoded = Buffer.from(result.colouredBase64, 'base64');
+      const pngSignature = [0x89, 0x50, 0x4e, 0x47];
+      expect(decoded[0]).toBe(pngSignature[0]);
+      expect(decoded[1]).toBe(pngSignature[1]);
+      expect(decoded[2]).toBe(pngSignature[2]);
+      expect(decoded[3]).toBe(pngSignature[3]);
     });
   });
 });

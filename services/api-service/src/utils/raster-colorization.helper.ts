@@ -170,8 +170,8 @@ export function processPopulationRaster(
   dataPngBuffer: Buffer,
   metadata: { transform: number[]; crs: string },
 ): PopulationRasterResult {
-  const png = PNG.sync.read(dataPngBuffer);
-  const { width, height } = png;
+  const width = dataPngBuffer.readUInt32BE(16);
+  const height = dataPngBuffer.readUInt32BE(20);
 
   const transform = metadata.transform.slice(0, 6);
   const xmin = transform[2];
@@ -181,21 +181,23 @@ export function processPopulationRaster(
   const xmax = xmin + xRes * width;
   const ymin = ymax - yRes * height;
 
-  const extent4326 = { xmin, ymin, xmax, ymax };
-  const extent3857 = reproject4326To3857(extent4326);
+  const extent = { xmin, ymin, xmax, ymax };
+  const colouredExtent =
+    metadata.crs === 'EPSG:4326' ? reproject4326To3857(extent) : extent;
+  const colouredCrs = metadata.crs === 'EPSG:4326' ? 'EPSG:3857' : metadata.crs;
 
   const colouredBase64 = colorizeGrayscalePng(dataPngBuffer.toString('base64'));
 
   return {
     colouredBase64,
     metadata: {
-      data: { extent: extent4326, crs: 'EPSG:4326', nodata: 0 },
-      coloured: { extent: extent3857, crs: 'EPSG:3857' },
+      data: { extent, crs: metadata.crs, nodata: 0 },
+      coloured: { extent: colouredExtent, crs: colouredCrs },
     },
   };
 }
 
-function reproject4326To3857(extent: {
+export function reproject4326To3857(extent: {
   xmin: number;
   ymin: number;
   xmax: number;
@@ -203,7 +205,8 @@ function reproject4326To3857(extent: {
 }): { xmin: number; ymin: number; xmax: number; ymax: number } {
   const toMercatorX = (lon: number): number => (lon * 20037508.34) / 180;
   const toMercatorY = (lat: number): number => {
-    const rad = (lat * Math.PI) / 180;
+    const clampedLat = Math.max(-85.05112878, Math.min(85.05112878, lat)); // Web Mercator formula is undefined at the poles
+    const rad = (clampedLat * Math.PI) / 180;
     return (Math.log(Math.tan(Math.PI / 4 + rad / 2)) / Math.PI) * 20037508.34;
   };
 

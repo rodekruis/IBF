@@ -14,6 +14,7 @@ import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
 import {
   colorizeGrayscalePng,
   FLOOD_DEPTH_CONFIG,
+  reproject4326To3857,
 } from '@api-service/src/utils/raster-colorization.helper';
 
 const alertInclude: Prisma.AlertInclude = {
@@ -149,8 +150,8 @@ export class AlertsRepository {
                     nodata: 0,
                   },
                   coloured: {
-                    extent: { ...entry.extent },
-                    crs: 'EPSG:4326',
+                    extent: reproject4326To3857(entry.extent),
+                    crs: 'EPSG:3857',
                   },
                 },
               })),
