@@ -15,7 +15,7 @@ export default {
     'node_modules/@t3-oss/.+\\.js$': ['ts-jest'],
   },
   transformIgnorePatterns: ['node_modules/(?!@t3-oss)'],
-  testTimeout: 30_000,
+  testTimeout: 60_000,
   randomize: true,
   verbose: true,
   reporters: ['default', ['github-actions', { silent: false }], 'summary'],

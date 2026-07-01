@@ -151,25 +151,27 @@ function applyColorSteps(
   return result;
 }
 
-export interface PopulationRasterResult {
-  colouredBase64: string;
-  metadata: {
-    data: {
-      extent: { xmin: number; ymin: number; xmax: number; ymax: number };
-      crs: string;
-      nodata: number;
-    };
-    coloured: {
-      extent: { xmin: number; ymin: number; xmax: number; ymax: number };
-      crs: string;
-    };
+export interface RasterMetadata {
+  data: {
+    extent: { xmin: number; ymin: number; xmax: number; ymax: number };
+    crs: string;
+    nodata: number;
+  };
+  coloured: {
+    extent: { xmin: number; ymin: number; xmax: number; ymax: number };
+    crs: string;
   };
 }
 
-export function processPopulationRaster(
+export interface PopulationRasterResult {
+  colouredBase64: string;
+  metadata: RasterMetadata;
+}
+
+export function computeRasterMetadata(
   dataPngBuffer: Buffer,
   metadata: { transform: number[]; crs: string },
-): PopulationRasterResult {
+): RasterMetadata {
   const width = dataPngBuffer.readUInt32BE(16);
   const height = dataPngBuffer.readUInt32BE(20);
 
@@ -186,14 +188,22 @@ export function processPopulationRaster(
     metadata.crs === 'EPSG:4326' ? reproject4326To3857(extent) : extent;
   const colouredCrs = metadata.crs === 'EPSG:4326' ? 'EPSG:3857' : metadata.crs;
 
+  return {
+    data: { extent, crs: metadata.crs, nodata: 0 },
+    coloured: { extent: colouredExtent, crs: colouredCrs },
+  };
+}
+
+export function processPopulationRaster(
+  dataPngBuffer: Buffer,
+  metadata: { transform: number[]; crs: string },
+): PopulationRasterResult {
+  const rasterMetadata = computeRasterMetadata(dataPngBuffer, metadata);
   const colouredBase64 = colorizeGrayscalePng(dataPngBuffer.toString('base64'));
 
   return {
     colouredBase64,
-    metadata: {
-      data: { extent, crs: metadata.crs, nodata: 0 },
-      coloured: { extent: colouredExtent, crs: colouredCrs },
-    },
+    metadata: rasterMetadata,
   };
 }
 
