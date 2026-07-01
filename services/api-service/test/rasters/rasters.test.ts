@@ -96,9 +96,7 @@ describe('/rasters/static', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename, {
-      skipStaticRasters: false,
-    });
+    await resetDB(SeedScript.ethiopiaOnly, __filename, false);
     accessToken = await getAccessToken();
   });
 
