@@ -10,7 +10,6 @@ import { EventsRepository } from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
 import {
   AlertClass,
-  AlertClassificationLevel,
   ForecastSource,
   HazardType,
 } from '@api-service/src/shared-enums';
@@ -120,7 +119,7 @@ describe('AlertToEventService', () => {
         eventName: alert.eventName,
         hazardType: forecast.hazardType,
         forecastSources: forecast.forecastSources,
-        alertClass: AlertClassificationLevel.high,
+        alertClass: AlertClass.high,
         trigger: true,
         centroid: {
           latitude: alert.centroid.latitude,
@@ -154,7 +153,7 @@ describe('AlertToEventService', () => {
         eventName: 'ETH_floods_station-A',
         hazardType: HazardType.floods,
         forecastSources: [ForecastSource.glofas],
-        alertClass: AlertClassificationLevel.medium,
+        alertClass: AlertClass.medium,
         trigger: false,
         centroid: { latitude: 0.35, longitude: 32.6 },
         startAt: new Date('2026-04-03T00:00:00Z'),
@@ -180,7 +179,7 @@ describe('AlertToEventService', () => {
 
       expect(result).toBe(42);
       expect(repository.updateEvent).toHaveBeenCalledWith(42, {
-        alertClass: AlertClassificationLevel.high,
+        alertClass: AlertClass.high,
         trigger: true,
         startAt: new Date('2026-04-08T00:00:00Z'),
         reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
@@ -213,7 +212,7 @@ describe('AlertToEventService', () => {
         eventName: 'ETH_floods_station-A',
         hazardType: HazardType.floods,
         forecastSources: [ForecastSource.glofas],
-        alertClass: AlertClassificationLevel.medium,
+        alertClass: AlertClass.medium,
         trigger: false,
         centroid: { latitude: 0.35, longitude: 32.6 },
         startAt: new Date('2026-04-01T00:00:00Z'),
