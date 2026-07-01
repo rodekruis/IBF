@@ -19,16 +19,21 @@ export class ScriptsService {
   public async loadSeedScenario({
     seedScript,
     resetIdentifier,
+    skipStaticRasters = false,
   }: {
     seedScript: string;
     resetIdentifier?: string;
+    skipStaticRasters?: boolean;
   }) {
     this.logger.log(
       `DB reset - Seed: ${seedScript} - Identifier: ${resetIdentifier}`,
     );
     const seedConfig = this.getSeedConfigByNameOrThrow(seedScript);
 
-    await this.seedInit.run({ countryCodes: seedConfig.countryCodes });
+    await this.seedInit.run({
+      countryCodes: seedConfig.countryCodes,
+      skipStaticRasters,
+    });
 
     // TODO: move event seeding to a separate proper functionality
     if (seedConfig.name === SeedScript.ethiopiaWithEvents) {

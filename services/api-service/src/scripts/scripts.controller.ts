@@ -1,4 +1,12 @@
-import { Body, Controller, HttpStatus, Post, Query, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpStatus,
+  ParseBoolPipe,
+  Post,
+  Query,
+  Res,
+} from '@nestjs/common';
 import { ApiOperation, ApiProperty, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
@@ -31,6 +39,12 @@ export class ScriptsController {
     description:
       'Optional identifier for this reset action, will be logged by the server.',
   })
+  @ApiQuery({
+    name: 'skipStaticRasters',
+    required: false,
+    description:
+      'If true, skip seeding static rasters (population) to speed up resets.',
+  })
   @ApiOperation({
     summary: `Reset instance database.`,
   })
@@ -39,6 +53,8 @@ export class ScriptsController {
     @Body() body: SecretDto,
     @Query('script') script: WrapperType<SeedScript>,
     @Query('resetIdentifier') resetIdentifier: string,
+    @Query('skipStaticRasters', new ParseBoolPipe({ optional: true }))
+    skipStaticRasters: boolean,
     @Res() res,
   ): Promise<void> {
     if (IS_PRODUCTION) {
@@ -55,6 +71,7 @@ export class ScriptsController {
     await this.scriptsService.loadSeedScenario({
       resetIdentifier,
       seedScript: script,
+      skipStaticRasters: skipStaticRasters ?? false,
     });
 
     res

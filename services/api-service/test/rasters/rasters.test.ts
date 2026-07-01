@@ -96,7 +96,9 @@ describe('/rasters/static', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(SeedScript.ethiopiaOnly, __filename, {
+      skipStaticRasters: false,
+    });
     accessToken = await getAccessToken();
   });
 
@@ -182,7 +184,12 @@ describe('/rasters/static', () => {
     const deleteLayer = LayerName.clinics;
 
     it('should delete the static raster and return 204', async () => {
-      await createStaticRaster(accessToken, country, deleteLayer);
+      const createResponse = await createStaticRaster(
+        accessToken,
+        country,
+        deleteLayer,
+      );
+      expect(createResponse.status).toBe(HttpStatus.OK);
 
       const response = await getServer()
         .delete(`/rasters/static/${country}/${deleteLayer}`)

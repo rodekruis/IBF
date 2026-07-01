@@ -63,8 +63,10 @@ export class SeedInit {
 
   public async run({
     countryCodes,
+    skipStaticRasters = false,
   }: {
     countryCodes?: string[];
+    skipStaticRasters?: boolean;
   }): Promise<void> {
     await this.truncateAll();
     await this.createAdminUser();
@@ -77,7 +79,9 @@ export class SeedInit {
     await this.seedAdminAreas(countries);
     await this.seedAlertConfigs(countries);
     await this.seedGeoFeatures(countries);
-    await this.seedStaticRasters(countries);
+    if (!skipStaticRasters) {
+      await this.seedStaticRasters(countries);
+    }
   }
 
   private async createAdminUser(): Promise<void> {

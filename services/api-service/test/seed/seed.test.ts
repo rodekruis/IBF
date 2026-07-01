@@ -12,7 +12,9 @@ describe('Seed', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(SeedScript.ethiopiaOnly, __filename, {
+      skipStaticRasters: false,
+    });
     accessToken = await getAccessToken();
   });
 
