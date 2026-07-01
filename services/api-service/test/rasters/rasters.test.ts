@@ -43,7 +43,7 @@ describe('/rasters', () => {
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.layer).toBe(LayerName.floodDepth);
       expect(response.body.valueColoured).toBeUndefined();
-      expect(response.body.extent).toEqual(
+      expect(response.body.metadata.data.extent).toEqual(
         expect.objectContaining({
           xmin: expect.any(Number),
           ymin: expect.any(Number),
@@ -109,7 +109,7 @@ describe('/rasters/static', () => {
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.id).toEqual(expect.any(Number));
       expect(response.body.layer).toBe(LayerName.population);
-      expect(response.body.extent).toEqual(
+      expect(response.body.metadata.data.extent).toEqual(
         expect.objectContaining({
           xmin: expect.any(Number),
           ymin: expect.any(Number),

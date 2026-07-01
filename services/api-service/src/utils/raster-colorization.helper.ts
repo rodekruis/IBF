@@ -70,23 +70,41 @@ export function colorizeGrayscalePng(
 
   const inputBuffer = Buffer.from(base64Grayscale, 'base64');
   const grayscalePng = PNG.sync.read(inputBuffer);
-  const { width, height } = grayscalePng;
+  const { width, height, data } = grayscalePng;
+  const pixelCount = width * height;
 
-  const grayscalePixels = extractGrayscaleValues(grayscalePng);
-  const scaled = useLogScale ? applyLogScale(grayscalePixels) : grayscalePixels;
-  const normalized = normalizeBetween0And1(scaled);
-  const stepped = applyColorSteps(normalized, steps);
+  // Pass 1: find max value (with optional log scaling) for normalization
+  let max = 0;
+  for (let i = 0; i < pixelCount; i++) {
+    let value = data[i * 4];
+    if (useLogScale) {
+      value = Math.log1p(value);
+    }
+    if (value > max) {
+      max = value;
+    }
+  }
+  if (max === 0) {
+    max = 1;
+  }
 
+  // Pass 2: colorize directly into output PNG without intermediate arrays
   const outputPng = new PNG({ width, height });
-  for (let i = 0; i < width * height; i++) {
+  for (let i = 0; i < pixelCount; i++) {
     const idx = i * 4;
-    if (grayscalePixels[i] === 0 && zeroIsTransparent) {
+    const raw = data[i * 4];
+
+    if (raw === 0 && zeroIsTransparent) {
       outputPng.data[idx] = 0;
       outputPng.data[idx + 1] = 0;
       outputPng.data[idx + 2] = 0;
       outputPng.data[idx + 3] = 0;
     } else {
-      const n = stepped[i];
+      const scaled = useLogScale ? Math.log1p(raw) : raw;
+      const normalized = scaled / max;
+      const stepIndex = Math.round(normalized * steps);
+      const n = Math.min(stepIndex, steps) / steps;
+
       outputPng.data[idx] = Math.round(
         colorLow[0] * (1 - n) + colorHigh[0] * n,
       );
@@ -102,53 +120,6 @@ export function colorizeGrayscalePng(
 
   const outputBuffer = PNG.sync.write(outputPng);
   return outputBuffer.toString('base64');
-}
-
-function extractGrayscaleValues(png: PNG): Float64Array {
-  const { width, height, data } = png;
-  const values = new Float64Array(width * height);
-  for (let i = 0; i < width * height; i++) {
-    values[i] = data[i * 4];
-  }
-  return values;
-}
-
-function applyLogScale(values: Float64Array): Float64Array {
-  const result = new Float64Array(values.length);
-  for (let i = 0; i < values.length; i++) {
-    result[i] = Math.log1p(values[i]);
-  }
-  return result;
-}
-
-function normalizeBetween0And1(values: Float64Array): Float64Array {
-  let max = 0;
-  for (const value of values) {
-    if (value > max) {
-      max = value;
-    }
-  }
-  if (max === 0) {
-    max = 1;
-  }
-
-  const result = new Float64Array(values.length);
-  for (let i = 0; i < values.length; i++) {
-    result[i] = values[i] / max;
-  }
-  return result;
-}
-
-function applyColorSteps(
-  normalized: Float64Array,
-  steps: number,
-): Float64Array {
-  const result = new Float64Array(normalized.length);
-  for (let i = 0; i < normalized.length; i++) {
-    const stepIndex = Math.round(normalized[i] * steps);
-    result[i] = Math.min(stepIndex, steps) / steps;
-  }
-  return result;
 }
 
 interface RasterMetadata {
@@ -199,12 +170,77 @@ export function processPopulationRaster(
   metadata: { transform: number[]; crs: string },
 ): PopulationRasterResult {
   const rasterMetadata = computeRasterMetadata(dataPngBuffer, metadata);
-  const colouredBase64 = colorizeGrayscalePng(dataPngBuffer.toString('base64'));
+  const colouredBase64 = colorizeGrayscalePngFromBuffer(dataPngBuffer);
 
   return {
     colouredBase64,
     metadata: rasterMetadata,
   };
+}
+
+function colorizeGrayscalePngFromBuffer(
+  inputBuffer: Buffer,
+  config: ColorizationConfig = DEFAULT_CONFIG,
+): string {
+  const {
+    colorLow,
+    colorHigh,
+    opacity,
+    zeroIsTransparent,
+    steps,
+    useLogScale,
+  } = config;
+  const alpha = Math.round(opacity * 255);
+
+  const grayscalePng = PNG.sync.read(inputBuffer);
+  const { width, height, data } = grayscalePng;
+  const pixelCount = width * height;
+
+  let max = 0;
+  for (let i = 0; i < pixelCount; i++) {
+    let value = data[i * 4];
+    if (useLogScale) {
+      value = Math.log1p(value);
+    }
+    if (value > max) {
+      max = value;
+    }
+  }
+  if (max === 0) {
+    max = 1;
+  }
+
+  const outputPng = new PNG({ width, height });
+  for (let i = 0; i < pixelCount; i++) {
+    const idx = i * 4;
+    const raw = data[i * 4];
+
+    if (raw === 0 && zeroIsTransparent) {
+      outputPng.data[idx] = 0;
+      outputPng.data[idx + 1] = 0;
+      outputPng.data[idx + 2] = 0;
+      outputPng.data[idx + 3] = 0;
+    } else {
+      const scaled = useLogScale ? Math.log1p(raw) : raw;
+      const normalized = scaled / max;
+      const stepIndex = Math.round(normalized * steps);
+      const n = Math.min(stepIndex, steps) / steps;
+
+      outputPng.data[idx] = Math.round(
+        colorLow[0] * (1 - n) + colorHigh[0] * n,
+      );
+      outputPng.data[idx + 1] = Math.round(
+        colorLow[1] * (1 - n) + colorHigh[1] * n,
+      );
+      outputPng.data[idx + 2] = Math.round(
+        colorLow[2] * (1 - n) + colorHigh[2] * n,
+      );
+      outputPng.data[idx + 3] = alpha;
+    }
+  }
+
+  const outputBuffer = PNG.sync.write(outputPng);
+  return outputBuffer.toString('base64');
 }
 
 export function reproject4326To3857(extent: {
