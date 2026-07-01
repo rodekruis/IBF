@@ -151,7 +151,7 @@ function applyColorSteps(
   return result;
 }
 
-export interface RasterMetadata {
+interface RasterMetadata {
   data: {
     extent: { xmin: number; ymin: number; xmax: number; ymax: number };
     crs: string;
@@ -168,7 +168,7 @@ export interface PopulationRasterResult {
   metadata: RasterMetadata;
 }
 
-export function computeRasterMetadata(
+function computeRasterMetadata(
   dataPngBuffer: Buffer,
   metadata: { transform: number[]; crs: string },
 ): RasterMetadata {
