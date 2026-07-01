@@ -43,10 +43,10 @@ interface FloodClassificationConfig {
 }
 
 const {
-  SingleThreshold: single,
-  Low: low,
-  Medium: med,
-  High: high,
+  singleThreshold: single,
+  low,
+  medium: med,
+  high,
 } = AlertClassificationLevel;
 
 // All configs use 'single' for at least one dimension (severity or probability).
@@ -63,13 +63,13 @@ export const FLOOD_CLASSIFICATION_BY_COUNTRY: Record<
       { label: high, threshold: 5 },
     ],
     probabilityClassLevels: [{ label: single, threshold: 0.6 }],
-    triggerAlertClass: AlertClass.High,
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P5D',
   },
   KEN: {
     severityClassLevels: [{ label: single, threshold: 5 }],
     probabilityClassLevels: [{ label: single, threshold: 0.85 }],
-    triggerAlertClass: AlertClass.High,
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P7D',
   },
   ETH: {
@@ -79,7 +79,7 @@ export const FLOOD_CLASSIFICATION_BY_COUNTRY: Record<
       { label: high, threshold: 10 },
     ],
     probabilityClassLevels: [{ label: single, threshold: 0.75 }],
-    triggerAlertClass: AlertClass.High,
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P7D',
   },
   ZMB: {
@@ -89,25 +89,25 @@ export const FLOOD_CLASSIFICATION_BY_COUNTRY: Record<
       { label: med, threshold: 0.7 },
       { label: high, threshold: 0.8 },
     ],
-    triggerAlertClass: AlertClass.High,
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P7D',
   },
   SSD: {
     severityClassLevels: [{ label: single, threshold: 5 }],
     probabilityClassLevels: [{ label: single, threshold: 0.6 }],
-    triggerAlertClass: AlertClass.High,
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P7D',
   },
   MWI: {
     severityClassLevels: [{ label: single, threshold: 5 }],
     probabilityClassLevels: [{ label: single, threshold: 0.6 }],
-    triggerAlertClass: AlertClass.High,
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P6D',
   },
   PHL: {
     severityClassLevels: [{ label: single, threshold: 5 }],
     probabilityClassLevels: [{ label: single, threshold: 0.8 }],
-    triggerAlertClass: AlertClass.High,
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P3D',
   },
 };

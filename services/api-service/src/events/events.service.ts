@@ -107,7 +107,7 @@ export class EventsService {
     return rasters.map((raster) => ({
       resourceId: String(raster.id),
       layerName: (raster.layer as LayerName) ?? LayerName.floodDepth,
-      layerType: LayerType.Raster,
+      layerType: LayerType.raster,
     }));
   }
 }
