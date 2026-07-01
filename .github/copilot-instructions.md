@@ -73,8 +73,8 @@ File naming matches class: `AlertsModule` → `alerts.module.ts`, `AlertCreateDt
 export class AlertsController {
   public constructor(private readonly alertsService: AlertsService) {}
 
-  @AuthenticatedUser()
   @Get()
+  @AuthenticatedUser()
   @ApiOperation({ summary: 'Get all alerts' })
   public async getAlerts(): Promise<AlertReadDto[]> {
     return this.alertsService.getAlerts();
