@@ -141,11 +141,11 @@ export class EventsRepository {
 
     return alerts.map((alert) => ({
       issuedAt: alert.issuedAt,
-      hazardType: alert.hazardType as HazardType,
+      hazardType: alert.hazardType,
       severityData: alert.severity.map((severity) => ({
         timeInterval: severity.timeInterval as { start: string; end: string },
-        ensembleMemberType: severity.ensembleMemberType as EnsembleMemberType,
-        severityKey: severity.severityKey as SeverityKey,
+        ensembleMemberType: severity.ensembleMemberType,
+        severityKey: severity.severityKey,
         severityValue: severity.severityValue,
       })),
     }));
@@ -199,7 +199,7 @@ export class EventsRepository {
           name: nameByPlaceCode.get(row.placeCode) ?? row.placeCode,
           exposure: [
             {
-              layerName: row.layer as LayerName,
+              layerName: row.layer,
               exposed: row.value,
             },
           ],
