@@ -12,9 +12,9 @@ export class ExposureRasterDto {
   @IsEnum(LayerName)
   public readonly layer: LayerName;
 
-  @ApiProperty({ example: 'base64-encoded-black-white-png' })
+  @ApiProperty({ example: 'base64-encoded-greyscale-png' })
   @IsString()
-  public readonly valueBlackWhite: string;
+  public readonly valueGreyscale: string;
 
   @ApiProperty({ type: RasterExtentDto })
   @ValidateNested()

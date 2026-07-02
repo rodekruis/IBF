@@ -69,7 +69,7 @@ function createMockValidAlert(
       rasters: [
         {
           layer: LayerName.floodDepth,
-          valueBlackWhite: TEST_RASTER_BASE64,
+          valueGreyscale: TEST_RASTER_BASE64,
           extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },
       ],
@@ -291,7 +291,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: LayerName.floodDepth,
-                valueBlackWhite: TEST_RASTER_BASE64,
+                valueGreyscale: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -327,7 +327,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: LayerName.floodDepth,
-                valueBlackWhite: TEST_RASTER_BASE64,
+                valueGreyscale: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -377,7 +377,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: LayerName.floodDepth,
-                valueBlackWhite: TEST_RASTER_BASE64,
+                valueGreyscale: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -417,7 +417,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: LayerName.floodDepth,
-                valueBlackWhite: TEST_RASTER_BASE64,
+                valueGreyscale: TEST_RASTER_BASE64,
                 extent: { xmin: 10, ymin: 5, xmax: 5, ymax: 1 },
               },
             ],
@@ -451,7 +451,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: LayerName.floodDepth,
-                valueBlackWhite: '!!!not-base64!!!',
+                valueGreyscale: '!!!not-base64!!!',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -467,7 +467,7 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('valueBlackWhite is not valid base64'),
+          expect.stringContaining('valueGreyscale is not valid base64'),
         ]),
       );
     });
@@ -487,7 +487,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: LayerName.floodDepth,
-                valueBlackWhite: 'AQI',
+                valueGreyscale: 'AQI',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -503,7 +503,7 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('valueBlackWhite is not valid base64'),
+          expect.stringContaining('valueGreyscale is not valid base64'),
         ]),
       );
     });
@@ -526,7 +526,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: LayerName.floodDepth,
-                valueBlackWhite: notPngBase64,
+                valueGreyscale: notPngBase64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -542,7 +542,7 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('valueBlackWhite is not a valid PNG'),
+          expect.stringContaining('valueGreyscale is not a valid PNG'),
         ]),
       );
     });
@@ -562,7 +562,7 @@ describe('AlertsService', () => {
             rasters: [
               {
                 layer: LayerName.floodDepth,
-                valueBlackWhite: TEST_RASTER_BASE64,
+                valueGreyscale: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],

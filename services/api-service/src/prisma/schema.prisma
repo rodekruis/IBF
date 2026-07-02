@@ -135,9 +135,9 @@ model AlertExposureRasterData {
   alertId         Int
   alert           Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   layer           String
-  valueBlackWhite String
+  valueGreyscale  String
   valueColoured   String
-  extent          Json
+  metadata        Json
 
   @@index([alertId])
 }
@@ -152,9 +152,9 @@ model StaticRasterData {
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
   layer           String
-  valueBlackWhite String
+  valueData       String
   valueColoured   String
-  extent          Json
+  metadata        Json
 
   @@unique([countryCodeIso3, layer])
   @@index([countryCodeIso3])

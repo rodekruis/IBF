@@ -124,18 +124,18 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
                 f"invalid extent (xmin={ext.xmin}, ymin={ext.ymin}, "
                 f"xmax={ext.xmax}, ymax={ext.ymax})"
             )
-        if not raster.value_black_white:
+        if not raster.value_greyscale:
             errors.append(
                 f"Alert '{event_name}' raster '{raster.layer}': "
-                f"value_black_white is empty"
+                f"value_greyscale is empty"
             )
         else:
             try:
-                decoded = base64.b64decode(raster.value_black_white, validate=True)
+                decoded = base64.b64decode(raster.value_greyscale, validate=True)
             except Exception:
                 errors.append(
                     f"Alert '{event_name}' raster '{raster.layer}': "
-                    f"value_black_white is not valid base64"
+                    f"value_greyscale is not valid base64"
                 )
             else:
                 # Look at the first few bytes to verify it is a b/w png
@@ -143,6 +143,6 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
                 if not decoded.startswith(png_signature):
                     errors.append(
                         f"Alert '{event_name}' raster '{raster.layer}': "
-                        f"value_black_white is not a valid PNG"
+                        f"value_greyscale is not a valid PNG"
                     )
     return errors

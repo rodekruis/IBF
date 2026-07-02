@@ -134,13 +134,13 @@ class RasterExtent:
 @dataclass
 class ExposureRaster:
     layer: LayerName
-    value_black_white: str
+    value_greyscale: str
     extent: RasterExtent
 
     def to_dict(self) -> JsonDict:
         return {
             "layer": self.layer,
-            "valueBlackWhite": self.value_black_white,
+            "valueGreyscale": self.value_greyscale,
             "extent": self.extent.to_dict(),
         }
 

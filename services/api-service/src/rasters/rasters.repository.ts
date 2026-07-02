@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
-import { RasterExtentDto } from '@api-service/src/alerts/dto/raster-extent.dto';
+import { RasterMetadataDto } from '@api-service/src/alerts/dto/raster-metadata.dto';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import { AlertRasterResponseDto } from '@api-service/src/rasters/dto/alert-raster-response.dto';
 import { StaticRasterResponseDto } from '@api-service/src/rasters/dto/static-raster-response.dto';
@@ -18,7 +19,7 @@ export class RastersRepository {
       where: { id },
       select: {
         layer: true,
-        extent: true,
+        metadata: true,
       },
     });
 
@@ -28,7 +29,7 @@ export class RastersRepository {
 
     return {
       layer: raster.layer as LayerName,
-      extent: raster.extent as unknown as RasterExtentDto,
+      metadata: raster.metadata as unknown as RasterMetadataDto,
     };
   }
 
@@ -58,7 +59,7 @@ export class RastersRepository {
       select: {
         id: true,
         layer: true,
-        extent: true,
+        metadata: true,
       },
     });
 
@@ -71,7 +72,7 @@ export class RastersRepository {
     return {
       id: raster.id,
       layer: raster.layer as LayerName,
-      extent: raster.extent as unknown as RasterExtentDto,
+      metadata: raster.metadata as unknown as RasterMetadataDto,
     };
   }
 
@@ -93,14 +94,14 @@ export class RastersRepository {
     return this.getStaticRasterImageBufferOrThrow(
       countryCodeIso3,
       layer,
-      'valueBlackWhite',
+      'valueData',
     );
   }
 
   private async getStaticRasterImageBufferOrThrow(
     countryCodeIso3: string,
     layer: LayerName,
-    field: 'valueColoured' | 'valueBlackWhite',
+    field: 'valueColoured' | 'valueData',
   ): Promise<Buffer> {
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {
@@ -131,28 +132,28 @@ export class RastersRepository {
         },
       },
       update: {
-        valueBlackWhite: dto.valueBlackWhite,
+        valueData: dto.valueData,
         valueColoured: dto.valueColoured,
-        extent: dto.extent as unknown as Record<string, number>,
+        metadata: dto.metadata as unknown as Prisma.InputJsonValue,
       },
       create: {
         countryCodeIso3: dto.countryCodeIso3,
         layer: dto.layer,
-        valueBlackWhite: dto.valueBlackWhite,
+        valueData: dto.valueData,
         valueColoured: dto.valueColoured,
-        extent: dto.extent as unknown as Record<string, number>,
+        metadata: dto.metadata as unknown as Prisma.InputJsonValue,
       },
       select: {
         id: true,
         layer: true,
-        extent: true,
+        metadata: true,
       },
     });
 
     return {
       id: raster.id,
       layer: raster.layer as LayerName,
-      extent: raster.extent as unknown as RasterExtentDto,
+      metadata: raster.metadata as unknown as RasterMetadataDto,
     };
   }
 
