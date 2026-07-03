@@ -8,13 +8,7 @@ import {
   EventsRepository,
   ExposedAdminAreaRecord,
 } from '@api-service/src/events/events.repository';
-import {
-  AlertClass,
-  ForecastSource,
-  HazardType,
-  LayerName,
-  LayerType,
-} from '@api-service/src/shared-enums';
+import { LayerName, LayerType } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class EventsService {
@@ -49,15 +43,15 @@ export class EventsService {
     event: Event,
     viewTime: Date,
     exposedAdminAreas: ExposedAdminAreaRecord[],
-    rasters: { id: number; layer: string }[],
+    rasters: { id: number; layer: LayerName }[],
   ): EventResponseDto {
     return {
       eventId: event.id,
       eventName: event.eventName,
       eventLabel: this.deriveEventLabel(event.eventName),
-      hazardType: event.hazardType as HazardType,
-      forecastSources: event.forecastSources as ForecastSource[],
-      alertClass: event.alertClass as AlertClass,
+      hazardType: event.hazardType,
+      forecastSources: event.forecastSources,
+      alertClass: event.alertClass,
       trigger: event.trigger,
       centroid: event.centroid as { latitude: number; longitude: number },
       startAt: event.startAt.toISOString(),
@@ -95,18 +89,18 @@ export class EventsService {
   }
 
   private mapAvailableLayers(
-    rasters: { id: number; layer: string }[],
+    rasters: { id: number; layer: LayerName }[],
   ): LayerDto[] {
     // TODO: extend with non-raster layers (e.g. RedCrossBranches, Clinics) once available
     return [...this.mapRasterLayers(rasters)];
   }
 
   private mapRasterLayers(
-    rasters: { id: number; layer: string }[],
+    rasters: { id: number; layer: LayerName }[],
   ): LayerDto[] {
     return rasters.map((raster) => ({
       resourceId: String(raster.id),
-      layerName: (raster.layer as LayerName) ?? LayerName.floodDepth,
+      layerName: raster.layer,
       layerType: LayerType.raster,
     }));
   }

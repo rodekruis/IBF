@@ -20,11 +20,11 @@ type AlertClassMatrix = Record<
 const { singleThreshold, low, medium, high } = AlertClassificationLevel;
 
 // This matrix determines how severityClass and probabilityClass are combined into alertClass.
-// - When one dimension is 'SingleThreshold' the other dimension passes through directly, so matrix[SingleThreshold][x] = x and matrix[x][SingleThreshold] = x.
-// - The inner 3x3 cells (Low/Medium/High × Low/Medium/High) follow a standard risk matrix (UNDRR/WMO),
-// but are currently unused: all configs use 'SingleThreshold' for at least one dimension.
+// - When one dimension is 'singleThreshold' the other dimension passes through directly, so matrix[singleThreshold][x] = x and matrix[x][singleThreshold] = x.
+// - The inner 3x3 cells (low/medium/high × low/medium/high) follow a standard risk matrix (UNDRR/WMO),
+// but are currently unused: all configs use 'singleThreshold' for at least one dimension.
 //
-// NOTE: 'SingleThreshold' is used when a dimension (severity or probability) has only one threshold level,
+// NOTE: 'singleThreshold' is used when a dimension (severity or probability) has only one threshold level,
 // meaning that dimension does not differentiate between alert classes.
 // In practice, all current configs use either multi-sev + single-prob, or single-sev + multi-prob, or both single.
 // Multi-sev + multi-prob is not used, and would in the current setup lead to counterintuitive results because probability is conditional on severity
@@ -33,7 +33,7 @@ const { singleThreshold, low, medium, high } = AlertClassificationLevel;
 // TODO AB#41119: resolve this computation problem
 const ALERT_CLASS_MATRIX: AlertClassMatrix = {
   [singleThreshold]: {
-    [singleThreshold]: AlertClass.high, // when both dimensions are 'SingleThreshold', we classify as 'high' for now
+    [singleThreshold]: AlertClass.high, // when both dimensions are 'singleThreshold', we classify as 'high' for now
     [low]: AlertClass.low,
     [medium]: AlertClass.medium,
     [high]: AlertClass.high,
@@ -298,8 +298,7 @@ export class AlertClassificationService {
 
     const alertClassOrder = Object.values(AlertClass);
     const alertClassRank = alertClassOrder.indexOf(alertClass) + 1;
-    const triggerRank =
-      alertClassOrder.indexOf(config.triggerAlertClass as AlertClass) + 1;
+    const triggerRank = alertClassOrder.indexOf(config.triggerAlertClass) + 1;
 
     if (alertClassRank < triggerRank) {
       return false;

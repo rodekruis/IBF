@@ -7,6 +7,78 @@ datasource db {
   schemas  = ["api-service"]
 }
 
+// ENUMS - START
+
+enum HazardType {
+  floods
+  drought
+
+  @@schema("api-service")
+}
+
+enum AlertClass {
+  // NOTE: do not change order — used functionally for ranking in AlertClassificationService
+  low
+  medium
+  high
+
+  @@schema("api-service")
+}
+
+enum EnsembleMemberType {
+  median
+  run
+
+  @@schema("api-service")
+}
+
+enum ForecastSource {
+  glofas
+  ECMWF
+
+  @@schema("api-service")
+}
+
+enum SeverityKey {
+  returnPeriod
+  percentile
+
+  @@schema("api-service")
+}
+
+enum AlertClassificationLevel {
+  singleThreshold
+  low
+  medium
+  high
+
+  @@schema("api-service")
+}
+
+enum LayerName {
+  population
+  populationExposed
+  redCrossBranches
+  clinics
+  floodDepth
+  glofasStations
+
+  @@schema("api-service")
+}
+
+enum LayerType {
+  raster
+  shape
+  point
+  vectorTile
+
+  @@schema("api-service")
+}
+
+// ENUMS - END
+
+// MODELS - START
+
 model User {
   @@schema("api-service")
   @@map("user")
@@ -36,8 +108,8 @@ model Alert {
   eventName       String
   issuedAt        DateTime
   centroid        Json
-  hazardType      String
-  forecastSources String[]
+  hazardType      HazardType
+  forecastSources ForecastSource[]
   eventId         Int?
   event           Event?   @relation(fields: [eventId], references: [id])
 
@@ -57,9 +129,9 @@ model Event {
   created                   DateTime  @default(now())
   updated                   DateTime  @updatedAt
   eventName                 String
-  hazardType                String
-  forecastSources           String[]
-  alertClass                String
+  hazardType                HazardType
+  forecastSources           ForecastSource[]
+  alertClass                AlertClass
   trigger                   Boolean
   centroid                  Json
   startAt                   DateTime
@@ -84,8 +156,8 @@ model AlertSeverity {
   alertId            Int
   alert              Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   timeInterval       Json
-  ensembleMemberType String
-  severityKey        String
+  ensembleMemberType EnsembleMemberType
+  severityKey        SeverityKey
   severityValue      Float
 
   @@index([alertId])
@@ -102,7 +174,7 @@ model AlertExposureAdminArea {
   alert      Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   placeCode  String
   adminLevel Int
-  layer      String
+  layer      LayerName
   value      Float
 
   @@index([alertId])
@@ -119,7 +191,7 @@ model AlertExposureGeoFeature {
   alertId      Int
   alert        Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   geoFeatureId String
-  layer        String
+  layer        LayerName
   attributes   Json
 
   @@index([alertId])
@@ -134,7 +206,7 @@ model AlertExposureRasterData {
   updated         DateTime @updatedAt
   alertId         Int
   alert           Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  layer           String
+  layer           LayerName
   valueGreyscale  String
   valueColoured   String
   metadata        Json
@@ -151,7 +223,7 @@ model StaticRasterData {
   updated         DateTime @updatedAt
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
-  layer           String
+  layer           LayerName
   valueData       String
   valueColoured   String
   metadata        Json
@@ -210,7 +282,7 @@ model GeoFeature {
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
   featureType     String // Point, LineString, Polygon, MultiPolygon
-  layer           String // e.g. "glofas_stations"
+  layer           LayerName // e.g. "glofasStations"
   referenceId     String // external identifier, e.g. station code
   geometry        Unsupported("geometry(Geometry, 4326)")?
   attributes      Json   @default("{}")
@@ -228,16 +300,18 @@ model AlertConfig {
   updated                   DateTime @updatedAt
   countryCodeIso3           String
   country                   Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
-  hazardType                String
+  hazardType                HazardType
   spatialExtentName         String
   spatialExtentPlaceCodes   String[] // soft FK to admin-area.placeCode
   temporalExtents           Json
   severityClassLevels       Json
   // TODO: the classification fields below are currently duplicated per row (they are hazard-type-level, not per-station). Handle differently later.
   probabilityClassLevels    Json
-  triggerAlertClass         String?
+  triggerAlertClass         AlertClass?
   triggerLeadTimeDuration   String?
 
   @@index([countryCodeIso3])
   @@index([countryCodeIso3, hazardType])
 }
+
+// MODELS - END

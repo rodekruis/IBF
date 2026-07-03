@@ -10,7 +10,6 @@ import { ExposureRasterReadDto } from '@api-service/src/alerts/dto/exposure-rast
 import { SeverityReadDto } from '@api-service/src/alerts/dto/severity-read.dto';
 import { ForecastMetadata } from '@api-service/src/events/alert-to-event.service';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
-import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
 import {
   colorizeGrayscalePng,
   FLOOD_DEPTH_CONFIG,
@@ -48,8 +47,8 @@ export class AlertsRepository {
       eventName: alert.eventName,
       issuedAt: alert.issuedAt,
       centroid: alert.centroid as unknown as CentroidDto,
-      hazardType: alert.hazardType as HazardType,
-      forecastSources: alert.forecastSources as ForecastSource[],
+      hazardType: alert.hazardType,
+      forecastSources: alert.forecastSources,
       severity: alert.severity as unknown as SeverityReadDto[],
       exposure: {
         adminAreas: alert.exposureAdminArea as ExposureAdminAreaReadDto[],

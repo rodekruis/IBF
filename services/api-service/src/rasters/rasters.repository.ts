@@ -28,7 +28,7 @@ export class RastersRepository {
     }
 
     return {
-      layer: raster.layer as LayerName,
+      layer: raster.layer,
       metadata: raster.metadata as unknown as RasterMetadataDto,
     };
   }
@@ -71,7 +71,7 @@ export class RastersRepository {
 
     return {
       id: raster.id,
-      layer: raster.layer as LayerName,
+      layer: raster.layer,
       metadata: raster.metadata as unknown as RasterMetadataDto,
     };
   }
@@ -152,7 +152,7 @@ export class RastersRepository {
 
     return {
       id: raster.id,
-      layer: raster.layer as LayerName,
+      layer: raster.layer,
       metadata: raster.metadata as unknown as RasterMetadataDto,
     };
   }

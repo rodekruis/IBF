@@ -59,23 +59,15 @@ Shared enums are located in `services/api-service/src/shared-enums.ts`. If you a
 
 **DTOs**
 
-DTO changes needed by Python must be copied/reformatted by hand. All changes are placed in `data/pipelines/infra/data_types/dtos.py`. Changes needed by the front end are automated, but if you need to add new classes, add a reference to them in `SOURCE_DTOS` at the top of `services/api-service/src/scripts/generate-frontend-dtos.ts`, along with any new DTO dependencies they have.
+DTO changes needed by Python must be copied/reformatted by hand. All changes are placed in `data/pipelines/infra/data_types/dtos.py`. Changes needed by the front end must also be copied by hand, into `app/src/utils/nrw/` in the Go repo, in a separate PR. See the [frontend repo readme](https://github.com/rodekruis/go-web-app/blob/ibf-main/app/src/components/NrwMap/readme.md) for more details.
 
 **Propagate changes**
 
-Making changes to the frontend files requires you to have a clone of the Go repo, with the path to it set in `GO_REPO_LOCAL_PATH` in `services/.env`. Files copied for the front end must be added to that repo in a separate PR. See the [frontend repo readme](https://github.com/rodekruis/go-web-app/blob/ibf-main/app/src/components/NrwMap/readme.md) for more details.
-
-Use these commands to regenerate downstream files. From the repo root:
+Use this command to regenerate downstream files. From the repo root:
 
 ```bash
-# Pipelines only (writes to data/pipelines/infra/data_types/enums.py)
+# Writes to data/pipelines/infra/data_types/enums.py
 npm run generate:python
-
-# Front end only (writes shared-dtos.ts + shared-enums.ts into the Go repo)
-npm run generate:frontend
-
-# Both at once
-npm run generate:all
 ```
 
 ### Testing
