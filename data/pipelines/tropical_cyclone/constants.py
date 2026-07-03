@@ -1,91 +1,98 @@
 """
 Constants for the tropical-cyclone hazard pipeline.
 
-Data only (no functions) — see `determine_alerts.py` for the `wind_speed_to_category()`
-lookup that consumes `WIND_CATEGORY_TABLES`. Tables are basin-pluggable.
+Data only (no functions) — see `determine_alerts.py` for the flat `MIN_SEVERITY_MS` gate and
+`extract_forecast.py` for where `WMO_HARPER_10MIN_TO_1MIN_FACTOR`/`COUNTRY_CONFIGS` get applied to
+convert GEFS's wind speed to each country's own sustained-wind convention.
 """
 
 from __future__ import annotations
+
+from dataclasses import dataclass
 from enum import StrEnum
+
 from shared.country_data import CountryCodeIso3
 
 
-class Basin(StrEnum):
-    """Ocean basin whose tropical-cyclone category scale governs a country."""
+class ExposureClass(StrEnum):
+    """WMO/Harper (2010) terrain/coastal exposure category for a country's wind observations."""
 
-    ATLANTIC = "atlantic"
-    WESTERN_PACIFIC = "western_pacific"
+    IN_LAND = "in_land"
+    OFF_LAND = "off_land"
+    OFF_SEA = "off_sea"
+    AT_SEA = "at_sea"
 
 
-# Which basin's category scale applies to each country.
-# TODO(data-scientist): Philippines study case only; extend as new countries are onboarded.
-COUNTRY_BASIN: dict[CountryCodeIso3, Basin] = {
-    CountryCodeIso3.PHL: Basin.WESTERN_PACIFIC,
+class AveragingPeriod(StrEnum):
+    """
+    Official sustained-wind averaging-period convention used by a country's tropical-cyclone
+    warning agency.
+    """
+
+    ONE_MINUTE = "1min"
+    THREE_MINUTE = "3min"
+    TEN_MINUTE = "10min"
+
+
+@dataclass
+class CountryConfig:
+    exposure_class: ExposureClass
+    sustained_wind_averaging_period: AveragingPeriod
+
+
+# Exposure class and averaging-period convention
+COUNTRY_CONFIGS: dict[CountryCodeIso3, CountryConfig] = {
+    CountryCodeIso3.PHL: CountryConfig(
+        exposure_class=ExposureClass.IN_LAND,  # TODO(data-scientist): confirm,
+        sustained_wind_averaging_period=AveragingPeriod.TEN_MINUTE,  # PAGASA convention
+    ),
+    CountryCodeIso3.KNA: CountryConfig(
+        exposure_class=ExposureClass.AT_SEA,  # small island, per domain owner
+        sustained_wind_averaging_period=AveragingPeriod.ONE_MINUTE,  # NHC convention
+    ),
+    CountryCodeIso3.DMA: CountryConfig(
+        exposure_class=ExposureClass.AT_SEA,  # small island, per domain owner
+        sustained_wind_averaging_period=AveragingPeriod.ONE_MINUTE,  # NHC convention
+    ),
+    CountryCodeIso3.ATG: CountryConfig(
+        exposure_class=ExposureClass.AT_SEA,  # small island, per domain owner
+        sustained_wind_averaging_period=AveragingPeriod.ONE_MINUTE,  # NHC convention
+    ),
 }
 
-# Sustained-wind conversion factor, per basin, applied to GEFS's instantaneous 10 m
-# wind speed before comparing it against the category tables below. GEFS reports an
-# instantaneous (analysis-time) wind field, not the 1-minute (Saffir-Simpson) or
-# 10-minute (PAGASA) sustained wind the tables are defined against.
-# Placeholder: 1.0 (no conversion) until we have a validated
-# instantaneous-to-sustained factor per basin
-# "instantaneous-wind caveat".
-# TODO(data-scientist): replace with a validated factor per basin.
-SUSTAINED_WIND_FACTOR: dict[Basin, float] = {
-    Basin.ATLANTIC: 1.0,
-    Basin.WESTERN_PACIFIC: 1.0,
+# Buffer added around each country's admin-area bounding box before slicing the global GRIB2/ATCF
+# data, so the monitoring box can see the storm approaching over open ocean before landfall — a
+# small island's own land extent doesn't capture that, and the right buffer is a function of track
+# uncertainty growth and desired lead time, not country size.
+# TODO(data-scientist): 200 km is a starting placeholder, not validated against GEFS/ATCF track
+# spread by lead time for the countries in scope.
+MONITORING_BOX_BUFFER_KM = 200.0
+
+# WMO/Harper (2010) exposure-dependent gust factor converting a 10-minute mean wind speed to a
+# 1-minute sustained estimate. Only applied for countries whose convention is ONE_MINUTE — a
+# TEN_MINUTE-convention country (e.g. PHL) needs no correction on this axis.
+# Assumes GEFS's native 10 m wind approximates a 10-minute-equivalent mean (the common NWP
+# convention) — TODO(data-scientist): this GEFS-specific assumption is unconfirmed, see the plan's
+# Open Items.
+# Source: Harper, Kepert & Ginger, "Guidelines for Converting Between Various Wind Averaging
+# Periods in Tropical Cyclone Conditions", WMO/TD-No. 1555 (2010).
+WMO_HARPER_10MIN_TO_1MIN_FACTOR: dict[ExposureClass, float] = {
+    ExposureClass.IN_LAND: 1.21,
+    ExposureClass.OFF_LAND: 1.16,
+    ExposureClass.OFF_SEA: 1.11,
+    ExposureClass.AT_SEA: 1.05,
 }
 
-# Saffir-Simpson Hurricane Wind Scale (NOAA/NHC), minimum 1-minute sustained wind
-# speed per category, in m/s. Ascending (category label, min speed m/s).
-# Source: https://www.nhc.noaa.gov/aboutsshws.php
-SAFFIR_SIMPSON_TABLE: list[tuple[str, float]] = [
-    ("CAT_1", 33.0),
-    ("CAT_2", 43.0),
-    ("CAT_3", 50.0),
-    ("CAT_4", 58.0),
-    ("CAT_5", 70.0),
-]
+# Minimum sustained wind speed (m/s) to raise an alert. Single flat constant across all countries
+# this only works because extract_wind_speed() converts
+# GEFS's wind speed into each country's own averaging-period convention first: ~33 m/s is both
+# Saffir-Simpson Category 1 (1-minute convention, e.g. KNA/DMA/ATG) and PAGASA's Typhoon threshold
+# (10-minute convention, PHL) independently.
+MIN_SEVERITY_MS = 33.0
 
-# PAGASA Tropical Cyclone Categories, minimum 10-minute sustained wind speed per
-# category, in m/s. Ascending (category label, min speed m/s).
-# Source: https://www.pagasa.dost.gov.ph/information/tropical-cyclone-information
-# TODO(data-scientist): only TYPHOON (the min-severity/Cat-1-equivalent boundary,
-# ~33 m/s) has been cross-checked against the plan's min-severity gate; verify the
-# other boundaries before they're relied on for anything beyond the alert gate.
-PAGASA_TABLE: list[tuple[str, float]] = [
-    ("TROPICAL_DEPRESSION", 11.0),
-    ("TROPICAL_STORM", 17.0),
-    ("SEVERE_TROPICAL_STORM", 25.0),
-    ("TYPHOON", 33.0),
-    ("SUPER_TYPHOON", 51.0),
-]
-
-# Basin-pluggable category tables, each ascending by min speed.
-# `wind_speed_to_category()` (tropical_cyclone/determine_alerts.py) looks up the
-# highest category whose min speed a wind speed exceeds.
-WIND_CATEGORY_TABLES: dict[Basin, list[tuple[str, float]]] = {
-    Basin.ATLANTIC: SAFFIR_SIMPSON_TABLE,
-    Basin.WESTERN_PACIFIC: PAGASA_TABLE,
-}
-
-# The category label, per basin, that gates whether an alert is raised at all —
-# below this category, no alert. The Philippines study case's
-# min-severity boundary (~33 m/s) is the same value in both scales (Saffir-Simpson
-# Cat 1 and PAGASA Typhoon) — this constant is still per-basin for when that stops
-# being true.
-MIN_SEVERITY_CATEGORY: dict[Basin, str] = {
-    Basin.ATLANTIC: "CAT_1",
-    Basin.WESTERN_PACIFIC: "TYPHOON",
-}
-
-# Minimum sustained wind speed (m/s) to raise an alert, per basin — derived from
-# WIND_CATEGORY_TABLES + MIN_SEVERITY_CATEGORY so the two constants can't drift apart.
-MIN_SEVERITY_MS: dict[Basin, float] = {
-    basin: dict(table)[MIN_SEVERITY_CATEGORY[basin]]
-    for basin, table in WIND_CATEGORY_TABLES.items()
-}
-
-# NOAA GEFS ensemble member count (31-member ensemble; see TROPICAL_CYCLONE_PLAN.md
-# "Data source"). Used to validate GEFS input completeness before extracting wind speed.
+# NOAA GEFS ensemble member naming (31-member ensemble: 1 control + 30 perturbed).
+# Wind (pgrb2sp25 GRIB2) and track (tctrack ATCF) products use different, but 1:1-mapped, member
+# codes for the same underlying ensemble member (gec00<->ac00, gep01<->ap01, ...).
 GEFS_ENSEMBLE_COUNT = 31
+GEFS_WIND_MEMBER_IDS: list[str] = ["gec00", *[f"gep{i:02d}" for i in range(1, 31)]]
+GEFS_TRACK_MEMBER_IDS: list[str] = ["ac00", *[f"ap{i:02d}" for i in range(1, 31)]]
