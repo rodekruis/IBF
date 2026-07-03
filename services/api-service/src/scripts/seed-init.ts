@@ -23,7 +23,7 @@ import {
   SeedCountry,
 } from '@api-service/src/scripts/seed-data/seed-countries.const';
 import { HazardType, LayerName } from '@api-service/src/shared-enums';
-import { UserRepository } from '@api-service/src/user/user.repository';
+import { hashPassword } from '@api-service/src/utils/hash-password.helper';
 import { processPopulationRaster } from '@api-service/src/utils/raster-colorization.helper';
 
 interface GeoJsonFeature {
@@ -69,7 +69,6 @@ export class SeedInit {
 
   public constructor(
     private readonly prisma: PrismaService,
-    private readonly userRepository: UserRepository,
     private readonly countriesService: CountriesService,
     private readonly adminAreasService: AdminAreasService,
     private readonly alertConfigsService: AlertConfigsService,
@@ -101,11 +100,17 @@ export class SeedInit {
   }
 
   private async createAdminUser(): Promise<void> {
-    await this.userRepository.createUser({
-      username: env.USERCONFIG_API_SERVICE_EMAIL_ADMIN,
-      password: env.USERCONFIG_API_SERVICE_PASSWORD_ADMIN,
-      displayName: env.USERCONFIG_API_SERVICE_EMAIL_ADMIN.split('@')[0],
-      admin: true,
+    const { hash, salt } = hashPassword(
+      env.USERCONFIG_API_SERVICE_PASSWORD_ADMIN,
+    );
+    await this.prisma.user.create({
+      data: {
+        username: env.USERCONFIG_API_SERVICE_EMAIL_ADMIN,
+        password: hash,
+        salt,
+        admin: true,
+        displayName: env.USERCONFIG_API_SERVICE_EMAIL_ADMIN.split('@')[0],
+      },
     });
   }
 

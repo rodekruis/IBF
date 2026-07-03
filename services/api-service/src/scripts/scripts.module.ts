@@ -12,7 +12,6 @@ import { ScriptsController } from '@api-service/src/scripts/scripts.controller';
 import { ScriptsService } from '@api-service/src/scripts/scripts.service';
 import { SeedInit } from '@api-service/src/scripts/seed-init';
 import { CustomHttpService } from '@api-service/src/shared/services/custom-http.service';
-import { UserModule } from '@api-service/src/user/user.module';
 
 @Module({
   imports: [
@@ -24,7 +23,6 @@ import { UserModule } from '@api-service/src/user/user.module';
     CountriesModule,
     GeoFeaturesModule,
     RastersModule,
-    UserModule,
   ],
   providers: [ScriptsService, SeedInit, CustomHttpService],
   controllers: [ScriptsController],
