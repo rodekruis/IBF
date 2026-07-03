@@ -2,6 +2,7 @@ import { PNG } from 'pngjs';
 
 import {
   colorizeGrayscalePng,
+  FLOOD_DEPTH_CONFIG,
   processPopulationRaster,
   reproject4326To3857,
 } from '@api-service/src/utils/raster-colorization.helper';
@@ -42,12 +43,12 @@ function readOutputPixel(
 describe('raster-colorization.helper', () => {
   describe('colorizeGrayscalePng', () => {
     it('should return empty string for empty input', () => {
-      expect(colorizeGrayscalePng('')).toBe('');
+      expect(colorizeGrayscalePng('', FLOOD_DEPTH_CONFIG)).toBe('');
     });
 
     it('should make zero pixels transparent with default config', () => {
       const input = createGrayscalePng(2, 2, [0, 100, 200, 0]);
-      const result = colorizeGrayscalePng(input);
+      const result = colorizeGrayscalePng(input, FLOOD_DEPTH_CONFIG);
 
       const pixel0 = readOutputPixel(result, 0);
       expect(pixel0.a).toBe(0);
@@ -58,19 +59,18 @@ describe('raster-colorization.helper', () => {
 
     it('should colorize non-zero pixels with opacity', () => {
       const input = createGrayscalePng(1, 1, [128]);
-      const result = colorizeGrayscalePng(input);
+      const result = colorizeGrayscalePng(input, FLOOD_DEPTH_CONFIG);
 
       const pixel = readOutputPixel(result, 0);
-      expect(pixel.a).toBe(Math.round(0.5 * 255));
+      expect(pixel.a).toBe(179);
       expect(pixel.r).toBeGreaterThanOrEqual(0);
       expect(pixel.r).toBeLessThanOrEqual(255);
     });
 
     it('should render zero pixels with colorLow when zeroIsTransparent is false', () => {
       const config = {
-        colorLow: [255, 0, 0] as [number, number, number],
-        colorHigh: [0, 0, 255] as [number, number, number],
-        opacity: 1,
+        colorLow: [255, 0, 0, 255] as [number, number, number, number],
+        colorHigh: [0, 0, 255, 255] as [number, number, number, number],
         zeroIsTransparent: false,
         steps: 6,
         useLogScale: false,
@@ -87,9 +87,8 @@ describe('raster-colorization.helper', () => {
 
     it('should map max value pixel to colorHigh', () => {
       const config = {
-        colorLow: [255, 0, 0] as [number, number, number],
-        colorHigh: [0, 0, 255] as [number, number, number],
-        opacity: 1,
+        colorLow: [255, 0, 0, 255] as [number, number, number, number],
+        colorHigh: [0, 0, 255, 255] as [number, number, number, number],
         zeroIsTransparent: true,
         steps: 6,
         useLogScale: false,
@@ -105,9 +104,8 @@ describe('raster-colorization.helper', () => {
 
     it('should produce intermediate colors for mid-range values', () => {
       const config = {
-        colorLow: [0, 0, 0] as [number, number, number],
-        colorHigh: [255, 255, 255] as [number, number, number],
-        opacity: 1,
+        colorLow: [0, 0, 0, 255] as [number, number, number, number],
+        colorHigh: [255, 255, 255, 255] as [number, number, number, number],
         zeroIsTransparent: true,
         steps: 100,
         useLogScale: false,
@@ -123,9 +121,8 @@ describe('raster-colorization.helper', () => {
 
     it('should apply log scale when useLogScale is true', () => {
       const configLinear = {
-        colorLow: [0, 0, 0] as [number, number, number],
-        colorHigh: [255, 255, 255] as [number, number, number],
-        opacity: 1,
+        colorLow: [0, 0, 0, 255] as [number, number, number, number],
+        colorHigh: [255, 255, 255, 255] as [number, number, number, number],
         zeroIsTransparent: true,
         steps: 100,
         useLogScale: false,
@@ -145,9 +142,8 @@ describe('raster-colorization.helper', () => {
 
     it('should produce banded output with fewer steps', () => {
       const config = {
-        colorLow: [0, 0, 0] as [number, number, number],
-        colorHigh: [255, 255, 255] as [number, number, number],
-        opacity: 1,
+        colorLow: [0, 0, 0, 255] as [number, number, number, number],
+        colorHigh: [255, 255, 255, 255] as [number, number, number, number],
         zeroIsTransparent: true,
         steps: 2,
         useLogScale: false,
@@ -164,7 +160,7 @@ describe('raster-colorization.helper', () => {
 
     it('should handle all-zero image', () => {
       const input = createGrayscalePng(2, 2, [0, 0, 0, 0]);
-      const result = colorizeGrayscalePng(input);
+      const result = colorizeGrayscalePng(input, FLOOD_DEPTH_CONFIG);
 
       for (let i = 0; i < 4; i++) {
         const pixel = readOutputPixel(result, i);
@@ -174,9 +170,8 @@ describe('raster-colorization.helper', () => {
 
     it('should handle uniform non-zero image', () => {
       const config = {
-        colorLow: [100, 100, 100] as [number, number, number],
-        colorHigh: [200, 200, 200] as [number, number, number],
-        opacity: 0.8,
+        colorLow: [100, 100, 100, 204] as [number, number, number, number],
+        colorHigh: [200, 200, 200, 204] as [number, number, number, number],
         zeroIsTransparent: true,
         steps: 6,
         useLogScale: false,
@@ -189,7 +184,7 @@ describe('raster-colorization.helper', () => {
       expect(pixel0.r).toBe(pixel3.r);
       expect(pixel0.g).toBe(pixel3.g);
       expect(pixel0.b).toBe(pixel3.b);
-      expect(pixel0.a).toBe(Math.round(0.8 * 255));
+      expect(pixel0.a).toBe(204);
     });
   });
 
@@ -318,6 +313,32 @@ describe('raster-colorization.helper', () => {
       expect(decoded[1]).toBe(pngSignature[1]);
       expect(decoded[2]).toBe(pngSignature[2]);
       expect(decoded[3]).toBe(pngSignature[3]);
+    });
+
+    it('should downsample a 20x20 input to 2x2', () => {
+      const pngBuffer = createTestPngBuffer(20, 20);
+      const result = processPopulationRaster(pngBuffer, {
+        transform: [1, 0, 0, 0, -1, 20],
+        crs: 'EPSG:4326',
+      });
+
+      const decoded = Buffer.from(result.colouredBase64, 'base64');
+      const outputPng = PNG.sync.read(decoded);
+      expect(outputPng.width).toBe(2);
+      expect(outputPng.height).toBe(2);
+    });
+
+    it('should not downsample when input is smaller than the factor', () => {
+      const pngBuffer = createTestPngBuffer(4, 4);
+      const result = processPopulationRaster(pngBuffer, {
+        transform: [1, 0, 0, 0, -1, 4],
+        crs: 'EPSG:4326',
+      });
+
+      const decoded = Buffer.from(result.colouredBase64, 'base64');
+      const outputPng = PNG.sync.read(decoded);
+      expect(outputPng.width).toBe(4);
+      expect(outputPng.height).toBe(4);
     });
   });
 });

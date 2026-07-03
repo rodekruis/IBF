@@ -1,20 +1,17 @@
 import { PNG } from 'pngjs';
 
-type Rgb = [number, number, number];
+type Rgba = [number, number, number, number];
 
 // ─── Colorization configuration ───────────────────────────────────────────────
 // These parameters control how grayscale raster values are mapped to colors.
 // Adjust these to change the visual output without altering the algorithm.
 
 interface ColorizationConfig {
-  // Color for the lowest non-zero values (RGB, each 0–255).
-  colorLow: Rgb;
+  // Color+alpha for the lowest non-zero values (RGBA, each 0–255).
+  colorLow: Rgba;
 
-  // Color for the highest values (RGB, each 0–255).
-  colorHigh: Rgb;
-
-  // Opacity for all non-zero pixels (0 = fully transparent, 1 = fully opaque).
-  opacity: number;
+  // Color+alpha for the highest values (RGBA, each 0–255).
+  colorHigh: Rgba;
 
   // Whether zero-value pixels are fully transparent.
   // true: zero pixels are invisible (typical for flood extents on a map).
@@ -31,19 +28,19 @@ interface ColorizationConfig {
   useLogScale: boolean;
 }
 
-const DEFAULT_CONFIG: ColorizationConfig = {
-  colorLow: [173, 216, 230], // Light blue
-  colorHigh: [0, 0, 139], // Dark blue
-  opacity: 0.5,
+const POPULATION_CONFIG: ColorizationConfig = {
+  colorLow: [0, 200, 0, 0],
+  colorHigh: [100, 100, 255, 255],
   zeroIsTransparent: true,
   steps: 6,
   useLogScale: true,
 };
 
+const POPULATION_DOWNSAMPLE_FACTOR = 10;
+
 export const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
-  colorLow: [173, 216, 230], // Light blue
-  colorHigh: [0, 0, 139], // Dark blue
-  opacity: 0.7,
+  colorLow: [173, 216, 230, 179],
+  colorHigh: [0, 0, 139, 179],
   zeroIsTransparent: true,
   steps: 6,
   useLogScale: false,
@@ -52,21 +49,13 @@ export const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
 
 export function colorizeGrayscalePng(
   base64Grayscale: string,
-  config: ColorizationConfig = DEFAULT_CONFIG,
+  config: ColorizationConfig,
 ): string {
   if (!base64Grayscale) {
     return '';
   }
 
-  const {
-    colorLow,
-    colorHigh,
-    opacity,
-    zeroIsTransparent,
-    steps,
-    useLogScale,
-  } = config;
-  const alpha = Math.round(opacity * 255);
+  const { colorLow, colorHigh, zeroIsTransparent, steps, useLogScale } = config;
 
   const inputBuffer = Buffer.from(base64Grayscale, 'base64');
   const grayscalePng = PNG.sync.read(inputBuffer);
@@ -114,7 +103,9 @@ export function colorizeGrayscalePng(
       outputPng.data[idx + 2] = Math.round(
         colorLow[2] * (1 - n) + colorHigh[2] * n,
       );
-      outputPng.data[idx + 3] = alpha;
+      outputPng.data[idx + 3] = Math.round(
+        colorLow[3] * (1 - n) + colorHigh[3] * n,
+      );
     }
   }
 
@@ -170,7 +161,11 @@ export function processPopulationRaster(
   metadata: { transform: number[]; crs: string },
 ): PopulationRasterResult {
   const rasterMetadata = computeRasterMetadata(dataPngBuffer, metadata);
-  const colouredBase64 = colorizeGrayscalePngFromBuffer(dataPngBuffer);
+  const colouredBase64 = colorizeRgbaEncodedPng(
+    dataPngBuffer,
+    POPULATION_CONFIG,
+    POPULATION_DOWNSAMPLE_FACTOR,
+  );
 
   return {
     colouredBase64,
@@ -178,51 +173,86 @@ export function processPopulationRaster(
   };
 }
 
-function colorizeGrayscalePngFromBuffer(
+// The data PNG encodes population values across RGBA channels:
+// value = (R * 16777216 + G * 65536 + B * 256 + A) / 1000
+// This function decodes those values (optionally downsampling) and colorizes based on population.
+// It allocates a Float32Array for decoded values and uses three passes (decode, max scan, render).
+// Peak memory is roughly input + output + decoded, so keep downsampleFactor in mind for large rasters.
+function colorizeRgbaEncodedPng(
   inputBuffer: Buffer,
-  config: ColorizationConfig = DEFAULT_CONFIG,
+  config: ColorizationConfig,
+  downsampleFactor = 1,
 ): string {
-  const {
-    colorLow,
-    colorHigh,
-    opacity,
-    zeroIsTransparent,
-    steps,
-    useLogScale,
-  } = config;
-  const alpha = Math.round(opacity * 255);
+  const { colorLow, colorHigh, zeroIsTransparent, steps, useLogScale } = config;
 
-  const grayscalePng = PNG.sync.read(inputBuffer);
-  const { width, height, data } = grayscalePng;
-  const pixelCount = width * height;
+  const png = PNG.sync.read(inputBuffer);
+  const { width, height, data } = png;
+
+  const effectiveFactor =
+    width >= downsampleFactor && height >= downsampleFactor
+      ? downsampleFactor
+      : 1;
+  const outWidth = Math.floor(width / effectiveFactor);
+  const outHeight = Math.floor(height / effectiveFactor);
+  const outPixelCount = outWidth * outHeight;
+
+  const decoded = new Float32Array(outPixelCount);
+
+  if (effectiveFactor <= 1) {
+    for (let i = 0; i < outPixelCount; i++) {
+      const idx = i * 4;
+      decoded[i] =
+        (data[idx] * 16777216 +
+          data[idx + 1] * 65536 +
+          data[idx + 2] * 256 +
+          data[idx + 3]) /
+        1000;
+    }
+  } else {
+    for (let oy = 0; oy < outHeight; oy++) {
+      for (let ox = 0; ox < outWidth; ox++) {
+        let sum = 0;
+        for (let dy = 0; dy < effectiveFactor; dy++) {
+          for (let dx = 0; dx < effectiveFactor; dx++) {
+            const srcX = ox * effectiveFactor + dx;
+            const srcY = oy * effectiveFactor + dy;
+            const idx = (srcY * width + srcX) * 4;
+            sum +=
+              (data[idx] * 16777216 +
+                data[idx + 1] * 65536 +
+                data[idx + 2] * 256 +
+                data[idx + 3]) /
+              1000;
+          }
+        }
+        decoded[oy * outWidth + ox] = sum / (effectiveFactor * effectiveFactor);
+      }
+    }
+  }
 
   let max = 0;
-  for (let i = 0; i < pixelCount; i++) {
-    let value = data[i * 4];
-    if (useLogScale) {
-      value = Math.log1p(value);
-    }
-    if (value > max) {
-      max = value;
+  for (let i = 0; i < outPixelCount; i++) {
+    const v = useLogScale ? Math.log1p(decoded[i]) : decoded[i];
+    if (v > max) {
+      max = v;
     }
   }
   if (max === 0) {
     max = 1;
   }
 
-  const outputPng = new PNG({ width, height });
-  for (let i = 0; i < pixelCount; i++) {
+  const outputPng = new PNG({ width: outWidth, height: outHeight });
+  for (let i = 0; i < outPixelCount; i++) {
     const idx = i * 4;
-    const raw = data[i * 4];
+    const v = useLogScale ? Math.log1p(decoded[i]) : decoded[i];
 
-    if (raw === 0 && zeroIsTransparent) {
+    if (v === 0 && zeroIsTransparent) {
       outputPng.data[idx] = 0;
       outputPng.data[idx + 1] = 0;
       outputPng.data[idx + 2] = 0;
       outputPng.data[idx + 3] = 0;
     } else {
-      const scaled = useLogScale ? Math.log1p(raw) : raw;
-      const normalized = scaled / max;
+      const normalized = v / max;
       const stepIndex = Math.round(normalized * steps);
       const n = Math.min(stepIndex, steps) / steps;
 
@@ -235,7 +265,9 @@ function colorizeGrayscalePngFromBuffer(
       outputPng.data[idx + 2] = Math.round(
         colorLow[2] * (1 - n) + colorHigh[2] * n,
       );
-      outputPng.data[idx + 3] = alpha;
+      outputPng.data[idx + 3] = Math.round(
+        colorLow[3] * (1 - n) + colorHigh[3] * n,
+      );
     }
   }
 
