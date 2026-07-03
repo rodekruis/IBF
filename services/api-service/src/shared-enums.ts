@@ -4,11 +4,11 @@
 
 export {
   AlertClass,
-  AlertClassificationLevel,
+  AlertClassificationLevel, // Not all enums are actually used as database column types, yet we still define them all in one place (postgres datamodel) for consistency
   EnsembleMemberType,
   ForecastSource,
   HazardType,
   LayerName,
   LayerType,
   SeverityKey,
-} from '@prisma/client';
+} from '@prisma/client'; // See schema.prisma for all enums with their members
