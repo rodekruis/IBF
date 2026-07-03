@@ -17,12 +17,14 @@ export function getServer(): TestAgent<request.Test> {
 export function resetDB(
   seedScript: SeedScript,
   resetIdentifier: string,
+  skipStaticRasters = true,
 ): Promise<request.Response> {
   return getServer()
     .post('/instance/reset')
     .query({
       script: seedScript,
       resetIdentifier,
+      skipStaticRasters,
     })
     .send({
       secret: env.RESET_SECRET,

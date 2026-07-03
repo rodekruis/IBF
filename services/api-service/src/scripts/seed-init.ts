@@ -16,6 +16,7 @@ import {
 } from '@api-service/src/scripts/seed-data/seed-countries.const';
 import { HazardType, LayerName } from '@api-service/src/shared-enums';
 import { hashPassword } from '@api-service/src/utils/hash-password.helper';
+import { processPopulationRaster } from '@api-service/src/utils/raster-colorization.helper';
 
 interface GeoJsonFeature {
   readonly type: string;
@@ -62,8 +63,10 @@ export class SeedInit {
 
   public async run({
     countryCodes,
+    skipStaticRasters = false,
   }: {
     countryCodes?: string[];
+    skipStaticRasters?: boolean;
   }): Promise<void> {
     await this.truncateAll();
     await this.createAdminUser();
@@ -76,7 +79,9 @@ export class SeedInit {
     await this.seedAdminAreas(countries);
     await this.seedAlertConfigs(countries);
     await this.seedGeoFeatures(countries);
-    await this.seedStaticRasters(countries);
+    if (!skipStaticRasters) {
+      await this.seedStaticRasters(countries);
+    }
   }
 
   private async createAdminUser(): Promise<void> {
@@ -465,16 +470,13 @@ export class SeedInit {
   private async seedPopulationRaster(countryCodeIso3: string): Promise<void> {
     const dataPngUrl = `${SEED_REPO_RAW_BASE_URL}/raster-data/population/data-png/${countryCodeIso3}_population.png`;
     const metadataUrl = `${SEED_REPO_RAW_BASE_URL}/raster-data/population/data-png/${countryCodeIso3}_population_metadata.json`;
-    const colouredPngUrl = `${SEED_REPO_RAW_BASE_URL}/raster-data/population/rgba/${countryCodeIso3}_population.png`;
 
     this.logger.log(`Download population raster for ${countryCodeIso3}...`);
 
-    const [dataPngResponse, metadataResponse, colouredPngResponse] =
-      await Promise.all([
-        fetch(dataPngUrl),
-        fetch(metadataUrl),
-        fetch(colouredPngUrl),
-      ]);
+    const [dataPngResponse, metadataResponse] = await Promise.all([
+      fetch(dataPngUrl),
+      fetch(metadataUrl),
+    ]);
 
     if (!dataPngResponse.ok) {
       this.logger.warn(
@@ -490,34 +492,14 @@ export class SeedInit {
       return;
     }
 
-    if (!colouredPngResponse.ok) {
-      this.logger.warn(
-        `No population coloured PNG for ${countryCodeIso3}: ${colouredPngResponse.status} — skipping`,
-      );
-      return;
-    }
-
     const dataPngBuffer = Buffer.from(await dataPngResponse.arrayBuffer());
-    const colouredPngBuffer = Buffer.from(
-      await colouredPngResponse.arrayBuffer(),
-    );
     const metadata = (await metadataResponse.json()) as {
       transform: number[];
       crs: string;
-      nodata: number;
     };
 
-    const transform = metadata.transform.slice(0, 6);
-    const xmin = transform[2];
-    const ymax = transform[5];
-    const xRes = transform[0];
-    const yRes = Math.abs(transform[4]);
-
-    const { width, height } = this.getPngDimensions(dataPngBuffer);
-    const xmax = xmin + xRes * width;
-    const ymin = ymax - yRes * height;
-
-    const extent = { xmin, ymin, xmax, ymax };
+    const { colouredBase64, metadata: rasterMetadata } =
+      processPopulationRaster(dataPngBuffer, metadata);
 
     // TODO: move database logic like this to rasters service and repository, same for other entities in this file.
     await this.prisma.staticRasterData.upsert({
@@ -528,29 +510,20 @@ export class SeedInit {
         },
       },
       update: {
-        valueBlackWhite: dataPngBuffer.toString('base64'),
-        valueColoured: colouredPngBuffer.toString('base64'),
-        extent,
+        valueData: dataPngBuffer.toString('base64'),
+        valueColoured: colouredBase64,
+        metadata: rasterMetadata as unknown as Prisma.InputJsonValue,
       },
       create: {
         countryCodeIso3,
         layer: LayerName.population,
-        valueBlackWhite: dataPngBuffer.toString('base64'),
-        valueColoured: colouredPngBuffer.toString('base64'),
-        extent,
+        valueData: dataPngBuffer.toString('base64'),
+        valueColoured: colouredBase64,
+        metadata: rasterMetadata as unknown as Prisma.InputJsonValue,
       },
     });
 
     this.logger.log(`Seeded population raster for ${countryCodeIso3}`);
-  }
-
-  private getPngDimensions(buffer: Buffer): {
-    width: number;
-    height: number;
-  } {
-    const width = buffer.readUInt32BE(16);
-    const height = buffer.readUInt32BE(20);
-    return { width, height };
   }
 
   public async truncateAll(): Promise<void> {

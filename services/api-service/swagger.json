@@ -14,6 +14,7 @@
     "path": "/api/instance/reset",
     "params": [
       "resetIdentifier",
+      "skipStaticRasters",
       "script"
     ]
   },

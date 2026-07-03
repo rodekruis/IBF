@@ -28,6 +28,8 @@ function readRasterImageById(id: number) {
 describe('/rasters', () => {
   let rasterId: number;
 
+  jest.setTimeout(60_000);
+
   beforeAll(async () => {
     await resetDB(SeedScript.ethiopiaOnly, __filename);
     const alert = buildAlert({ eventName: 'ETH_floods_raster-test' });
@@ -43,7 +45,7 @@ describe('/rasters', () => {
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.layer).toBe(LayerName.floodDepth);
       expect(response.body.valueColoured).toBeUndefined();
-      expect(response.body.extent).toEqual(
+      expect(response.body.metadata.data.extent).toEqual(
         expect.objectContaining({
           xmin: expect.any(Number),
           ymin: expect.any(Number),
@@ -96,7 +98,7 @@ describe('/rasters/static', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(SeedScript.ethiopiaOnly, __filename, false);
     accessToken = await getAccessToken();
   });
 
@@ -109,7 +111,7 @@ describe('/rasters/static', () => {
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.id).toEqual(expect.any(Number));
       expect(response.body.layer).toBe(LayerName.population);
-      expect(response.body.extent).toEqual(
+      expect(response.body.metadata.data.extent).toEqual(
         expect.objectContaining({
           xmin: expect.any(Number),
           ymin: expect.any(Number),
@@ -182,7 +184,12 @@ describe('/rasters/static', () => {
     const deleteLayer = LayerName.clinics;
 
     it('should delete the static raster and return 204', async () => {
-      await createStaticRaster(accessToken, country, deleteLayer);
+      const createResponse = await createStaticRaster(
+        accessToken,
+        country,
+        deleteLayer,
+      );
+      expect(createResponse.status).toBe(HttpStatus.OK);
 
       const response = await getServer()
         .delete(`/rasters/static/${country}/${deleteLayer}`)

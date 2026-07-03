@@ -101,7 +101,7 @@ def calculate_forecasts(
             data_submitter.add_raster_exposure(
                 event_name=event_name,
                 layer=LayerName.FLOOD_DEPTH,  # replace with your hazard's raster layer
-                value_black_white=PLACEHOLDER_RASTER_BASE64,
+                value_greyscale=PLACEHOLDER_RASTER_BASE64,
                 extent={"xmin": -1, "ymin": -1, "xmax": 1, "ymax": 1},
             )
 
