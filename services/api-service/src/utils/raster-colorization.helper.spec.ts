@@ -314,5 +314,31 @@ describe('raster-colorization.helper', () => {
       expect(decoded[2]).toBe(pngSignature[2]);
       expect(decoded[3]).toBe(pngSignature[3]);
     });
+
+    it('should downsample a 20x20 input to 2x2', () => {
+      const pngBuffer = createTestPngBuffer(20, 20);
+      const result = processPopulationRaster(pngBuffer, {
+        transform: [1, 0, 0, 0, -1, 20],
+        crs: 'EPSG:4326',
+      });
+
+      const decoded = Buffer.from(result.colouredBase64, 'base64');
+      const outputPng = PNG.sync.read(decoded);
+      expect(outputPng.width).toBe(2);
+      expect(outputPng.height).toBe(2);
+    });
+
+    it('should not downsample when input is smaller than the factor', () => {
+      const pngBuffer = createTestPngBuffer(4, 4);
+      const result = processPopulationRaster(pngBuffer, {
+        transform: [1, 0, 0, 0, -1, 4],
+        crs: 'EPSG:4326',
+      });
+
+      const decoded = Buffer.from(result.colouredBase64, 'base64');
+      const outputPng = PNG.sync.read(decoded);
+      expect(outputPng.width).toBe(4);
+      expect(outputPng.height).toBe(4);
+    });
   });
 });

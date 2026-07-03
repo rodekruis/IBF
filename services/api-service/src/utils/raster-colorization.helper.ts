@@ -175,9 +175,9 @@ export function processPopulationRaster(
 
 // The data PNG encodes population values across RGBA channels:
 // value = (R * 16777216 + G * 65536 + B * 256 + A) / 1000
-// This function decodes those values and colorizes based on the actual population.
-// Uses two passes over the input data to avoid allocating an intermediate array,
-// keeping peak memory at ~2x image size instead of ~3x for large rasters.
+// This function decodes those values (optionally downsampling) and colorizes based on population.
+// It allocates a Float32Array for decoded values and uses three passes (decode, max scan, render).
+// Peak memory is roughly input + output + decoded, so keep downsampleFactor in mind for large rasters.
 function colorizeRgbaEncodedPng(
   inputBuffer: Buffer,
   config: ColorizationConfig,
