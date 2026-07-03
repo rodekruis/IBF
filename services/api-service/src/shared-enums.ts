@@ -10,11 +10,13 @@ export enum EnsembleMemberType {
 export enum ForecastSource {
   glofas = 'glofas',
   ecmwf = 'ECMWF',
+  gefs = 'gefs',
 }
 
 export enum HazardType {
   floods = 'floods',
   drought = 'drought',
+  tropicalCyclone = 'tropical-cyclone',
 }
 
 export enum Layer {
@@ -25,6 +27,9 @@ export enum Layer {
   // --- floods-specific layers ---
   floodDepth = 'flood_depth',
   glofasStations = 'glofas_stations',
+
+  // --- tropical-cyclone-specific layers ---
+  windSpeed = 'wind_speed',
 }
 
 // Key to identify the type of map layer info being shown.
@@ -53,6 +58,7 @@ export enum MapLayerDisplayType {
 export enum SeverityKey {
   returnPeriod = 'return_period',
   percentile = 'percentile',
+  windSpeed = 'wind_speed',
 }
 
 // ---------------------------------------------
