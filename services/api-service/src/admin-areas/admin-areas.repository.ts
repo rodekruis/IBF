@@ -68,56 +68,6 @@ export class AdminAreasRepository {
     }
   }
 
-  public async createAdminArea(
-    adminAreaCreateDto: AdminAreaCreateDto,
-  ): Promise<Feature> {
-    this.validateMultiPolygonGeometry(adminAreaCreateDto.geometry);
-    const geojson = JSON.stringify(adminAreaCreateDto.geometry);
-    try {
-      await this.prisma.$transaction(async (tx) => {
-        await tx.adminArea.create({
-          data: {
-            placeCode: adminAreaCreateDto.placeCode,
-            adminLevel: adminAreaCreateDto.adminLevel,
-            nameEn: adminAreaCreateDto.nameEn,
-            countryCodeIso3: adminAreaCreateDto.countryCodeIso3,
-            placeCodeLevel1: adminAreaCreateDto.placeCodeLevel1,
-            placeCodeLevel2: adminAreaCreateDto.placeCodeLevel2,
-            placeCodeLevel3: adminAreaCreateDto.placeCodeLevel3,
-            placeCodeLevel4: adminAreaCreateDto.placeCodeLevel4,
-            attributes:
-              (adminAreaCreateDto.attributes as Prisma.InputJsonValue) ??
-              undefined,
-          },
-        });
-        await tx.$executeRaw`
-          UPDATE "api-service"."admin-area"
-          SET geometry = public.ST_Force2D(public.ST_GeomFromGeoJSON(${geojson}))
-          WHERE "placeCode" = ${adminAreaCreateDto.placeCode}`;
-      });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') {
-          throw new ConflictException(
-            `Admin area '${adminAreaCreateDto.placeCode}' already exists`,
-          );
-        }
-        if (error.code === 'P2003') {
-          throw new BadRequestException(
-            `Country '${adminAreaCreateDto.countryCodeIso3}' does not exist`,
-          );
-        }
-        if (error.code === 'P2010') {
-          throw new BadRequestException(
-            'Invalid geometry: could not parse GeoJSON',
-          );
-        }
-      }
-      throw error;
-    }
-    return this.getAdminAreaOrThrow(adminAreaCreateDto.placeCode);
-  }
-
   public async updateAdminAreaOrThrow(
     placeCode: string,
     adminAreaUpdateDto: AdminAreaUpdateDto,
@@ -180,5 +130,69 @@ export class AdminAreasRepository {
       throw new NotFoundException(`Admin area '${placeCode}' not found`);
     }
     await this.prisma.adminArea.delete({ where: { placeCode } });
+  }
+
+  public async createAdminAreas(dtos: AdminAreaCreateDto[]): Promise<void> {
+    if (dtos.length === 0) {
+      return;
+    }
+
+    const BATCH_SIZE = 100;
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        for (let i = 0; i < dtos.length; i += BATCH_SIZE) {
+          const batch = dtos.slice(i, i + BATCH_SIZE);
+          const values = batch.map((dto) => {
+            const geojson = JSON.stringify(dto.geometry);
+            const attrs = JSON.stringify(dto.attributes ?? {});
+            return Prisma.sql`(
+              ${dto.placeCode},
+              ${dto.adminLevel},
+              ${dto.nameEn},
+              ${dto.countryCodeIso3},
+              ${dto.placeCodeLevel1 ?? null},
+              ${dto.placeCodeLevel2 ?? null},
+              ${dto.placeCodeLevel3 ?? null},
+              ${dto.placeCodeLevel4 ?? null},
+              ${attrs}::jsonb,
+              NOW(),
+              NOW(),
+              public.ST_Force2D(public.ST_GeomFromGeoJSON(${geojson}))
+            )`;
+          });
+          await tx.$executeRaw`
+            INSERT INTO "api-service"."admin-area"
+              ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", "placeCodeLevel1", "placeCodeLevel2", "placeCodeLevel3", "placeCodeLevel4", attributes, created, updated, geometry)
+            VALUES ${Prisma.join(values)}`;
+        }
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2010') {
+          const pgCode = this.extractPostgresErrorCode(error);
+          if (pgCode === '23505') {
+            throw new ConflictException('One or more placeCodes already exist');
+          }
+          if (pgCode === '23503') {
+            throw new BadRequestException(
+              'One or more referenced countries do not exist',
+            );
+          }
+          throw new BadRequestException(
+            'Invalid geometry: could not parse GeoJSON',
+          );
+        }
+      }
+      throw error;
+    }
+  }
+
+  private extractPostgresErrorCode(
+    error: Prisma.PrismaClientKnownRequestError,
+  ): string | undefined {
+    const meta = error.meta as
+      | { driverAdapterError?: { cause?: { originalCode?: string } } }
+      | undefined;
+    return meta?.driverAdapterError?.cause?.originalCode;
   }
 }

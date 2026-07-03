@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseArrayPipe,
   Patch,
   Post,
   UseGuards,
@@ -55,23 +56,23 @@ export class CountriesController {
     return this.countriesService.getCountryOrThrow(countryCodeIso3);
   }
 
-  // TODO: Consider adding a batch endpoint (POST with array body) for bulk imports
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
-  @ApiOperation({ summary: 'Create a country' })
+  @ApiOperation({ summary: 'Create one or more countries' })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Country created successfully',
-    type: CountryResponseDto,
+    description: 'Countries created successfully',
+    type: [CountryResponseDto],
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
     description: 'Country already exists',
   })
-  public async createCountry(
-    @Body() countryCreateDto: CountryCreateDto,
-  ): Promise<CountryResponseDto> {
-    return this.countriesService.createCountry(countryCreateDto);
+  public async createCountries(
+    @Body(new ParseArrayPipe({ items: CountryCreateDto }))
+    dtos: CountryCreateDto[],
+  ): Promise<CountryResponseDto[]> {
+    return this.countriesService.createCountries(dtos);
   }
 
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })

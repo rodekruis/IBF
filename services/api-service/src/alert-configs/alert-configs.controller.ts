@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseArrayPipe,
   ParseIntPipe,
   Post,
   Query,
@@ -62,21 +63,21 @@ export class AlertConfigsController {
     });
   }
 
-  // TODO: Consider adding a batch endpoint (POST with array body) for bulk imports
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
   @ApiOperation({
-    summary: 'Create alert config for country and hazard type',
+    summary: 'Create one or more alert configs',
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Alert config created successfully',
-    type: AlertConfigResponseDto,
+    description: 'Alert configs created successfully',
+    type: [AlertConfigResponseDto],
   })
-  public async createAlertConfig(
-    @Body() alertConfigCreateDto: AlertConfigCreateDto,
-  ): Promise<AlertConfigResponseDto> {
-    return this.alertConfigsService.createAlertConfig(alertConfigCreateDto);
+  public async createAlertConfigs(
+    @Body(new ParseArrayPipe({ items: AlertConfigCreateDto }))
+    dtos: AlertConfigCreateDto[],
+  ): Promise<AlertConfigResponseDto[]> {
+    return this.alertConfigsService.createAlertConfigs(dtos);
   }
 
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })

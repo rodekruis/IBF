@@ -63,8 +63,7 @@
   {
     "method": "post",
     "path": "/api/alert-configs",
-    "params": [],
-    "returnType": "AlertConfigResponseDto"
+    "params": []
   },
   {
     "method": "delete",
@@ -75,26 +74,6 @@
   },
   {
     "method": "get",
-    "path": "/api/users",
-    "params": []
-  },
-  {
-    "method": "post",
-    "path": "/api/users/login",
-    "params": []
-  },
-  {
-    "method": "post",
-    "path": "/api/users/logout",
-    "params": []
-  },
-  {
-    "method": "get",
-    "path": "/api/users/current",
-    "params": []
-  },
-  {
-    "method": "get",
     "path": "/api/admin-areas",
     "params": [],
     "returnType": "GeoJsonFeatureCollectionDto"
@@ -102,8 +81,7 @@
   {
     "method": "post",
     "path": "/api/admin-areas",
-    "params": [],
-    "returnType": "GeoJsonFeatureDto"
+    "params": []
   },
   {
     "method": "patch",
@@ -128,8 +106,7 @@
   {
     "method": "post",
     "path": "/api/countries",
-    "params": [],
-    "returnType": "CountryResponseDto"
+    "params": []
   },
   {
     "method": "get",
@@ -163,8 +140,7 @@
   {
     "method": "post",
     "path": "/api/geo-features",
-    "params": [],
-    "returnType": "GeoJsonFeatureDto"
+    "params": []
   },
   {
     "method": "patch",
@@ -234,5 +210,25 @@
     "params": [
       "id"
     ]
+  },
+  {
+    "method": "get",
+    "path": "/api/users",
+    "params": []
+  },
+  {
+    "method": "post",
+    "path": "/api/users/login",
+    "params": []
+  },
+  {
+    "method": "post",
+    "path": "/api/users/logout",
+    "params": []
+  },
+  {
+    "method": "get",
+    "path": "/api/users/current",
+    "params": []
   }
 ]

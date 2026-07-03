@@ -24,10 +24,10 @@ export class AlertConfigsService {
     });
   }
 
-  public async createAlertConfig(
-    alertConfigCreateDto: AlertConfigCreateDto,
-  ): Promise<AlertConfigResponseDto> {
-    return this.alertConfigsRepository.createAlertConfig(alertConfigCreateDto);
+  public async createAlertConfigs(
+    dtos: AlertConfigCreateDto[],
+  ): Promise<AlertConfigResponseDto[]> {
+    return this.alertConfigsRepository.createAlertConfigs(dtos);
   }
 
   public async deleteAlertConfigOrThrow(id: number): Promise<void> {

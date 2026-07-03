@@ -49,45 +49,40 @@ describe('/ Geo Features', () => {
   };
 
   describe('POST /geo-features', () => {
-    it('should create a geo-feature', async () => {
+    it('should create geo-features', async () => {
       const response = await getServer()
         .post('/geo-features')
         .set('Cookie', [accessToken])
-        .send(validGeoFeature);
+        .send([validGeoFeature]);
 
       expect(response.status).toBe(HttpStatus.CREATED);
-      expect(response.body.type).toBe('Feature');
-      expect(response.body.id).toBeDefined();
-      expect(response.body.properties.countryCodeIso3).toBe('ETH');
-      expect(response.body.properties.referenceId).toBe('TEST_STATION_01');
-      expect(response.body.geometry.coordinates).toEqual([38.5, 9.0]);
     });
 
-    it('should return 409 for duplicate geo-feature', async () => {
-      const firstResponse = await getServer()
+    it('should silently skip duplicate geo-features', async () => {
+      await getServer()
         .post('/geo-features')
         .set('Cookie', [accessToken])
-        .send({ ...validGeoFeature, referenceId: 'DUPLICATE_TEST_01' });
-
-      expect(firstResponse.status).toBe(HttpStatus.CREATED);
+        .send([{ ...validGeoFeature, referenceId: 'DUPLICATE_TEST_01' }]);
 
       const response = await getServer()
         .post('/geo-features')
         .set('Cookie', [accessToken])
-        .send({ ...validGeoFeature, referenceId: 'DUPLICATE_TEST_01' });
+        .send([{ ...validGeoFeature, referenceId: 'DUPLICATE_TEST_01' }]);
 
-      expect(response.status).toBe(HttpStatus.CONFLICT);
+      expect(response.status).toBe(HttpStatus.CREATED);
     });
 
     it('should return 400 for non-existent country', async () => {
       const response = await getServer()
         .post('/geo-features')
         .set('Cookie', [accessToken])
-        .send({
-          ...validGeoFeature,
-          countryCodeIso3: 'XXX',
-          referenceId: 'UNIQUE',
-        });
+        .send([
+          {
+            ...validGeoFeature,
+            countryCodeIso3: 'XXX',
+            referenceId: 'UNIQUE',
+          },
+        ]);
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
@@ -95,13 +90,17 @@ describe('/ Geo Features', () => {
 
   describe('PATCH /geo-features/:id', () => {
     it('should update a geo-feature', async () => {
-      const createResponse = await getServer()
+      await getServer()
         .post('/geo-features')
         .set('Cookie', [accessToken])
-        .send({ ...validGeoFeature, referenceId: 'TO_UPDATE' });
+        .send([{ ...validGeoFeature, referenceId: 'TO_UPDATE' }]);
 
-      expect(createResponse.status).toBe(HttpStatus.CREATED);
-      const id = createResponse.body.id;
+      const getResponse = await getServer()
+        .get('/geo-features')
+        .query({ filter: "referenceId='TO_UPDATE'" })
+        .set('Cookie', [accessToken]);
+
+      const id = getResponse.body.features[0].id;
 
       const response = await getServer()
         .patch(`/geo-features/${id}`)
@@ -125,13 +124,17 @@ describe('/ Geo Features', () => {
 
   describe('DELETE /geo-features/:id', () => {
     it('should delete a geo-feature', async () => {
-      const createResponse = await getServer()
+      await getServer()
         .post('/geo-features')
         .set('Cookie', [accessToken])
-        .send({ ...validGeoFeature, referenceId: 'TO_DELETE' });
+        .send([{ ...validGeoFeature, referenceId: 'TO_DELETE' }]);
 
-      expect(createResponse.status).toBe(HttpStatus.CREATED);
-      const id = createResponse.body.id;
+      const getResponse = await getServer()
+        .get('/geo-features')
+        .query({ filter: "referenceId='TO_DELETE'" })
+        .set('Cookie', [accessToken]);
+
+      const id = getResponse.body.features[0].id;
 
       const response = await getServer()
         .delete(`/geo-features/${id}`)

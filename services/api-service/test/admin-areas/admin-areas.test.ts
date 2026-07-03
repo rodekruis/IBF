@@ -50,28 +50,25 @@ describe('/ Admin Areas', () => {
   });
 
   describe('POST /admin-areas', () => {
-    it('should create an admin area', async () => {
+    it('should create admin areas', async () => {
       const response = await getServer()
         .post('/admin-areas')
         .set('Cookie', [accessToken])
-        .send({ ...validAdminArea, placeCode: 'CREATE01' });
+        .send([{ ...validAdminArea, placeCode: 'CREATE01' }]);
 
       expect(response.status).toBe(HttpStatus.CREATED);
-      expect(response.body.type).toBe('Feature');
-      expect(response.body.properties.placeCode).toBe('CREATE01');
-      expect(response.body.properties.nameEn).toBe('Test Admin Area');
     });
 
     it('should return 409 for duplicate placeCode', async () => {
       await getServer()
         .post('/admin-areas')
         .set('Cookie', [accessToken])
-        .send({ ...validAdminArea, placeCode: 'DUP01' });
+        .send([{ ...validAdminArea, placeCode: 'DUP01' }]);
 
       const response = await getServer()
         .post('/admin-areas')
         .set('Cookie', [accessToken])
-        .send({ ...validAdminArea, placeCode: 'DUP01' });
+        .send([{ ...validAdminArea, placeCode: 'DUP01' }]);
 
       expect(response.status).toBe(HttpStatus.CONFLICT);
     });
@@ -80,11 +77,13 @@ describe('/ Admin Areas', () => {
       const response = await getServer()
         .post('/admin-areas')
         .set('Cookie', [accessToken])
-        .send({
-          ...validAdminArea,
-          placeCode: 'BAD01',
-          countryCodeIso3: 'XXX',
-        });
+        .send([
+          {
+            ...validAdminArea,
+            placeCode: 'BAD01',
+            countryCodeIso3: 'XXX',
+          },
+        ]);
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
@@ -95,7 +94,7 @@ describe('/ Admin Areas', () => {
       const createResponse = await getServer()
         .post('/admin-areas')
         .set('Cookie', [accessToken])
-        .send({ ...validAdminArea, placeCode: 'PATCH01' });
+        .send([{ ...validAdminArea, placeCode: 'PATCH01' }]);
 
       expect(createResponse.status).toBe(HttpStatus.CREATED);
 
@@ -123,7 +122,7 @@ describe('/ Admin Areas', () => {
       const createResponse = await getServer()
         .post('/admin-areas')
         .set('Cookie', [accessToken])
-        .send({ ...validAdminArea, placeCode: 'DEL01' });
+        .send([{ ...validAdminArea, placeCode: 'DEL01' }]);
 
       expect(createResponse.status).toBe(HttpStatus.CREATED);
 

@@ -1,9 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
+import { AdminAreasService } from '@api-service/src/admin-areas/admin-areas.service';
+import { AdminAreaCreateDto } from '@api-service/src/admin-areas/dto/admin-area-create.dto';
+import { AlertConfigsService } from '@api-service/src/alert-configs/alert-configs.service';
+import { AlertConfigCreateDto } from '@api-service/src/alert-configs/dto/alert-config-create.dto';
+import { CountriesService } from '@api-service/src/countries/countries.service';
 import { env } from '@api-service/src/env';
+import { GeoFeatureCreateDto } from '@api-service/src/geo-features/dto/geo-feature-create.dto';
 import { GeoFeatureType } from '@api-service/src/geo-features/enum/geo-feature-type.enum';
+import { GeoFeaturesService } from '@api-service/src/geo-features/geo-features.service';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
+import { RastersService } from '@api-service/src/rasters/rasters.service';
 import {
   FLOOD_CLASSIFICATION_BY_COUNTRY,
   FLOOD_LEAD_TIME_SPECTRUM,
@@ -15,7 +23,7 @@ import {
   SeedCountry,
 } from '@api-service/src/scripts/seed-data/seed-countries.const';
 import { HazardType, LayerName } from '@api-service/src/shared-enums';
-import { hashPassword } from '@api-service/src/utils/hash-password.helper';
+import { UserRepository } from '@api-service/src/user/user.repository';
 import { processPopulationRaster } from '@api-service/src/utils/raster-colorization.helper';
 
 interface GeoJsonFeature {
@@ -59,7 +67,15 @@ function getStationThresholdsFileUrl(countryCodeIso3: string): string {
 export class SeedInit {
   private readonly logger = new Logger(SeedInit.name);
 
-  public constructor(private prisma: PrismaService) {}
+  public constructor(
+    private readonly prisma: PrismaService,
+    private readonly userRepository: UserRepository,
+    private readonly countriesService: CountriesService,
+    private readonly adminAreasService: AdminAreasService,
+    private readonly alertConfigsService: AlertConfigsService,
+    private readonly geoFeaturesService: GeoFeaturesService,
+    private readonly rastersService: RastersService,
+  ) {}
 
   public async run({
     countryCodes,
@@ -85,27 +101,21 @@ export class SeedInit {
   }
 
   private async createAdminUser(): Promise<void> {
-    const { hash, salt } = hashPassword(
-      env.USERCONFIG_API_SERVICE_PASSWORD_ADMIN,
-    );
-    await this.prisma.user.create({
-      data: {
-        username: env.USERCONFIG_API_SERVICE_EMAIL_ADMIN,
-        password: hash,
-        salt,
-        admin: true,
-        displayName: env.USERCONFIG_API_SERVICE_EMAIL_ADMIN.split('@')[0],
-      },
+    await this.userRepository.createUser({
+      username: env.USERCONFIG_API_SERVICE_EMAIL_ADMIN,
+      password: env.USERCONFIG_API_SERVICE_PASSWORD_ADMIN,
+      displayName: env.USERCONFIG_API_SERVICE_EMAIL_ADMIN.split('@')[0],
+      admin: true,
     });
   }
 
   private async seedCountries(countries: SeedCountry[]): Promise<void> {
-    await this.prisma.$transaction(
-      countries.map(({ countryCodeIso3, countryCodeIso2, countryName }) =>
-        this.prisma.country.create({
-          data: { countryCodeIso3, countryCodeIso2, countryName },
-        }),
-      ),
+    await this.countriesService.createCountries(
+      countries.map(({ countryCodeIso3, countryCodeIso2, countryName }) => ({
+        countryCodeIso3,
+        countryCodeIso2,
+        countryName,
+      })),
     );
   }
 
@@ -150,40 +160,15 @@ export class SeedInit {
           adminLevel,
         }),
       )
-      .filter((area): area is NonNullable<typeof area> => area !== undefined);
+      .filter(
+        (area): area is NonNullable<typeof area> => area !== undefined,
+      ) satisfies AdminAreaCreateDto[];
 
     if (adminAreas.length === 0) {
       return;
     }
 
-    const BATCH_SIZE = 100;
-    await this.prisma.$transaction(async (tx) => {
-      for (let i = 0; i < adminAreas.length; i += BATCH_SIZE) {
-        const batch = adminAreas.slice(i, i + BATCH_SIZE);
-        const values = batch.map((area) => {
-          const geojson = JSON.stringify(area.geometry);
-          const attrs = JSON.stringify(area.attributes);
-          return Prisma.sql`(
-            ${area.placeCode},
-            ${area.adminLevel},
-            ${area.nameEn},
-            ${area.countryCodeIso3},
-            ${area.placeCodeLevel1},
-            ${area.placeCodeLevel2},
-            ${area.placeCodeLevel3},
-            ${area.placeCodeLevel4},
-            ${attrs}::jsonb,
-            NOW(),
-            NOW(),
-            public.ST_Force2D(public.ST_GeomFromGeoJSON(${geojson}))
-          )`;
-        });
-        await tx.$executeRaw`
-          INSERT INTO "api-service"."admin-area"
-            ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", "placeCodeLevel1", "placeCodeLevel2", "placeCodeLevel3", "placeCodeLevel4", attributes, created, updated, geometry)
-          VALUES ${Prisma.join(values)}`;
-      }
-    });
+    await this.adminAreasService.createAdminAreas(adminAreas);
 
     this.logger.log(`Seeded ${adminAreas.length} admin areas from ${filename}`);
   }
@@ -191,20 +176,7 @@ export class SeedInit {
   private parseAdminAreaFeature(
     feature: GeoJsonFeature,
     file: { countryCodeIso3: string; adminLevel: number },
-  ):
-    | {
-        placeCode: string;
-        adminLevel: number;
-        nameEn: string;
-        countryCodeIso3: string;
-        placeCodeLevel1: string | null;
-        placeCodeLevel2: string | null;
-        placeCodeLevel3: string | null;
-        placeCodeLevel4: string | null;
-        attributes: Prisma.InputJsonValue;
-        geometry: Record<string, unknown>;
-      }
-    | undefined {
+  ): AdminAreaCreateDto | undefined {
     const props = feature.properties;
 
     const placeCode =
@@ -230,7 +202,6 @@ export class SeedInit {
       return undefined;
     }
 
-    // Collect attributes
     const attributes: Record<string, unknown> = {
       POPULATION: typeof props.POPULATION === 'number' ? props.POPULATION : 0,
     };
@@ -244,7 +215,7 @@ export class SeedInit {
       placeCodeLevel2: props.ADM2_PCODE ?? null,
       placeCodeLevel3: props.ADM3_PCODE ?? null,
       placeCodeLevel4: props.ADM4_PCODE ?? null,
-      attributes: attributes as unknown as Prisma.InputJsonValue,
+      attributes,
       geometry: this.normalizeToMultiPolygon(feature.geometry),
     };
   }
@@ -262,14 +233,11 @@ export class SeedInit {
   }
 
   private async seedAlertConfigs(countries: SeedCountry[]): Promise<void> {
-    // Drought: spatial extents are climate regions defined in code (seed-alert-configs.const.ts)
-    // TODO: move drought alert configs to an external source (seed-data repo or similar)
     const countryCodes = countries.map((c) => c.countryCodeIso3);
     const droughtConfigs = SEED_DROUGHT_ALERT_CONFIGS.filter((c) =>
       countryCodes.includes(c.countryCodeIso3),
     );
 
-    // Floods: spatial extents are GloFAS stations, fetched from the seed-data repo
     const floodCountries = countries.filter((c) =>
       c.hazardTypes.includes(HazardType.floods),
     );
@@ -284,23 +252,18 @@ export class SeedInit {
 
     const allConfigs: SeedAlertConfig[] = [...floodConfigs, ...droughtConfigs];
 
-    await this.prisma.$transaction(
-      allConfigs.map((alertConfig) =>
-        this.prisma.alertConfig.create({
-          data: {
-            countryCodeIso3: alertConfig.countryCodeIso3,
-            hazardType: alertConfig.hazardType,
-            spatialExtentName: alertConfig.spatialExtentName,
-            spatialExtentPlaceCodes: alertConfig.spatialExtentPlaceCodes,
-            temporalExtents:
-              alertConfig.temporalExtents as Prisma.InputJsonValue,
-            severityClassLevels:
-              alertConfig.severityClassLevels as unknown as Prisma.InputJsonValue,
-            probabilityClassLevels:
-              alertConfig.probabilityClassLevels as unknown as Prisma.InputJsonValue,
-            triggerAlertClass: alertConfig.triggerAlertClass,
-            triggerLeadTimeDuration: alertConfig.triggerLeadTimeDuration,
-          },
+    await this.alertConfigsService.createAlertConfigs(
+      allConfigs.map(
+        (config): AlertConfigCreateDto => ({
+          countryCodeIso3: config.countryCodeIso3,
+          hazardType: config.hazardType as HazardType,
+          spatialExtentName: config.spatialExtentName,
+          spatialExtentPlaceCodes: config.spatialExtentPlaceCodes,
+          temporalExtents: config.temporalExtents,
+          severityClassLevels: config.severityClassLevels,
+          probabilityClassLevels: config.probabilityClassLevels,
+          triggerAlertClass: config.triggerAlertClass,
+          triggerLeadTimeDuration: config.triggerLeadTimeDuration,
         }),
       ),
     );
@@ -410,7 +373,7 @@ export class SeedInit {
       }
     }
 
-    const geoFeatures = [...seenStations.entries()].map(
+    const geoFeatures: GeoFeatureCreateDto[] = [...seenStations.entries()].map(
       ([stationCode, station]) => ({
         countryCodeIso3,
         featureType: GeoFeatureType.point,
@@ -419,11 +382,11 @@ export class SeedInit {
         geometry: {
           type: 'Point',
           coordinates: [station.lon, station.lat],
-        } as Prisma.InputJsonValue,
+        },
         attributes: {
           name: station.name,
           thresholds: station.thresholds,
-        } as Prisma.InputJsonValue,
+        },
       }),
     );
 
@@ -431,30 +394,7 @@ export class SeedInit {
       return;
     }
 
-    const BATCH_SIZE = 100;
-    await this.prisma.$transaction(async (tx) => {
-      for (let i = 0; i < geoFeatures.length; i += BATCH_SIZE) {
-        const batch = geoFeatures.slice(i, i + BATCH_SIZE);
-        const values = batch.map((gf) => {
-          const geojson = JSON.stringify(gf.geometry);
-          const attrs = JSON.stringify(gf.attributes);
-          return Prisma.sql`(
-            ${gf.countryCodeIso3},
-            ${gf.featureType},
-            ${gf.layer}::"api-service"."LayerName",
-            ${gf.referenceId},
-            public.ST_SetSRID(public.ST_GeomFromGeoJSON(${geojson}), 4326),
-            ${attrs}::jsonb,
-            NOW()
-          )`;
-        });
-        await tx.$executeRaw`
-          INSERT INTO "api-service"."geo-feature"
-            ("countryCodeIso3", "featureType", "layer", "referenceId", "geometry", "attributes", "updated")
-          VALUES ${Prisma.join(values)}
-          ON CONFLICT ("countryCodeIso3", "layer", "referenceId") DO NOTHING`;
-      }
-    });
+    await this.geoFeaturesService.createGeoFeatures(geoFeatures);
 
     this.logger.log(
       `Seeded ${geoFeatures.length} GloFAS station geo-features for ${countryCodeIso3}`,
@@ -501,26 +441,12 @@ export class SeedInit {
     const { colouredBase64, metadata: rasterMetadata } =
       processPopulationRaster(dataPngBuffer, metadata);
 
-    // TODO: move database logic like this to rasters service and repository, same for other entities in this file.
-    await this.prisma.staticRasterData.upsert({
-      where: {
-        countryCodeIso3_layer: {
-          countryCodeIso3,
-          layer: LayerName.population,
-        },
-      },
-      update: {
-        valueData: dataPngBuffer.toString('base64'),
-        valueColoured: colouredBase64,
-        metadata: rasterMetadata as unknown as Prisma.InputJsonValue,
-      },
-      create: {
-        countryCodeIso3,
-        layer: LayerName.population,
-        valueData: dataPngBuffer.toString('base64'),
-        valueColoured: colouredBase64,
-        metadata: rasterMetadata as unknown as Prisma.InputJsonValue,
-      },
+    await this.rastersService.upsertStaticRaster({
+      countryCodeIso3,
+      layer: LayerName.population,
+      valueData: dataPngBuffer.toString('base64'),
+      valueColoured: colouredBase64,
+      metadata: rasterMetadata,
     });
 
     this.logger.log(`Seeded population raster for ${countryCodeIso3}`);

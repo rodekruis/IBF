@@ -58,25 +58,27 @@ export class CountriesRepository {
     return this.toResponseDto(row);
   }
 
-  public async createCountry(
-    countryCreateDto: CountryCreateDto,
-  ): Promise<CountryResponseDto> {
+  public async createCountries(
+    dtos: CountryCreateDto[],
+  ): Promise<CountryResponseDto[]> {
     try {
-      const row = await this.prisma.country.create({
-        data: {
-          countryCodeIso3: countryCreateDto.countryCodeIso3,
-          countryCodeIso2: countryCreateDto.countryCodeIso2,
-          countryName: countryCreateDto.countryName,
-        },
-        select: countrySelect,
-      });
-      return this.toResponseDto(row);
+      const rows = await this.prisma.$transaction(
+        dtos.map((dto) =>
+          this.prisma.country.create({
+            data: {
+              countryCodeIso3: dto.countryCodeIso3,
+              countryCodeIso2: dto.countryCodeIso2,
+              countryName: dto.countryName,
+            },
+            select: countrySelect,
+          }),
+        ),
+      );
+      return rows.map((row) => this.toResponseDto(row));
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new ConflictException(
-            `Country '${countryCreateDto.countryCodeIso3}' already exists`,
-          );
+          throw new ConflictException('One or more countries already exist');
         }
       }
       throw error;
