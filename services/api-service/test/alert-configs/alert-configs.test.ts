@@ -63,6 +63,15 @@ describe('/ Alert Configs', () => {
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
+
+    it('should return 400 for non-existent country', async () => {
+      const response = await getServer()
+        .post('/alert-configs')
+        .set('Cookie', [accessToken])
+        .send([{ ...validAlertConfig, countryCodeIso3: 'XXX' }]);
+
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+    });
   });
 
   describe('GET /alert-configs', () => {

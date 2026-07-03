@@ -86,6 +86,21 @@ describe('/ Geo Features', () => {
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
+
+    it('should return 400 for invalid geometry', async () => {
+      const response = await getServer()
+        .post('/geo-features')
+        .set('Cookie', [accessToken])
+        .send([
+          {
+            ...validGeoFeature,
+            referenceId: 'BADGEO01',
+            geometry: { type: 'Point', coordinates: 'invalid' },
+          },
+        ]);
+
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+    });
   });
 
   describe('PATCH /geo-features/:id', () => {
@@ -119,6 +134,27 @@ describe('/ Geo Features', () => {
         .send({ attributes: { name: 'Does not exist' } });
 
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should return 400 for invalid geometry on update', async () => {
+      await getServer()
+        .post('/geo-features')
+        .set('Cookie', [accessToken])
+        .send([{ ...validGeoFeature, referenceId: 'PATCHGEO01' }]);
+
+      const getResponse = await getServer()
+        .get('/geo-features')
+        .query({ filter: "referenceId='PATCHGEO01'" })
+        .set('Cookie', [accessToken]);
+
+      const id = getResponse.body.features[0].id;
+
+      const response = await getServer()
+        .patch(`/geo-features/${id}`)
+        .set('Cookie', [accessToken])
+        .send({ geometry: { type: 'Point', coordinates: 'invalid' } });
+
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
   });
 

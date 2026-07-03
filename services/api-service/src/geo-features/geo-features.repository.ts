@@ -10,6 +10,7 @@ import { env } from '@api-service/src/env';
 import { GeoFeatureCreateDto } from '@api-service/src/geo-features/dto/geo-feature-create.dto';
 import { GeoFeatureUpdateDto } from '@api-service/src/geo-features/dto/geo-feature-update.dto';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
+import { extractPostgresErrorCode } from '@api-service/src/utils/extract-postgres-error-code.helper';
 
 const GEO_FEATURE_COLLECTION = 'api-service.geo-feature';
 
@@ -114,6 +115,7 @@ export class GeoFeaturesRepository {
 
     const BATCH_SIZE = 100;
     try {
+      // Uses raw SQL because Prisma's client API cannot call PostGIS functions (ST_GeomFromGeoJSON) inline
       await this.prisma.$transaction(async (tx) => {
         for (let i = 0; i < dtos.length; i += BATCH_SIZE) {
           const batch = dtos.slice(i, i + BATCH_SIZE);
@@ -140,7 +142,7 @@ export class GeoFeaturesRepository {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2010') {
-          const pgCode = this.extractPostgresErrorCode(error);
+          const pgCode = extractPostgresErrorCode(error);
           if (pgCode === '23503') {
             throw new BadRequestException(
               'One or more referenced countries do not exist',
@@ -153,14 +155,5 @@ export class GeoFeaturesRepository {
       }
       throw error;
     }
-  }
-
-  private extractPostgresErrorCode(
-    error: Prisma.PrismaClientKnownRequestError,
-  ): string | undefined {
-    const meta = error.meta as
-      | { driverAdapterError?: { cause?: { originalCode?: string } } }
-      | undefined;
-    return meta?.driverAdapterError?.cause?.originalCode;
   }
 }

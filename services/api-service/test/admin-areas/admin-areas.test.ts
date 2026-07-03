@@ -87,6 +87,21 @@ describe('/ Admin Areas', () => {
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
+
+    it('should return 400 for invalid geometry', async () => {
+      const response = await getServer()
+        .post('/admin-areas')
+        .set('Cookie', [accessToken])
+        .send([
+          {
+            ...validAdminArea,
+            placeCode: 'BADGEO01',
+            geometry: { type: 'MultiPolygon', coordinates: 'invalid' },
+          },
+        ]);
+
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+    });
   });
 
   describe('PATCH /admin-areas/:placeCode', () => {
@@ -114,6 +129,36 @@ describe('/ Admin Areas', () => {
         .send({ nameEn: 'Does Not Exist' });
 
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
+    });
+
+    it('should return 400 for non-existent country on update', async () => {
+      await getServer()
+        .post('/admin-areas')
+        .set('Cookie', [accessToken])
+        .send([{ ...validAdminArea, placeCode: 'PATCHFK01' }]);
+
+      const response = await getServer()
+        .patch('/admin-areas/PATCHFK01')
+        .set('Cookie', [accessToken])
+        .send({ countryCodeIso3: 'XXX' });
+
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+    });
+
+    it('should return 400 for invalid geometry on update', async () => {
+      await getServer()
+        .post('/admin-areas')
+        .set('Cookie', [accessToken])
+        .send([{ ...validAdminArea, placeCode: 'PATCHGEO01' }]);
+
+      const response = await getServer()
+        .patch('/admin-areas/PATCHGEO01')
+        .set('Cookie', [accessToken])
+        .send({
+          geometry: { type: 'MultiPolygon', coordinates: 'invalid' },
+        });
+
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
   });
 

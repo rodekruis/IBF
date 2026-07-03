@@ -11,6 +11,7 @@ import { AdminAreaCreateDto } from '@api-service/src/admin-areas/dto/admin-area-
 import { AdminAreaUpdateDto } from '@api-service/src/admin-areas/dto/admin-area-update.dto';
 import { env } from '@api-service/src/env';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
+import { extractPostgresErrorCode } from '@api-service/src/utils/extract-postgres-error-code.helper';
 
 const ADMIN_AREA_COLLECTION = 'api-service.admin-area';
 
@@ -139,6 +140,7 @@ export class AdminAreasRepository {
 
     const BATCH_SIZE = 100;
     try {
+      // Uses raw SQL because Prisma's client API cannot call PostGIS functions (ST_GeomFromGeoJSON) inline
       await this.prisma.$transaction(async (tx) => {
         for (let i = 0; i < dtos.length; i += BATCH_SIZE) {
           const batch = dtos.slice(i, i + BATCH_SIZE);
@@ -169,7 +171,7 @@ export class AdminAreasRepository {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2010') {
-          const pgCode = this.extractPostgresErrorCode(error);
+          const pgCode = extractPostgresErrorCode(error);
           if (pgCode === '23505') {
             throw new ConflictException('One or more placeCodes already exist');
           }
@@ -185,14 +187,5 @@ export class AdminAreasRepository {
       }
       throw error;
     }
-  }
-
-  private extractPostgresErrorCode(
-    error: Prisma.PrismaClientKnownRequestError,
-  ): string | undefined {
-    const meta = error.meta as
-      | { driverAdapterError?: { cause?: { originalCode?: string } } }
-      | undefined;
-    return meta?.driverAdapterError?.cause?.originalCode;
   }
 }

@@ -239,6 +239,9 @@ export class SeedInit {
 
   private async seedAlertConfigs(countries: SeedCountry[]): Promise<void> {
     const countryCodes = countries.map((c) => c.countryCodeIso3);
+
+    // Drought: spatial extents are climate regions defined in code (seed-alert-configs.const.ts)
+    // TODO: move drought alert configs to an external source (seed-data repo or similar)
     const droughtConfigs = SEED_DROUGHT_ALERT_CONFIGS.filter((c) =>
       countryCodes.includes(c.countryCodeIso3),
     );
@@ -247,6 +250,7 @@ export class SeedInit {
       c.hazardTypes.includes(HazardType.floods),
     );
 
+    // Floods: spatial extents are GloFAS stations, fetched from the seed-data repo
     const floodConfigs = (
       await Promise.all(
         floodCountries.map((country) =>
