@@ -115,6 +115,9 @@ describe('/ Geo Features', () => {
         .query({ filter: "referenceId='TO_UPDATE'" })
         .set('Cookie', [accessToken]);
 
+      expect(getResponse.status).toBe(HttpStatus.OK);
+      expect(getResponse.body.features.length).toBeGreaterThan(0);
+
       const id = getResponse.body.features[0].id;
 
       const response = await getServer()
@@ -147,6 +150,9 @@ describe('/ Geo Features', () => {
         .query({ filter: "referenceId='PATCHGEO01'" })
         .set('Cookie', [accessToken]);
 
+      expect(getResponse.status).toBe(HttpStatus.OK);
+      expect(getResponse.body.features.length).toBeGreaterThan(0);
+
       const id = getResponse.body.features[0].id;
 
       const response = await getServer()
@@ -169,6 +175,9 @@ describe('/ Geo Features', () => {
         .get('/geo-features')
         .query({ filter: "referenceId='TO_DELETE'" })
         .set('Cookie', [accessToken]);
+
+      expect(getResponse.status).toBe(HttpStatus.OK);
+      expect(getResponse.body.features.length).toBeGreaterThan(0);
 
       const id = getResponse.body.features[0].id;
 

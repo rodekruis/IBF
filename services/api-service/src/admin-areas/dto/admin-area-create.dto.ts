@@ -40,11 +40,10 @@ export class AdminAreaCreateDto {
 
   @ApiPropertyOptional({
     example: { POPULATION: 215293 },
-    nullable: true,
   })
   @IsOptional()
   @IsObject()
-  public readonly attributes?: Record<string, unknown> | null;
+  public readonly attributes?: Record<string, unknown>;
 
   @ApiProperty({ example: { type: 'Feature', geometry: {}, properties: {} } })
   @IsObject()

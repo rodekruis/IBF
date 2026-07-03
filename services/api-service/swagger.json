@@ -21,12 +21,14 @@
   {
     "method": "get",
     "path": "/api/alerts",
-    "params": []
+    "params": [],
+    "returnType": "AlertReadDto[]"
   },
   {
     "method": "post",
     "path": "/api/alerts",
-    "params": []
+    "params": [],
+    "returnType": "AlertReadDto[]"
   },
   {
     "method": "get",
@@ -50,7 +52,8 @@
       "countryCodeIso3",
       "active",
       "timestamp"
-    ]
+    ],
+    "returnType": "EventResponseDto[]"
   },
   {
     "method": "get",
@@ -58,12 +61,14 @@
     "params": [
       "countryCodeIso3",
       "hazardType"
-    ]
+    ],
+    "returnType": "AlertConfigResponseDto[]"
   },
   {
     "method": "post",
     "path": "/api/alert-configs",
-    "params": []
+    "params": [],
+    "returnType": "AlertConfigResponseDto[]"
   },
   {
     "method": "delete",
@@ -101,12 +106,14 @@
   {
     "method": "get",
     "path": "/api/countries",
-    "params": []
+    "params": [],
+    "returnType": "CountryResponseDto[]"
   },
   {
     "method": "post",
     "path": "/api/countries",
-    "params": []
+    "params": [],
+    "returnType": "CountryResponseDto[]"
   },
   {
     "method": "get",

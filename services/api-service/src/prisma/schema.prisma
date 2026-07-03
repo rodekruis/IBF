@@ -265,7 +265,7 @@ model AdminArea {
   placeCodeLevel2   String?
   placeCodeLevel3   String?
   placeCodeLevel4   String?
-  attributes        Json? // e.g. { "POPULATION": 215293 }
+  attributes        Json   @default("{}") // e.g. { "POPULATION": 215293 }
   geometry          Unsupported("geometry(MultiPolygon, 4326)")?
 
   @@index([countryCodeIso3])
