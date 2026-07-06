@@ -13,7 +13,7 @@ class RasterDataMetadata {
 
   @ApiProperty({ example: EPSG.WGS84 })
   @IsString()
-  public readonly crs: string;
+  public readonly crs: EPSG;
 
   @ApiProperty({ example: 0 })
   @IsNumber()
@@ -28,7 +28,7 @@ class RasterColouredMetadata {
 
   @ApiProperty({ example: EPSG.WebMercator })
   @IsString()
-  public readonly crs: string;
+  public readonly crs: EPSG;
 }
 
 export class RasterMetadataDto {

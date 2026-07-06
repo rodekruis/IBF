@@ -118,12 +118,12 @@ export function colorizeGrayscalePng(
 interface RasterMetadata {
   data: {
     extent: { xmin: number; ymin: number; xmax: number; ymax: number };
-    crs: string;
+    crs: EPSG;
     nodata: number;
   };
   coloured: {
     extent: { xmin: number; ymin: number; xmax: number; ymax: number };
-    crs: string;
+    crs: EPSG;
   };
 }
 
@@ -134,7 +134,7 @@ export interface PopulationRasterResult {
 
 function computeRasterMetadata(
   dataPngBuffer: Buffer,
-  metadata: { transform: number[]; crs: string },
+  metadata: { transform: number[]; crs: EPSG },
 ): RasterMetadata {
   const width = dataPngBuffer.readUInt32BE(16);
   const height = dataPngBuffer.readUInt32BE(20);
@@ -161,7 +161,7 @@ function computeRasterMetadata(
 
 export function processPopulationRaster(
   dataPngBuffer: Buffer,
-  metadata: { transform: number[]; crs: string },
+  metadata: { transform: number[]; crs: EPSG },
 ): PopulationRasterResult {
   const rasterMetadata = computeRasterMetadata(dataPngBuffer, metadata);
   const colouredBase64 = colorizeRgbaEncodedPng(
