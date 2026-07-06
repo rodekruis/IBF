@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import { IsNumber, IsString, ValidateNested } from 'class-validator';
 
 import { RasterExtentDto } from '@api-service/src/alerts/dto/raster-extent.dto';
+import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 
 class RasterDataMetadata {
   @ApiProperty({ type: RasterExtentDto })
@@ -10,7 +11,7 @@ class RasterDataMetadata {
   @Type(() => RasterExtentDto)
   public readonly extent: RasterExtentDto;
 
-  @ApiProperty({ example: 'EPSG:4326' })
+  @ApiProperty({ example: EPSG.WGS84 })
   @IsString()
   public readonly crs: string;
 
@@ -25,7 +26,7 @@ class RasterColouredMetadata {
   @Type(() => RasterExtentDto)
   public readonly extent: RasterExtentDto;
 
-  @ApiProperty({ example: 'EPSG:3857' })
+  @ApiProperty({ example: EPSG.WebMercator })
   @IsString()
   public readonly crs: string;
 }

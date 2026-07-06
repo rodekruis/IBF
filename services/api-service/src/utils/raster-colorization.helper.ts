@@ -1,5 +1,7 @@
 import { PNG } from 'pngjs';
 
+import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
+
 type Rgba = [number, number, number, number];
 
 // ─── Colorization configuration ───────────────────────────────────────────────
@@ -147,8 +149,9 @@ function computeRasterMetadata(
 
   const extent = { xmin, ymin, xmax, ymax };
   const colouredExtent =
-    metadata.crs === 'EPSG:4326' ? reproject4326To3857(extent) : extent;
-  const colouredCrs = metadata.crs === 'EPSG:4326' ? 'EPSG:3857' : metadata.crs;
+    metadata.crs === EPSG.WGS84 ? reproject4326To3857(extent) : extent;
+  const colouredCrs =
+    metadata.crs === EPSG.WGS84 ? EPSG.WebMercator : metadata.crs;
 
   return {
     data: { extent, crs: metadata.crs, nodata: 0 },
