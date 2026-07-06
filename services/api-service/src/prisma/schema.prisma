@@ -17,7 +17,6 @@ enum HazardType {
 }
 
 enum AlertClass {
-  // NOTE: do not change order — used functionally for ranking in AlertClassificationService
   low
   medium
   high
