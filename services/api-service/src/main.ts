@@ -83,13 +83,16 @@ function generateSwaggerSummaryJson(app: INestApplication<any>): void {
   for (const path in openApiDocument.paths) {
     for (const method in openApiDocument.paths[path]) {
       const methodInfo = openApiDocument.paths[path][method];
-      const returnType =
-        methodInfo.responses['200']?.content?.['application/json']?.schema?.$ref
-          ?.split('/')
-          .pop() ||
-        methodInfo.responses['201']?.content?.['application/json']?.schema?.$ref
-          ?.split('/')
-          .pop();
+      const schema =
+        methodInfo.responses['200']?.content?.['application/json']?.schema ||
+        methodInfo.responses['201']?.content?.['application/json']?.schema;
+
+      let returnType: string | undefined;
+      if (schema?.$ref) {
+        returnType = schema.$ref.split('/').pop();
+      } else if (schema?.items?.$ref) {
+        returnType = `${schema.items.$ref.split('/').pop()}[]`;
+      }
 
       const params =
         methodInfo.parameters?.map((param: any) => param.name) || [];

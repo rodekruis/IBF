@@ -17,10 +17,8 @@ export class GeoFeaturesService {
     return this.geoFeaturesRepository.getGeoFeatures(query);
   }
 
-  public async createGeoFeature(
-    geoFeatureCreateDto: GeoFeatureCreateDto,
-  ): Promise<Feature> {
-    return this.geoFeaturesRepository.createGeoFeature(geoFeatureCreateDto);
+  public async createGeoFeatures(dtos: GeoFeatureCreateDto[]): Promise<void> {
+    return this.geoFeaturesRepository.createGeoFeatures(dtos);
   }
 
   public async updateGeoFeatureOrThrow(

@@ -17,10 +17,8 @@ export class AdminAreasService {
     return this.adminAreasRepository.getAdminAreas(query);
   }
 
-  public async createAdminArea(
-    adminAreaCreateDto: AdminAreaCreateDto,
-  ): Promise<Feature> {
-    return this.adminAreasRepository.createAdminArea(adminAreaCreateDto);
+  public async createAdminAreas(dtos: AdminAreaCreateDto[]): Promise<void> {
+    return this.adminAreasRepository.createAdminAreas(dtos);
   }
 
   public async updateAdminAreaOrThrow(

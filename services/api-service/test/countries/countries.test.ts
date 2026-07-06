@@ -48,19 +48,21 @@ describe('/ Countries', () => {
   });
 
   describe('POST /countries', () => {
-    it('should create a country', async () => {
+    it('should create countries', async () => {
       const response = await getServer()
         .post('/countries')
         .set('Cookie', [accessToken])
-        .send({
-          countryCodeIso3: 'TST',
-          countryCodeIso2: 'TS',
-          countryName: 'Test Country',
-        });
+        .send([
+          {
+            countryCodeIso3: 'TST',
+            countryCodeIso2: 'TS',
+            countryName: 'Test Country',
+          },
+        ]);
 
       expect(response.status).toBe(HttpStatus.CREATED);
-      expect(response.body.countryCodeIso3).toBe('TST');
-      expect(response.body.countryName).toBe('Test Country');
+      expect(response.body[0].countryCodeIso3).toBe('TST');
+      expect(response.body[0].countryName).toBe('Test Country');
     });
 
     it('should return 409 for duplicate country', async () => {
@@ -73,12 +75,12 @@ describe('/ Countries', () => {
       await getServer()
         .post('/countries')
         .set('Cookie', [accessToken])
-        .send(duplicateCountry);
+        .send([duplicateCountry]);
 
       const response = await getServer()
         .post('/countries')
         .set('Cookie', [accessToken])
-        .send(duplicateCountry);
+        .send([duplicateCountry]);
 
       expect(response.status).toBe(HttpStatus.CONFLICT);
     });
@@ -86,11 +88,16 @@ describe('/ Countries', () => {
 
   describe('PATCH /countries/:countryCodeIso3', () => {
     it('should update a country', async () => {
-      await getServer().post('/countries').set('Cookie', [accessToken]).send({
-        countryCodeIso3: 'UPD',
-        countryCodeIso2: 'UP',
-        countryName: 'Update Country',
-      });
+      await getServer()
+        .post('/countries')
+        .set('Cookie', [accessToken])
+        .send([
+          {
+            countryCodeIso3: 'UPD',
+            countryCodeIso2: 'UP',
+            countryName: 'Update Country',
+          },
+        ]);
 
       const response = await getServer()
         .patch('/countries/UPD')
@@ -113,11 +120,16 @@ describe('/ Countries', () => {
 
   describe('DELETE /countries/:countryCodeIso3', () => {
     it('should delete a country', async () => {
-      await getServer().post('/countries').set('Cookie', [accessToken]).send({
-        countryCodeIso3: 'DEL',
-        countryCodeIso2: 'DL',
-        countryName: 'Delete Country',
-      });
+      await getServer()
+        .post('/countries')
+        .set('Cookie', [accessToken])
+        .send([
+          {
+            countryCodeIso3: 'DEL',
+            countryCodeIso2: 'DL',
+            countryName: 'Delete Country',
+          },
+        ]);
 
       const response = await getServer()
         .delete('/countries/DEL')
