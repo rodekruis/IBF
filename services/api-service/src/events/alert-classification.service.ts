@@ -19,6 +19,12 @@ type AlertClassMatrix = Record<
 
 const { singleThreshold, low, medium, high } = AlertClassificationLevel;
 
+const ALERT_CLASS_ORDER: Record<AlertClass, number> = {
+  [AlertClass.low]: 1,
+  [AlertClass.medium]: 2,
+  [AlertClass.high]: 3,
+};
+
 // This matrix determines how severityClass and probabilityClass are combined into alertClass.
 // - When one dimension is 'singleThreshold' the other dimension passes through directly, so matrix[singleThreshold][x] = x and matrix[x][singleThreshold] = x.
 // - The inner 3x3 cells (low/medium/high × low/medium/high) follow a standard risk matrix (UNDRR/WMO),
@@ -247,22 +253,21 @@ export class AlertClassificationService {
   private computeAlertClass(
     alertClassPerTimeInterval: Map<string, AlertClass | null>,
   ): AlertClass | null {
-    let highest: AlertClass | null = null;
-    let highestOrder = -1;
-
-    const alertClassOrder = Object.values(AlertClass);
+    let highestAlertClass: AlertClass | null = null;
+    let highestAlertClassOrder = -1;
 
     for (const alertClass of alertClassPerTimeInterval.values()) {
-      if (alertClass === null) {
-        continue;
-      }
-      const order = alertClassOrder.indexOf(alertClass) + 1;
-      if (order > highestOrder) {
-        highest = alertClass;
-        highestOrder = order;
+      if (alertClass === null) continue;
+
+      const alertClassOrder = ALERT_CLASS_ORDER[alertClass];
+
+      if (alertClassOrder > highestAlertClassOrder) {
+        highestAlertClass = alertClass;
+        highestAlertClassOrder = alertClassOrder;
       }
     }
-    return highest;
+
+    return highestAlertClass;
   }
 
   private computeReachesPeakAlertClassAt(
@@ -296,11 +301,10 @@ export class AlertClassificationService {
       return false;
     }
 
-    const alertClassOrder = Object.values(AlertClass);
-    const alertClassRank = alertClassOrder.indexOf(alertClass) + 1;
-    const triggerRank = alertClassOrder.indexOf(config.triggerAlertClass) + 1;
+    const alertClassOrder = ALERT_CLASS_ORDER[alertClass];
+    const triggerOrder = ALERT_CLASS_ORDER[config.triggerAlertClass];
 
-    if (alertClassRank < triggerRank) {
+    if (alertClassOrder < triggerOrder) {
       return false;
     }
 
