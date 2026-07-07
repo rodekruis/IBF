@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from pipelines.infra.data_types.glofas_discharge_provider import (
+    _get_highest_ensemble_index,
     _validate_ensemble_count,
     GLOFAS_MIN_ENSEMBLE_COUNT,
     load_glofas_discharge_from_cache,
@@ -265,3 +266,35 @@ def test_load_from_cache_raises_for_nonexistent_date(
 
     with pytest.raises(FileNotFoundError, match="No cached raw GloFAS files found"):
         load_glofas_discharge_from_cache("KEN", "20260101")
+
+
+# ---------------------------------------------------------------------------
+# _get_highest_ensemble_index
+# ---------------------------------------------------------------------------
+
+
+def test_highest_ensemble_index_standard_filenames() -> None:
+    files = [
+        "/cache/glofas/raw/20260701/dis_00_2026070100.nc",
+        "/cache/glofas/raw/20260701/dis_05_2026070100.nc",
+        "/cache/glofas/raw/20260701/dis_50_2026070100.nc",
+    ]
+    assert _get_highest_ensemble_index(files) == 50
+
+
+def test_highest_ensemble_index_single_file() -> None:
+    files = ["/cache/glofas/raw/20260701/dis_03_2026070100.nc"]
+    assert _get_highest_ensemble_index(files) == 3
+
+
+def test_highest_ensemble_index_empty_list() -> None:
+    assert _get_highest_ensemble_index([]) == -1
+
+
+def test_highest_ensemble_index_ignores_unparsable_names() -> None:
+    files = [
+        "/cache/glofas/raw/20260701/dis_10_2026070100.nc",
+        "/cache/glofas/raw/20260701/readme.txt",
+        "/cache/glofas/raw/20260701/other_file.nc",
+    ]
+    assert _get_highest_ensemble_index(files) == 10

@@ -8,6 +8,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 from pipelines.flood.constants import GLOFAS_MIN_ENSEMBLE_COUNT
+from pipelines.infra.environment import load_environment_settings
 from pipelines.infra.utils.nrw_logger import log_with_tag, LogTag
 from pipelines.infra.utils.storage_helpers import (
     find_latest_forecast_date_in_cache,
@@ -38,52 +39,102 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
 
     Returns a list of local file paths to the downloaded NetCDF files.
     """
+    host, user, password = _load_ftp_credentials()
+    ensemble_count = int(os.environ.get("GLOFAS_FTP_ENSEMBLE_COUNT", "51"))
+
+    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+    forecast_date = _resolve_forecast_date(forecast_date, user, password, host)
+
+    existing_download = _try_reuse_existing_download(forecast_date)
+    if existing_download is not None:
+        return existing_download
+
+    # Resume from a partial download only in development (avoids re-downloading all
+    # files when a connection failure interrupts a local run).
+    # On prod and test, always start fresh.
+    env = load_environment_settings()
+    resume_index = 0
+    if env.is_development:
+        resume_index = _get_download_resume_index(forecast_date)
+
+    downloaded_paths = _download_ensemble_files(
+        host, user, password, forecast_date, ensemble_count, resume_index, country
+    )
+
+    _validate_ensemble_count(downloaded_paths, forecast_date)
+    return downloaded_paths
+
+
+def _load_ftp_credentials() -> tuple[str, str, str]:
     host = os.environ.get("GLOFAS_FTP_HOST")
     user = os.environ.get("GLOFAS_FTP_USER")
     password = os.environ.get("GLOFAS_FTP_PASSWORD")
-    ensemble_count = int(os.environ.get("GLOFAS_FTP_ENSEMBLE_COUNT", "51"))
 
     if not host or not user or not password:
         raise ValueError(
             "GloFAS FTP credentials not configured. "
             "Set GLOFAS_FTP_HOST, GLOFAS_FTP_USER, and GLOFAS_FTP_PASSWORD."
         )
+    return host, user, password
 
-    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d")
-    forecast_date = _resolve_forecast_date(forecast_date, user, password, host)
 
-    # Get cached files
-    # If there is a partial set, set the highestEnsembleIndex so the download can resume
-    # The resume downloading flow isn't expected to be used on cloud deployments, but
-    # it's useful when running this locally.
-    # TODO: break this into cleaner, simpler code. TODO task #43105
-    cached_files = get_cached_glofas_files(forecast_date)
-    highestEnsembleIndex = -1
-    if cached_files is not None:
-        highestEnsembleIndex = _get_highest_ensemble_index(cached_files)
-        if len(cached_files) >= GLOFAS_MIN_ENSEMBLE_COUNT:
-            logger.info(
-                f"Reusing {len(cached_files)} cached GloFAS ensemble files for {forecast_date}"
-            )
-            return cached_files
+def _try_reuse_existing_download(forecast_date: str) -> list[str] | None:
+    """Return previously downloaded files if a complete set exists, otherwise None."""
+    existing_files = get_cached_glofas_files(forecast_date)
+    if existing_files is not None and len(existing_files) >= GLOFAS_MIN_ENSEMBLE_COUNT:
         logger.info(
-            f"Found {len(cached_files)} cached GloFAS ensemble files for {forecast_date}, "
-            f"below minimum of {GLOFAS_MIN_ENSEMBLE_COUNT}. "
-            f"Resuming download from ensemble index {highestEnsembleIndex + 1}."
+            f"Reusing {len(existing_files)} previously downloaded GloFAS ensemble files for {forecast_date}"
         )
+        return existing_files
+    return None
 
+
+def _get_download_resume_index(forecast_date: str) -> int:
+    """Determine the ensemble index to resume downloading from.
+
+    If a partial download exists (below minimum count), resumes from the highest
+    index + 1. Returns 0 if no prior download exists.
+
+    The resume downloading flow isn't expected to be used on cloud deployments, but
+    it's useful when running this locally.
+    """
+    existing_files = get_cached_glofas_files(forecast_date)
+    if existing_files is None:
+        return 0
+
+    highest_index = _get_highest_ensemble_index(existing_files)
+    logger.info(
+        f"Found {len(existing_files)} previously downloaded GloFAS ensemble files for {forecast_date}, "
+        f"below minimum of {GLOFAS_MIN_ENSEMBLE_COUNT}. "
+        f"Resuming download from ensemble index {highest_index + 1}."
+    )
+    return highest_index + 1
+
+
+def _download_ensemble_files(
+    host: str,
+    user: str,
+    password: str,
+    forecast_date: str,
+    ensemble_count: int,
+    start_index: int,
+    country: str,
+) -> list[str]:
+    """Download ensemble files from FTP, starting from start_index."""
     output_dir = get_glofas_raw_data_dir(forecast_date)
-    downloaded_paths: list[str] = list(cached_files) if cached_files is not None else []
     remote_dir = f"{GLOFAS_FTP_BASE_PATH}/{forecast_date}"
 
-    download_start = time.monotonic()
+    # Include any already-cached files in the result
+    cached_files = get_cached_glofas_files(forecast_date)
+    downloaded_paths: list[str] = list(cached_files) if cached_files is not None else []
 
+    download_start = time.monotonic()
     ftp = _connect_ftp(host, user, password)
     ftp.cwd(remote_dir)
 
     try:
         # Grab new ensemble files, starting from the highest index found in cached files
-        for ensemble_index in range(highestEnsembleIndex + 1, ensemble_count):
+        for ensemble_index in range(start_index, ensemble_count):
             ensemble_label = f"{ensemble_index:02d}"
             filename = f"dis_{ensemble_label}_{forecast_date}00.nc"
 
@@ -117,7 +168,6 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
     logger.info(
         f"Downloaded {len(downloaded_paths)} GloFAS ensemble files to {output_dir}"
     )
-    _validate_ensemble_count(downloaded_paths, forecast_date)
     return downloaded_paths
 
 
