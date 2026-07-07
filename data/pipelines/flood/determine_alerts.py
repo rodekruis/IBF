@@ -9,6 +9,9 @@ import numpy as np
 from pipelines.flood.constants import MINIMUM_RETURN_PERIOD
 from pipelines.flood.extract_forecast import TimeIntervalDischarge
 from pipelines.infra.data_types.location_point import LocationPoint
+from pipelines.infra.utils.nrw_logger import log_warning, LogTag
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -136,14 +139,18 @@ def _prepare_station_threshold(
     """
     station_thresholds = _get_station_return_period_thresholds(thresholds, station_code)
     if station_thresholds is None:
-        logging.warning(
-            f"No return period thresholds for station {station_code}, skipping"
+        log_warning(
+            logger,
+            LogTag.FLOOD_LOGIC,
+            f"No return period thresholds for station {station_code}, skipping",
         )
         return None
 
     if minimum_return_period not in station_thresholds:
-        logging.warning(
-            f"Return period '{minimum_return_period}' not found for station {station_code}, skipping"
+        log_warning(
+            logger,
+            LogTag.FLOOD_LOGIC,
+            f"Return period '{minimum_return_period}' not found for station {station_code}, skipping",
         )
         return None
 

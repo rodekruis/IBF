@@ -31,6 +31,7 @@ from pipelines.infra.utils.alert_integrity_checks import (
     check_severity_integrity,
 )
 from pipelines.infra.utils.api_client import ApiClient
+from pipelines.infra.utils.nrw_logger import log_error, log_info, log_warning, LogTag
 
 logger = logging.getLogger(__name__)
 
@@ -177,13 +178,13 @@ class DataSubmitter:
     def send_all(self, output_mode: OutputMode, output_path: str) -> list[str]:
         if self.errors:
             for err in self.errors.values():
-                logger.error(f"Pipeline error: '{err}'")
+                log_error(logger, LogTag.INFRA, f"Pipeline error: '{err}'")
             return list(self.errors.values())
 
         integrity_errors = self._check_integrity()
         if integrity_errors:
             for err in integrity_errors:
-                logger.error(f"Integrity error: '{err}'")
+                log_error(logger, LogTag.INFRA, f"Integrity error: '{err}'")
             return integrity_errors
 
         if self._forecast is None:
@@ -196,18 +197,26 @@ class DataSubmitter:
 
         if output_mode == OutputMode.API:
             if file_errors:
-                logger.warning(f"Local debug write failed: '{file_errors}'")
+                log_warning(
+                    logger, LogTag.INFRA, f"Local debug write failed: '{file_errors}'"
+                )
             api_errors = self.api_client.submit_forecast(forecast_dict)
             if not api_errors:
                 shutil.rmtree(output_path, ignore_errors=True)
-                logger.info(f"Remove local output at '{output_path}'")
+                log_info(
+                    logger, LogTag.INFRA, f"Remove local output at '{output_path}'"
+                )
             return api_errors
 
         return file_errors
 
     def _write_to_file(self, forecast_dict: dict, output_dir: str) -> list[str]:
         file_path = os.path.join(output_dir, "forecast.json")
-        logger.info(f"Write forecast with {len(self._alerts)} alerts to '{file_path}'")
+        log_info(
+            logger,
+            LogTag.INFRA,
+            f"Write forecast with {len(self._alerts)} alerts to '{file_path}'",
+        )
         try:
             os.makedirs(output_dir, exist_ok=True)
             with open(file_path, "w", encoding="utf-8") as f:

@@ -20,6 +20,7 @@ from pipelines.infra.data_types.data_config_types import (
     SourceTarget,
 )
 from pipelines.infra.data_types.enums import HazardType
+from pipelines.infra.utils.nrw_logger import log_error, LogTag
 
 logger = logging.getLogger(__name__)
 
@@ -44,18 +45,18 @@ class ConfigReader:
         # Load the config from the path
         path = Path(path)
         if not path.exists():
-            logger.error(f"Config file not found: {path}")
+            log_error(logger, LogTag.INFRA, f"Config file not found: {path}")
             return False
 
         try:
             with open(path, "r", encoding="utf-8") as f:
                 config_raw = yaml.safe_load(f)
         except yaml.YAMLError as exc:
-            logger.error(f"Failed to parse YAML: {exc}")
+            log_error(logger, LogTag.INFRA, f"Failed to parse YAML: {exc}")
             return False
 
         if config_raw is None:
-            logger.error(f"Config file is empty: {path}")
+            log_error(logger, LogTag.INFRA, f"Config file is empty: {path}")
             return False
 
         # Assign and validate hazard_type
@@ -63,9 +64,11 @@ class ConfigReader:
         try:
             hazard_type = HazardType(hazard_type_raw.lower())
         except ValueError:
-            logger.error(
+            log_error(
+                logger,
+                LogTag.INFRA,
                 f"Invalid hazard_type '{hazard_type_raw}',"
-                f" expected one of: {[e.value for e in HazardType]}"
+                f" expected one of: {[e.value for e in HazardType]}",
             )
             return False
 
@@ -78,12 +81,14 @@ class ConfigReader:
         Get the parsed config for a specific country, or None if not found.
         """
         if self.config is None:
-            logger.error("Config not loaded")
+            log_error(logger, LogTag.INFRA, "Config not loaded")
             return None
 
         country_config = self.config.country_configs.get(country_name)
         if not country_config:
-            logger.error(f"Country '{country_name}' not found in config")
+            log_error(
+                logger, LogTag.INFRA, f"Country '{country_name}' not found in config"
+            )
             return None
 
         return country_config
@@ -114,12 +119,14 @@ class ConfigReader:
 
         for country_raw in config.get("countries", []):
             if "iso_3_code" not in country_raw:
-                logger.error("Country is missing 'iso_3_code'")
+                log_error(logger, LogTag.INFRA, "Country is missing 'iso_3_code'")
                 success = False
                 continue
             if "target_admin_level" not in country_raw:
-                logger.error(
-                    f"Country '{country_raw['iso_3_code']}' is missing 'target_admin_level'"
+                log_error(
+                    logger,
+                    LogTag.INFRA,
+                    f"Country '{country_raw['iso_3_code']}' is missing 'target_admin_level'",
                 )
                 success = False
                 continue
@@ -127,24 +134,30 @@ class ConfigReader:
             try:
                 iso_3_code = CountryCodeIso3(country_raw["iso_3_code"].upper())
             except ValueError:
-                logger.error(
+                log_error(
+                    logger,
+                    LogTag.INFRA,
                     f"Invalid country code '{country_raw['iso_3_code']}',"
-                    f" expected a valid ISO a-3 code"
+                    f" expected a valid ISO a-3 code",
                 )
                 success = False
                 continue
 
             # if the country data already exists, throw an error
             if iso_3_code in countries:
-                logger.error(f"Duplicate country '{iso_3_code}' in config")
+                log_error(
+                    logger, LogTag.INFRA, f"Duplicate country '{iso_3_code}' in config"
+                )
                 success = False
                 continue
 
             # Parse data sources (required per country)
             data_sources_raw = country_raw.get("data_sources")
             if not isinstance(data_sources_raw, list) or not data_sources_raw:
-                logger.error(
-                    f"Country '{iso_3_code}' is missing a non-empty 'data_sources' list"
+                log_error(
+                    logger,
+                    LogTag.INFRA,
+                    f"Country '{iso_3_code}' is missing a non-empty 'data_sources' list",
                 )
                 success = False
                 continue
@@ -163,9 +176,11 @@ class ConfigReader:
                 and self.source_target is not None
                 and not any(source.source_target is not None for source in data_sources)
             ):
-                logger.error(
+                log_error(
+                    logger,
+                    LogTag.INFRA,
                     f"No forecast data source configured for source target"
-                    f" '{self.source_target}' for country '{iso_3_code}'"
+                    f" '{self.source_target}' for country '{iso_3_code}'",
                 )
                 success = False
                 continue
@@ -176,9 +191,11 @@ class ConfigReader:
                 or target_admin_level < 1
                 or target_admin_level > 4
             ):
-                logger.error(
+                log_error(
+                    logger,
+                    LogTag.INFRA,
                     f"Invalid target_admin_level '{target_admin_level}' for country '{iso_3_code}',"
-                    f" expected a positive integer between 1 and 4"
+                    f" expected a positive integer between 1 and 4",
                 )
                 success = False
                 continue
@@ -210,10 +227,12 @@ class ConfigReader:
                 try:
                     parsed_source_target = SourceTarget(str(source_target_raw).lower())
                 except ValueError:
-                    logger.error(
+                    log_error(
+                        logger,
+                        LogTag.INFRA,
                         f"Invalid source_target '{source_target_raw}' for data source"
                         f" '{source_entry.get('source')}' in country '{iso_3_code}',"
-                        f" expected one of: {[e.value for e in SourceTarget]}"
+                        f" expected one of: {[e.value for e in SourceTarget]}",
                     )
                     success = False
                     continue
@@ -234,9 +253,11 @@ class ConfigReader:
             try:
                 data_source = DataSource(source_entry.get("source", "todo_data_source"))
             except ValueError:
-                logger.error(
+                log_error(
+                    logger,
+                    LogTag.INFRA,
                     f"Invalid data source '{source_entry.get('source')}' in country '{iso_3_code}',"
-                    f" expected one of: {[e.value for e in DataSource]}"
+                    f" expected one of: {[e.value for e in DataSource]}",
                 )
                 success = False
                 continue

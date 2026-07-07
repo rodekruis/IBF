@@ -29,6 +29,7 @@ from pipelines.infra.utils.alert_admin_aggregation import (
 )
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.infra_mock_generator import make_infra_mock_hazard_function
+from pipelines.infra.utils.nrw_logger import log_error, log_info, log_warning, LogTag
 
 logger = logging.getLogger(__name__)
 
@@ -167,18 +168,20 @@ def run_forecasts(
     hazard_fn = HAZARD_FUNCTIONS.get(hazard_type)
     if hazard_fn is None:
         msg = f"No hazard function registered for '{hazard_type}'"
-        logger.error(msg)
+        log_error(logger, LogTag.INFRA, msg)
         return [msg]
 
     countries = _resolve_countries(pipeline_run_config.country_configs, country_filter)
     if isinstance(countries, str):
-        logger.error(countries)
+        log_error(logger, LogTag.INFRA, countries)
         return [countries]
 
     if local_data and hazard_type != HazardType.FLOODS:
-        logger.warning(
+        log_warning(
+            logger,
+            LogTag.INFRA,
             f"--local-data is currently only supported for floods. "
-            f"Flag will be ignored for '{hazard_type}'."
+            f"Flag will be ignored for '{hazard_type}'.",
         )
 
     all_errors: list[str] = []
@@ -189,17 +192,25 @@ def run_forecasts(
     if infra_only:
         # bypasses hazard logic in forecast.py
         active_fn = make_infra_mock_hazard_function(mock or 0, hazard_type)
-        logger.info(
+        log_info(
+            logger,
+            LogTag.INFRA,
             f"Skipping hazard logic (--infra-only): generating {mock or 0}"
-            f" mock alert(s) per country"
+            f" mock alert(s) per country",
         )
 
-    logger.info(
-        f"Start '{hazard_type}' pipeline for '{', '.join(c.country_code_iso_3 for c in countries)}' (source target: '{source_target}'{', infra-only' if infra_only else ''})"
+    log_info(
+        logger,
+        LogTag.INFRA,
+        f"Start '{hazard_type}' pipeline for '{', '.join(c.country_code_iso_3 for c in countries)}' (source target: '{source_target}'{', infra-only' if infra_only else ''})",
     )
 
     for country in countries:
-        logger.info(f"Forecast '{hazard_type}' for '{country.country_code_iso_3}'")
+        log_info(
+            logger,
+            LogTag.INFRA,
+            f"Forecast '{hazard_type}' for '{country.country_code_iso_3}'",
+        )
 
         errors = _run_country(
             active_fn,
@@ -213,10 +224,18 @@ def run_forecasts(
             local_data_date=local_data_date,
         )
         if errors:
-            logger.error(f"Errors for '{country.country_code_iso_3}': {errors}")
+            log_error(
+                logger,
+                LogTag.INFRA,
+                f"Errors for '{country.country_code_iso_3}': {errors}",
+            )
             all_errors.extend(errors)
         else:
-            logger.info(f"Completed '{hazard_type}' for '{country.country_code_iso_3}'")
+            log_info(
+                logger,
+                LogTag.INFRA,
+                f"Completed '{hazard_type}' for '{country.country_code_iso_3}'",
+            )
 
     return all_errors
 
@@ -369,10 +388,12 @@ def main(
         local_data_date=local_data_date,
     )
     if errors:
-        logger.error(f"Pipeline finished with {len(errors)} error(s)")
+        log_error(
+            logger, LogTag.INFRA, f"Pipeline finished with {len(errors)} error(s)"
+        )
         sys.exit(1)
 
-    logger.info("Pipeline finished successfully")
+    log_info(logger, LogTag.INFRA, "Pipeline finished successfully")
 
 
 if __name__ == "__main__":

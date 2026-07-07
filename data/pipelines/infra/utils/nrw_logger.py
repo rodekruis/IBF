@@ -1,8 +1,6 @@
 import logging
 from enum import StrEnum
 
-# TODO: AB#42956 Update all log states to use log tags, and the logger in this class
-
 
 # Log tags used to help find and compare logs in Kusto
 # Add new tags as needed here with a short comment as to their use.
@@ -27,3 +25,15 @@ def log_with_tag(
     consider writing out the whole log string as JSON.
     """
     logger.log(level, "tag_%s %s", tag.value, message)
+
+
+def log_info(logger: logging.Logger, tag: LogTag, message: str) -> None:
+    log_with_tag(logger, tag, message, level=logging.INFO)
+
+
+def log_warning(logger: logging.Logger, tag: LogTag, message: str) -> None:
+    log_with_tag(logger, tag, message, level=logging.WARNING)
+
+
+def log_error(logger: logging.Logger, tag: LogTag, message: str) -> None:
+    log_with_tag(logger, tag, message, level=logging.ERROR)

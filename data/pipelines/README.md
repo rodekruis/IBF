@@ -38,8 +38,8 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --country ETH --moc
 | `--country`         | _(optional)_ ISO3 country code to run a single country instead of all configured countries                                                                                                                           |
 | `--output-mode`     | _(optional)_ Where to send pipeline results: `api` submits to the IBF API, `local` writes to disk. Default `api`.                                                                                                    |
 | `--output-path`     | _(optional)_ Base directory for local output (used when `--output-mode` is `local`). Default `pipelines/output`.                                                                                                     |
-| `--local-data`      | _(optional)_ Use locally cached forecast data instead of downloading. Currently only supported for floods. Mutually exclusive with `--mock`.                                                                         |
-| `--local-data-date` | _(optional)_ Date (`YYYYMMDD`) identifying which cached data to use. Requires `--local-data`. If omitted, uses the most recent available date.                                                                       |
+| `--local-data`      | _(optional)_ Use locally cached GloFAS data: `global` (raw files, still slices) or `country` (pre-sliced, skips slicing). Currently only supported for floods. Mutually exclusive with `--mock`.                     |
+| `--local-data-date` | _(optional)_ Date (`YYYYMMDD`) identifying which local data to use. Requires `--local-data`. If omitted, uses the most recent available date.                                                                        |
 
 > `--mock` values greater than `1` require `--infra-only`, because the mock forecast
 > path only has seed discharge data for the no-alert (`0`) and alert (`1`) cases.
@@ -47,27 +47,35 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --country ETH --moc
 ### Using local data for debugging
 
 The `--local-data` flag lets you re-run the pipeline using locally cached GloFAS
-country-split data instead of downloading from FTP. This is useful when:
+data instead of downloading from FTP. It accepts two modes:
 
-- Debugging a production run by downloading its country-split output to your machine
+- `--local-data global` — loads raw global files from `DATA_CACHE_DIR/glofas/raw/{date}/` (still slices to country bounds). Global data is retained for about a week after a production run.
+- `--local-data country` — loads pre-sliced country-split files from `DATA_CACHE_DIR/glofas/country_split/{date}/` (skips slicing). Country-split data is retained longer.
+
+This is useful when:
+
+- Debugging a production run by downloading its output to your local machine
 - Iterating on forecast logic locally
 - Reproducing results from a specific date
 
 The workflow is:
 
-1. Obtain country-split data (e.g., download from cloud storage after a production run)
-2. Place it in `DATA_CACHE_DIR/glofas/country_split/{YYYYMMDD}/`
-3. Run with `--local-data`
+1. Obtain data from cloud storage (global raw or country-split, depending on what's available)
+2. Place it in the corresponding `DATA_CACHE_DIR/glofas/` subfolder
+3. Run with `--local-data global` or `--local-data country`
 
 ```bash
-# Re-run using the most recent locally cached data
-uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN --local-data
+# Use local raw global data (still slices to country)
+uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN --local-data global
 
-# Use local data from a specific date
-uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN --local-data --local-data-date 20260701
+# Use local pre-sliced country data (skips slicing)
+uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN --local-data country
+
+# Specify which date's data to use
+uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN --local-data country --local-data-date 20260701
 
 # Write output locally instead of submitting to the API
-uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN --local-data --output-mode local
+uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN --local-data country --output-mode local
 ```
 
 The minimum ensemble count (34) is **not** enforced for local data — you can run with
