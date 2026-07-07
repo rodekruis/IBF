@@ -5,7 +5,7 @@ import io
 import logging
 import os
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from pipelines.flood.constants import GLOFAS_MIN_ENSEMBLE_COUNT
 from pipelines.infra.environment import load_environment_settings
@@ -321,6 +321,24 @@ def _download_ftp_file(
 
 
 def _resolve_forecast_date(today: str, user: str, password: str, host: str) -> str:
+    """Resolve the forecast date to download from FTP.
+
+    In production, retries with exponential backoff if today's data is not yet
+    available (handles the case where the pipeline runs before data is published).
+    In development/test, fails immediately.
+    """
+    env = load_environment_settings()
+
+    if env.is_production:
+        return _resolve_forecast_date_with_retry(today, user, password, host)
+
+    return _check_forecast_date_available(today, user, password, host)
+
+
+def _check_forecast_date_available(
+    today: str, user: str, password: str, host: str
+) -> str:
+    """Check if today's data is available on FTP. Fails immediately if not."""
     ftp = _connect_ftp(host, user, password, timeout=15)
     ftp.cwd(GLOFAS_FTP_BASE_PATH)
     available_dates = sorted(ftp.nlst())
@@ -329,17 +347,43 @@ def _resolve_forecast_date(today: str, user: str, password: str, host: str) -> s
     if today in available_dates:
         return today
 
-    # TODO: move this fallback behaviour to a separate download-job we might set up
-    yesterday = (datetime.strptime(today, "%Y%m%d") - timedelta(days=1)).strftime(
-        "%Y%m%d"
+    raise FileNotFoundError(
+        f"GloFAS data not available for {today}. "
+        f"Use --cached-data to run with previously downloaded data. "
+        f"Available dates on FTP: {available_dates[-5:]}"
     )
-    if yesterday in available_dates:
+
+
+def _resolve_forecast_date_with_retry(
+    today: str, user: str, password: str, host: str
+) -> str:
+    """Retry with exponential backoff until today's data appears on FTP."""
+    max_retries = 10
+    base_delay_seconds = 60.0
+    max_delay_seconds = 900.0  # cap at 15 minutes between retries (~2.5h total)
+
+    available_dates: list[str] = []
+    for attempt in range(max_retries + 1):
+        ftp = _connect_ftp(host, user, password, timeout=15)
+        ftp.cwd(GLOFAS_FTP_BASE_PATH)
+        available_dates = sorted(ftp.nlst())
+        ftp.quit()
+
+        if today in available_dates:
+            return today
+
+        if attempt >= max_retries:
+            break
+
+        delay = min(base_delay_seconds * (2**attempt), max_delay_seconds)
         logger.warning(
-            f"GloFAS data for {today} not yet available, falling back to {yesterday}"
+            f"GloFAS data for {today} not yet available "
+            f"(attempt {attempt + 1}/{max_retries + 1}). "
+            f"Retrying in {delay:.0f}s..."
         )
-        return yesterday
+        time.sleep(delay)
 
     raise FileNotFoundError(
-        f"GloFAS data not available for {today} or {yesterday}. "
-        f"Available dates: {available_dates[-5:]}"
+        f"GloFAS data not available for {today} after {max_retries + 1} attempts. "
+        f"Available dates on FTP: {available_dates[-5:]}"
     )

@@ -7,6 +7,7 @@ import pytest
 
 from pipelines.infra.data_types.glofas_discharge_provider import (
     _get_highest_ensemble_index,
+    _resolve_forecast_date,
     _validate_ensemble_count,
     GLOFAS_MIN_ENSEMBLE_COUNT,
     load_glofas_discharge_from_cache,
@@ -298,3 +299,104 @@ def test_highest_ensemble_index_ignores_unparsable_names() -> None:
         "/cache/glofas/raw/20260701/other_file.nc",
     ]
     assert _get_highest_ensemble_index(files) == 10
+
+
+# ---------------------------------------------------------------------------
+# _resolve_forecast_date
+# ---------------------------------------------------------------------------
+
+
+from unittest.mock import MagicMock, patch
+
+
+def _mock_ftp_with_dates(available_dates: list[str]) -> MagicMock:
+    mock_ftp = MagicMock()
+    mock_ftp.nlst.return_value = available_dates
+    return mock_ftp
+
+
+def test_resolve_forecast_date_returns_today_when_available(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IBF_ENVIRONMENT", "development")
+
+    with patch(
+        "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp"
+    ) as mock_connect:
+        mock_connect.return_value = _mock_ftp_with_dates(["20260706", "20260707"])
+
+        result = _resolve_forecast_date("20260707", "user", "pass", "host")
+
+    assert result == "20260707"
+
+
+def test_resolve_forecast_date_fails_immediately_in_development(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IBF_ENVIRONMENT", "development")
+
+    with patch(
+        "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp"
+    ) as mock_connect:
+        mock_connect.return_value = _mock_ftp_with_dates(["20260705", "20260706"])
+
+        with pytest.raises(FileNotFoundError, match="not available for 20260707"):
+            _resolve_forecast_date("20260707", "user", "pass", "host")
+
+
+def test_resolve_forecast_date_fails_immediately_in_test(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IBF_ENVIRONMENT", "test")
+
+    with patch(
+        "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp"
+    ) as mock_connect:
+        mock_connect.return_value = _mock_ftp_with_dates(["20260705", "20260706"])
+
+        with pytest.raises(FileNotFoundError, match="not available for 20260707"):
+            _resolve_forecast_date("20260707", "user", "pass", "host")
+
+
+def test_resolve_forecast_date_retries_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IBF_ENVIRONMENT", "production")
+
+    call_count = 0
+
+    def ftp_factory(*args, **kwargs) -> MagicMock:
+        nonlocal call_count
+        call_count += 1
+        if call_count < 3:
+            return _mock_ftp_with_dates(["20260705", "20260706"])
+        return _mock_ftp_with_dates(["20260705", "20260706", "20260707"])
+
+    with (
+        patch(
+            "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp",
+            side_effect=ftp_factory,
+        ),
+        patch("pipelines.infra.data_types.glofas_discharge_provider.time.sleep"),
+    ):
+        result = _resolve_forecast_date("20260707", "user", "pass", "host")
+
+    assert result == "20260707"
+    assert call_count == 3
+
+
+def test_resolve_forecast_date_fails_after_retries_exhausted_in_production(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IBF_ENVIRONMENT", "production")
+
+    with (
+        patch(
+            "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp"
+        ) as mock_connect,
+        patch("pipelines.infra.data_types.glofas_discharge_provider.time.sleep"),
+    ):
+        mock_connect.return_value = _mock_ftp_with_dates(["20260705", "20260706"])
+
+        with pytest.raises(FileNotFoundError, match="after 11 attempts"):
+            _resolve_forecast_date("20260707", "user", "pass", "host")
