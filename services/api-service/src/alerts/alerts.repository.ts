@@ -10,6 +10,7 @@ import { ExposureRasterReadDto } from '@api-service/src/alerts/dto/exposure-rast
 import { SeverityReadDto } from '@api-service/src/alerts/dto/severity-read.dto';
 import { ForecastMetadata } from '@api-service/src/events/alert-to-event.service';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
+import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 import {
   colorizeGrayscalePng,
   FLOOD_DEPTH_CONFIG,
@@ -145,12 +146,12 @@ export class AlertsRepository {
                 metadata: {
                   data: {
                     extent: { ...entry.extent },
-                    crs: 'EPSG:4326',
+                    crs: EPSG.WGS84,
                     nodata: 0,
                   },
                   coloured: {
                     extent: reproject4326To3857(entry.extent),
-                    crs: 'EPSG:3857',
+                    crs: EPSG.WebMercator,
                   },
                 },
               })),

@@ -1,3 +1,4 @@
+import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 import { LayerName } from '@api-service/src/shared-enums';
 import { getServer } from '@api-service/test/helpers/utility.helper';
 
@@ -21,12 +22,12 @@ export function createStaticRaster(
       metadata: {
         data: {
           extent: { xmin: 33.0, ymin: 3.0, xmax: 48.0, ymax: 15.0 },
-          crs: 'EPSG:4326',
+          crs: EPSG.WGS84,
           nodata: 0,
         },
         coloured: {
           extent: { xmin: 33.0, ymin: 3.0, xmax: 48.0, ymax: 15.0 },
-          crs: 'EPSG:4326',
+          crs: EPSG.WGS84,
         },
       },
     });

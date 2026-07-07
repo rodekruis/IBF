@@ -9,7 +9,7 @@ from shared.country_data import CountryCodeIso3
 
 from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.infra.data_types.data_config_types import DataSource, DataSourceConfig
-from pipelines.infra.data_types.enums import HazardType, LayerName
+from pipelines.infra.data_types.enums import EPSG, HazardType, LayerName
 from pipelines.infra.data_types.loaded_data_types import (
     DataType,
     LoadedDataSource,
@@ -57,12 +57,12 @@ def _make_api_metadata_response() -> dict:
         "metadata": {
             "data": {
                 "extent": {"xmin": 0.0, "ymin": -200.0, "xmax": 200.0, "ymax": 0.0},
-                "crs": "EPSG:4326",
+                "crs": EPSG.WGS84,
                 "nodata": 0,
             },
             "coloured": {
                 "extent": {"xmin": 0.0, "ymin": -200.0, "xmax": 200.0, "ymax": 0.0},
-                "crs": "EPSG:3857",
+                "crs": EPSG.WEB_MERCATOR,
             },
         },
     }

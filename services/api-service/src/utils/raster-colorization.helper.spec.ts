@@ -1,5 +1,6 @@
 import { PNG } from 'pngjs';
 
+import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 import {
   colorizeGrayscalePng,
   FLOOD_DEPTH_CONFIG,
@@ -244,7 +245,7 @@ describe('raster-colorization.helper', () => {
       const pngBuffer = createTestPngBuffer(10, 20);
       const result = processPopulationRaster(pngBuffer, {
         transform: [0.5, 0, 33.0, 0, -0.25, 5.0],
-        crs: 'EPSG:4326',
+        crs: EPSG.WGS84,
       });
 
       expect(result.metadata.data.extent.xmin).toBe(33.0);
@@ -257,17 +258,17 @@ describe('raster-colorization.helper', () => {
       const pngBuffer = createTestPngBuffer(2, 2);
       const result = processPopulationRaster(pngBuffer, {
         transform: [1, 0, 0, 0, -1, 2],
-        crs: 'EPSG:4326',
+        crs: EPSG.WGS84,
       });
 
-      expect(result.metadata.data.crs).toBe('EPSG:4326');
+      expect(result.metadata.data.crs).toBe(EPSG.WGS84);
     });
 
     it('should set nodata to 0', () => {
       const pngBuffer = createTestPngBuffer(2, 2);
       const result = processPopulationRaster(pngBuffer, {
         transform: [1, 0, 0, 0, -1, 2],
-        crs: 'EPSG:4326',
+        crs: EPSG.WGS84,
       });
 
       expect(result.metadata.data.nodata).toBe(0);
@@ -277,10 +278,10 @@ describe('raster-colorization.helper', () => {
       const pngBuffer = createTestPngBuffer(4, 4);
       const result = processPopulationRaster(pngBuffer, {
         transform: [1, 0, 33.0, 0, -1, 5.0],
-        crs: 'EPSG:4326',
+        crs: EPSG.WGS84,
       });
 
-      expect(result.metadata.coloured.crs).toBe('EPSG:3857');
+      expect(result.metadata.coloured.crs).toBe(EPSG.WebMercator);
       expect(result.metadata.coloured.extent.xmin).not.toBe(
         result.metadata.data.extent.xmin,
       );
@@ -290,10 +291,10 @@ describe('raster-colorization.helper', () => {
       const pngBuffer = createTestPngBuffer(4, 4);
       const result = processPopulationRaster(pngBuffer, {
         transform: [1000, 0, 500000, 0, -1000, 600000],
-        crs: 'EPSG:3857',
+        crs: EPSG.WebMercator,
       });
 
-      expect(result.metadata.coloured.crs).toBe('EPSG:3857');
+      expect(result.metadata.coloured.crs).toBe(EPSG.WebMercator);
       expect(result.metadata.coloured.extent).toEqual(
         result.metadata.data.extent,
       );
@@ -303,7 +304,7 @@ describe('raster-colorization.helper', () => {
       const pngBuffer = createTestPngBuffer(4, 4);
       const result = processPopulationRaster(pngBuffer, {
         transform: [1, 0, 0, 0, -1, 4],
-        crs: 'EPSG:4326',
+        crs: EPSG.WGS84,
       });
 
       expect(result.colouredBase64).toBeTruthy();
@@ -319,7 +320,7 @@ describe('raster-colorization.helper', () => {
       const pngBuffer = createTestPngBuffer(20, 20);
       const result = processPopulationRaster(pngBuffer, {
         transform: [1, 0, 0, 0, -1, 20],
-        crs: 'EPSG:4326',
+        crs: EPSG.WGS84,
       });
 
       const decoded = Buffer.from(result.colouredBase64, 'base64');
@@ -332,7 +333,7 @@ describe('raster-colorization.helper', () => {
       const pngBuffer = createTestPngBuffer(4, 4);
       const result = processPopulationRaster(pngBuffer, {
         transform: [1, 0, 0, 0, -1, 4],
-        crs: 'EPSG:4326',
+        crs: EPSG.WGS84,
       });
 
       const decoded = Buffer.from(result.colouredBase64, 'base64');

@@ -22,6 +22,7 @@ import {
   SEED_COUNTRIES,
   SeedCountry,
 } from '@api-service/src/scripts/seed-data/seed-countries.const';
+import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 import { HazardType, LayerName } from '@api-service/src/shared-enums';
 import { hashPassword } from '@api-service/src/utils/hash-password.helper';
 import { processPopulationRaster } from '@api-service/src/utils/raster-colorization.helper';
@@ -444,7 +445,7 @@ export class SeedInit {
     const dataPngBuffer = Buffer.from(await dataPngResponse.arrayBuffer());
     const metadata = (await metadataResponse.json()) as {
       transform: number[];
-      crs: string;
+      crs: EPSG;
     };
 
     const { colouredBase64, metadata: rasterMetadata } =

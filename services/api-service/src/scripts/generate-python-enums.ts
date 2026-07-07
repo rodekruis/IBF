@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 import {
   EnsembleMemberType,
+  EPSG,
   ForecastSource,
   HazardType,
   LayerName,
@@ -18,6 +19,7 @@ const enumsToGenerate: { name: string; values: EnumObject }[] = [
   { name: 'HazardType', values: HazardType },
   { name: 'LayerName', values: LayerName },
   { name: 'SeverityKey', values: SeverityKey },
+  { name: 'EPSG', values: EPSG },
 ];
 
 const SOURCE_PATH = 'services/api-service/src/shared-enums.ts';
