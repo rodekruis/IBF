@@ -88,8 +88,8 @@ def calculate_flood_forecasts(
     )
 
     # Slice NetCDF files to country bounds once before processing stations
-    # When using --local-data, files are already country-split so skip slicing
-    if data_provider.local_data:
+    # When using --local-data country, files are already country-split so skip slicing
+    if data_provider.local_data == "country":
         country_sliced_netcdf_paths = glofas_netcdf_paths
     else:
         country_sliced_netcdf_paths: list[str] = []

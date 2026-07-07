@@ -17,6 +17,7 @@ from pipelines.infra.utils.storage_helpers import (
     get_glofas_mock_data_dir,
     get_glofas_raw_data_dir,
     GLOFAS_COUNTRY_SPLIT_DATA_DIR,
+    GLOFAS_RAW_DATA_DIR,
 )
 
 logger = logging.getLogger(__name__)
@@ -212,14 +213,52 @@ def download_glofas_discharge_from_seed_repo(
     return [local_path]
 
 
-def load_glofas_discharge_from_cache(
+def load_glofas_discharge_from_local_global_files(
+    country: str, local_data_date: str | None
+) -> list[str]:
+    """
+    Load previously downloaded raw global GloFAS discharge files from local cache.
+
+    Global data is retained for about a week after a production run.
+    Useful for debugging issues in the download → slicing flow.
+
+    Unlike the FTP download path, this does NOT enforce the minimum ensemble
+    count. Developers can run with even a single cached file for fast iteration.
+
+    If local_data_date is None, uses the most recent cached date.
+    Raises FileNotFoundError if no cached data is found.
+    """
+    if local_data_date is None:
+        local_data_date = find_latest_forecast_date_in_cache(GLOFAS_RAW_DATA_DIR)
+        if local_data_date is None:
+            raise FileNotFoundError(
+                "No locally cached raw GloFAS data found. "
+                "Run a live pipeline first or specify --local-data-date."
+            )
+        logger.info(f"Using most recent local raw data: {local_data_date}")
+
+    cached_files = get_cached_glofas_files(local_data_date)
+    if cached_files is None or len(cached_files) == 0:
+        raise FileNotFoundError(
+            f"No locally cached raw GloFAS files found for date {local_data_date}. "
+            f"Available data can be found in DATA_CACHE_DIR/glofas/raw/."
+        )
+
+    logger.info(
+        f"Loaded {len(cached_files)} local raw GloFAS files for {local_data_date} "
+        f"(country: {country})"
+    )
+    return cached_files
+
+
+def load_glofas_discharge_from_local_country_files(
     country: str, local_data_date: str | None
 ) -> list[str]:
     """
     Load previously country-split GloFAS discharge files from local cache.
 
     This is the primary debug path for checking results from real pipeline runs.
-    Production retains only country-split data (not the full global raw files).
+    Production retains country-split data longer than global raw files.
 
     Unlike the FTP download path, this does NOT enforce the minimum ensemble
     count. Developers can run with even a single cached file for fast iteration.
@@ -233,22 +272,22 @@ def load_glofas_discharge_from_cache(
         )
         if local_data_date is None:
             raise FileNotFoundError(
-                "No cached country-split GloFAS data found. "
+                "No locally cached country-split GloFAS data found. "
                 "Run a live pipeline first or specify --local-data-date."
             )
-        logger.info(f"Using most recent cached country-split data: {local_data_date}")
+        logger.info(f"Using most recent local country-split data: {local_data_date}")
 
     cached_files = get_cached_glofas_country_split_files(country, local_data_date)
     if cached_files is None or len(cached_files) == 0:
         raise FileNotFoundError(
-            f"No cached country-split GloFAS files found for {country} "
+            f"No locally cached country-split GloFAS files found for {country} "
             f"on date {local_data_date}. "
             f"Available data can be found in "
             f"DATA_CACHE_DIR/glofas/country_split/."
         )
 
     logger.info(
-        f"Loaded {len(cached_files)} cached country-split GloFAS files "
+        f"Loaded {len(cached_files)} local country-split GloFAS files "
         f"for {country} on {local_data_date}"
     )
     return cached_files

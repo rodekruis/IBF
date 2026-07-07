@@ -11,7 +11,8 @@ from pipelines.infra.data_types.glofas_discharge_provider import (
     _resolve_forecast_date,
     _validate_ensemble_count,
     GLOFAS_MIN_ENSEMBLE_COUNT,
-    load_glofas_discharge_from_cache,
+    load_glofas_discharge_from_local_country_files,
+    load_glofas_discharge_from_local_global_files,
 )
 from pipelines.infra.utils.storage_helpers import (
     find_latest_forecast_date_in_cache,
@@ -235,7 +236,7 @@ def test_find_latest_returns_none_when_dir_missing(
 
 
 # ---------------------------------------------------------------------------
-# load_glofas_discharge_from_cache
+# load_glofas_discharge_from_local_country
 # ---------------------------------------------------------------------------
 
 
@@ -245,7 +246,7 @@ def test_load_from_cache_with_explicit_date(
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
     expected = _write_country_split_files(tmp_path, FORECAST_DATE, "KEN", count=3)
 
-    result = load_glofas_discharge_from_cache("KEN", FORECAST_DATE)
+    result = load_glofas_discharge_from_local_country_files("KEN", FORECAST_DATE)
 
     assert result == expected
 
@@ -256,7 +257,7 @@ def test_load_from_cache_succeeds_with_single_file(
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
     expected = _write_country_split_files(tmp_path, FORECAST_DATE, "KEN", count=1)
 
-    result = load_glofas_discharge_from_cache("KEN", FORECAST_DATE)
+    result = load_glofas_discharge_from_local_country_files("KEN", FORECAST_DATE)
 
     assert result == expected
 
@@ -268,7 +269,7 @@ def test_load_from_cache_auto_detects_latest_date(
     _write_country_split_files(tmp_path, "20260320", "KEN", count=5)
     expected = _write_country_split_files(tmp_path, "20260325", "KEN", count=3)
 
-    result = load_glofas_discharge_from_cache("KEN", None)
+    result = load_glofas_discharge_from_local_country_files("KEN", None)
 
     assert result == expected
 
@@ -279,9 +280,9 @@ def test_load_from_cache_raises_when_no_cache_exists(
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
 
     with pytest.raises(
-        FileNotFoundError, match="No cached country-split GloFAS data found"
+        FileNotFoundError, match="No locally cached country-split GloFAS data found"
     ):
-        load_glofas_discharge_from_cache("KEN", None)
+        load_glofas_discharge_from_local_country_files("KEN", None)
 
 
 def test_load_from_cache_raises_for_nonexistent_date(
@@ -290,12 +291,72 @@ def test_load_from_cache_raises_for_nonexistent_date(
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
 
     with pytest.raises(
-        FileNotFoundError, match="No cached country-split GloFAS files found"
+        FileNotFoundError, match="No locally cached country-split GloFAS files found"
     ):
-        load_glofas_discharge_from_cache("KEN", "20260101")
+        load_glofas_discharge_from_local_country_files("KEN", "20260101")
 
 
 # ---------------------------------------------------------------------------
+# load_glofas_discharge_from_local_global
+# ---------------------------------------------------------------------------
+
+
+def test_load_from_global_cache_with_explicit_date(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+    expected = _write_cached_files(tmp_path, FORECAST_DATE, count=3)
+
+    result = load_glofas_discharge_from_local_global_files("KEN", FORECAST_DATE)
+
+    assert result == expected
+
+
+def test_load_from_global_cache_succeeds_with_single_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+    expected = _write_cached_files(tmp_path, FORECAST_DATE, count=1)
+
+    result = load_glofas_discharge_from_local_global_files("KEN", FORECAST_DATE)
+
+    assert result == expected
+
+
+def test_load_from_global_cache_auto_detects_latest_date(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+    _write_cached_files(tmp_path, "20260320", count=5)
+    expected = _write_cached_files(tmp_path, "20260325", count=3)
+
+    result = load_glofas_discharge_from_local_global_files("KEN", None)
+
+    assert result == expected
+
+
+def test_load_from_global_cache_raises_when_no_cache_exists(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+
+    with pytest.raises(
+        FileNotFoundError, match="No locally cached raw GloFAS data found"
+    ):
+        load_glofas_discharge_from_local_global_files("KEN", None)
+
+
+def test_load_from_global_cache_raises_for_nonexistent_date(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+
+    with pytest.raises(
+        FileNotFoundError, match="No locally cached raw GloFAS files found"
+    ):
+        load_glofas_discharge_from_local_global_files("KEN", "20260101")
+
+
 # _get_highest_ensemble_index
 # ---------------------------------------------------------------------------
 

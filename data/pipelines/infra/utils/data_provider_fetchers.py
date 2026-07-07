@@ -19,7 +19,8 @@ from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.glofas_discharge_provider import (
     download_glofas_discharge_from_ftp,
     download_glofas_discharge_from_seed_repo,
-    load_glofas_discharge_from_cache,
+    load_glofas_discharge_from_local_country_files,
+    load_glofas_discharge_from_local_global_files,
 )
 from pipelines.infra.data_types.loaded_data_types import (
     DataType,
@@ -52,7 +53,7 @@ def load_data_container(
     container: LoadedDataSource,
     api_client: ApiClient,
     local_data_date: str | None = None,
-    local_data: bool = False,
+    local_data: str | None = None,
 ):
 
     match data_config.source:
@@ -260,11 +261,15 @@ def _load_glofas_discharge(
     config: DataSourceConfig,
     container: LoadedDataSource,
     local_data_date: str | None,
-    local_data: bool,
+    local_data: str | None,
 ) -> None:
     container.data_type = DataType.PATH_LIST
-    if local_data:
-        container.data = load_glofas_discharge_from_cache(
+    if local_data == "global":
+        container.data = load_glofas_discharge_from_local_global_files(
+            config.country_code_iso_3, local_data_date
+        )
+    elif local_data == "country":
+        container.data = load_glofas_discharge_from_local_country_files(
             config.country_code_iso_3, local_data_date
         )
     else:

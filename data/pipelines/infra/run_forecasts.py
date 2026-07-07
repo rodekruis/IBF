@@ -59,7 +59,7 @@ def _run_country(
     output_mode: OutputMode,
     output_path: str,
     api_client: ApiClient,
-    local_data: bool = False,
+    local_data: str | None = None,
     local_data_date: str | None = None,
 ) -> list[str]:
     data_provider = DataProvider(
@@ -150,7 +150,7 @@ def run_forecasts(
     country_filter: list[str] | None = None,
     output_mode: OutputMode = OutputMode.API,
     output_path: str = DEFAULT_OUTPUT_PATH,
-    local_data: bool = False,
+    local_data: str | None = None,
     local_data_date: str | None = None,
 ) -> list[str]:
     _register_hazard_functions()
@@ -280,12 +280,13 @@ def run_forecasts(
 @click.option(
     "--local-data",
     "local_data",
-    is_flag=True,
-    default=False,
+    type=click.Choice(["global", "country"]),
+    default=None,
     help=(
-        "Use locally cached country-split data instead of downloading. "
-        "Currently only supported for floods (GloFAS). "
-        "Loads from DATA_CACHE_DIR/glofas/country_split/. "
+        "Use locally cached GloFAS data instead of downloading. "
+        "'global' loads raw global files (still slices to country). "
+        "'country' loads pre-sliced country-split files (skips slicing). "
+        "Currently only supported for floods. "
         "Mutually exclusive with --mock."
     ),
 )
@@ -294,8 +295,8 @@ def run_forecasts(
     "local_data_date",
     default=None,
     help=(
-        "Date (YYYYMMDD) identifying which cached GloFAS data to use. "
-        "Refers to the forecast date subfolder in DATA_CACHE_DIR/glofas/country_split/. "
+        "Date (YYYYMMDD) identifying which locally cached GloFAS data to use. "
+        "Refers to the forecast date subfolder in DATA_CACHE_DIR/glofas/. "
         "If omitted, uses the most recent available date. "
         "Requires --local-data. "
         "Not to be confused with --issued-at which controls the metadata timestamp."
@@ -309,7 +310,7 @@ def main(
     country_filter: str | None,
     output_mode_str: str,
     output_path: str,
-    local_data: bool,
+    local_data: str | None,
     local_data_date: str | None,
 ) -> None:
     load_dotenv()
@@ -325,11 +326,11 @@ def main(
 
     if mock is not None and env.is_production:
         raise click.UsageError("--mock is not allowed in production")
-    if local_data and env.is_production:
+    if local_data is not None and env.is_production:
         raise click.UsageError("--local-data is not allowed in production")
-    if local_data and mock is not None:
+    if local_data is not None and mock is not None:
         raise click.UsageError("--local-data and --mock are mutually exclusive")
-    if local_data_date is not None and not local_data:
+    if local_data_date is not None and local_data is None:
         raise click.UsageError("--local-data-date requires --local-data")
     if local_data_date is not None and len(local_data_date) != 8:
         raise click.UsageError(
@@ -342,7 +343,7 @@ def main(
             f"--mock must be 0 or 1 without --infra-only (got {mock}); "
             "use --infra-only to generate more than one alert"
         )
-    if issued_at_str and mock is None and not local_data:
+    if issued_at_str and mock is None and local_data is None:
         raise click.UsageError("--issued-at requires --mock or --local-data")
 
     issued_at: datetime | None = None

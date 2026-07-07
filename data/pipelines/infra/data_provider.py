@@ -33,7 +33,7 @@ class DataProvider:
     def __init__(
         self,
         api_client: ApiClient,
-        local_data: bool = False,
+        local_data: str | None = None,
         local_data_date: str | None = None,
     ) -> None:
         self.loaded_data: dict[DataSource, LoadedDataSource] = {}
