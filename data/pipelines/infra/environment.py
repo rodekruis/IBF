@@ -19,6 +19,10 @@ class EnvironmentSettings:
     def is_production(self) -> bool:
         return self.environment == IbfEnvironment.PRODUCTION
 
+    @property
+    def is_development(self) -> bool:
+        return self.environment == IbfEnvironment.DEVELOPMENT
+
 
 def load_environment_settings() -> EnvironmentSettings:
     raw = os.environ.get("IBF_ENVIRONMENT")
