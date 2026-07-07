@@ -13,10 +13,16 @@ import {
 const AWASH_RIVER_RASTER_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAA8AAAAUCAYAAABSx2cSAAAA0ElEQVR4AaXBsW0jQRREwXezedDpNNpmTDTXZEy0OxLa7fwIpFvgCAjCeVP153a7fd3vdy6Px4OP5/PJ5fV68X6/+Z/FhmNmzrZIIgm2udgmCZJoy8zw22LDYsMBnDNDWySRBNtcbJMESbRlZvhpsWGxYbHhAE7+mhnaIokk2OZimyRIoi0zw8diw2LDAZz8MzO0RRJJsM3FNkmQRFtmhstiw2LDAZz8MDO0RRJJsM3FNkmQRFtmhsWGxYbFhgM4+WVmaIskkmCbi22SIIm2fANUaHZa8hEamQAAAABJRU5ErkJggg==';
 
+const JINJA_RASTER_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAA8AAAAUCAYAAABSx2cSAAAA0ElEQVR4AaXBsW0jQRREwXezedDpNNpmTDTXZEy0OxLa7fwIpFvgCAjCeVP153a7fd3vdy6Px4OP5/PJ5fV68X6/+Z/FhmNmzrZIIgm2udgmCZJoy8zw22LDYsMBnDNDWySRBNtcbJMESbRlZvhpsWGxYbHhAE7+mhnaIokk2OZimyRIoi0zw8diw2LDAZz8MzO0RRJJsM3FNkmQRFtmhstiw2LDAZz8MDO0RRJJsM3FNkmQRFtmhsWGxYbFhgM4+WVmaIskkmCbi22SIIm2fANUaHZa8hEamQAAAABJRU5ErkJggg==';
+
+const KARAMOJA_RASTER_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAAkElEQVR4AaXB0WkEAQxDwRfXpcJUggpTXwmGO1hM/nbmB/jlQRLLNlcSVlvWcLRlJeGyzZLEGv7RlpWEyzZLEsMLwwvDPySxbHMlYbVlOCSxbHMlYbVlDQ+SWLa5krDa8jV8SGLZ5krCasvT8MLwwvDRlpWEyzZLEk/DC8NDW1YSLtssSXwNR1tWEi7bLEmsP2VPPR0QvluXAAAAAElFTkSuQmCC';
+
 const GAMBELLA_RASTER_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAAkElEQVR4AaXB0WkEAQxDwRfXpcJUggpTXwmGO1hM/nbmB/jlQRLLNlcSVlvWcLRlJeGyzZLEGv7RlpWEyzZLEsMLwwvDPySxbHMlYbVlOCSxbHMlYbVlDQ+SWLa5krDa8jV8SGLZ5krCasvT8MLwwvDRlpWEyzZLEk/DC8NDW1YSLtssSXwNR1tWEi7bLEmsP2VPPR0QvluXAAAAAElFTkSuQmCC';
 
-export function buildDemoForecast(): ForecastCreateDto {
+export function buildEthiopiaDemoForecast(): ForecastCreateDto {
   const now = new Date();
   const daysFromNow = (days: number): Date => addDays(now, days);
 
@@ -193,5 +199,167 @@ export function buildDemoForecast(): ForecastCreateDto {
     hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofas],
     alerts: [awashRiverAlert, gambellaAlert],
+  };
+}
+
+export function buildUgandaDemoForecast(): ForecastCreateDto {
+  const now = new Date();
+  const daysFromNow = (days: number): Date => addDays(now, days);
+
+  const jinjaAlert: AlertCreateDto = {
+    eventName: 'UGA_floods_nile-jinja',
+    centroid: { latitude: 0.44, longitude: 33.2 },
+    severity: [
+      {
+        timeInterval: {
+          start: daysFromNow(-1),
+          end: daysFromNow(5),
+        },
+        ensembleMemberType: EnsembleMemberType.median,
+        severityKey: SeverityKey.returnPeriod,
+        severityValue: 5,
+      },
+      ...Array.from({ length: 4 }, () => ({
+        timeInterval: {
+          start: daysFromNow(-1),
+          end: daysFromNow(5),
+        },
+        ensembleMemberType: EnsembleMemberType.run,
+        severityKey: SeverityKey.returnPeriod,
+        severityValue: 5,
+      })),
+    ],
+    exposure: {
+      adminAreas: [
+        {
+          placeCode: 'UG20400101',
+          adminLevel: 4,
+          layer: LayerName.populationExposed,
+          value: 8200,
+        },
+        {
+          placeCode: 'UG20400102',
+          adminLevel: 4,
+          layer: LayerName.populationExposed,
+          value: 6100,
+        },
+        {
+          placeCode: 'UG20400104',
+          adminLevel: 4,
+          layer: LayerName.populationExposed,
+          value: 4500,
+        },
+        {
+          placeCode: 'UG204001',
+          adminLevel: 3,
+          layer: LayerName.populationExposed,
+          value: 18800,
+        },
+        {
+          placeCode: 'UG2040',
+          adminLevel: 2,
+          layer: LayerName.populationExposed,
+          value: 18800,
+        },
+        {
+          placeCode: 'UG2',
+          adminLevel: 1,
+          layer: LayerName.populationExposed,
+          value: 18800,
+        },
+        {
+          placeCode: 'UG',
+          adminLevel: 0,
+          layer: LayerName.populationExposed,
+          value: 18800,
+        },
+      ],
+      rasters: [
+        {
+          layer: LayerName.floodDepth,
+          valueGreyscale: JINJA_RASTER_BASE64,
+          extent: { xmin: 32.5, ymin: -0.2, xmax: 33.8, ymax: 1.0 },
+        },
+      ],
+    },
+  };
+
+  const karamojaAlert: AlertCreateDto = {
+    eventName: 'UGA_floods_lokok-karamoja',
+    centroid: { latitude: 3.45, longitude: 34.5 },
+    severity: [
+      {
+        timeInterval: {
+          start: daysFromNow(0),
+          end: daysFromNow(4),
+        },
+        ensembleMemberType: EnsembleMemberType.median,
+        severityKey: SeverityKey.returnPeriod,
+        severityValue: 2,
+      },
+      ...Array.from({ length: 3 }, () => ({
+        timeInterval: {
+          start: daysFromNow(0),
+          end: daysFromNow(4),
+        },
+        ensembleMemberType: EnsembleMemberType.run,
+        severityKey: SeverityKey.returnPeriod,
+        severityValue: 2,
+      })),
+    ],
+    exposure: {
+      adminAreas: [
+        {
+          placeCode: 'UG30660101',
+          adminLevel: 4,
+          layer: LayerName.populationExposed,
+          value: 3400,
+        },
+        {
+          placeCode: 'UG30660102',
+          adminLevel: 4,
+          layer: LayerName.populationExposed,
+          value: 2100,
+        },
+        {
+          placeCode: 'UG306601',
+          adminLevel: 3,
+          layer: LayerName.populationExposed,
+          value: 5500,
+        },
+        {
+          placeCode: 'UG3066',
+          adminLevel: 2,
+          layer: LayerName.populationExposed,
+          value: 5500,
+        },
+        {
+          placeCode: 'UG3',
+          adminLevel: 1,
+          layer: LayerName.populationExposed,
+          value: 5500,
+        },
+        {
+          placeCode: 'UG',
+          adminLevel: 0,
+          layer: LayerName.populationExposed,
+          value: 5500,
+        },
+      ],
+      rasters: [
+        {
+          layer: LayerName.floodDepth,
+          valueGreyscale: KARAMOJA_RASTER_BASE64,
+          extent: { xmin: 33.8, ymin: 2.8, xmax: 35.2, ymax: 4.2 },
+        },
+      ],
+    },
+  };
+
+  return {
+    issuedAt: daysFromNow(-1),
+    hazardType: HazardType.floods,
+    forecastSources: [ForecastSource.glofas],
+    alerts: [jinjaAlert, karamojaAlert],
   };
 }
