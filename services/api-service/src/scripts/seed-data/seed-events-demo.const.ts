@@ -22,7 +22,7 @@ const KARAMOJA_RASTER_BASE64 =
 const GAMBELLA_RASTER_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAAkElEQVR4AaXB0WkEAQxDwRfXpcJUggpTXwmGO1hM/nbmB/jlQRLLNlcSVlvWcLRlJeGyzZLEGv7RlpWEyzZLEsMLwwvDPySxbHMlYbVlOCSxbHMlYbVlDQ+SWLa5krDa8jV8SGLZ5krCasvT8MLwwvDRlpWEyzZLEk/DC8NDW1YSLtssSXwNR1tWEi7bLEmsP2VPPR0QvluXAAAAAElFTkSuQmCC';
 
-export function buildDemoForecast(): ForecastCreateDto {
+export function buildEthiopiaDemoForecast(): ForecastCreateDto {
   const now = new Date();
   const daysFromNow = (days: number): Date => addDays(now, days);
 
