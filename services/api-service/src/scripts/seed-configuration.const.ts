@@ -13,4 +13,8 @@ export const SEED_CONFIGURATION_SETTINGS: SeedConfigurationDto[] = [
     name: SeedScript.ethiopiaWithEvents,
     countryCodes: ['ETH'],
   },
+  {
+    name: SeedScript.multiCountryWithEvents,
+    countryCodes: ['ETH', 'UGA'],
+  },
 ];

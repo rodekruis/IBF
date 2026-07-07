@@ -4,7 +4,10 @@ import { AlertsService } from '@api-service/src/alerts/alerts.service';
 import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { SEED_CONFIGURATION_SETTINGS } from '@api-service/src/scripts/seed-configuration.const';
 import { SeedConfigurationDto } from '@api-service/src/scripts/seed-configuration.dto';
-import { buildDemoForecast } from '@api-service/src/scripts/seed-data/seed-events-demo.const';
+import {
+  buildDemoForecast,
+  buildUgandaDemoForecast,
+} from '@api-service/src/scripts/seed-data/seed-events-demo.const';
 import { SeedInit } from '@api-service/src/scripts/seed-init';
 
 @Injectable()
@@ -38,6 +41,10 @@ export class ScriptsService {
     // TODO: move event seeding to a separate proper functionality
     if (seedConfig.name === SeedScript.ethiopiaWithEvents) {
       await this.alertsService.createAlerts(buildDemoForecast());
+    }
+    if (seedConfig.name === SeedScript.multiCountryWithEvents) {
+      await this.alertsService.createAlerts(buildDemoForecast());
+      await this.alertsService.createAlerts(buildUgandaDemoForecast());
     }
   }
 
