@@ -124,8 +124,8 @@ def _download_ensemble_files(
     output_dir = get_glofas_raw_data_dir(forecast_date)
     remote_dir = f"{GLOFAS_FTP_BASE_PATH}/{forecast_date}"
 
-    # Include any already-cached files in the result
-    cached_files = get_cached_glofas_files(forecast_date)
+    # Only include already-cached files when resuming a partial download
+    cached_files = get_cached_glofas_files(forecast_date) if start_index > 0 else None
     downloaded_paths: list[str] = list(cached_files) if cached_files is not None else []
 
     download_start = time.monotonic()
