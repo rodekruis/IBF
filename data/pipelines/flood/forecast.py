@@ -88,15 +88,19 @@ def calculate_flood_forecasts(
     )
 
     # Slice NetCDF files to country bounds once before processing stations
-    country_sliced_netcdf_paths: list[str] = []
-    for netcdf_path in glofas_netcdf_paths:
-        archivable_output_path = get_glofas_country_split_path(country, netcdf_path)
-        country_sliced_path = slice_netcdf_to_bounds(
-            netcdf_path,
-            country_bounds,
-            archivable_output_path,
-        )
-        country_sliced_netcdf_paths.append(country_sliced_path)
+    # When using --local-data, files are already country-split so skip slicing
+    if data_provider.local_data:
+        country_sliced_netcdf_paths = glofas_netcdf_paths
+    else:
+        country_sliced_netcdf_paths: list[str] = []
+        for netcdf_path in glofas_netcdf_paths:
+            archivable_output_path = get_glofas_country_split_path(country, netcdf_path)
+            country_sliced_path = slice_netcdf_to_bounds(
+                netcdf_path,
+                country_bounds,
+                archivable_output_path,
+            )
+            country_sliced_netcdf_paths.append(country_sliced_path)
 
     ### Step 3 - Loop through alert configs (spatial extents / stations) ###
     # REQUIRED: loop over spatial extents (alert configs)

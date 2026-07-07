@@ -130,6 +130,33 @@ def find_latest_forecast_date_in_cache(subdir: str) -> str | None:
     return date_dirs[0]
 
 
+def get_cached_glofas_country_split_files(
+    country: str, forecast_date: str
+) -> list[str] | None:
+    """
+    Return cached country-split GloFAS NetCDF files for the given country and
+    forecast_date. Returns None if none exist.
+    """
+    cache_base = os.environ.get("DATA_CACHE_DIR")
+    if not cache_base:
+        return None
+    cache_dir = os.path.join(cache_base, GLOFAS_COUNTRY_SPLIT_DATA_DIR, forecast_date)
+    if not os.path.isdir(cache_dir):
+        return None
+
+    suffix = f"_sliced_{country}{GLOFAS_FILE_SUFFIX}"
+    files = [
+        os.path.join(cache_dir, name)
+        for name in sorted(os.listdir(cache_dir))
+        if name.endswith(suffix) and os.path.getsize(os.path.join(cache_dir, name)) > 0
+    ]
+
+    if not files:
+        return None
+
+    return files
+
+
 def archive_alert_glofas_files(country_sliced_netcdf_paths: list[str]) -> None:
     """
     Archive country-sliced GloFAS NetCDF files to alert storage with longer retention.

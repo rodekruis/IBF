@@ -33,13 +33,13 @@ class DataProvider:
     def __init__(
         self,
         api_client: ApiClient,
-        cached_data: bool = False,
-        cache_date: str | None = None,
+        local_data: bool = False,
+        local_data_date: str | None = None,
     ) -> None:
         self.loaded_data: dict[DataSource, LoadedDataSource] = {}
         self.api_client = api_client
-        self.cached_data = cached_data
-        self.cache_date = cache_date
+        self.local_data = local_data
+        self.local_data_date = local_data_date
 
     def try_load_data(self, country_config: CountryRunConfig) -> tuple[bool, list[str]]:
         """Load all data sources for a country.
@@ -66,8 +66,8 @@ class DataProvider:
                     source_config,
                     data_container,
                     api_client=self.api_client,
-                    cache_date=self.cache_date,
-                    cached_data=self.cached_data,
+                    local_data_date=self.local_data_date,
+                    local_data=self.local_data,
                 )
             except Exception as exc:
                 data_container.error = str(exc)

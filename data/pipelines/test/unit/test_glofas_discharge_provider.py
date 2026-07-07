@@ -17,6 +17,7 @@ from pipelines.infra.utils.storage_helpers import (
     find_latest_forecast_date_in_cache,
     get_cached_glofas_files,
     get_glofas_raw_data_dir,
+    GLOFAS_COUNTRY_SPLIT_DATA_DIR,
     GLOFAS_RAW_DATA_DIR,
 )
 
@@ -36,6 +37,26 @@ def _write_cached_files(
         path = cache_dir / f"dis_{ensemble_index:02d}_{forecast_date}00.nc"
         # Write content to the file since empty files are ignored.
         path.write_bytes(b"fake_NetCDF_content")
+        paths.append(str(path))
+    return sorted(paths)
+
+
+def _write_country_split_files(
+    cache_base: Path,
+    forecast_date: str,
+    country: str,
+    count: int,
+) -> list[str]:
+    """Create `count` non-empty country-split NetCDF files for `forecast_date`."""
+    cache_dir = cache_base / GLOFAS_COUNTRY_SPLIT_DATA_DIR / forecast_date
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    paths: list[str] = []
+    for ensemble_index in range(count):
+        path = (
+            cache_dir
+            / f"dis_{ensemble_index:02d}_{forecast_date}00_sliced_{country}.nc"
+        )
+        path.write_bytes(b"fake_sliced_NetCDF_content")
         paths.append(str(path))
     return sorted(paths)
 
@@ -222,7 +243,7 @@ def test_load_from_cache_with_explicit_date(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
-    expected = _write_cached_files(tmp_path, FORECAST_DATE, count=3)
+    expected = _write_country_split_files(tmp_path, FORECAST_DATE, "KEN", count=3)
 
     result = load_glofas_discharge_from_cache("KEN", FORECAST_DATE)
 
@@ -233,7 +254,7 @@ def test_load_from_cache_succeeds_with_single_file(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
-    expected = _write_cached_files(tmp_path, FORECAST_DATE, count=1)
+    expected = _write_country_split_files(tmp_path, FORECAST_DATE, "KEN", count=1)
 
     result = load_glofas_discharge_from_cache("KEN", FORECAST_DATE)
 
@@ -244,8 +265,8 @@ def test_load_from_cache_auto_detects_latest_date(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
-    _write_cached_files(tmp_path, "20260320", count=5)
-    expected = _write_cached_files(tmp_path, "20260325", count=3)
+    _write_country_split_files(tmp_path, "20260320", "KEN", count=5)
+    expected = _write_country_split_files(tmp_path, "20260325", "KEN", count=3)
 
     result = load_glofas_discharge_from_cache("KEN", None)
 
@@ -257,7 +278,9 @@ def test_load_from_cache_raises_when_no_cache_exists(
 ) -> None:
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
 
-    with pytest.raises(FileNotFoundError, match="No cached raw GloFAS data found"):
+    with pytest.raises(
+        FileNotFoundError, match="No cached country-split GloFAS data found"
+    ):
         load_glofas_discharge_from_cache("KEN", None)
 
 
@@ -266,7 +289,9 @@ def test_load_from_cache_raises_for_nonexistent_date(
 ) -> None:
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
 
-    with pytest.raises(FileNotFoundError, match="No cached raw GloFAS files found"):
+    with pytest.raises(
+        FileNotFoundError, match="No cached country-split GloFAS files found"
+    ):
         load_glofas_discharge_from_cache("KEN", "20260101")
 
 

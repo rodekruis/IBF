@@ -51,8 +51,8 @@ def load_data_container(
     data_config: DataSourceConfig,
     container: LoadedDataSource,
     api_client: ApiClient,
-    cache_date: str | None = None,
-    cached_data: bool = False,
+    local_data_date: str | None = None,
+    local_data: bool = False,
 ):
 
     match data_config.source:
@@ -84,7 +84,7 @@ def load_data_container(
             )
         case DataSource.GLOFAS_DISCHARGE_FTP:
             return _load_glofas_discharge(
-                data_config, container, cache_date, cached_data
+                data_config, container, local_data_date, local_data
             )
         case DataSource.GLOFAS_DISCHARGE_SEED_REPO_ALERT:
             return _load_glofas_discharge_seed_repo(data_config, container, "alert")
@@ -259,13 +259,13 @@ def _validate_station_thresholds(
 def _load_glofas_discharge(
     config: DataSourceConfig,
     container: LoadedDataSource,
-    cache_date: str | None,
-    cached_data: bool,
+    local_data_date: str | None,
+    local_data: bool,
 ) -> None:
     container.data_type = DataType.PATH_LIST
-    if cached_data:
+    if local_data:
         container.data = load_glofas_discharge_from_cache(
-            config.country_code_iso_3, cache_date
+            config.country_code_iso_3, local_data_date
         )
     else:
         container.data = download_glofas_discharge_from_ftp(config.country_code_iso_3)

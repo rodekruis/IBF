@@ -12,7 +12,7 @@ _data_sources: &data_sources
   - source: population_ibf_api
   - source: flood_extents_seed_repo
   - source: glofas_discharge_ftp
-    source_target: live # production (GloFAS FTP), or local cache with --cached-data
+    source_target: live # production (GloFAS FTP), or local cache with --local-data
   - source: glofas_discharge_seed_repo_alert # over-threshold mock seed
     source_target: mock_alert # --mock 1
   - source: glofas_discharge_seed_repo_no_alert # under-threshold mock seed
