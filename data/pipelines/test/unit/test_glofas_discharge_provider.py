@@ -8,8 +8,10 @@ import pytest
 from pipelines.infra.data_types.glofas_discharge_provider import (
     _validate_ensemble_count,
     GLOFAS_MIN_ENSEMBLE_COUNT,
+    load_glofas_discharge_from_cache,
 )
 from pipelines.infra.utils.storage_helpers import (
+    find_latest_forecast_date_in_cache,
     get_cached_glofas_files,
     get_glofas_raw_data_dir,
     GLOFAS_RAW_DATA_DIR,
@@ -151,3 +153,115 @@ def test_raw_data_dir_raises_when_cache_dir_env_unset(
 
     with pytest.raises(ValueError, match="DATA_CACHE_DIR"):
         get_glofas_raw_data_dir(FORECAST_DATE)
+
+
+# ---------------------------------------------------------------------------
+# find_latest_forecast_date_in_cache
+# ---------------------------------------------------------------------------
+
+
+def test_find_latest_returns_most_recent_date(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+    raw_dir = tmp_path / GLOFAS_RAW_DATA_DIR
+    (raw_dir / "20260320").mkdir(parents=True)
+    (raw_dir / "20260325").mkdir(parents=True)
+    (raw_dir / "20260322").mkdir(parents=True)
+
+    result = find_latest_forecast_date_in_cache(GLOFAS_RAW_DATA_DIR)
+
+    assert result == "20260325"
+
+
+def test_find_latest_ignores_non_date_dirs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+    raw_dir = tmp_path / GLOFAS_RAW_DATA_DIR
+    (raw_dir / "20260320").mkdir(parents=True)
+    (raw_dir / "not_a_date").mkdir(parents=True)
+    (raw_dir / "readme.txt").parent.mkdir(parents=True, exist_ok=True)
+    (raw_dir / "readme.txt").write_text("ignore")
+
+    result = find_latest_forecast_date_in_cache(GLOFAS_RAW_DATA_DIR)
+
+    assert result == "20260320"
+
+
+def test_find_latest_returns_none_when_empty(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+    (tmp_path / GLOFAS_RAW_DATA_DIR).mkdir(parents=True)
+
+    result = find_latest_forecast_date_in_cache(GLOFAS_RAW_DATA_DIR)
+
+    assert result is None
+
+
+def test_find_latest_returns_none_when_dir_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+
+    result = find_latest_forecast_date_in_cache(GLOFAS_RAW_DATA_DIR)
+
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
+# load_glofas_discharge_from_cache
+# ---------------------------------------------------------------------------
+
+
+def test_load_from_cache_with_explicit_date(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+    expected = _write_cached_files(tmp_path, FORECAST_DATE, count=3)
+
+    result = load_glofas_discharge_from_cache("KEN", FORECAST_DATE)
+
+    assert result == expected
+
+
+def test_load_from_cache_succeeds_with_single_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+    expected = _write_cached_files(tmp_path, FORECAST_DATE, count=1)
+
+    result = load_glofas_discharge_from_cache("KEN", FORECAST_DATE)
+
+    assert result == expected
+
+
+def test_load_from_cache_auto_detects_latest_date(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+    _write_cached_files(tmp_path, "20260320", count=5)
+    expected = _write_cached_files(tmp_path, "20260325", count=3)
+
+    result = load_glofas_discharge_from_cache("KEN", None)
+
+    assert result == expected
+
+
+def test_load_from_cache_raises_when_no_cache_exists(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+
+    with pytest.raises(FileNotFoundError, match="No cached raw GloFAS data found"):
+        load_glofas_discharge_from_cache("KEN", None)
+
+
+def test_load_from_cache_raises_for_nonexistent_date(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+
+    with pytest.raises(FileNotFoundError, match="No cached raw GloFAS files found"):
+        load_glofas_discharge_from_cache("KEN", "20260101")

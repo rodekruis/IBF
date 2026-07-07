@@ -59,8 +59,14 @@ def _run_country(
     output_mode: OutputMode,
     output_path: str,
     api_client: ApiClient,
+    cached_data: bool = False,
+    cache_date: str | None = None,
 ) -> list[str]:
-    data_provider = DataProvider(api_client)
+    data_provider = DataProvider(
+        api_client,
+        cached_data=cached_data,
+        cache_date=cache_date,
+    )
     load_success, load_errors = data_provider.try_load_data(country)
     if not load_success:
         return load_errors
@@ -144,6 +150,8 @@ def run_forecasts(
     country_filter: list[str] | None = None,
     output_mode: OutputMode = OutputMode.API,
     output_path: str = DEFAULT_OUTPUT_PATH,
+    cached_data: bool = False,
+    cache_date: str | None = None,
 ) -> list[str]:
     _register_hazard_functions()
 
@@ -166,6 +174,12 @@ def run_forecasts(
     if isinstance(countries, str):
         logger.error(countries)
         return [countries]
+
+    if cached_data and hazard_type != HazardType.FLOODS:
+        logger.warning(
+            f"--cached-data is currently only supported for floods. "
+            f"Flag will be ignored for '{hazard_type}'."
+        )
 
     all_errors: list[str] = []
 
@@ -195,6 +209,8 @@ def run_forecasts(
             output_mode,
             output_path,
             api_client,
+            cached_data=cached_data,
+            cache_date=cache_date,
         )
         if errors:
             logger.error(f"Errors for '{country.country_code_iso_3}': {errors}")
@@ -261,6 +277,30 @@ def run_forecasts(
     show_default=True,
     help="Base directory for local output (used when --output-mode is 'local').",
 )
+@click.option(
+    "--cached-data",
+    "cached_data",
+    is_flag=True,
+    default=False,
+    help=(
+        "Use locally cached forecast data instead of downloading. "
+        "Currently only supported for floods (GloFAS). "
+        "Loads previously downloaded raw files from DATA_CACHE_DIR. "
+        "Mutually exclusive with --mock."
+    ),
+)
+@click.option(
+    "--cache-date",
+    "cache_date",
+    default=None,
+    help=(
+        "Date (YYYYMMDD) identifying which cached GloFAS data to use. "
+        "Refers to the forecast date subfolder in DATA_CACHE_DIR/glofas/raw/. "
+        "If omitted, uses the most recent available date. "
+        "Requires --cached-data. "
+        "Not to be confused with --issued-at which controls the metadata timestamp."
+    ),
+)
 def main(
     config_path: str,
     mock: int | None,
@@ -269,6 +309,8 @@ def main(
     country_filter: str | None,
     output_mode_str: str,
     output_path: str,
+    cached_data: bool,
+    cache_date: str | None,
 ) -> None:
     load_dotenv()
     logging.basicConfig(
@@ -283,6 +325,16 @@ def main(
 
     if mock is not None and env.is_production:
         raise click.UsageError("--mock is not allowed in production")
+    if cached_data and env.is_production:
+        raise click.UsageError("--cached-data is not allowed in production")
+    if cached_data and mock is not None:
+        raise click.UsageError("--cached-data and --mock are mutually exclusive")
+    if cache_date is not None and not cached_data:
+        raise click.UsageError("--cache-date requires --cached-data")
+    if cache_date is not None and len(cache_date) != 8:
+        raise click.UsageError(
+            f"--cache-date must be YYYYMMDD format (got '{cache_date}')"
+        )
     if infra_only and mock is None:
         raise click.UsageError("--infra-only requires --mock")
     if mock is not None and not infra_only and mock not in (0, 1):
@@ -290,8 +342,8 @@ def main(
             f"--mock must be 0 or 1 without --infra-only (got {mock}); "
             "use --infra-only to generate more than one alert"
         )
-    if issued_at_str and mock is None:
-        raise click.UsageError("--issued-at requires --mock")
+    if issued_at_str and mock is None and not cached_data:
+        raise click.UsageError("--issued-at requires --mock or --cached-data")
 
     issued_at: datetime | None = None
     if issued_at_str:
@@ -312,6 +364,8 @@ def main(
         country_filter=parsed_countries,
         output_mode=OutputMode(output_mode_str),
         output_path=output_path,
+        cached_data=cached_data,
+        cache_date=cache_date,
     )
     if errors:
         logger.error(f"Pipeline finished with {len(errors)} error(s)")

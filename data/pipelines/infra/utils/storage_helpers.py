@@ -106,6 +106,30 @@ def get_cached_glofas_files(forecast_date: str) -> list[str] | None:
     return files
 
 
+def find_latest_forecast_date_in_cache(subdir: str) -> str | None:
+    """
+    Find the most recent forecast_date folder inside DATA_CACHE_DIR/{subdir}.
+    Returns the date string (YYYYMMDD) or None if no dated folders exist.
+    """
+    cache_base = os.environ.get("DATA_CACHE_DIR")
+    if not cache_base:
+        return None
+    parent_dir = os.path.join(cache_base, subdir)
+    if not os.path.isdir(parent_dir):
+        return None
+
+    date_dirs = [
+        name
+        for name in sorted(os.listdir(parent_dir), reverse=True)
+        if os.path.isdir(os.path.join(parent_dir, name))
+        and name.isdigit()
+        and len(name) == 8
+    ]
+    if not date_dirs:
+        return None
+    return date_dirs[0]
+
+
 def archive_alert_glofas_files(country_sliced_netcdf_paths: list[str]) -> None:
     """
     Archive country-sliced GloFAS NetCDF files to alert storage with longer retention.

@@ -10,9 +10,11 @@ from datetime import datetime, timedelta, timezone
 from pipelines.flood.constants import GLOFAS_MIN_ENSEMBLE_COUNT
 from pipelines.infra.utils.nrw_logger import log_with_tag, LogTag
 from pipelines.infra.utils.storage_helpers import (
+    find_latest_forecast_date_in_cache,
     get_cached_glofas_files,
     get_glofas_mock_data_dir,
     get_glofas_raw_data_dir,
+    GLOFAS_RAW_DATA_DIR,
 )
 
 logger = logging.getLogger(__name__)
@@ -157,6 +159,39 @@ def download_glofas_discharge_from_seed_repo(
 
     logger.info(f"Downloaded GloFAS mock discharge to {local_path}")
     return [local_path]
+
+
+def load_glofas_discharge_from_cache(country: str, cache_date: str | None) -> list[str]:
+    """
+    Load previously downloaded raw GloFAS discharge files from local cache.
+
+    Unlike the FTP download path, this does NOT enforce the minimum ensemble
+    count. Developers can run with even a single cached file for fast iteration.
+
+    If cache_date is None, uses the most recent cached date.
+    Raises FileNotFoundError if no cached data is found.
+    """
+    if cache_date is None:
+        cache_date = find_latest_forecast_date_in_cache(GLOFAS_RAW_DATA_DIR)
+        if cache_date is None:
+            raise FileNotFoundError(
+                "No cached raw GloFAS data found. "
+                "Run a live download first or specify --cache-date."
+            )
+        logger.info(f"Using most recent cached raw data: {cache_date}")
+
+    cached_files = get_cached_glofas_files(cache_date)
+    if cached_files is None or len(cached_files) == 0:
+        raise FileNotFoundError(
+            f"No cached raw GloFAS files found for date {cache_date}. "
+            f"Available data can be found in DATA_CACHE_DIR/glofas/raw/."
+        )
+
+    logger.info(
+        f"Loaded {len(cached_files)} cached raw GloFAS files for {cache_date} "
+        f"(country: {country})"
+    )
+    return cached_files
 
 
 def _validate_ensemble_count(files: list[str], forecast_date: str) -> None:
