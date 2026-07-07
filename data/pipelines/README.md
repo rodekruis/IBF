@@ -38,9 +38,39 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --country ETH --moc
 | `--country`     | _(optional)_ ISO3 country code to run a single country instead of all configured countries                                                                                                                           |
 | `--output-mode` | _(optional)_ Where to send pipeline results: `api` submits to the IBF API, `local` writes to disk. Default `api`.                                                                                                    |
 | `--output-path` | _(optional)_ Base directory for local output (used when `--output-mode` is `local`). Default `pipelines/output`.                                                                                                     |
+| `--cached-data` | _(optional)_ Use locally cached forecast data instead of downloading. Currently only supported for floods. Mutually exclusive with `--mock`.                                                                         |
+| `--cache-date`  | _(optional)_ Date (`YYYYMMDD`) identifying which cached data to use. Requires `--cached-data`. If omitted, uses the most recent available date.                                                                      |
 
 > `--mock` values greater than `1` require `--infra-only`, because the mock forecast
 > path only has seed discharge data for the no-alert (`0`) and alert (`1`) cases.
+
+### Using cached data for local debugging
+
+The `--cached-data` flag lets you re-run the pipeline using previously downloaded GloFAS data,
+without needing FTP access or waiting for a fresh download. This is useful when:
+
+- Iterating on forecast logic locally
+- Running offline without FTP credentials
+- Reproducing results from a specific date
+
+```bash
+# First, run live once to populate the cache (requires FTP credentials)
+uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN
+
+# Re-run using the most recent cached data (no FTP needed)
+uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN --cached-data
+
+# Use cached data from a specific date
+uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN --cached-data --cache-date 20260701
+```
+
+Cached raw files are stored at `DATA_CACHE_DIR/glofas/raw/{date}/`. The minimum ensemble
+count (34) is **not** enforced for cached data — you can run with even a single file for
+fast iteration.
+
+> **Note:** `--cache-date` refers to which date's data files to load from disk.
+> This is different from `--issued-at`, which overrides the metadata timestamp recorded
+> in the API.
 
 ### `--mock` and `--infra-only` flows
 
