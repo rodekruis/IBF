@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -306,9 +307,6 @@ def test_highest_ensemble_index_ignores_unparsable_names() -> None:
 # ---------------------------------------------------------------------------
 
 
-from unittest.mock import MagicMock, patch
-
-
 def _mock_ftp_with_dates(available_dates: list[str]) -> MagicMock:
     mock_ftp = MagicMock()
     mock_ftp.nlst.return_value = available_dates
@@ -398,5 +396,5 @@ def test_resolve_forecast_date_fails_after_retries_exhausted_in_production(
     ):
         mock_connect.return_value = _mock_ftp_with_dates(["20260705", "20260706"])
 
-        with pytest.raises(FileNotFoundError, match="after 11 attempts"):
+        with pytest.raises(FileNotFoundError, match="after 14 attempts"):
             _resolve_forecast_date("20260707", "user", "pass", "host")

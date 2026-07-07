@@ -340,9 +340,14 @@ def _check_forecast_date_available(
 ) -> str:
     """Check if today's data is available on FTP. Fails immediately if not."""
     ftp = _connect_ftp(host, user, password, timeout=15)
-    ftp.cwd(GLOFAS_FTP_BASE_PATH)
-    available_dates = sorted(ftp.nlst())
-    ftp.quit()
+    try:
+        ftp.cwd(GLOFAS_FTP_BASE_PATH)
+        available_dates = sorted(ftp.nlst())
+    finally:
+        try:
+            ftp.quit()
+        except ftplib.all_errors:
+            ftp.close()
 
     if today in available_dates:
         return today
@@ -358,16 +363,21 @@ def _resolve_forecast_date_with_retry(
     today: str, user: str, password: str, host: str
 ) -> str:
     """Retry with exponential backoff until today's data appears on FTP."""
-    max_retries = 10
+    max_retries = 13
     base_delay_seconds = 60.0
-    max_delay_seconds = 900.0  # cap at 15 minutes between retries (~2.5h total)
+    max_delay_seconds = 900.0  # cap at 15 minutes between retries (~2h30m total)
 
     available_dates: list[str] = []
     for attempt in range(max_retries + 1):
         ftp = _connect_ftp(host, user, password, timeout=15)
-        ftp.cwd(GLOFAS_FTP_BASE_PATH)
-        available_dates = sorted(ftp.nlst())
-        ftp.quit()
+        try:
+            ftp.cwd(GLOFAS_FTP_BASE_PATH)
+            available_dates = sorted(ftp.nlst())
+        finally:
+            try:
+                ftp.quit()
+            except ftplib.all_errors:
+                ftp.close()
 
         if today in available_dates:
             return today
