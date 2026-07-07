@@ -9,7 +9,13 @@ from datetime import datetime, timezone
 
 from pipelines.flood.constants import GLOFAS_MIN_ENSEMBLE_COUNT
 from pipelines.infra.environment import load_environment_settings
-from pipelines.infra.utils.nrw_logger import log_with_tag, LogTag
+from pipelines.infra.utils.nrw_logger import (
+    log_error,
+    log_info,
+    log_warning,
+    log_with_tag,
+    LogTag,
+)
 from pipelines.infra.utils.storage_helpers import (
     find_latest_forecast_date_in_cache,
     get_cached_glofas_country_split_files,
@@ -84,8 +90,10 @@ def _try_reuse_existing_download(forecast_date: str) -> list[str] | None:
     """Return previously downloaded files if a complete set exists, otherwise None."""
     existing_files = get_cached_glofas_files(forecast_date)
     if existing_files is not None and len(existing_files) >= GLOFAS_MIN_ENSEMBLE_COUNT:
-        logger.info(
-            f"Reusing {len(existing_files)} previously downloaded GloFAS ensemble files for {forecast_date}"
+        log_info(
+            logger,
+            LogTag.INFRA,
+            f"Reusing {len(existing_files)} previously downloaded GloFAS ensemble files for {forecast_date}",
         )
         return existing_files
     return None
@@ -105,10 +113,12 @@ def _get_download_resume_index(forecast_date: str) -> int:
         return 0
 
     highest_index = _get_highest_ensemble_index(existing_files)
-    logger.info(
+    log_info(
+        logger,
+        LogTag.INFRA,
         f"Found {len(existing_files)} previously downloaded GloFAS ensemble files for {forecast_date}, "
         f"below minimum of {GLOFAS_MIN_ENSEMBLE_COUNT}. "
-        f"Resuming download from ensemble index {highest_index + 1}."
+        f"Resuming download from ensemble index {highest_index + 1}.",
     )
     return highest_index + 1
 
@@ -140,8 +150,10 @@ def _download_ensemble_files(
             ensemble_label = f"{ensemble_index:02d}"
             filename = f"dis_{ensemble_label}_{forecast_date}00.nc"
 
-            logger.info(
-                f"Downloading GloFAS ensemble {ensemble_label}/{ensemble_count} for {country}"
+            log_info(
+                logger,
+                LogTag.INFRA,
+                f"Downloading GloFAS ensemble {ensemble_label}/{ensemble_count} for {country}",
             )
 
             content, ftp = _download_ftp_file(
@@ -167,8 +179,10 @@ def _download_ensemble_files(
         f"in {download_duration_seconds:.1f}s",
     )
 
-    logger.info(
-        f"Downloaded {len(downloaded_paths)} GloFAS ensemble files to {output_dir}"
+    log_info(
+        logger,
+        LogTag.INFRA,
+        f"Downloaded {len(downloaded_paths)} GloFAS ensemble files to {output_dir}",
     )
     return downloaded_paths
 
@@ -194,7 +208,7 @@ def download_glofas_discharge_from_seed_repo(
     filename = f"{country}_glofas_discharge_{mock_variant}.nc"
     url = f"{base_url}/pipelines/mock-data/floods/glofas-discharge/{filename}"
 
-    logger.info(f"Downloading GloFAS mock discharge from {url}")
+    log_info(logger, LogTag.INFRA, f"Downloading GloFAS mock discharge from {url}")
 
     from shared.download_helpers import download_object
 
@@ -209,7 +223,7 @@ def download_glofas_discharge_from_seed_repo(
     with open(local_path, "wb") as f:
         f.write(content)
 
-    logger.info(f"Downloaded GloFAS mock discharge to {local_path}")
+    log_info(logger, LogTag.INFRA, f"Downloaded GloFAS mock discharge to {local_path}")
     return [local_path]
 
 
@@ -235,7 +249,9 @@ def load_glofas_discharge_from_local_global_files(
                 "No locally cached raw GloFAS data found. "
                 "Run a live pipeline first or specify --local-data-date."
             )
-        logger.info(f"Using most recent local raw data: {local_data_date}")
+        log_info(
+            logger, LogTag.INFRA, f"Using most recent local raw data: {local_data_date}"
+        )
 
     cached_files = get_cached_glofas_files(local_data_date)
     if cached_files is None or len(cached_files) == 0:
@@ -244,9 +260,11 @@ def load_glofas_discharge_from_local_global_files(
             f"Available data can be found in DATA_CACHE_DIR/glofas/raw/."
         )
 
-    logger.info(
+    log_info(
+        logger,
+        LogTag.INFRA,
         f"Loaded {len(cached_files)} local raw GloFAS files for {local_data_date} "
-        f"(country: {country})"
+        f"(country: {country})",
     )
     return cached_files
 
@@ -275,7 +293,11 @@ def load_glofas_discharge_from_local_country_files(
                 "No locally cached country-split GloFAS data found. "
                 "Run a live pipeline first or specify --local-data-date."
             )
-        logger.info(f"Using most recent local country-split data: {local_data_date}")
+        log_info(
+            logger,
+            LogTag.INFRA,
+            f"Using most recent local country-split data: {local_data_date}",
+        )
 
     cached_files = get_cached_glofas_country_split_files(country, local_data_date)
     if cached_files is None or len(cached_files) == 0:
@@ -286,9 +308,11 @@ def load_glofas_discharge_from_local_country_files(
             f"DATA_CACHE_DIR/glofas/country_split/."
         )
 
-    logger.info(
+    log_info(
+        logger,
+        LogTag.INFRA,
         f"Loaded {len(cached_files)} local country-split GloFAS files "
-        f"for {country} on {local_data_date}"
+        f"for {country} on {local_data_date}",
     )
     return cached_files
 
@@ -346,8 +370,10 @@ def _download_ftp_file(
         except ftplib.error_perm as exc:
             raise FileNotFoundError(f"FTP server rejected '{filename}': {exc}") from exc
         except ftplib.all_errors as exc:
-            logger.error(
-                f"Attempt {attempt}/{max_retries} failed for '{filename}': {exc}"
+            log_error(
+                logger,
+                LogTag.INFRA,
+                f"Attempt {attempt}/{max_retries} failed for '{filename}': {exc}",
             )
             if attempt == max_retries:
                 raise ConnectionError(
@@ -435,10 +461,12 @@ def _resolve_forecast_date_with_retry(
             break
 
         delay = min(base_delay_seconds * (2**attempt), max_delay_seconds)
-        logger.warning(
+        log_warning(
+            logger,
+            LogTag.INFRA,
             f"GloFAS data for {today} not yet available "
             f"(attempt {attempt + 1}/{max_retries + 1}). "
-            f"Retrying in {delay:.0f}s..."
+            f"Retrying in {delay:.0f}s...",
         )
         time.sleep(delay)
 

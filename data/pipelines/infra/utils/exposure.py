@@ -5,10 +5,13 @@ import logging
 import numpy as np
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
+from pipelines.infra.utils.nrw_logger import log_warning, LogTag
 from rasterio.features import geometry_mask
 from rasterio.transform import from_bounds
 from rasterio.windows import from_bounds as window_from_bounds
 from rasterstats import zonal_stats
+
+logger = logging.getLogger(__name__)
 
 
 def aggregate_population_exposed(
@@ -59,8 +62,10 @@ def clip_raster_to_admin_areas(
     )
 
     if not geometries:
-        logging.warning(
-            f"No admin area geometries to clip{f' for {label}' if label else ''}; using full raster"
+        log_warning(
+            logger,
+            LogTag.INFRA,
+            f"No admin area geometries to clip{f' for {label}' if label else ''}; using full raster",
         )
         return raster
 

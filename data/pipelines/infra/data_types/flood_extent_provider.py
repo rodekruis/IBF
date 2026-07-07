@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 from pipelines.infra.data_types.loaded_data_types import RasterData
+from pipelines.infra.utils.nrw_logger import log_info, LogTag
 from rasterio.transform import Affine
 from shared.download_helpers import download_json_source, download_object
 from shared.image_helpers import rgba_png_to_float_array
@@ -52,7 +53,7 @@ class FloodExtentProvider:
         crs = json_data["crs"]
         nodata = json_data["nodata"]
 
-        logger.info(f"Downloaded and decoded flood extent '{key}'")
+        log_info(logger, LogTag.INFRA, f"Downloaded and decoded flood extent '{key}'")
         return RasterData(
             array=float_array.astype(np.float32),
             transform=transform,

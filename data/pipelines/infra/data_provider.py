@@ -23,6 +23,7 @@ from pipelines.infra.data_types.loaded_data_types import (
 )
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.data_provider_fetchers import load_data_container
+from pipelines.infra.utils.nrw_logger import log_error, LogTag
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ class DataProvider:
                     f"Failed to load data source '{source_config.source}'"
                     f" for {country_name}: {exc}"
                 )
-                logger.error(error_msg)
+                log_error(logger, LogTag.INFRA, error_msg)
                 errors.append(error_msg)
 
             self.loaded_data[source_config.source] = data_container

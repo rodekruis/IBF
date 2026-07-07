@@ -24,6 +24,7 @@ from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.exposure import aggregate_population_exposed
+from pipelines.infra.utils.nrw_logger import log_info, log_warning, LogTag
 from pipelines.infra.utils.raster import (
     get_bounding_box,
     get_raster_extent,
@@ -34,6 +35,8 @@ from pipelines.infra.utils.storage_helpers import (
     archive_alert_glofas_files,
     get_glofas_country_split_path,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_flood_forecasts(
@@ -108,7 +111,11 @@ def calculate_flood_forecasts(
         station_code = config.spatial_extent_name
         station = glofas_stations.get(station_code)
         if station is None:
-            logging.warning(f"No station location found for '{station_code}', skipping")
+            log_warning(
+                logger,
+                LogTag.FLOOD_LOGIC,
+                f"No station location found for '{station_code}', skipping",
+            )
             continue
 
         # REQUIRED: loop over temporal extents (even though there is just one temporal extent for floods - the extent of all lead times - stick to the generic pattern of looping over temporal extents defined in the alert config
@@ -129,7 +136,9 @@ def calculate_flood_forecasts(
 
             # If no time intervals exceeded the minimum return period threshold, skip to the next temporal extent
             if not time_interval_severities:
-                logging.info(f"No alerts for station {station_code}")
+                log_info(
+                    logger, LogTag.FLOOD_LOGIC, f"No alerts for station {station_code}"
+                )
                 continue
 
             ### Step 5 - Compute flood extent
@@ -147,7 +156,11 @@ def calculate_flood_forecasts(
             )
 
             if not place_codes_exposed or clipped_flood_extent is None:
-                logging.info(f"No place codes for station {station_code}")
+                log_info(
+                    logger,
+                    LogTag.FLOOD_LOGIC,
+                    f"No place codes for station {station_code}",
+                )
                 continue
 
             ### Step 7 - Compute exposure within the flood extent ###
