@@ -19,6 +19,8 @@ from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.glofas_discharge_provider import (
     download_glofas_discharge_from_ftp,
     download_glofas_discharge_from_seed_repo,
+    load_glofas_discharge_from_local_country_files,
+    load_glofas_discharge_from_local_global_files,
 )
 from pipelines.infra.data_types.loaded_data_types import (
     DataType,
@@ -50,6 +52,8 @@ def load_data_container(
     data_config: DataSourceConfig,
     container: LoadedDataSource,
     api_client: ApiClient,
+    local_data_date: str | None = None,
+    local_data: str | None = None,
 ):
 
     match data_config.source:
@@ -80,7 +84,9 @@ def load_data_container(
                 data_config,
             )
         case DataSource.GLOFAS_DISCHARGE_FTP:
-            return _load_glofas_discharge_ftp(data_config, container)
+            return _load_glofas_discharge(
+                data_config, container, local_data_date, local_data
+            )
         case DataSource.GLOFAS_DISCHARGE_SEED_REPO_ALERT:
             return _load_glofas_discharge_seed_repo(data_config, container, "alert")
         case DataSource.GLOFAS_DISCHARGE_SEED_REPO_NO_ALERT:
@@ -251,11 +257,23 @@ def _validate_station_thresholds(
         )
 
 
-def _load_glofas_discharge_ftp(
-    config: DataSourceConfig, container: LoadedDataSource
+def _load_glofas_discharge(
+    config: DataSourceConfig,
+    container: LoadedDataSource,
+    local_data_date: str | None,
+    local_data: str | None,
 ) -> None:
     container.data_type = DataType.PATH_LIST
-    container.data = download_glofas_discharge_from_ftp(config.country_code_iso_3)
+    if local_data == "global":
+        container.data = load_glofas_discharge_from_local_global_files(
+            config.country_code_iso_3, local_data_date
+        )
+    elif local_data == "country":
+        container.data = load_glofas_discharge_from_local_country_files(
+            config.country_code_iso_3, local_data_date
+        )
+    else:
+        container.data = download_glofas_discharge_from_ftp(config.country_code_iso_3)
 
 
 def _load_glofas_discharge_seed_repo(

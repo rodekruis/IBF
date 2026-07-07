@@ -30,9 +30,16 @@ _T = TypeVar("_T")
 
 
 class DataProvider:
-    def __init__(self, api_client: ApiClient) -> None:
+    def __init__(
+        self,
+        api_client: ApiClient,
+        local_data: str | None = None,
+        local_data_date: str | None = None,
+    ) -> None:
         self.loaded_data: dict[DataSource, LoadedDataSource] = {}
         self.api_client = api_client
+        self.local_data = local_data
+        self.local_data_date = local_data_date
 
     def try_load_data(self, country_config: CountryRunConfig) -> tuple[bool, list[str]]:
         """Load all data sources for a country.
@@ -59,6 +66,8 @@ class DataProvider:
                     source_config,
                     data_container,
                     api_client=self.api_client,
+                    local_data_date=self.local_data_date,
+                    local_data=self.local_data,
                 )
             except Exception as exc:
                 data_container.error = str(exc)

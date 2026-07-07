@@ -59,8 +59,14 @@ def _run_country(
     output_mode: OutputMode,
     output_path: str,
     api_client: ApiClient,
+    local_data: str | None = None,
+    local_data_date: str | None = None,
 ) -> list[str]:
-    data_provider = DataProvider(api_client)
+    data_provider = DataProvider(
+        api_client,
+        local_data=local_data,
+        local_data_date=local_data_date,
+    )
     load_success, load_errors = data_provider.try_load_data(country)
     if not load_success:
         return load_errors
@@ -144,6 +150,8 @@ def run_forecasts(
     country_filter: list[str] | None = None,
     output_mode: OutputMode = OutputMode.API,
     output_path: str = DEFAULT_OUTPUT_PATH,
+    local_data: str | None = None,
+    local_data_date: str | None = None,
 ) -> list[str]:
     _register_hazard_functions()
 
@@ -166,6 +174,12 @@ def run_forecasts(
     if isinstance(countries, str):
         logger.error(countries)
         return [countries]
+
+    if local_data and hazard_type != HazardType.FLOODS:
+        logger.warning(
+            f"--local-data is currently only supported for floods. "
+            f"Flag will be ignored for '{hazard_type}'."
+        )
 
     all_errors: list[str] = []
 
@@ -195,6 +209,8 @@ def run_forecasts(
             output_mode,
             output_path,
             api_client,
+            local_data=local_data,
+            local_data_date=local_data_date,
         )
         if errors:
             logger.error(f"Errors for '{country.country_code_iso_3}': {errors}")
@@ -261,6 +277,31 @@ def run_forecasts(
     show_default=True,
     help="Base directory for local output (used when --output-mode is 'local').",
 )
+@click.option(
+    "--local-data",
+    "local_data",
+    type=click.Choice(["global", "country"]),
+    default=None,
+    help=(
+        "Use locally cached GloFAS data instead of downloading. "
+        "'global' loads raw global files (still slices to country). "
+        "'country' loads pre-sliced country-split files (skips slicing). "
+        "Currently only supported for floods. "
+        "Mutually exclusive with --mock."
+    ),
+)
+@click.option(
+    "--local-data-date",
+    "local_data_date",
+    default=None,
+    help=(
+        "Date (YYYYMMDD) identifying which locally cached GloFAS data to use. "
+        "Refers to the forecast date subfolder in DATA_CACHE_DIR/glofas/. "
+        "If omitted, uses the most recent available date. "
+        "Requires --local-data. "
+        "Not to be confused with --issued-at which controls the metadata timestamp."
+    ),
+)
 def main(
     config_path: str,
     mock: int | None,
@@ -269,6 +310,8 @@ def main(
     country_filter: str | None,
     output_mode_str: str,
     output_path: str,
+    local_data: str | None,
+    local_data_date: str | None,
 ) -> None:
     load_dotenv()
     logging.basicConfig(
@@ -283,6 +326,16 @@ def main(
 
     if mock is not None and env.is_production:
         raise click.UsageError("--mock is not allowed in production")
+    if local_data is not None and env.is_production:
+        raise click.UsageError("--local-data is not allowed in production")
+    if local_data is not None and mock is not None:
+        raise click.UsageError("--local-data and --mock are mutually exclusive")
+    if local_data_date is not None and local_data is None:
+        raise click.UsageError("--local-data-date requires --local-data")
+    if local_data_date is not None and len(local_data_date) != 8:
+        raise click.UsageError(
+            f"--local-data-date must be YYYYMMDD format (got '{local_data_date}')"
+        )
     if infra_only and mock is None:
         raise click.UsageError("--infra-only requires --mock")
     if mock is not None and not infra_only and mock not in (0, 1):
@@ -290,8 +343,8 @@ def main(
             f"--mock must be 0 or 1 without --infra-only (got {mock}); "
             "use --infra-only to generate more than one alert"
         )
-    if issued_at_str and mock is None:
-        raise click.UsageError("--issued-at requires --mock")
+    if issued_at_str and mock is None and local_data is None:
+        raise click.UsageError("--issued-at requires --mock or --local-data")
 
     issued_at: datetime | None = None
     if issued_at_str:
@@ -312,6 +365,8 @@ def main(
         country_filter=parsed_countries,
         output_mode=OutputMode(output_mode_str),
         output_path=output_path,
+        local_data=local_data,
+        local_data_date=local_data_date,
     )
     if errors:
         logger.error(f"Pipeline finished with {len(errors)} error(s)")

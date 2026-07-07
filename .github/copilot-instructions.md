@@ -18,6 +18,7 @@ IBF is a web app to visualize hazard forecasts. This repository contains:
 - Do not include "Enum" suffix for enum names (e.g., `HazardType`, not `HazardTypeEnum`)
 - Follow existing code patterns — prioritize readability over cleverness
 - Always include Azure DevOps reference `AB#XXXXX` in commit body
+- Do NOT remove existing comments — when editing code that already has comments, preserve them
 
 ### Commit Conventions
 

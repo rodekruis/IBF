@@ -29,18 +29,53 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --mock 1
 uv run pipeline --config pipelines/infra/configs/floods.yaml --country ETH --mock 1 --infra-only
 ```
 
-| Flag            | Description                                                                                                                                                                                                          |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--config`      | Path to the hazard YAML config file (e.g. `pipelines/infra/configs/floods.yaml`)                                                                                                                                     |
-| `--mock`        | _(optional)_ Run with mock data; value is the alert count (`0` = no-alert, `1` = alert). Omit for a LIVE run. Without `--infra-only` only `0` or `1` are allowed; with `--infra-only` any count `>= 0` is permitted. |
-| `--infra-only`  | _(optional)_ Run only pipeline infra. Skip `forecast.py` and generate `--mock` alerts. Requires `--mock`.                                                                                                            |
-| `--issued-at`   | _(optional)_ Override the issued-at timestamp (ISO 8601). Requires `--mock`                                                                                                                                          |
-| `--country`     | _(optional)_ ISO3 country code to run a single country instead of all configured countries                                                                                                                           |
-| `--output-mode` | _(optional)_ Where to send pipeline results: `api` submits to the IBF API, `local` writes to disk. Default `api`.                                                                                                    |
-| `--output-path` | _(optional)_ Base directory for local output (used when `--output-mode` is `local`). Default `pipelines/output`.                                                                                                     |
+| Flag                | Description                                                                                                                                                                                                          |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--config`          | Path to the hazard YAML config file (e.g. `pipelines/infra/configs/floods.yaml`)                                                                                                                                     |
+| `--mock`            | _(optional)_ Run with mock data; value is the alert count (`0` = no-alert, `1` = alert). Omit for a LIVE run. Without `--infra-only` only `0` or `1` are allowed; with `--infra-only` any count `>= 0` is permitted. |
+| `--infra-only`      | _(optional)_ Run only pipeline infra. Skip `forecast.py` and generate `--mock` alerts. Requires `--mock`.                                                                                                            |
+| `--issued-at`       | _(optional)_ Override the issued-at timestamp (ISO 8601). Requires `--mock`                                                                                                                                          |
+| `--country`         | _(optional)_ ISO3 country code to run a single country instead of all configured countries                                                                                                                           |
+| `--output-mode`     | _(optional)_ Where to send pipeline results: `api` submits to the IBF API, `local` writes to disk. Default `api`.                                                                                                    |
+| `--output-path`     | _(optional)_ Base directory for local output (used when `--output-mode` is `local`). Default `pipelines/output`.                                                                                                     |
+| `--local-data`      | _(optional)_ Use locally cached forecast data instead of downloading. Currently only supported for floods. Mutually exclusive with `--mock`.                                                                         |
+| `--local-data-date` | _(optional)_ Date (`YYYYMMDD`) identifying which cached data to use. Requires `--local-data`. If omitted, uses the most recent available date.                                                                       |
 
 > `--mock` values greater than `1` require `--infra-only`, because the mock forecast
 > path only has seed discharge data for the no-alert (`0`) and alert (`1`) cases.
+
+### Using local data for debugging
+
+The `--local-data` flag lets you re-run the pipeline using locally cached GloFAS
+country-split data instead of downloading from FTP. This is useful when:
+
+- Debugging a production run by downloading its country-split output to your machine
+- Iterating on forecast logic locally
+- Reproducing results from a specific date
+
+The workflow is:
+
+1. Obtain country-split data (e.g., download from cloud storage after a production run)
+2. Place it in `DATA_CACHE_DIR/glofas/country_split/{YYYYMMDD}/`
+3. Run with `--local-data`
+
+```bash
+# Re-run using the most recent locally cached data
+uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN --local-data
+
+# Use local data from a specific date
+uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN --local-data --local-data-date 20260701
+
+# Write output locally instead of submitting to the API
+uv run pipeline --config pipelines/infra/configs/floods.yaml --country KEN --local-data --output-mode local
+```
+
+The minimum ensemble count (34) is **not** enforced for local data — you can run with
+even a single file for fast iteration.
+
+> **Note:** `--local-data-date` refers to which date's local data files to load.
+> This is different from `--issued-at`, which overrides the metadata timestamp recorded
+> in the API.
 
 ### `--mock` and `--infra-only` flows
 
