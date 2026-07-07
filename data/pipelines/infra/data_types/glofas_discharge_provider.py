@@ -17,7 +17,6 @@ from pipelines.infra.utils.storage_helpers import (
     get_glofas_mock_data_dir,
     get_glofas_raw_data_dir,
     GLOFAS_COUNTRY_SPLIT_DATA_DIR,
-    GLOFAS_RAW_DATA_DIR,
 )
 
 logger = logging.getLogger(__name__)
