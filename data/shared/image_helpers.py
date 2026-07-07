@@ -8,6 +8,7 @@ import numpy as np
 import rasterio
 import rasterio.crs
 from PIL import Image
+from pipelines.infra.data_types.enums import EPSG
 from rasterio.io import MemoryFile
 from rasterio.transform import array_bounds
 from rasterio.warp import calculate_default_transform, reproject, Resampling
@@ -97,7 +98,7 @@ def geotiff_to_array(tif_data: bytes):
                 )
 
             # Reproject to EPSG:3857
-            target_crs = CRS.from_epsg(3857)
+            target_crs = CRS.from_string(EPSG.WEB_MERCATOR)
             transform, width, height = calculate_default_transform(
                 src.crs, target_crs, src.width, src.height, *src.bounds
             )
