@@ -1,0 +1,29 @@
+# Secrets — must never end up inside an image
+.env
+credentials/
+
+# Virtual environment (host-specific; the image builds its own)
+.venv
+
+# Docker
+.dockerignore
+Dockerfile
+
+# Data cache and pipeline outputs
+data/
+pipelines/output/
+*.nc
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# IDE / editors
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
