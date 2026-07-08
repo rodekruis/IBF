@@ -17,7 +17,7 @@ the relevant owner first:
   it does.
 - Plan Batch 1.2 (`npm run generate:python`) and Batch 1.3 (register in `run_forecasts.py`) both
   wait on data-scientist sign-off before running. This file already references the enum members it
-  will need once that regen lands (`SeverityKey.WIND_SPEED`, `Layer.WIND_SPEED`) — they don't exist
+  will need once that regen lands (`SeverityKey.WIND_SPEED`, `LayerName.WIND_SPEED`) — they don't exist
   in `enums.py` yet, so *calling* this function today raises `AttributeError`, but *importing* it
   does not. 
 
@@ -36,7 +36,7 @@ from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import Centroid
-from pipelines.infra.data_types.enums import EnsembleMemberType, Layer, SeverityKey
+from pipelines.infra.data_types.enums import EnsembleMemberType, LayerName, SeverityKey
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.utils.exposure import (
     aggregate_population_exposed,
@@ -213,7 +213,7 @@ def calculate_tropical_cyclone_forecasts(
     data_submitter.add_admin_area_exposure(
         event_name=event_name,
         admin_level=target_admin_level,
-        layer=Layer.POPULATION_EXPOSED,
+        layer=LayerName.POPULATION_EXPOSED,
         values_by_place_code=population_exposed,
     )
 
@@ -222,7 +222,7 @@ def calculate_tropical_cyclone_forecasts(
 
     data_submitter.add_raster_exposure(
         event_name=event_name,
-        layer=Layer.WIND_SPEED,
+        layer=LayerName.WIND_SPEED,
         value_black_white=raster_to_base64_png(clipped_wind_extent),
         extent=get_raster_extent(clipped_wind_extent),
     )
