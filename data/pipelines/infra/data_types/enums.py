@@ -16,28 +16,29 @@ class EnsembleMemberType(StrEnum):
 class ForecastSource(StrEnum):
     GLOFAS = "glofas"
     ECMWF = "ECMWF"
+    GEFS = "gefs"
 
 
 class HazardType(StrEnum):
     FLOODS = "floods"
     DROUGHT = "drought"
+    TROPICAL_CYCLONE = "tropicalCyclone"
 
 
 class LayerName(StrEnum):
-    # --- generic layers (cross-hazard) ---
     POPULATION = "population"
     POPULATION_EXPOSED = "populationExposed"
-
-    # --- floods-specific layers ---
     RED_CROSS_BRANCHES = "redCrossBranches"
     CLINICS = "clinics"
     FLOOD_DEPTH = "floodDepth"
     GLOFAS_STATIONS = "glofasStations"
+    WIND_SPEED = "windSpeed"
 
 
 class SeverityKey(StrEnum):
     RETURN_PERIOD = "returnPeriod"
     PERCENTILE = "percentile"
+    WIND_SPEED = "windSpeed"
 
 
 class EPSG(StrEnum):

@@ -150,7 +150,7 @@ Most of the fields in the config file are mapped to enums. You can see the allow
 To handle new configs, see the sections below.
 
 ```
-hazard_type                      # HazardType enum (e.g. "floods", "drought")
+hazard_type                      # HazardType enum (e.g. "floods", "drought", "tropicalCyclone")
 
 _data_sources: &data_sources     # Anchor: data sources for this hazard
   - source                       # DataSource enum showing where to fetch this data
@@ -163,13 +163,19 @@ countries:
     data_sources: *data_sources  # Required; reference the anchor or override per country
 ```
 
+`hazard_type` must match a `HazardType` enum value exactly, including case. Enum values follow
+camelCase (e.g. `tropicalCyclone`), so for a multi-word hazard type, write it in the config YAML
+the same way — not lowercase, not hyphenated.
+
 ### Adding a new hazard type
 
 1. Create a new folder: `<hazard_type>/`
 2. Copy `infra/template_forecast.py` to `<hazard_type>/forecast.py`
 3. Implement the hazard-specific logic (replace placeholders marked with `<...>`)
 4. Register the function in `infra/run_forecasts.py` (`HAZARD_FUNCTIONS`)
-5. Add a config YAML in `infra/configs/<hazard_type>.yaml`
+5. Add a config YAML in `infra/configs/<hazard_type>.yaml`, with `hazard_type` written in
+   camelCase to match its `HazardType` enum value exactly (e.g. `tropicalCyclone`, not
+   `tropical-cyclone` or `tropicalcyclone`)
 
 ### Adding a new data source
 
