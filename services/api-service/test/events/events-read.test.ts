@@ -25,7 +25,7 @@ describe('GET /events', () => {
     await resetDB(['MWI'], __filename);
 
     const closedAlert = buildAlert({
-      eventName: 'ETH_floods_station-closed',
+      eventName: 'MWI_floods_station-closed',
       severity: buildSeverityData({
         start: new Date('2026-03-27T00:00:00Z'),
         end: new Date('2026-03-28T00:00:00Z'),
@@ -35,7 +35,7 @@ describe('GET /events', () => {
     });
 
     const ongoingAlert = buildAlert({
-      eventName: 'ETH_floods_station-ongoing',
+      eventName: 'MWI_floods_station-ongoing',
       severity: buildSeverityData({
         start: new Date('2026-03-25T00:00:00Z'),
         end: new Date('2026-03-26T00:00:00Z'),
@@ -45,7 +45,7 @@ describe('GET /events', () => {
     });
 
     const expiredAlert = buildAlert({
-      eventName: 'ETH_floods_station-expired',
+      eventName: 'MWI_floods_station-expired',
       severity: buildSeverityData({
         start: new Date('2026-03-24T00:00:00Z'),
         end: new Date('2026-03-25T00:00:00Z'),
@@ -72,7 +72,7 @@ describe('GET /events', () => {
     });
 
     it('should return all events when active is omitted', async () => {
-      const response = await readEvents(accessToken, 'ETH', {
+      const response = await readEvents(accessToken, 'MWI', {
         timestamp: viewTimestamp,
       });
 
@@ -83,14 +83,14 @@ describe('GET /events', () => {
           .map((event: { eventName: string }) => event.eventName)
           .sort(),
       ).toEqual([
-        'ETH_floods_station-closed',
-        'ETH_floods_station-expired',
-        'ETH_floods_station-ongoing',
+        'MWI_floods_station-closed',
+        'MWI_floods_station-expired',
+        'MWI_floods_station-ongoing',
       ]);
     });
 
     it('should return only ongoing open events when active is true', async () => {
-      const response = await readEvents(accessToken, 'ETH', {
+      const response = await readEvents(accessToken, 'MWI', {
         active: true,
         timestamp: viewTimestamp,
       });
@@ -98,14 +98,14 @@ describe('GET /events', () => {
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body).toHaveLength(1);
       expect(response.body[0]).toMatchObject({
-        eventName: 'ETH_floods_station-ongoing',
+        eventName: 'MWI_floods_station-ongoing',
         eventLabel: 'station-ongoing',
         isOngoing: true,
       });
     });
 
     it('should return closed or expired events when active is false', async () => {
-      const response = await readEvents(accessToken, 'ETH', {
+      const response = await readEvents(accessToken, 'MWI', {
         active: false,
         timestamp: viewTimestamp,
       });
@@ -116,15 +116,15 @@ describe('GET /events', () => {
         response.body
           .map((event: { eventName: string }) => event.eventName)
           .sort(),
-      ).toEqual(['ETH_floods_station-closed', 'ETH_floods_station-expired']);
+      ).toEqual(['MWI_floods_station-closed', 'MWI_floods_station-expired']);
 
       const closedEvent = response.body.find(
         (event: { eventName: string }) =>
-          event.eventName === 'ETH_floods_station-closed',
+          event.eventName === 'MWI_floods_station-closed',
       );
       const expiredEvent = response.body.find(
         (event: { eventName: string }) =>
-          event.eventName === 'ETH_floods_station-expired',
+          event.eventName === 'MWI_floods_station-expired',
       );
 
       expect(closedEvent.isOngoing).toBe(false);
@@ -134,18 +134,18 @@ describe('GET /events', () => {
 
   describe('event label derivation', () => {
     it('should derive event label from event name', async () => {
-      const droughtEventName = 'ETH_drought_Meher_MAM';
+      const eventName = 'MWI_floods_Meher_MAM';
       await createAlerts(
         buildForecast([
           buildAlert({
-            eventName: droughtEventName,
+            eventName,
           }),
         ]),
       );
 
-      const response = await readEvents(accessToken, 'ETH');
+      const response = await readEvents(accessToken, 'MWI');
       const event = response.body.find(
-        (event: { eventName: string }) => event.eventName === droughtEventName,
+        (event: { eventName: string }) => event.eventName === eventName,
       );
 
       expect(event.eventLabel).toBe('Meher MAM');
@@ -158,7 +158,7 @@ describe('GET /events', () => {
     });
 
     it('should return only events for the specified country', async () => {
-      const response = await readEvents(accessToken, 'ETH', {
+      const response = await readEvents(accessToken, 'MWI', {
         timestamp: viewTimestamp,
       });
 
@@ -166,7 +166,7 @@ describe('GET /events', () => {
       expect(response.body).toHaveLength(3);
       expect(
         response.body.every((event: { eventName: string }) =>
-          event.eventName.startsWith('ETH_'),
+          event.eventName.startsWith('MWI_'),
         ),
       ).toBe(true);
     });

@@ -13,7 +13,7 @@ import {
   resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
-const ALERT_NAME = 'ETH_floods_delete-test';
+const ALERT_NAME = 'MWI_floods_delete-test';
 
 describe('/ Alerts', () => {
   let adminAccessToken: string;

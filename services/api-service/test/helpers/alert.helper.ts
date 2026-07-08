@@ -51,8 +51,8 @@ export function buildAlert(
   const now = new Date();
   const tomorrow = addDays(now, 1);
   return {
-    eventName: 'ETH_floods_test-station',
-    centroid: { latitude: 0.35, longitude: 32.6 },
+    eventName: 'MWI_floods_test-station',
+    centroid: { latitude: -16.0, longitude: 34.8 },
     severity: [
       {
         timeInterval: {
@@ -76,7 +76,7 @@ export function buildAlert(
     exposure: {
       adminAreas: [
         {
-          placeCode: 'ETH_01',
+          placeCode: 'MW31001',
           adminLevel: 3,
           layer: LayerName.populationExposed,
           value: 1000,
@@ -99,7 +99,7 @@ export function buildForecast(
   overrides: Partial<Omit<ForecastCreateDto, 'alerts'>> = {},
 ): ForecastCreateDto {
   return {
-    countryCodeIso3: 'ETH',
+    countryCodeIso3: 'MWI',
     issuedAt: new Date(),
     hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofas],

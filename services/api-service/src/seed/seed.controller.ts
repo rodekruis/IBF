@@ -92,9 +92,7 @@ export class SeedController {
       skipStaticRasters: skipStaticRasters ?? false,
     });
 
-    res
-      .status(HttpStatus.OK)
-      .send('Request received. Database should be reset.');
+    res.status(HttpStatus.OK).send('Database reset to initial state.');
   }
 
   @Post('/mock-events')
@@ -163,6 +161,7 @@ export class SeedController {
 
     res
       .status(HttpStatus.OK)
+      .header('Content-Type', 'text/plain')
       .send(
         `Mock scenario '${scenario}' applied for ${countryCode}. clearEvents: ${String(clearEvents ?? false)}. issuedAt: ${issuedAt ?? 'now'}.`,
       );
