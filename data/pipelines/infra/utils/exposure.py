@@ -56,11 +56,18 @@ def compute_population_exposed(
     hazard_extent_raster: RasterData,
 ) -> RasterData | None:
     """
-    Extract population only within the intersection of admin areas and hazard extent.
     Masks the population raster with the (binary) hazard extent raster
     so only exposed pixels count toward the population sum.
     Returns the exposed population as in-memory raster data.
     """
+    if (
+        population_raster is None
+        or hazard_extent_raster is None
+        or population_raster.array.size == 0
+        or hazard_extent_raster.array.size == 0
+    ):
+        return None
+
     pop_array = population_raster.array
     pop_transform = population_raster.transform
     pop_crs = population_raster.crs
