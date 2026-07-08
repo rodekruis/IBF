@@ -104,4 +104,8 @@ export class EventsService {
       layerType: LayerType.raster,
     }));
   }
+
+  public async deleteEventsByCountry(countryCodeIso3: string): Promise<number> {
+    return this.eventsRepository.deleteEventsByCountry(countryCodeIso3);
+  }
 }

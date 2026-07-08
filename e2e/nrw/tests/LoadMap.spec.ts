@@ -1,14 +1,13 @@
 import { expect, test } from '@playwright/test';
 
-import { resetDb, SeedScript } from '@ibf-e2e/nrw/helpers/reset';
+import { resetDb } from '@ibf-e2e/nrw/helpers/reset';
 import { NrwMapPage } from '@ibf-e2e/nrw/pages/NrwMapPage';
 
-// NOTE: ETH is seeded by the `ethiopiaOnly` seed script and currently has no frontend
-// mock event data, so the map view renders the deterministic empty-events state.
-const COUNTRY_CODE = 'ETH';
+// NOTE: this test currently seeds only, so loads no-events view
+const COUNTRY_CODE = 'MWI';
 
 test.beforeAll(async () => {
-  await resetDb(SeedScript.ethiopiaOnly);
+  await resetDb([COUNTRY_CODE]);
 });
 
 test('NRW loads ETH events and shows the empty-events state', async ({

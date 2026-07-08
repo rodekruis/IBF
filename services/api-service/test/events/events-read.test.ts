@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   buildAlert,
   buildForecast,
@@ -18,12 +17,12 @@ describe('GET /events', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(['MWI'], __filename);
     accessToken = await getAccessToken();
   });
 
   async function seedEventsForReadTests(): Promise<void> {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(['MWI'], __filename);
 
     const closedAlert = buildAlert({
       eventName: 'ETH_floods_station-closed',

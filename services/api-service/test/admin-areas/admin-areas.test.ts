@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   getAccessToken,
   getServer,
@@ -11,7 +10,7 @@ describe('/ Admin Areas', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(['MWI'], __filename);
     accessToken = await getAccessToken();
   });
 
@@ -19,17 +18,17 @@ describe('/ Admin Areas', () => {
     placeCode: 'TEST01',
     adminLevel: 1,
     nameEn: 'Test Admin Area',
-    countryCodeIso3: 'ETH',
+    countryCodeIso3: 'MWI',
     geometry: {
       type: 'MultiPolygon',
       coordinates: [
         [
           [
-            [38.0, 8.0],
-            [38.5, 8.0],
-            [38.5, 8.5],
-            [38.0, 8.5],
-            [38.0, 8.0],
+            [34.0, -14.0],
+            [34.5, -14.0],
+            [34.5, -13.5],
+            [34.0, -13.5],
+            [34.0, -14.0],
           ],
         ],
       ],

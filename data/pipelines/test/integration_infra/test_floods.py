@@ -12,14 +12,14 @@ import pytest
 
 @pytest.mark.parametrize("mock", [0, 1, 2])
 def test_floods_infra_only(pipeline, mock):
-    """Run the flood pipeline for ETH with --infra-only and the --mock number of
+    """Run the flood pipeline for UGA with --infra-only and the --mock number of
     mock alerts. A zero exit code implies the API accepted the forecast,
     which—given server-side validation—implicitly asserts correct structure."""
     result = pipeline.run_pipeline(
         "pipelines/infra/configs/floods.yaml",
         mock=mock,
         infra_only=True,
-        country="ETH",
+        country="UGA",
         issued_at="2026-04-17T12:00:00Z",
     )
     assert (

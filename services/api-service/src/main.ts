@@ -42,7 +42,7 @@ function generateModuleDependencyGraph(app: INestApplication): void {
     'HttpModule',
     'MulterModule',
     'PassportModule',
-    'ScriptsModule',
+    'SeedModule',
     'TerminusModule',
     'ThrottlerModule',
     'PrismaModule',

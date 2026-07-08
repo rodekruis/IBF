@@ -26,7 +26,16 @@ echo "✅ Backend is running"
 print_header "Resetting IBF instance"
 
 curl --silent --show-error --fail -X 'POST' \
-  'http://localhost:4000/api/instance/reset?script=ethiopia-with-events' \
+  'http://localhost:4000/api/seed/reset?countryCodes=MWI' \
+  -H 'accept: */*' \
+  -H 'Content-Type: application/json' \
+  -d '{"secret":"fill_in_secret"}' \
+  > /dev/null
+
+print_header "Creating mock events"
+
+curl --silent --show-error --fail -X 'POST' \
+  'http://localhost:4000/api/seed/mock-events?countryCode=MWI&scenario=events' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
   -d '{"secret":"fill_in_secret"}' \

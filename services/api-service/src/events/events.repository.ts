@@ -20,6 +20,7 @@ interface EventAlertHistorySeverity {
 }
 
 export interface EventAlertHistoryRecord {
+  readonly eventName: string;
   readonly issuedAt: Date;
   readonly hazardType: HazardType;
   readonly severityData: EventAlertHistorySeverity[];
@@ -126,6 +127,7 @@ export class EventsRepository {
       },
       orderBy: { issuedAt: 'asc' },
       select: {
+        eventName: true,
         issuedAt: true,
         hazardType: true,
         severity: {
@@ -140,6 +142,7 @@ export class EventsRepository {
     });
 
     return alerts.map((alert) => ({
+      eventName: alert.eventName,
       issuedAt: alert.issuedAt,
       hazardType: alert.hazardType,
       severityData: alert.severity.map((severity) => ({
@@ -226,10 +229,12 @@ export class EventsRepository {
 
   public async closeStaleOpenEvents({
     hazardType,
+    countryCodeIso3,
     excludeEventNames,
     issuedAt,
   }: {
     hazardType: HazardType;
+    countryCodeIso3: string;
     excludeEventNames: string[];
     issuedAt: Date;
   }): Promise<number> {
@@ -237,7 +242,10 @@ export class EventsRepository {
       where: {
         closedAt: null,
         hazardType,
-        eventName: { notIn: excludeEventNames },
+        eventName: {
+          startsWith: `${countryCodeIso3}_`,
+          notIn: excludeEventNames,
+        },
       },
       data: { closedAt: issuedAt, lastUpdatedAt: issuedAt },
     });
@@ -274,5 +282,33 @@ export class EventsRepository {
     }
 
     return result;
+  }
+
+  public async deleteEventsByCountry(countryCodeIso3: string): Promise<number> {
+    const events = await this.prisma.event.findMany({
+      where: { eventName: { startsWith: `${countryCodeIso3}_` } },
+      select: { id: true },
+    });
+    const eventIds = events.map((e) => e.id);
+
+    if (eventIds.length === 0) {
+      return 0;
+    }
+
+    // Delete alerts linked to events (children cascade via onDelete: Cascade)
+    await this.prisma.alert.deleteMany({
+      where: { eventId: { in: eventIds } },
+    });
+
+    // Delete orphan alerts for this country (not linked to an event)
+    await this.prisma.alert.deleteMany({
+      where: { eventName: { startsWith: `${countryCodeIso3}_` } },
+    });
+
+    const result = await this.prisma.event.deleteMany({
+      where: { id: { in: eventIds } },
+    });
+
+    return result.count;
   }
 }

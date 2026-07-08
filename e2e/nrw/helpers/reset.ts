@@ -1,25 +1,13 @@
 import { env } from '@ibf-e2e/env';
 
-/**
- * Seed scripts supported by the api-service `/instance/reset` endpoint.
- * Mirrors `SeedScript` in services/api-service. Kept as a local constant so the
- * e2e package stays decoupled from the api-service source and its test deps.
- */
-export const SeedScript = {
-  allCountries: 'all-countries',
-  ethiopiaOnly: 'ethiopia-only',
-  ethiopiaWithEvents: 'ethiopia-with-events',
-} as const;
-
-export type SeedScript = (typeof SeedScript)[keyof typeof SeedScript];
-
-// Reset and seed the api-service database with mock data.
 export async function resetDb(
-  seedScript: SeedScript = SeedScript.ethiopiaOnly,
+  countryCodes: string[] = ['MWI'],
   resetIdentifier = 'e2e',
 ): Promise<void> {
-  const url = new URL(`${env.API_SERVICE_URL}/api/instance/reset`);
-  url.searchParams.set('script', seedScript);
+  const url = new URL(`${env.API_SERVICE_URL}/api/seed/reset`);
+  for (const code of countryCodes) {
+    url.searchParams.append('countryCodes', code);
+  }
   url.searchParams.set('resetIdentifier', resetIdentifier);
 
   const response = await fetch(url, {

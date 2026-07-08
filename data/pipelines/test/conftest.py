@@ -32,6 +32,7 @@ def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
         issued_at=datetime.now(timezone.utc),
         hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
+        country_code_iso3="ETH",
     )
     submitter.create_alert(
         event_name=EVENT_NAME,

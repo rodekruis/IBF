@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   AlertClass,
   ForecastSource,
@@ -22,7 +21,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
   let accessToken: string;
 
   beforeEach(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(['MWI'], __filename);
     accessToken = await getAccessToken();
   });
 

@@ -35,6 +35,7 @@ function buildForecastMetadata(
   overrides: Partial<ForecastMetadata> = {},
 ): ForecastMetadata {
   return {
+    countryCodeIso3: 'ETH',
     hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofas],
     issuedAt: new Date(),
@@ -166,6 +167,7 @@ describe('AlertToEventService', () => {
       repository.getOpenEventByName.mockResolvedValue(existingEvent);
       repository.getAlertHistoryForEvent.mockResolvedValue([
         {
+          eventName: 'ETH_floods_station-A',
           issuedAt: new Date('2026-04-01T00:00:00Z'),
           hazardType: HazardType.floods,
           severityData: [],
@@ -225,11 +227,13 @@ describe('AlertToEventService', () => {
       repository.getOpenEventByName.mockResolvedValue(existingEvent);
       repository.getAlertHistoryForEvent.mockResolvedValue([
         {
+          eventName: 'ETH_floods_station-A',
           issuedAt: new Date('2026-03-30T00:00:00Z'),
           hazardType: HazardType.floods,
           severityData: [],
         },
         {
+          eventName: 'ETH_floods_station-A',
           issuedAt: new Date('2026-04-01T00:00:00Z'),
           hazardType: HazardType.floods,
           severityData: [],

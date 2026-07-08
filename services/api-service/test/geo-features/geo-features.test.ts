@@ -1,7 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
 import { GeoFeatureType } from '@api-service/src/geo-features/enum/geo-feature-type.enum';
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { LayerName } from '@api-service/src/shared-enums';
 import {
   getAccessToken,
@@ -13,7 +12,7 @@ describe('/ Geo Features', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(['MWI'], __filename);
     accessToken = await getAccessToken();
   });
 
@@ -22,7 +21,7 @@ describe('/ Geo Features', () => {
       const response = await getServer()
         .get('/geo-features')
         .query({
-          filter: `countryCodeIso3='ETH' AND layer='${LayerName.glofasStations}'`,
+          filter: `countryCodeIso3='MWI' AND layer='${LayerName.glofasStations}'`,
         })
         .set('Cookie', [accessToken]);
 
@@ -34,17 +33,17 @@ describe('/ Geo Features', () => {
       const feature = response.body.features[0];
       expect(feature.type).toBe('Feature');
       expect(feature.geometry).toBeDefined();
-      expect(feature.properties.countryCodeIso3).toBe('ETH');
+      expect(feature.properties.countryCodeIso3).toBe('MWI');
       expect(feature.properties.layer).toBe(LayerName.glofasStations);
     });
   });
 
   const validGeoFeature = {
-    countryCodeIso3: 'ETH',
+    countryCodeIso3: 'MWI',
     featureType: GeoFeatureType.point,
     layer: LayerName.glofasStations,
     referenceId: 'TEST_STATION_01',
-    geometry: { type: 'Point', coordinates: [38.5, 9.0] },
+    geometry: { type: 'Point', coordinates: [34.5, -14.0] },
     attributes: { name: 'Test Station' },
   };
 

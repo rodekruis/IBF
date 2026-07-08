@@ -3,7 +3,6 @@ import * as request from 'supertest';
 import TestAgent from 'supertest/lib/agent';
 
 import { env } from '@api-service/src/env';
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { CookieNames } from '@api-service/src/shared/enum/cookie.enums';
 
 export function getHostname(): string {
@@ -15,14 +14,14 @@ export function getServer(): TestAgent<request.Test> {
 }
 
 export function resetDB(
-  seedScript: SeedScript,
+  countryCodes: string[],
   resetIdentifier: string,
   skipStaticRasters = true,
 ): Promise<request.Response> {
   return getServer()
-    .post('/instance/reset')
+    .post('/seed/reset')
     .query({
-      script: seedScript,
+      countryCodes,
       resetIdentifier,
       skipStaticRasters,
     })

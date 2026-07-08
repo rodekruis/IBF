@@ -99,6 +99,7 @@ export function buildForecast(
   overrides: Partial<Omit<ForecastCreateDto, 'alerts'>> = {},
 ): ForecastCreateDto {
   return {
+    countryCodeIso3: 'ETH',
     issuedAt: new Date(),
     hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofas],

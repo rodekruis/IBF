@@ -51,6 +51,7 @@ class DataSubmitter:
         issued_at: datetime,
         hazard_type: HazardType,
         forecast_sources: list[ForecastSource],
+        country_code_iso3: str,
     ) -> None:
         self._forecast = Forecast(
             issued_at=(
@@ -60,6 +61,7 @@ class DataSubmitter:
             ),
             hazard_type=hazard_type,
             forecast_sources=forecast_sources,
+            country_code_iso3=country_code_iso3,
         )
 
     def create_alert(

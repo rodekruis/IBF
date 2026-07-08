@@ -18,6 +18,7 @@ function toClassificationInput(
   issuedAt: Date = new Date(),
 ): AlertClassificationInput {
   return {
+    countryCodeIso3: 'ETH',
     hazardType,
     issuedAt,
     severity: alert.severity,
@@ -90,6 +91,23 @@ describe('AlertClassificationService', () => {
       ).rejects.toThrow(
         "No classification config found for hazard type 'unknown'",
       );
+    });
+
+    it('should pass countryCodeIso3 to getAlertConfigs', async () => {
+      const alert = buildAlert();
+      const input: AlertClassificationInput = {
+        countryCodeIso3: 'UGA',
+        hazardType: HazardType.floods,
+        issuedAt: new Date(),
+        severity: alert.severity,
+      };
+
+      await service.classifyAlert(input);
+
+      expect(alertConfigsService.getAlertConfigs).toHaveBeenCalledWith({
+        countryCodeIso3: 'UGA',
+        hazardType: HazardType.floods,
+      });
     });
 
     describe('floods', () => {

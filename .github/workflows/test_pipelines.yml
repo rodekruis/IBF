@@ -103,7 +103,7 @@ jobs:
         run: |
           curl --fail --silent --show-error \
             --request POST \
-            --url "http://localhost:4000/api/instance/reset?script=ethiopia-only&resetIdentifier=ci-pipeline-test" \
+            --url "http://localhost:4000/api/seed/reset?countryCodes=UGA&resetIdentifier=ci-pipeline-test" \
             --header "Content-Type: application/json" \
             --data '{"secret":"fill_in_secret"}'
 

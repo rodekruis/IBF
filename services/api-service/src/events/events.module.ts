@@ -17,6 +17,6 @@ import { PrismaModule } from '@api-service/src/prisma/prisma.module';
     AlertClassificationService,
     AlertToEventService,
   ],
-  exports: [AlertToEventService],
+  exports: [AlertToEventService, EventsService],
 })
 export class EventsModule {}

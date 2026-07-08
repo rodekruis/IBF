@@ -192,6 +192,7 @@ def calculate_flood_forecasts(
             event_name = f"{country}_floods_{station.name if station.name.lower() != 'na' else station_code}"
             data_submitter.create_alert(
                 event_name=event_name,
+                # For floods we agreed that event centroid is the station location
                 centroid=Centroid(
                     latitude=station.lat,
                     longitude=station.lon,

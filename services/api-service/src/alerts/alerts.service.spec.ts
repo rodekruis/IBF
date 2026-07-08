@@ -23,6 +23,7 @@ function createMockValidForecast(
   overrides: Partial<ForecastCreateDto> = {},
 ): ForecastCreateDto {
   return {
+    countryCodeIso3: 'ETH',
     issuedAt: new Date('2026-03-20T12:00:00Z'),
     hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofas],
@@ -621,6 +622,48 @@ describe('AlertsService', () => {
       };
       expect(response.message).toBe('Alert integrity check failed');
       expect(response.errors.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('createAlerts – closeStaleEvents', () => {
+    let alertToEventService: AlertToEventService;
+
+    beforeEach(() => {
+      alertToEventService = (
+        service as unknown as { alertToEventService: AlertToEventService }
+      ).alertToEventService;
+    });
+
+    it('should call closeStaleEvents with countryCodeIso3 from forecast', async () => {
+      const alerts = [createMockValidAlert()];
+      const forecast = createMockValidForecast(alerts, {
+        countryCodeIso3: 'UGA',
+      });
+
+      await service.createAlerts(forecast);
+
+      expect(alertToEventService.closeStaleEvents).toHaveBeenCalledWith(
+        expect.objectContaining({
+          countryCodeIso3: 'UGA',
+          hazardType: HazardType.floods,
+          excludeEventNames: ['ETH_floods_station-A'],
+        }),
+      );
+    });
+
+    it('should call closeStaleEvents with empty excludeEventNames for empty alerts', async () => {
+      const forecast = createMockValidForecast([], {
+        countryCodeIso3: 'MWI',
+      });
+
+      await service.createAlerts(forecast);
+
+      expect(alertToEventService.closeStaleEvents).toHaveBeenCalledWith(
+        expect.objectContaining({
+          countryCodeIso3: 'MWI',
+          excludeEventNames: [],
+        }),
+      );
     });
   });
 });

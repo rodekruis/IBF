@@ -1,7 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
 import { env } from '@api-service/src/env';
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { EnsembleMemberType, SeverityKey } from '@api-service/src/shared-enums';
 import {
   buildAlert,
@@ -21,7 +20,7 @@ describe('POST /alerts', () => {
   const apiKey = env.PIPELINE_API_KEY;
   let accessToken: string;
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(['MWI'], __filename);
 
     accessToken = await getAccessToken();
   });

@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   buildAlert,
   buildForecast,
@@ -21,7 +20,7 @@ describe('/ Alerts', () => {
   let seededAlertId: number;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(['MWI'], __filename);
     const alert = buildAlert({ eventName: ALERT_NAME });
     const forecast = buildForecast([alert]);
     await createAlerts(forecast);

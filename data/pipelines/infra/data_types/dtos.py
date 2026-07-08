@@ -185,10 +185,12 @@ class Forecast:
     issued_at: datetime
     hazard_type: HazardType
     forecast_sources: list[ForecastSource]
+    country_code_iso3: str
     alerts: list[Alert] = field(default_factory=list)
 
     def to_dict(self) -> JsonDict:
         return {
+            "countryCodeIso3": self.country_code_iso3,
             "issuedAt": self.issued_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "hazardType": str(self.hazard_type),
             "forecastSources": [str(item) for item in self.forecast_sources],

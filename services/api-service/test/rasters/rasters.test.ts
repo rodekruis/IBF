@@ -1,7 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
 import { env } from '@api-service/src/env';
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { LayerName } from '@api-service/src/shared-enums';
 import {
   buildAlert,
@@ -31,7 +30,7 @@ describe('/rasters', () => {
   jest.setTimeout(60_000);
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(['MWI'], __filename);
     const alert = buildAlert({ eventName: 'ETH_floods_raster-test' });
     const createResponse = await createAlerts(buildForecast([alert]));
     const createdAlert = createResponse.body[0];
@@ -93,12 +92,12 @@ describe('/rasters', () => {
 });
 
 describe('/rasters/static', () => {
-  const country = 'ETH';
+  const country = 'MWI';
   const layer = LayerName.population;
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename, false);
+    await resetDB(['MWI'], __filename, false);
     accessToken = await getAccessToken();
   });
 

@@ -11,11 +11,21 @@
   },
   {
     "method": "post",
-    "path": "/api/instance/reset",
+    "path": "/api/seed/reset",
     "params": [
-      "resetIdentifier",
       "skipStaticRasters",
-      "script"
+      "resetIdentifier",
+      "countryCodes"
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/seed/mock-events",
+    "params": [
+      "countryCode",
+      "clearEvents",
+      "issuedAt",
+      "scenario"
     ]
   },
   {
