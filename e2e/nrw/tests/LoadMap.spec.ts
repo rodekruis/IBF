@@ -10,7 +10,7 @@ test.beforeAll(async () => {
   await resetDb([COUNTRY_CODE]);
 });
 
-test('NRW loads MWI events and shows the empty-events state', async ({
+test('NRW loads MWI page and shows the empty-events state', async ({
   page,
 }) => {
   const nrwMapPage = new NrwMapPage(page);
