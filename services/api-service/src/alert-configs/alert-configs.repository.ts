@@ -9,7 +9,7 @@ import { AlertConfigCreateDto } from '@api-service/src/alert-configs/dto/alert-c
 import { AlertConfigResponseDto } from '@api-service/src/alert-configs/dto/alert-config-response.dto';
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
-import { AlertClass, HazardType } from '@api-service/src/shared-enums';
+import { HazardType } from '@api-service/src/shared-enums';
 
 type AlertConfigRow = Prisma.AlertConfigGetPayload<null>;
 
@@ -23,7 +23,7 @@ export class AlertConfigsRepository {
       created: row.created,
       updated: row.updated,
       countryCodeIso3: row.countryCodeIso3,
-      hazardType: row.hazardType as HazardType,
+      hazardType: row.hazardType,
       spatialExtentName: row.spatialExtentName,
       spatialExtentPlaceCodes: row.spatialExtentPlaceCodes,
       temporalExtents: row.temporalExtents as unknown as Record<
@@ -34,7 +34,7 @@ export class AlertConfigsRepository {
         row.severityClassLevels as unknown as ClassLevelDto[],
       probabilityClassLevels:
         row.probabilityClassLevels as unknown as ClassLevelDto[],
-      triggerAlertClass: row.triggerAlertClass as AlertClass | null,
+      triggerAlertClass: row.triggerAlertClass,
       triggerLeadTimeDuration: row.triggerLeadTimeDuration,
     };
   }
@@ -56,46 +56,52 @@ export class AlertConfigsRepository {
     return rows.map((row: AlertConfigRow) => this.toResponseDto(row));
   }
 
-  public async createAlertConfig(
-    alertConfigCreateDto: AlertConfigCreateDto,
-  ): Promise<AlertConfigResponseDto> {
-    try {
-      const row = await this.prisma.alertConfig.create({
-        data: {
-          countryCodeIso3: alertConfigCreateDto.countryCodeIso3,
-          hazardType: alertConfigCreateDto.hazardType,
-          spatialExtentName: alertConfigCreateDto.spatialExtentName,
-          spatialExtentPlaceCodes: alertConfigCreateDto.spatialExtentPlaceCodes,
-          temporalExtents: alertConfigCreateDto.temporalExtents,
-          severityClassLevels:
-            alertConfigCreateDto.severityClassLevels as unknown as Prisma.InputJsonValue,
-          probabilityClassLevels:
-            alertConfigCreateDto.probabilityClassLevels as unknown as Prisma.InputJsonValue,
-          triggerAlertClass: alertConfigCreateDto.triggerAlertClass ?? null,
-          triggerLeadTimeDuration:
-            alertConfigCreateDto.triggerLeadTimeDuration ?? null,
-        },
-      });
-
-      return this.toResponseDto(row);
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2003'
-      ) {
-        throw new BadRequestException(
-          `Country '${alertConfigCreateDto.countryCodeIso3}' does not exist`,
-        );
-      }
-      throw error;
-    }
-  }
-
   public async deleteAlertConfigOrThrow(id: number): Promise<void> {
     const row = await this.prisma.alertConfig.findUnique({ where: { id } });
     if (!row) {
       throw new NotFoundException(`Alert config with id ${id} not found`);
     }
     await this.prisma.alertConfig.delete({ where: { id } });
+  }
+
+  public async createAlertConfigs(
+    dtos: AlertConfigCreateDto[],
+  ): Promise<AlertConfigResponseDto[]> {
+    if (dtos.length === 0) {
+      return [];
+    }
+
+    try {
+      const rows = await this.prisma.$transaction(
+        dtos.map((dto) =>
+          this.prisma.alertConfig.create({
+            data: {
+              countryCodeIso3: dto.countryCodeIso3,
+              hazardType: dto.hazardType,
+              spatialExtentName: dto.spatialExtentName,
+              spatialExtentPlaceCodes: dto.spatialExtentPlaceCodes,
+              temporalExtents:
+                dto.temporalExtents as unknown as Prisma.InputJsonValue,
+              severityClassLevels:
+                dto.severityClassLevels as unknown as Prisma.InputJsonValue,
+              probabilityClassLevels:
+                dto.probabilityClassLevels as unknown as Prisma.InputJsonValue,
+              triggerAlertClass: dto.triggerAlertClass ?? null,
+              triggerLeadTimeDuration: dto.triggerLeadTimeDuration ?? null,
+            },
+          }),
+        ),
+      );
+      return rows.map((row) => this.toResponseDto(row));
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2003') {
+          throw new BadRequestException(
+            'One or more referenced countries do not exist',
+          );
+        }
+      }
+      throw error;
+    }
   }
 }

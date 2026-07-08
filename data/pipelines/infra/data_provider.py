@@ -23,6 +23,7 @@ from pipelines.infra.data_types.loaded_data_types import (
 )
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.data_provider_fetchers import load_data_container
+from pipelines.infra.utils.nrw_logger import log_error, LogTag
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +31,16 @@ _T = TypeVar("_T")
 
 
 class DataProvider:
-    def __init__(self, api_client: ApiClient) -> None:
+    def __init__(
+        self,
+        api_client: ApiClient,
+        local_data: str | None = None,
+        local_data_date: str | None = None,
+    ) -> None:
         self.loaded_data: dict[DataSource, LoadedDataSource] = {}
         self.api_client = api_client
+        self.local_data = local_data
+        self.local_data_date = local_data_date
 
     def try_load_data(self, country_config: CountryRunConfig) -> tuple[bool, list[str]]:
         """Load all data sources for a country.
@@ -59,6 +67,8 @@ class DataProvider:
                     source_config,
                     data_container,
                     api_client=self.api_client,
+                    local_data_date=self.local_data_date,
+                    local_data=self.local_data,
                 )
             except Exception as exc:
                 data_container.error = str(exc)
@@ -66,7 +76,7 @@ class DataProvider:
                     f"Failed to load data source '{source_config.source}'"
                     f" for {country_name}: {exc}"
                 )
-                logger.error(error_msg)
+                log_error(logger, LogTag.INFRA, error_msg)
                 errors.append(error_msg)
 
             self.loaded_data[source_config.source] = data_container

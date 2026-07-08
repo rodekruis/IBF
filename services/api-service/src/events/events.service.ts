@@ -3,19 +3,12 @@ import { Event } from '@prisma/client';
 
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
-import { MapLayerDetailsDto } from '@api-service/src/events/dto/map-layer-details.dto';
+import { LayerDto } from '@api-service/src/events/dto/layer.dto';
 import {
   EventsRepository,
   ExposedAdminAreaRecord,
 } from '@api-service/src/events/events.repository';
-import {
-  AlertClass,
-  ForecastSource,
-  HazardType,
-  Layer,
-  MapLayerDisplayType,
-  MapLayerInfoType,
-} from '@api-service/src/shared-enums';
+import { LayerName, LayerType } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class EventsService {
@@ -50,15 +43,15 @@ export class EventsService {
     event: Event,
     viewTime: Date,
     exposedAdminAreas: ExposedAdminAreaRecord[],
-    rasters: { id: number; layer: string }[],
+    rasters: { id: number; layer: LayerName }[],
   ): EventResponseDto {
     return {
       eventId: event.id,
       eventName: event.eventName,
       eventLabel: this.deriveEventLabel(event.eventName),
-      hazardType: event.hazardType as HazardType,
-      forecastSources: event.forecastSources as ForecastSource[],
-      alertClass: event.alertClass as AlertClass,
+      hazardType: event.hazardType,
+      forecastSources: event.forecastSources,
+      alertClass: event.alertClass,
       trigger: event.trigger,
       centroid: event.centroid as { latitude: number; longitude: number },
       startAt: event.startAt.toISOString(),
@@ -83,7 +76,7 @@ export class EventsService {
       adminLevel: area.adminLevel,
       name: area.name,
       exposure: area.exposure.map((exp) => ({
-        type: exp.type,
+        layerName: exp.layerName,
         total: null,
         exposed: exp.exposed,
       })),
@@ -96,23 +89,19 @@ export class EventsService {
   }
 
   private mapAvailableLayers(
-    rasters: { id: number; layer: string }[],
-  ): MapLayerDetailsDto[] {
+    rasters: { id: number; layer: LayerName }[],
+  ): LayerDto[] {
     // TODO: extend with non-raster layers (e.g. RedCrossBranches, Clinics) once available
     return [...this.mapRasterLayers(rasters)];
   }
 
   private mapRasterLayers(
-    rasters: { id: number; layer: string }[],
-  ): MapLayerDetailsDto[] {
-    const layerInfoMap: Record<string, MapLayerInfoType> = {
-      [Layer.floodDepth]: MapLayerInfoType.FloodDepth,
-    };
-
+    rasters: { id: number; layer: LayerName }[],
+  ): LayerDto[] {
     return rasters.map((raster) => ({
       resourceId: String(raster.id),
-      dataType: layerInfoMap[raster.layer] ?? MapLayerInfoType.FloodDepth,
-      displayType: MapLayerDisplayType.Raster,
+      layerName: raster.layer,
+      layerType: LayerType.raster,
     }));
   }
 }

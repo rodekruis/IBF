@@ -27,39 +27,48 @@ describe('/ Alert Configs', () => {
     spatialExtentPlaceCodes: ['ET0101'],
     temporalExtents: [{ 'lead-time-spectrum': ['0-day', '1-day', '2-day'] }],
     severityClassLevels: [
-      { label: AlertClassificationLevel.Low, threshold: 100 },
-      { label: AlertClassificationLevel.Medium, threshold: 200 },
-      { label: AlertClassificationLevel.High, threshold: 400 },
+      { label: AlertClassificationLevel.low, threshold: 100 },
+      { label: AlertClassificationLevel.medium, threshold: 200 },
+      { label: AlertClassificationLevel.high, threshold: 400 },
     ],
     probabilityClassLevels: [
-      { label: AlertClassificationLevel.Low, threshold: 0.5 },
-      { label: AlertClassificationLevel.Medium, threshold: 0.65 },
-      { label: AlertClassificationLevel.High, threshold: 0.85 },
+      { label: AlertClassificationLevel.low, threshold: 0.5 },
+      { label: AlertClassificationLevel.medium, threshold: 0.65 },
+      { label: AlertClassificationLevel.high, threshold: 0.85 },
     ],
-    triggerAlertClass: AlertClass.High,
+    triggerAlertClass: AlertClass.high,
     triggerLeadTimeDuration: 'P7D',
   };
 
   describe('POST /alert-configs', () => {
-    it('should create an alert config', async () => {
+    it('should create alert configs', async () => {
       const response = await getServer()
         .post('/alert-configs')
         .set('Cookie', [accessToken])
-        .send(validAlertConfig);
+        .send([validAlertConfig]);
 
       expect(response.status).toBe(HttpStatus.CREATED);
-      expect(response.body.id).toBeDefined();
-      expect(response.body.countryCodeIso3).toBe('ETH');
-      expect(response.body.hazardType).toBe(HazardType.floods);
-      expect(response.body.spatialExtentName).toBe('TEST_STATION');
-      expect(response.body.spatialExtentPlaceCodes).toEqual(['ET0101']);
+      expect(response.body[0].id).toBeDefined();
+      expect(response.body[0].countryCodeIso3).toBe('ETH');
+      expect(response.body[0].hazardType).toBe(HazardType.floods);
+      expect(response.body[0].spatialExtentName).toBe('TEST_STATION');
+      expect(response.body[0].spatialExtentPlaceCodes).toEqual(['ET0101']);
     });
 
     it('should reject invalid hazard type', async () => {
       const response = await getServer()
         .post('/alert-configs')
         .set('Cookie', [accessToken])
-        .send({ ...validAlertConfig, hazardType: 'invalid' });
+        .send([{ ...validAlertConfig, hazardType: 'invalid' }]);
+
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+    });
+
+    it('should return 400 for non-existent country', async () => {
+      const response = await getServer()
+        .post('/alert-configs')
+        .set('Cookie', [accessToken])
+        .send([{ ...validAlertConfig, countryCodeIso3: 'XXX' }]);
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
@@ -106,13 +115,15 @@ describe('/ Alert Configs', () => {
       const createResponse = await getServer()
         .post('/alert-configs')
         .set('Cookie', [accessToken])
-        .send({
-          ...validAlertConfig,
-          spatialExtentName: 'TO_DELETE_STATION',
-        });
+        .send([
+          {
+            ...validAlertConfig,
+            spatialExtentName: 'TO_DELETE_STATION',
+          },
+        ]);
 
       expect(createResponse.status).toBe(HttpStatus.CREATED);
-      const id = createResponse.body.id;
+      const id = createResponse.body[0].id;
 
       const deleteResponse = await getServer()
         .delete(`/alert-configs/${id}`)

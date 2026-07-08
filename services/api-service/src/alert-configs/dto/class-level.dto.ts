@@ -6,7 +6,7 @@ import { AlertClassificationLevel } from '@api-service/src/shared-enums';
 export class ClassLevelDto {
   @ApiProperty({
     enum: AlertClassificationLevel,
-    example: AlertClassificationLevel.High,
+    example: AlertClassificationLevel.high,
   })
   @IsEnum(AlertClassificationLevel)
   public readonly label: AlertClassificationLevel;

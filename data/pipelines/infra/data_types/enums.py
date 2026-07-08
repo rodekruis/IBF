@@ -23,16 +23,23 @@ class HazardType(StrEnum):
     DROUGHT = "drought"
 
 
-class Layer(StrEnum):
+class LayerName(StrEnum):
     # --- generic layers (cross-hazard) ---
     POPULATION = "population"
-    POPULATION_EXPOSED = "population_exposed"
+    POPULATION_EXPOSED = "populationExposed"
 
     # --- floods-specific layers ---
-    FLOOD_DEPTH = "flood_depth"
-    GLOFAS_STATIONS = "glofas_stations"
+    RED_CROSS_BRANCHES = "redCrossBranches"
+    CLINICS = "clinics"
+    FLOOD_DEPTH = "floodDepth"
+    GLOFAS_STATIONS = "glofasStations"
 
 
 class SeverityKey(StrEnum):
-    RETURN_PERIOD = "return_period"
+    RETURN_PERIOD = "returnPeriod"
     PERCENTILE = "percentile"
+
+
+class EPSG(StrEnum):
+    WGS84 = "EPSG:4326"
+    WEB_MERCATOR = "EPSG:3857"

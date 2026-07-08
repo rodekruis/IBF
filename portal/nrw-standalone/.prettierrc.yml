@@ -1,0 +1,9 @@
+# Matches the go-web-app submodule's formatting style.
+# Prettier resolves config by walking up from the file being formatted,
+# so this is picked up for files inside src/go-web-app/.
+arrowParens: always
+semi: true
+singleAttributePerLine: true
+singleQuote: true
+tabWidth: 4
+trailingComma: all

@@ -57,7 +57,7 @@ jobs:
     outputs:
       preview_url: ${{ steps.deploy_to_aswa.outputs.static_web_app_url }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -97,7 +97,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Add Deployment URL to PR Description
-        uses: nefrob/pr-description@v1.2.0
+        uses: nefrob/pr-description@v1.3.0
         with:
           content: ${{ needs.test.outputs.preview_url }}
           regex: '<!-- start deployment url -->.*?<!-- end deployment url -->'

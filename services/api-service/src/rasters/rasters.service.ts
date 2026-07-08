@@ -4,7 +4,7 @@ import { AlertRasterResponseDto } from '@api-service/src/rasters/dto/alert-raste
 import { StaticRasterResponseDto } from '@api-service/src/rasters/dto/static-raster-response.dto';
 import { StaticRasterUploadDto } from '@api-service/src/rasters/dto/static-raster-upload.dto';
 import { RastersRepository } from '@api-service/src/rasters/rasters.repository';
-import { Layer } from '@api-service/src/shared-enums';
+import { LayerName } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class RastersService {
@@ -22,7 +22,7 @@ export class RastersService {
 
   public async getStaticRasterOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    layer: LayerName,
   ): Promise<StaticRasterResponseDto> {
     return this.rastersRepository.getStaticRasterOrThrow(
       countryCodeIso3,
@@ -32,7 +32,7 @@ export class RastersService {
 
   public async getStaticRasterImageOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    layer: LayerName,
   ): Promise<Buffer> {
     return this.rastersRepository.getStaticRasterImageOrThrow(
       countryCodeIso3,
@@ -42,7 +42,7 @@ export class RastersService {
 
   public async getStaticRasterDataImageOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    layer: LayerName,
   ): Promise<Buffer> {
     return this.rastersRepository.getStaticRasterDataImageOrThrow(
       countryCodeIso3,
@@ -58,7 +58,7 @@ export class RastersService {
 
   public async deleteStaticRasterOrThrow(
     countryCodeIso3: string,
-    layer: Layer,
+    layer: LayerName,
   ): Promise<void> {
     await this.rastersRepository.deleteStaticRasterOrThrow(
       countryCodeIso3,

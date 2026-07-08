@@ -17,14 +17,20 @@ type AlertClassMatrix = Record<
   Record<AlertClassificationLevel, AlertClass>
 >;
 
-const { SingleThreshold, Low, Medium, High } = AlertClassificationLevel;
+const { singleThreshold, low, medium, high } = AlertClassificationLevel;
+
+const ALERT_CLASS_ORDER: Record<AlertClass, number> = {
+  [AlertClass.low]: 1,
+  [AlertClass.medium]: 2,
+  [AlertClass.high]: 3,
+};
 
 // This matrix determines how severityClass and probabilityClass are combined into alertClass.
-// - When one dimension is 'SingleThreshold' the other dimension passes through directly, so matrix[SingleThreshold][x] = x and matrix[x][SingleThreshold] = x.
-// - The inner 3x3 cells (Low/Medium/High × Low/Medium/High) follow a standard risk matrix (UNDRR/WMO),
-// but are currently unused: all configs use 'SingleThreshold' for at least one dimension.
+// - When one dimension is 'singleThreshold' the other dimension passes through directly, so matrix[singleThreshold][x] = x and matrix[x][singleThreshold] = x.
+// - The inner 3x3 cells (low/medium/high × low/medium/high) follow a standard risk matrix (UNDRR/WMO),
+// but are currently unused: all configs use 'singleThreshold' for at least one dimension.
 //
-// NOTE: 'SingleThreshold' is used when a dimension (severity or probability) has only one threshold level,
+// NOTE: 'singleThreshold' is used when a dimension (severity or probability) has only one threshold level,
 // meaning that dimension does not differentiate between alert classes.
 // In practice, all current configs use either multi-sev + single-prob, or single-sev + multi-prob, or both single.
 // Multi-sev + multi-prob is not used, and would in the current setup lead to counterintuitive results because probability is conditional on severity
@@ -32,29 +38,29 @@ const { SingleThreshold, Low, Medium, High } = AlertClassificationLevel;
 // which means: lower severity threshold is easier to exceed > higher probability > higher probability class > potentially higher alert class for less severe alert (depending on exact threshold configurations)
 // TODO AB#41119: resolve this computation problem
 const ALERT_CLASS_MATRIX: AlertClassMatrix = {
-  [SingleThreshold]: {
-    [SingleThreshold]: AlertClass.High, // when both dimensions are 'SingleThreshold', we classify as 'high' for now
-    [Low]: AlertClass.Low,
-    [Medium]: AlertClass.Medium,
-    [High]: AlertClass.High,
+  [singleThreshold]: {
+    [singleThreshold]: AlertClass.high, // when both dimensions are 'singleThreshold', we classify as 'high' for now
+    [low]: AlertClass.low,
+    [medium]: AlertClass.medium,
+    [high]: AlertClass.high,
   },
-  [Low]: {
-    [SingleThreshold]: AlertClass.Low,
-    [Low]: AlertClass.Low,
-    [Medium]: AlertClass.Low,
-    [High]: AlertClass.Medium,
+  [low]: {
+    [singleThreshold]: AlertClass.low,
+    [low]: AlertClass.low,
+    [medium]: AlertClass.low,
+    [high]: AlertClass.medium,
   },
-  [Medium]: {
-    [SingleThreshold]: AlertClass.Medium,
-    [Low]: AlertClass.Low,
-    [Medium]: AlertClass.Medium,
-    [High]: AlertClass.High,
+  [medium]: {
+    [singleThreshold]: AlertClass.medium,
+    [low]: AlertClass.low,
+    [medium]: AlertClass.medium,
+    [high]: AlertClass.high,
   },
-  [High]: {
-    [SingleThreshold]: AlertClass.High,
-    [Low]: AlertClass.Medium,
-    [Medium]: AlertClass.High,
-    [High]: AlertClass.High,
+  [high]: {
+    [singleThreshold]: AlertClass.high,
+    [low]: AlertClass.medium,
+    [medium]: AlertClass.high,
+    [high]: AlertClass.high,
   },
 };
 
@@ -247,22 +253,21 @@ export class AlertClassificationService {
   private computeAlertClass(
     alertClassPerTimeInterval: Map<string, AlertClass | null>,
   ): AlertClass | null {
-    let highest: AlertClass | null = null;
-    let highestOrder = -1;
-
-    const alertClassOrder = Object.values(AlertClass);
+    let highestAlertClass: AlertClass | null = null;
+    let highestAlertClassOrder = -1;
 
     for (const alertClass of alertClassPerTimeInterval.values()) {
-      if (alertClass === null) {
-        continue;
-      }
-      const order = alertClassOrder.indexOf(alertClass) + 1;
-      if (order > highestOrder) {
-        highest = alertClass;
-        highestOrder = order;
+      if (alertClass === null) continue;
+
+      const alertClassOrder = ALERT_CLASS_ORDER[alertClass];
+
+      if (alertClassOrder > highestAlertClassOrder) {
+        highestAlertClass = alertClass;
+        highestAlertClassOrder = alertClassOrder;
       }
     }
-    return highest;
+
+    return highestAlertClass;
   }
 
   private computeReachesPeakAlertClassAt(
@@ -296,12 +301,10 @@ export class AlertClassificationService {
       return false;
     }
 
-    const alertClassOrder = Object.values(AlertClass);
-    const alertClassRank = alertClassOrder.indexOf(alertClass) + 1;
-    const triggerRank =
-      alertClassOrder.indexOf(config.triggerAlertClass as AlertClass) + 1;
+    const alertClassOrder = ALERT_CLASS_ORDER[alertClass];
+    const triggerOrder = ALERT_CLASS_ORDER[config.triggerAlertClass];
 
-    if (alertClassRank < triggerRank) {
+    if (alertClassOrder < triggerOrder) {
       return false;
     }
 

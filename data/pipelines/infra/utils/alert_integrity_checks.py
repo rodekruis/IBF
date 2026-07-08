@@ -9,7 +9,7 @@ from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
     HazardType,
-    Layer,
+    LayerName,
 )
 
 # This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
@@ -83,7 +83,7 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
         errors.append(f"Alert '{event_name}' admin-area: expected at least 1 record")
         return errors
 
-    levels: dict[int, dict[Layer, int]] = {}
+    levels: dict[int, dict[LayerName, int]] = {}
     for entry in alert.exposure.admin_areas:
         level_layers = levels.setdefault(entry.admin_level, {})
         level_layers[entry.layer] = level_layers.get(entry.layer, 0) + 1
@@ -94,7 +94,7 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
                 f"layer '{entry.layer}' must be non-negative, got {entry.value}"
             )
 
-    admin_area_required = (Layer.POPULATION_EXPOSED,)
+    admin_area_required = (LayerName.POPULATION_EXPOSED,)
     for level, layer_counts in sorted(levels.items()):
         for required in admin_area_required:
             if required not in layer_counts:
@@ -105,9 +105,7 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
 
         counts = list(layer_counts.values())
         if len(set(counts)) > 1:
-            detail = ", ".join(
-                f"{layer}={count}" for layer, count in layer_counts.items()
-            )
+            detail = ", ".join(f"{key}={count}" for key, count in layer_counts.items())
             errors.append(
                 f"Alert '{event_name}' admin-area level {level}: "
                 f"record count differs across layers ({detail})"
@@ -126,18 +124,18 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
                 f"invalid extent (xmin={ext.xmin}, ymin={ext.ymin}, "
                 f"xmax={ext.xmax}, ymax={ext.ymax})"
             )
-        if not raster.value_black_white:
+        if not raster.value_greyscale:
             errors.append(
                 f"Alert '{event_name}' raster '{raster.layer}': "
-                f"value_black_white is empty"
+                f"value_greyscale is empty"
             )
         else:
             try:
-                decoded = base64.b64decode(raster.value_black_white, validate=True)
+                decoded = base64.b64decode(raster.value_greyscale, validate=True)
             except Exception:
                 errors.append(
                     f"Alert '{event_name}' raster '{raster.layer}': "
-                    f"value_black_white is not valid base64"
+                    f"value_greyscale is not valid base64"
                 )
             else:
                 # Look at the first few bytes to verify it is a b/w png
@@ -145,6 +143,6 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
                 if not decoded.startswith(png_signature):
                     errors.append(
                         f"Alert '{event_name}' raster '{raster.layer}': "
-                        f"value_black_white is not a valid PNG"
+                        f"value_greyscale is not a valid PNG"
                     )
     return errors

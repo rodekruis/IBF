@@ -8,7 +8,7 @@ import { AlertToEventService } from '@api-service/src/events/alert-to-event.serv
 import {
   EnsembleMemberType,
   HazardType,
-  Layer,
+  LayerName,
 } from '@api-service/src/shared-enums';
 
 // This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
@@ -177,10 +177,10 @@ export class AlertsService {
       return errors;
     }
 
-    const levels = new Map<number, Map<Layer, number>>();
+    const levels = new Map<number, Map<LayerName, number>>();
     for (const entry of adminAreas) {
       const levelLayers =
-        levels.get(entry.adminLevel) ?? new Map<Layer, number>();
+        levels.get(entry.adminLevel) ?? new Map<LayerName, number>();
       levelLayers.set(entry.layer, (levelLayers.get(entry.layer) ?? 0) + 1);
       levels.set(entry.adminLevel, levelLayers);
 
@@ -191,7 +191,7 @@ export class AlertsService {
       }
     }
 
-    const requiredLayers = [Layer.populationExposed];
+    const requiredLayers = [LayerName.populationExposed];
     for (const [level, layerCounts] of [...levels.entries()].sort(
       (a, b) => a[0] - b[0],
     )) {
@@ -230,30 +230,30 @@ export class AlertsService {
         );
       }
 
-      if (!raster.valueBlackWhite) {
+      if (!raster.valueGreyscale) {
         errors.push(
-          `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is empty`,
+          `Alert '${alert.eventName}' raster '${raster.layer}': valueGreyscale is empty`,
         );
       } else {
         // Check base64 structure: valid characters and correct padding length
         const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
         if (
-          raster.valueBlackWhite.length % 4 !== 0 ||
-          !base64Regex.test(raster.valueBlackWhite)
+          raster.valueGreyscale.length % 4 !== 0 ||
+          !base64Regex.test(raster.valueGreyscale)
         ) {
           errors.push(
-            `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is not valid base64`,
+            `Alert '${alert.eventName}' raster '${raster.layer}': valueGreyscale is not valid base64`,
           );
         } else {
           // Verify decoded bytes start with the 8-byte PNG magic number
-          const bytes = Buffer.from(raster.valueBlackWhite, 'base64');
+          const bytes = Buffer.from(raster.valueGreyscale, 'base64');
           const pngSignature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
           const hasPngSignature =
             bytes.length >= pngSignature.length &&
             pngSignature.every((b, i) => bytes[i] === b);
           if (!hasPngSignature) {
             errors.push(
-              `Alert '${alert.eventName}' raster '${raster.layer}': valueBlackWhite is not a valid PNG`,
+              `Alert '${alert.eventName}' raster '${raster.layer}': valueGreyscale is not a valid PNG`,
             );
           }
         }

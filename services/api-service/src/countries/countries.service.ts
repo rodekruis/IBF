@@ -21,10 +21,10 @@ export class CountriesService {
     return this.countriesRepository.getCountryOrThrow(countryCodeIso3);
   }
 
-  public async createCountry(
-    countryCreateDto: CountryCreateDto,
-  ): Promise<CountryResponseDto> {
-    return this.countriesRepository.createCountry(countryCreateDto);
+  public async createCountries(
+    dtos: CountryCreateDto[],
+  ): Promise<CountryResponseDto[]> {
+    return this.countriesRepository.createCountries(dtos);
   }
 
   public async updateCountryOrThrow(

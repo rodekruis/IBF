@@ -5,9 +5,10 @@ import os
 from urllib.parse import urlencode
 
 import requests
-from pipelines.infra.data_types.enums import Layer
+from pipelines.infra.data_types.enums import LayerName
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.data_types.location_point import LocationPoint
+from pipelines.infra.utils.nrw_logger import log_error, log_info, log_warning, LogTag
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class ApiClient:
         )
 
         if response.status_code == 201:
-            logger.info(f"Forecast submitted to '{url}'")
+            log_info(logger, LogTag.INFRA, f"Forecast submitted to '{url}'")
             return []
 
         try:
@@ -52,7 +53,7 @@ class ApiClient:
             errors = [f"API returned {response.status_code}: {response.text}"]
 
         for err in errors:
-            logger.error(f"API error: {err}")
+            log_error(logger, LogTag.INFRA, f"API error: {err}")
         return errors
 
     def get_admin_areas(
@@ -63,16 +64,22 @@ class ApiClient:
         if admin_level is not None:
             cql_filter += f" AND adminLevel={admin_level}"
         params = {"filter": cql_filter}
-        logger.info(f"Download '{url}?{urlencode(params)}'")
+        log_info(logger, LogTag.INFRA, f"Download '{url}?{urlencode(params)}'")
         response = self._session.get(url, params=params, timeout=30)
         if response.status_code == 200:
             feature_collection = response.json()
             features = feature_collection.get("features", [])
             if not features:
-                logger.warning(f"Downloaded 0 admin areas for {country_code_iso_3}")
+                log_warning(
+                    logger,
+                    LogTag.INFRA,
+                    f"Downloaded 0 admin areas for {country_code_iso_3}",
+                )
             return feature_collection
-        logger.error(
-            f"Failed to download admin areas for {country_code_iso_3}: {response.status_code} {response.text}"
+        log_error(
+            logger,
+            LogTag.INFRA,
+            f"Failed to download admin areas for {country_code_iso_3}: {response.status_code} {response.text}",
         )
         return {}
 
@@ -84,17 +91,21 @@ class ApiClient:
             "countryCodeIso3": country_code_iso_3,
             "hazardType": hazard_type,
         }
-        logger.info(f"Download '{url}?{urlencode(params)}'")
+        log_info(logger, LogTag.INFRA, f"Download '{url}?{urlencode(params)}'")
         response = self._session.get(url, params=params, timeout=30)
         if response.status_code == 200:
             configs = response.json()
             if not configs:
-                logger.warning(
-                    f"Downloaded 0 alert configs for {country_code_iso_3}/{hazard_type}"
+                log_warning(
+                    logger,
+                    LogTag.INFRA,
+                    f"Downloaded 0 alert configs for {country_code_iso_3}/{hazard_type}",
                 )
             return [AlertConfig.from_api(item) for item in configs]
-        logger.error(
-            f"Failed to download alert configs for {country_code_iso_3}/{hazard_type}: {response.status_code} {response.text}"
+        log_error(
+            logger,
+            LogTag.INFRA,
+            f"Failed to download alert configs for {country_code_iso_3}/{hazard_type}: {response.status_code} {response.text}",
         )
         return []
 
@@ -102,23 +113,27 @@ class ApiClient:
         url = f"{self._base_url}{GEO_FEATURES_PATH}"
         cql_filter = f"countryCodeIso3='{country_code_iso_3}' AND layer='{layer}'"
         params = {"filter": cql_filter}
-        logger.info(f"Download '{url}?{urlencode(params)}'")
+        log_info(logger, LogTag.INFRA, f"Download '{url}?{urlencode(params)}'")
         response = self._session.get(url, params=params, timeout=30)
         if response.status_code == 200:
             feature_collection = response.json()
             features = feature_collection.get("features", [])
             if not features:
-                logger.warning(
-                    f"Downloaded 0 geo-features for {country_code_iso_3}/{layer}"
+                log_warning(
+                    logger,
+                    LogTag.INFRA,
+                    f"Downloaded 0 geo-features for {country_code_iso_3}/{layer}",
                 )
             return features
-        logger.error(
-            f"Failed to download geo-features for {country_code_iso_3}/{layer}: {response.status_code} {response.text}"
+        log_error(
+            logger,
+            LogTag.INFRA,
+            f"Failed to download geo-features for {country_code_iso_3}/{layer}: {response.status_code} {response.text}",
         )
         return []
 
     def get_glofas_stations(self, country_code_iso_3: str) -> dict[str, LocationPoint]:
-        data = self.get_geo_features(country_code_iso_3, Layer.GLOFAS_STATIONS)
+        data = self.get_geo_features(country_code_iso_3, LayerName.GLOFAS_STATIONS)
         stations: dict[str, LocationPoint] = {}
         for feature in data:
             properties = feature.get("properties", {})
@@ -138,12 +153,14 @@ class ApiClient:
         self, country_code_iso_3: str, layer: str
     ) -> dict | None:
         url = f"{self._base_url}{STATIC_RASTERS_PATH}/{country_code_iso_3}/{layer}"
-        logger.info(f"Download '{url}'")
+        log_info(logger, LogTag.INFRA, f"Download '{url}'")
         response = self._session.get(url, timeout=30)
         if response.status_code == 200:
             return response.json()
-        logger.error(
-            f"Failed to download static raster metadata for {country_code_iso_3}/{layer}: {response.status_code} {response.text}"
+        log_error(
+            logger,
+            LogTag.INFRA,
+            f"Failed to download static raster metadata for {country_code_iso_3}/{layer}: {response.status_code} {response.text}",
         )
         return None
 
@@ -151,11 +168,13 @@ class ApiClient:
         self, country_code_iso_3: str, layer: str
     ) -> bytes | None:
         url = f"{self._base_url}{STATIC_RASTERS_PATH}/{country_code_iso_3}/{layer}/data"
-        logger.info(f"Download '{url}'")
+        log_info(logger, LogTag.INFRA, f"Download '{url}'")
         response = self._session.get(url, timeout=60)
         if response.status_code == 200:
             return response.content
-        logger.error(
-            f"Failed to download static raster data image for {country_code_iso_3}/{layer}: {response.status_code} {response.text}"
+        log_error(
+            logger,
+            LogTag.INFRA,
+            f"Failed to download static raster data image for {country_code_iso_3}/{layer}: {response.status_code} {response.text}",
         )
         return None

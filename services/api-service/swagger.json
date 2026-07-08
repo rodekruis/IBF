@@ -14,18 +14,21 @@
     "path": "/api/instance/reset",
     "params": [
       "resetIdentifier",
+      "skipStaticRasters",
       "script"
     ]
   },
   {
     "method": "get",
     "path": "/api/alerts",
-    "params": []
+    "params": [],
+    "returnType": "AlertReadDto[]"
   },
   {
     "method": "post",
     "path": "/api/alerts",
-    "params": []
+    "params": [],
+    "returnType": "AlertReadDto[]"
   },
   {
     "method": "get",
@@ -49,7 +52,8 @@
       "countryCodeIso3",
       "active",
       "timestamp"
-    ]
+    ],
+    "returnType": "EventResponseDto[]"
   },
   {
     "method": "get",
@@ -57,13 +61,14 @@
     "params": [
       "countryCodeIso3",
       "hazardType"
-    ]
+    ],
+    "returnType": "AlertConfigResponseDto[]"
   },
   {
     "method": "post",
     "path": "/api/alert-configs",
     "params": [],
-    "returnType": "AlertConfigResponseDto"
+    "returnType": "AlertConfigResponseDto[]"
   },
   {
     "method": "delete",
@@ -74,26 +79,6 @@
   },
   {
     "method": "get",
-    "path": "/api/users",
-    "params": []
-  },
-  {
-    "method": "post",
-    "path": "/api/users/login",
-    "params": []
-  },
-  {
-    "method": "post",
-    "path": "/api/users/logout",
-    "params": []
-  },
-  {
-    "method": "get",
-    "path": "/api/users/current",
-    "params": []
-  },
-  {
-    "method": "get",
     "path": "/api/admin-areas",
     "params": [],
     "returnType": "GeoJsonFeatureCollectionDto"
@@ -101,8 +86,7 @@
   {
     "method": "post",
     "path": "/api/admin-areas",
-    "params": [],
-    "returnType": "GeoJsonFeatureDto"
+    "params": []
   },
   {
     "method": "patch",
@@ -122,13 +106,14 @@
   {
     "method": "get",
     "path": "/api/countries",
-    "params": []
+    "params": [],
+    "returnType": "CountryResponseDto[]"
   },
   {
     "method": "post",
     "path": "/api/countries",
     "params": [],
-    "returnType": "CountryResponseDto"
+    "returnType": "CountryResponseDto[]"
   },
   {
     "method": "get",
@@ -162,8 +147,7 @@
   {
     "method": "post",
     "path": "/api/geo-features",
-    "params": [],
-    "returnType": "GeoJsonFeatureDto"
+    "params": []
   },
   {
     "method": "patch",
@@ -233,5 +217,25 @@
     "params": [
       "id"
     ]
+  },
+  {
+    "method": "get",
+    "path": "/api/users",
+    "params": []
+  },
+  {
+    "method": "post",
+    "path": "/api/users/login",
+    "params": []
+  },
+  {
+    "method": "post",
+    "path": "/api/users/logout",
+    "params": []
+  },
+  {
+    "method": "get",
+    "path": "/api/users/current",
+    "params": []
   }
 ]

@@ -9,21 +9,22 @@ from pipelines.flood.determine_alerts import (
     ReturnPeriodThresholds,
     ReturnPeriodThresholdValue,
 )
-from pipelines.flood.determine_exposure import (
-    compute_population_exposed,
-    determine_spatial_extent,
-)
+from pipelines.flood.determine_exposure import determine_spatial_extent
 from pipelines.flood.extract_forecast import extract_discharge_glofas_station
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import Centroid
-from pipelines.infra.data_types.enums import EnsembleMemberType, Layer, SeverityKey
+from pipelines.infra.data_types.enums import EnsembleMemberType, LayerName, SeverityKey
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
-from pipelines.infra.utils.exposure import aggregate_population_exposed
+from pipelines.infra.utils.exposure import (
+    aggregate_population_exposed,
+    compute_population_exposed,
+)
+from pipelines.infra.utils.nrw_logger import log_info, log_warning, LogTag
 from pipelines.infra.utils.raster import (
     get_bounding_box,
     get_raster_extent,
@@ -34,6 +35,8 @@ from pipelines.infra.utils.storage_helpers import (
     archive_alert_glofas_files,
     get_glofas_country_split_path,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_flood_forecasts(
@@ -88,15 +91,19 @@ def calculate_flood_forecasts(
     )
 
     # Slice NetCDF files to country bounds once before processing stations
-    country_sliced_netcdf_paths: list[str] = []
-    for netcdf_path in glofas_netcdf_paths:
-        archivable_output_path =get_glofas_country_split_path(country, netcdf_path)
-        country_sliced_path = slice_netcdf_to_bounds(
-            netcdf_path,
-            country_bounds,
-            archivable_output_path,
-        )
-        country_sliced_netcdf_paths.append(country_sliced_path)
+    # When using --local-data country, files are already country-split so skip slicing
+    if data_provider.local_data == "country":
+        country_sliced_netcdf_paths = glofas_netcdf_paths
+    else:
+        country_sliced_netcdf_paths: list[str] = []
+        for netcdf_path in glofas_netcdf_paths:
+            archivable_output_path = get_glofas_country_split_path(country, netcdf_path)
+            country_sliced_path = slice_netcdf_to_bounds(
+                netcdf_path,
+                country_bounds,
+                archivable_output_path,
+            )
+            country_sliced_netcdf_paths.append(country_sliced_path)
 
     ### Step 3 - Loop through alert configs (spatial extents / stations) ###
     # REQUIRED: loop over spatial extents (alert configs)
@@ -104,7 +111,11 @@ def calculate_flood_forecasts(
         station_code = config.spatial_extent_name
         station = glofas_stations.get(station_code)
         if station is None:
-            logging.warning(f"No station location found for '{station_code}', skipping")
+            log_warning(
+                logger,
+                LogTag.FLOOD_LOGIC,
+                f"No station location found for '{station_code}', skipping",
+            )
             continue
 
         # REQUIRED: loop over temporal extents (even though there is just one temporal extent for floods - the extent of all lead times - stick to the generic pattern of looping over temporal extents defined in the alert config
@@ -125,7 +136,9 @@ def calculate_flood_forecasts(
 
             # If no time intervals exceeded the minimum return period threshold, skip to the next temporal extent
             if not time_interval_severities:
-                logging.info(f"No alerts for station {station_code}")
+                log_info(
+                    logger, LogTag.FLOOD_LOGIC, f"No alerts for station {station_code}"
+                )
                 continue
 
             ### Step 5 - Compute flood extent
@@ -143,7 +156,11 @@ def calculate_flood_forecasts(
             )
 
             if not place_codes_exposed or clipped_flood_extent is None:
-                logging.info(f"No place codes for station {station_code}")
+                log_info(
+                    logger,
+                    LogTag.FLOOD_LOGIC,
+                    f"No place codes for station {station_code}",
+                )
                 continue
 
             ### Step 7 - Compute exposure within the flood extent ###
@@ -203,7 +220,7 @@ def calculate_flood_forecasts(
             data_submitter.add_admin_area_exposure(
                 event_name=event_name,
                 admin_level=target_admin_level,
-                layer=Layer.POPULATION_EXPOSED,
+                layer=LayerName.POPULATION_EXPOSED,
                 values_by_place_code=population_exposed,
             )
 
@@ -211,14 +228,14 @@ def calculate_flood_forecasts(
             # data_submitter.add_geo_feature_exposure(
             #     event_name=event_name,
             #     geo_feature_id=station_code,
-            #     layer=Layer.GLOFAS_STATIONS,
+            #     layer=LayerName.GLOFAS_STATIONS,
             #     attributes={"river_discharge": 0},
             # )
 
             data_submitter.add_raster_exposure(
                 event_name=event_name,
-                layer=Layer.FLOOD_DEPTH,
-                value_black_white=raster_to_base64_png(clipped_flood_extent),
+                layer=LayerName.FLOOD_DEPTH,
+                value_greyscale=raster_to_base64_png(clipped_flood_extent),
                 extent=get_raster_extent(clipped_flood_extent),
             )
 

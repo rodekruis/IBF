@@ -10,7 +10,7 @@ import {
   EnsembleMemberType,
   ForecastSource,
   HazardType,
-  Layer,
+  LayerName,
   SeverityKey,
 } from '@api-service/src/shared-enums';
 
@@ -62,14 +62,14 @@ function createMockValidAlert(
         {
           placeCode: 'ETH_01_001',
           adminLevel: 3,
-          layer: Layer.populationExposed,
+          layer: LayerName.populationExposed,
           value: 1,
         },
       ],
       rasters: [
         {
-          layer: Layer.floodDepth,
-          valueBlackWhite: TEST_RASTER_BASE64,
+          layer: LayerName.floodDepth,
+          valueGreyscale: TEST_RASTER_BASE64,
           extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
         },
       ],
@@ -290,8 +290,8 @@ describe('AlertsService', () => {
             adminAreas: [],
             rasters: [
               {
-                layer: Layer.floodDepth,
-                valueBlackWhite: TEST_RASTER_BASE64,
+                layer: LayerName.floodDepth,
+                valueGreyscale: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -312,7 +312,7 @@ describe('AlertsService', () => {
       );
     });
 
-    it('should reject admin-area missing required population_exposed layer', async () => {
+    it('should reject admin-area missing required populationExposed layer', async () => {
       const alerts = [
         createMockValidAlert({
           exposure: {
@@ -320,14 +320,14 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.glofasStations,
+                layer: LayerName.glofasStations,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.floodDepth,
-                valueBlackWhite: TEST_RASTER_BASE64,
+                layer: LayerName.floodDepth,
+                valueGreyscale: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -343,9 +343,7 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining(
-            "missing required layer 'population_exposed'",
-          ),
+          expect.stringContaining("missing required layer 'populationExposed'"),
         ]),
       );
     });
@@ -358,26 +356,26 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.glofasStations, // not actually admin-area layer, but works to test the record count validation
+                layer: LayerName.glofasStations, // not actually admin-area layerName, but works to test the record count validation
                 value: 1,
               },
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 100,
               },
               {
                 placeCode: 'B',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 200,
               },
             ],
             rasters: [
               {
-                layer: Layer.floodDepth,
-                valueBlackWhite: TEST_RASTER_BASE64,
+                layer: LayerName.floodDepth,
+                valueGreyscale: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -410,14 +408,14 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.floodDepth,
-                valueBlackWhite: TEST_RASTER_BASE64,
+                layer: LayerName.floodDepth,
+                valueGreyscale: TEST_RASTER_BASE64,
                 extent: { xmin: 10, ymin: 5, xmax: 5, ymax: 1 },
               },
             ],
@@ -444,14 +442,14 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.floodDepth,
-                valueBlackWhite: '!!!not-base64!!!',
+                layer: LayerName.floodDepth,
+                valueGreyscale: '!!!not-base64!!!',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -467,7 +465,7 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('valueBlackWhite is not valid base64'),
+          expect.stringContaining('valueGreyscale is not valid base64'),
         ]),
       );
     });
@@ -480,14 +478,14 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.floodDepth,
-                valueBlackWhite: 'AQI',
+                layer: LayerName.floodDepth,
+                valueGreyscale: 'AQI',
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -503,7 +501,7 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('valueBlackWhite is not valid base64'),
+          expect.stringContaining('valueGreyscale is not valid base64'),
         ]),
       );
     });
@@ -519,14 +517,14 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.floodDepth,
-                valueBlackWhite: notPngBase64,
+                layer: LayerName.floodDepth,
+                valueGreyscale: notPngBase64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -542,12 +540,12 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('valueBlackWhite is not a valid PNG'),
+          expect.stringContaining('valueGreyscale is not a valid PNG'),
         ]),
       );
     });
 
-    it('should accept rasters with valid flood_depth', async () => {
+    it('should accept rasters with valid floodDepth', async () => {
       const alerts = [
         createMockValidAlert({
           exposure: {
@@ -555,14 +553,14 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],
             rasters: [
               {
-                layer: Layer.floodDepth,
-                valueBlackWhite: TEST_RASTER_BASE64,
+                layer: LayerName.floodDepth,
+                valueGreyscale: TEST_RASTER_BASE64,
                 extent: { xmin: 0, ymin: 0, xmax: 1, ymax: 1 },
               },
             ],
@@ -588,7 +586,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: Layer.populationExposed,
+                layer: LayerName.populationExposed,
                 value: 1,
               },
             ],

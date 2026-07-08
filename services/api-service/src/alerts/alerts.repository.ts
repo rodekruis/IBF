@@ -10,8 +10,12 @@ import { ExposureRasterReadDto } from '@api-service/src/alerts/dto/exposure-rast
 import { SeverityReadDto } from '@api-service/src/alerts/dto/severity-read.dto';
 import { ForecastMetadata } from '@api-service/src/events/alert-to-event.service';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
-import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
-import { colorizeGrayscalePng } from '@api-service/src/utils/raster-colorization.helper';
+import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
+import {
+  colorizeGrayscalePng,
+  FLOOD_DEPTH_CONFIG,
+  reproject4326To3857,
+} from '@api-service/src/utils/raster-colorization.helper';
 
 const alertInclude: Prisma.AlertInclude = {
   severity: true,
@@ -23,7 +27,7 @@ const alertInclude: Prisma.AlertInclude = {
       created: true,
       updated: true,
       layer: true,
-      extent: true,
+      metadata: true,
     },
   },
 };
@@ -44,8 +48,8 @@ export class AlertsRepository {
       eventName: alert.eventName,
       issuedAt: alert.issuedAt,
       centroid: alert.centroid as unknown as CentroidDto,
-      hazardType: alert.hazardType as HazardType,
-      forecastSources: alert.forecastSources as ForecastSource[],
+      hazardType: alert.hazardType,
+      forecastSources: alert.forecastSources,
       severity: alert.severity as unknown as SeverityReadDto[],
       exposure: {
         adminAreas: alert.exposureAdminArea as ExposureAdminAreaReadDto[],
@@ -134,9 +138,22 @@ export class AlertsRepository {
             exposureRasterData: {
               create: (alertCreateDto.exposure.rasters ?? []).map((entry) => ({
                 layer: entry.layer,
-                valueBlackWhite: entry.valueBlackWhite,
-                valueColoured: colorizeGrayscalePng(entry.valueBlackWhite),
-                extent: { ...entry.extent },
+                valueGreyscale: entry.valueGreyscale,
+                valueColoured: colorizeGrayscalePng(
+                  entry.valueGreyscale,
+                  FLOOD_DEPTH_CONFIG,
+                ),
+                metadata: {
+                  data: {
+                    extent: { ...entry.extent },
+                    crs: EPSG.WGS84,
+                    nodata: 0,
+                  },
+                  coloured: {
+                    extent: reproject4326To3857(entry.extent),
+                    crs: EPSG.WebMercator,
+                  },
+                },
               })),
             },
           },

@@ -9,6 +9,9 @@ from datetime import datetime, timedelta
 import rasterio
 
 from pipelines.infra.data_types.location_point import LocationPoint
+from pipelines.infra.utils.nrw_logger import log_info, log_warning, LogTag
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -45,7 +48,11 @@ def extract_discharge_glofas_station(
     for netcdf_path in netcdf_paths:
         # TODO: to catch exact today date netcdf file
         if not os.path.exists(netcdf_path):
-            logging.warning(f"NetCDF file not found, skipping: {netcdf_path}")
+            log_warning(
+                logger,
+                LogTag.FLOOD_LOGIC,
+                f"NetCDF file not found, skipping: {netcdf_path}",
+            )
             continue
 
         if forecast_base_datetime is None:
@@ -63,7 +70,11 @@ def extract_discharge_glofas_station(
                     )
                 )
 
-        logging.info(f"Extracting station discharge from {netcdf_path}")
+        log_info(
+            logger,
+            LogTag.FLOOD_LOGIC,
+            f"Extracting station discharge from {netcdf_path}",
+        )
         with rasterio.open(netcdf_path) as src:
             station_coords = [(float(station.lon), float(station.lat))]
             for lead_time in range(lead_time_min, lead_time_max + 1):

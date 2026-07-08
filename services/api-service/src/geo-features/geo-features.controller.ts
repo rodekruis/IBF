@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseArrayPipe,
   ParseIntPipe,
   Patch,
   Post,
@@ -34,7 +35,7 @@ export class GeoFeaturesController {
     summary:
       'Get geo-features; all pg_featureserv query parameters are supported (not shown in Swagger UI, so calling via Swagger is limited)',
     description:
-      "Example current use: GET /geo-features?filter=countryCodeIso3='ETH' AND layer='glofas_stations'",
+      "Example current use: GET /geo-features?filter=countryCodeIso3='ETH' AND layer='glofasStations'",
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -47,15 +48,14 @@ export class GeoFeaturesController {
     return this.geoFeaturesService.getGeoFeatures(query);
   }
 
-  // TODO: Consider adding a batch endpoint (POST with array body) for bulk imports
   @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
-  @ApiOperation({ summary: 'Create a geo-feature' })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create one or more geo-features' })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Geo-feature created successfully',
-    type: GeoJsonFeatureDto,
+    description: 'Geo-features created successfully',
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
@@ -66,10 +66,11 @@ export class GeoFeaturesController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Country does not exist',
   })
-  public async createGeoFeature(
-    @Body() geoFeatureCreateDto: GeoFeatureCreateDto,
-  ): Promise<Feature> {
-    return this.geoFeaturesService.createGeoFeature(geoFeatureCreateDto);
+  public async createGeoFeatures(
+    @Body(new ParseArrayPipe({ items: GeoFeatureCreateDto }))
+    dtos: GeoFeatureCreateDto[],
+  ): Promise<void> {
+    await this.geoFeaturesService.createGeoFeatures(dtos);
   }
 
   @UseGuards(AuthenticatedUserGuard)

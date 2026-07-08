@@ -12,7 +12,7 @@ from pipelines.infra.data_types.enums import (
     EnsembleMemberType,
     ForecastSource,
     HazardType,
-    Layer,
+    LayerName,
     SeverityKey,
 )
 
@@ -86,7 +86,7 @@ class Severity:
 class ExposureAdminArea:
     place_code: str
     admin_level: int
-    layer: Layer
+    layer: LayerName
     value: int | float
 
     def to_dict(self) -> JsonDict:
@@ -102,7 +102,7 @@ class ExposureAdminArea:
 @dataclass
 class ExposureGeoFeature:
     geo_feature_id: str
-    layer: Layer
+    layer: LayerName
     attributes: dict[str, bool | str | int | float]
 
     def to_dict(self) -> JsonDict:
@@ -133,14 +133,14 @@ class RasterExtent:
 # Source: services/api-service/src/alerts/dto/exposure-raster.dto.ts
 @dataclass
 class ExposureRaster:
-    layer: Layer
-    value_black_white: str
+    layer: LayerName
+    value_greyscale: str
     extent: RasterExtent
 
     def to_dict(self) -> JsonDict:
         return {
             "layer": self.layer,
-            "valueBlackWhite": self.value_black_white,
+            "valueGreyscale": self.value_greyscale,
             "extent": self.extent.to_dict(),
         }
 

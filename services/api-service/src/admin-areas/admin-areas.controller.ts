@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseArrayPipe,
   Patch,
   Post,
   Query,
@@ -47,16 +48,15 @@ export class AdminAreasController {
     return this.adminAreasService.getAdminAreas(query);
   }
 
-  // TODO: Consider adding a batch endpoint (POST with array body) for bulk imports
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Create an admin area.',
+    summary: 'Create one or more admin areas.',
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Admin area created successfully',
-    type: GeoJsonFeatureDto,
+    description: 'Admin areas created successfully',
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
@@ -66,10 +66,11 @@ export class AdminAreasController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Country does not exist',
   })
-  public async createAdminArea(
-    @Body() adminAreaCreateDto: AdminAreaCreateDto,
-  ): Promise<Feature> {
-    return this.adminAreasService.createAdminArea(adminAreaCreateDto);
+  public async createAdminAreas(
+    @Body(new ParseArrayPipe({ items: AdminAreaCreateDto }))
+    dtos: AdminAreaCreateDto[],
+  ): Promise<void> {
+    await this.adminAreasService.createAdminAreas(dtos);
   }
 
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })

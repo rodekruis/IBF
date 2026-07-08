@@ -11,6 +11,9 @@ from PIL import Image
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
+from pipelines.infra.utils.nrw_logger import log_info, LogTag
+
+logger = logging.getLogger(__name__)
 
 BoundingBox = tuple[float, float, float, float]  # (min_lon, min_lat, max_lon, max_lat)
 
@@ -64,7 +67,11 @@ def slice_netcdf_to_bounds(
         finally:
             sliced.close()
 
-    logging.info(f"Sliced NetCDF {input_path} to bounds {bounds} -> {output_path}")
+    log_info(
+        logger,
+        LogTag.INFRA,
+        f"Sliced NetCDF {input_path} to bounds {bounds} -> {output_path}",
+    )
     return output_path
 
 

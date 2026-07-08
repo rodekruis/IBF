@@ -17,7 +17,7 @@ from pipelines.infra.data_types.dtos import (
     Forecast,
     ForecastSource,
     HazardType,
-    Layer,
+    LayerName,
     RasterExtent,
     Severity,
     SeverityKey,
@@ -31,6 +31,7 @@ from pipelines.infra.utils.alert_integrity_checks import (
     check_severity_integrity,
 )
 from pipelines.infra.utils.api_client import ApiClient
+from pipelines.infra.utils.nrw_logger import log_error, log_info, log_warning, LogTag
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +112,7 @@ class DataSubmitter:
         self,
         event_name: str,
         admin_level: int,
-        layer: Layer,
+        layer: LayerName,
         values_by_place_code: dict[str, int | float],
     ) -> None:
         alert = self._get_alert(event_name, "add_admin_area_exposure")
@@ -132,7 +133,7 @@ class DataSubmitter:
         self,
         event_name: str,
         geo_feature_id: str,
-        layer: Layer,
+        layer: LayerName,
         attributes: dict[str, bool | str | int | float],
     ) -> None:
         alert = self._get_alert(event_name, "add_geo_feature_exposure")
@@ -141,15 +142,17 @@ class DataSubmitter:
 
         alert.exposure.geo_features.append(
             ExposureGeoFeature(
-                geo_feature_id=geo_feature_id, layer=layer, attributes=attributes
+                geo_feature_id=geo_feature_id,
+                layer=layer,
+                attributes=attributes,
             )
         )
 
     def add_raster_exposure(
         self,
         event_name: str,
-        layer: Layer,
-        value_black_white: str,
+        layer: LayerName,
+        value_greyscale: str,
         extent: dict[str, float],
     ) -> None:
         alert = self._get_alert(event_name, "add_raster_exposure")
@@ -159,7 +162,7 @@ class DataSubmitter:
         alert.exposure.rasters.append(
             ExposureRaster(
                 layer=layer,
-                value_black_white=value_black_white,
+                value_greyscale=value_greyscale,
                 extent=RasterExtent(
                     xmin=extent["xmin"],
                     ymin=extent["ymin"],
@@ -175,13 +178,13 @@ class DataSubmitter:
     def send_all(self, output_mode: OutputMode, output_path: str) -> list[str]:
         if self.errors:
             for err in self.errors.values():
-                logger.error(f"Pipeline error: '{err}'")
+                log_error(logger, LogTag.INFRA, f"Pipeline error: '{err}'")
             return list(self.errors.values())
 
         integrity_errors = self._check_integrity()
         if integrity_errors:
             for err in integrity_errors:
-                logger.error(f"Integrity error: '{err}'")
+                log_error(logger, LogTag.INFRA, f"Integrity error: '{err}'")
             return integrity_errors
 
         if self._forecast is None:
@@ -194,18 +197,26 @@ class DataSubmitter:
 
         if output_mode == OutputMode.API:
             if file_errors:
-                logger.warning(f"Local debug write failed: '{file_errors}'")
+                log_warning(
+                    logger, LogTag.INFRA, f"Local debug write failed: '{file_errors}'"
+                )
             api_errors = self.api_client.submit_forecast(forecast_dict)
             if not api_errors:
                 shutil.rmtree(output_path, ignore_errors=True)
-                logger.info(f"Remove local output at '{output_path}'")
+                log_info(
+                    logger, LogTag.INFRA, f"Remove local output at '{output_path}'"
+                )
             return api_errors
 
         return file_errors
 
     def _write_to_file(self, forecast_dict: dict, output_dir: str) -> list[str]:
         file_path = os.path.join(output_dir, "forecast.json")
-        logger.info(f"Write forecast with {len(self._alerts)} alerts to '{file_path}'")
+        log_info(
+            logger,
+            LogTag.INFRA,
+            f"Write forecast with {len(self._alerts)} alerts to '{file_path}'",
+        )
         try:
             os.makedirs(output_dir, exist_ok=True)
             with open(file_path, "w", encoding="utf-8") as f:

@@ -9,5 +9,6 @@ import { RastersService } from '@api-service/src/rasters/rasters.service';
   imports: [PrismaModule],
   controllers: [RastersController],
   providers: [RastersService, RastersRepository],
+  exports: [RastersService],
 })
 export class RastersModule {}
