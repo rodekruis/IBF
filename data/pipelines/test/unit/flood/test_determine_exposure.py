@@ -4,7 +4,6 @@ import numpy as np
 from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.flood.determine_exposure import (
     clip_flood_extent_to_admin_areas,
-    compute_population_exposed,
     determine_spatial_extent,
 )
 from pipelines.infra.data_types.admin_area_types import (
@@ -14,7 +13,10 @@ from pipelines.infra.data_types.admin_area_types import (
 )
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
-from pipelines.infra.utils.exposure import aggregate_population_exposed
+from pipelines.infra.utils.exposure import (
+    aggregate_population_exposed,
+    compute_population_exposed,
+)
 from rasterio.transform import from_origin
 
 
@@ -84,7 +86,7 @@ def test_compute_population_exposed_sums_only_flooded_pixels():
 
     population_exposed_raster = compute_population_exposed(
         population_raster=population_data,
-        flood_extent_raster=flood_extent_data,
+        hazard_extent_raster=flood_extent_data,
     )
     assert population_exposed_raster is not None
 
@@ -113,7 +115,7 @@ def test_compute_population_exposed_returns_zero_for_empty_extent():
 
     population_exposed_raster = compute_population_exposed(
         population_raster=population_data,
-        flood_extent_raster=flood_extent_data,
+        hazard_extent_raster=flood_extent_data,
     )
     assert population_exposed_raster is not None
 

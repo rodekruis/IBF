@@ -9,10 +9,7 @@ from pipelines.flood.determine_alerts import (
     ReturnPeriodThresholds,
     ReturnPeriodThresholdValue,
 )
-from pipelines.flood.determine_exposure import (
-    compute_population_exposed,
-    determine_spatial_extent,
-)
+from pipelines.flood.determine_exposure import determine_spatial_extent
 from pipelines.flood.extract_forecast import extract_discharge_glofas_station
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
@@ -23,7 +20,10 @@ from pipelines.infra.data_types.enums import EnsembleMemberType, LayerName, Seve
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
-from pipelines.infra.utils.exposure import aggregate_population_exposed
+from pipelines.infra.utils.exposure import (
+    aggregate_population_exposed,
+    compute_population_exposed,
+)
 from pipelines.infra.utils.nrw_logger import log_info, log_warning, LogTag
 from pipelines.infra.utils.raster import (
     get_bounding_box,
