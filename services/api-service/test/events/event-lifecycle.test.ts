@@ -31,8 +31,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     const viewTimestamp = '2026-03-25T00:00:00Z';
     const laterViewTimestamp = '2026-03-27T00:00:00Z';
 
-    // median=2 → severity 'low' (≥2), runs all exceed 2 → prob=1.0 → 'single'
-    // matrix[low][single] = 'low', below triggerAlertClass 'high' → trigger false
+    // median=2 → severity 'medium' (≥2), runs all exceed 2 → prob=1.0 → 'single'
+    // matrix[medium][single] = 'medium', below triggerAlertClass 'high' → trigger false
     const alertA = buildAlert({
       eventName: 'UGA_floods_station-A',
       severity: buildSeverityData({
@@ -44,7 +44,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     });
 
     // Same station, upgraded severity: median=25 → severity 'high', prob=1.0 → 'single'
-    // matrix[high][single] = 'high', within P7D of issuedAt → trigger true
+    // matrix[high][single] = 'high', within P5D of issuedAt → trigger true
     const alertAUpgraded = buildAlert({
       eventName: 'UGA_floods_station-A',
       severity: buildSeverityData({
@@ -56,7 +56,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     });
 
     // Different station: median=10 → severity 'high', prob=1.0 → 'single'
-    // matrix[high][single] = 'high', within P7D of issuedAt → trigger true
+    // matrix[high][single] = 'high', within P5D of issuedAt → trigger true
     const alertB = buildAlert({
       eventName: 'UGA_floods_station-B',
       severity: buildSeverityData({

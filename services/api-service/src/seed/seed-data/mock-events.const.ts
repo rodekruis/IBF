@@ -568,7 +568,7 @@ export function buildMockForecast(
 
   return {
     issuedAt,
-    hazardType: HazardType.floods,
+    hazardType: HazardType.floods, // TODO: for now we mock only flood events. To be extended later.
     forecastSources: [ForecastSource.glofas],
     countryCodeIso3: countryCode,
     alerts,

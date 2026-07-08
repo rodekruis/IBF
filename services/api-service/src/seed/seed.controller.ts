@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   ForbiddenException,
+  HttpCode,
   HttpStatus,
   ParseArrayPipe,
   ParseBoolPipe,
@@ -36,6 +37,7 @@ export class SeedController {
   public constructor(private readonly seedService: SeedService) {}
 
   @Post('/reset')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Reset database and seed initial (non-event) data.',
   })
@@ -91,6 +93,7 @@ export class SeedController {
   }
 
   @Post('/mock-events')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Generate mock events for a country.',
   })
