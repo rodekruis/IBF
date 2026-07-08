@@ -49,8 +49,8 @@ describe('GET /events', () => {
       severity: buildSeverityData({
         start: new Date('2026-03-24T00:00:00Z'),
         end: new Date('2026-03-25T00:00:00Z'),
-        medianValue: 2,
-        runValues: [2, 2, 2],
+        medianValue: 10,
+        runValues: [10, 10, 10],
       }),
     });
 

@@ -23,9 +23,9 @@
     "path": "/api/seed/mock-events",
     "params": [
       "countryCode",
+      "scenario",
       "clearEvents",
-      "issuedAt",
-      "scenario"
+      "issuedAt"
     ]
   },
   {

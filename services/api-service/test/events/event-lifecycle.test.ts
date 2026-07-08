@@ -69,7 +69,10 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
     // Step 1: Create alert → creates event
     await createAlerts(
-      buildForecast([alertA], { issuedAt: new Date('2026-03-23T12:00:00Z') }),
+      buildForecast([alertA], {
+        countryCodeIso3,
+        issuedAt: new Date('2026-03-23T12:00:00Z'),
+      }),
     );
     let response = await getActiveEvents(
       accessToken,
@@ -91,7 +94,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       isOngoing: true,
       exposedAdminAreas: [
         {
-          placeCode: 'UG3066',
+          placeCode: 'MW31001',
           adminLevel: 3,
           exposure: [{ layerName: 'populationExposed', exposed: 1000 }],
         },
@@ -101,6 +104,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     // Step 2: Create an alert with higher severity → updates event
     await createAlerts(
       buildForecast([alertAUpgraded], {
+        countryCodeIso3,
         issuedAt: new Date('2026-03-24T12:00:00Z'),
       }),
     );
@@ -119,7 +123,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       isOngoing: true,
       exposedAdminAreas: [
         {
-          placeCode: 'UG3066',
+          placeCode: 'MW31001',
           adminLevel: 3,
           exposure: [{ layerName: 'populationExposed', exposed: 1000 }],
         },
@@ -129,6 +133,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     // Step 3: Create two alerts → both events open
     await createAlerts(
       buildForecast([alertAUpgraded, alertB], {
+        countryCodeIso3,
         issuedAt: new Date('2026-03-24T12:00:00Z'),
       }),
     );
@@ -145,7 +150,10 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
     // Step 4: Create only alertB → stale event for alertA is closed
     await createAlerts(
-      buildForecast([alertB], { issuedAt: new Date('2026-03-24T12:00:00Z') }),
+      buildForecast([alertB], {
+        countryCodeIso3,
+        issuedAt: new Date('2026-03-24T12:00:00Z'),
+      }),
     );
     response = await getActiveEvents(
       accessToken,
@@ -174,6 +182,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       await createAlerts(
         buildForecast([alertThatStartsNextDay], {
+          countryCodeIso3,
           issuedAt: new Date('2026-03-23T12:00:00Z'),
         }),
       );
@@ -223,6 +232,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       await createAlerts(
         buildForecast([expiredAlert], {
+          countryCodeIso3,
           issuedAt: new Date('2026-03-23T12:00:00Z'),
         }),
       );
@@ -286,16 +296,19 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
     await createAlerts(
       buildForecast([firstUpcomingAlert], {
+        countryCodeIso3,
         issuedAt: new Date('2026-03-20T12:00:00Z'),
       }),
     );
     await createAlerts(
       buildForecast([firstOngoingAlert], {
+        countryCodeIso3,
         issuedAt: new Date('2026-03-27T12:00:00Z'),
       }),
     );
     await createAlerts(
       buildForecast([laterUpcomingAlert], {
+        countryCodeIso3,
         issuedAt: new Date('2026-03-28T12:00:00Z'),
       }),
     );
@@ -345,11 +358,13 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
     await createAlerts(
       buildForecast([firstUpcomingAlert], {
+        countryCodeIso3,
         issuedAt: new Date('2026-04-01T12:00:00Z'),
       }),
     );
     await createAlerts(
       buildForecast([secondUpcomingAlert], {
+        countryCodeIso3,
         issuedAt: new Date('2026-04-02T12:00:00Z'),
       }),
     );
@@ -387,6 +402,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       }),
     });
     const oldFloodsForecast = buildForecast([oldFloodsAlert], {
+      countryCodeIso3,
       hazardType: HazardType.floods,
       issuedAt: new Date(oldForecastTimestamp),
     });
@@ -402,6 +418,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       }),
     });
     const oldDroughtForecast = buildForecast([oldDroughtAlert], {
+      countryCodeIso3,
       hazardType: HazardType.drought,
       issuedAt: new Date(oldForecastTimestamp),
     });
@@ -413,6 +430,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     const currentForecastTimestamp = '2026-04-11T00:00:00Z';
     const currentFloodsAlerts: never[] = [];
     const currentFloodsForecast = buildForecast(currentFloodsAlerts, {
+      countryCodeIso3,
       hazardType: HazardType.floods,
       issuedAt: new Date(currentForecastTimestamp),
     });

@@ -1,12 +1,13 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   HttpStatus,
   ParseArrayPipe,
   ParseBoolPipe,
   Post,
   Query,
-  Res,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -21,7 +22,6 @@ import { IS_PRODUCTION } from '@api-service/src/config';
 import { env } from '@api-service/src/env';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import { SeedService } from '@api-service/src/seed/seed.service';
-import { WrapperType } from '@api-service/src/wrapper.type';
 
 class SecretDto {
   @ApiProperty({ example: 'fill_in_secret' })
@@ -73,17 +73,12 @@ export class SeedController {
     @Query('skipStaticRasters', new ParseBoolPipe({ optional: true }))
     skipStaticRasters: boolean,
     @Query('resetIdentifier') resetIdentifier: string,
-    @Res() res,
-  ): Promise<void> {
+  ): Promise<string> {
     if (IS_PRODUCTION) {
-      res
-        .status(HttpStatus.FORBIDDEN)
-        .send('Reset is not allowed in production');
-      return;
+      throw new ForbiddenException('Reset is not allowed in production');
     }
     if (body.secret !== env.RESET_SECRET) {
-      res.status(HttpStatus.FORBIDDEN).send('Not allowed');
-      return;
+      throw new ForbiddenException('Not allowed');
     }
 
     await this.seedService.reset({
@@ -92,7 +87,7 @@ export class SeedController {
       skipStaticRasters: skipStaticRasters ?? false,
     });
 
-    res.status(HttpStatus.OK).send('Database reset to initial state.');
+    return 'Database reset to initial state.';
   }
 
   @Post('/mock-events')
@@ -135,36 +130,39 @@ export class SeedController {
   public async mockEvents(
     @Body() body: SecretDto,
     @Query('countryCode') countryCode: string,
-    @Query('scenario') scenario: WrapperType<MockScenario>,
+    @Query('scenario') scenario: string,
     @Query('clearEvents', new ParseBoolPipe({ optional: true }))
     clearEvents: boolean,
     @Query('issuedAt') issuedAt: string | undefined,
-    @Res() res,
-  ): Promise<void> {
+  ): Promise<string> {
     if (IS_PRODUCTION) {
-      res
-        .status(HttpStatus.FORBIDDEN)
-        .send('Mock events are not allowed in production');
-      return;
+      throw new ForbiddenException('Mock events are not allowed in production');
     }
     if (body.secret !== env.RESET_SECRET) {
-      res.status(HttpStatus.FORBIDDEN).send('Not allowed');
-      return;
+      throw new ForbiddenException('Not allowed');
+    }
+
+    const validScenarios = Object.values(MockScenario) as string[];
+    if (!validScenarios.includes(scenario)) {
+      throw new BadRequestException(
+        `Invalid scenario '${scenario}'. Supported: ${validScenarios.join(', ')}`,
+      );
+    }
+
+    const issuedAtDate = issuedAt ? new Date(issuedAt) : new Date();
+    if (issuedAt && Number.isNaN(issuedAtDate.getTime())) {
+      throw new BadRequestException(
+        `Invalid issuedAt '${issuedAt}'. Must be an ISO8601 datetime.`,
+      );
     }
 
     await this.seedService.mockEvents({
       countryCode,
-      scenario,
+      scenario: scenario as MockScenario,
       clearEvents: clearEvents ?? false,
-      issuedAt: issuedAt ? new Date(issuedAt) : undefined,
+      issuedAt: issuedAtDate,
     });
 
-    res.status(HttpStatus.OK).json({
-      message: 'Mock scenario applied.',
-      countryCode,
-      scenario,
-      clearEvents: clearEvents ?? false,
-      issuedAt: issuedAt ?? null,
-    });
+    return 'Mock scenario applied.';
   }
 }
