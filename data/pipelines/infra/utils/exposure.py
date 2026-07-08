@@ -6,8 +6,10 @@ import numpy as np
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.utils.nrw_logger import log_warning, LogTag
+from rasterio.enums import Resampling
 from rasterio.features import geometry_mask
 from rasterio.transform import from_bounds
+from rasterio.warp import reproject
 from rasterio.windows import from_bounds as window_from_bounds
 from rasterstats import zonal_stats
 
@@ -47,6 +49,42 @@ def aggregate_population_exposed(
         population[pcode] = round(value, 0) if value is not None else 0.0
 
     return population
+
+
+def compute_population_exposed(
+    population_raster: RasterData,
+    hazard_extent_raster: RasterData,
+) -> RasterData | None:
+    """
+    Extract population only within the intersection of admin areas and hazard extent.
+    Masks the population raster with the (binary) hazard extent raster
+    so only exposed pixels count toward the population sum.
+    Returns the exposed population as in-memory raster data.
+    """
+    pop_array = population_raster.array
+    pop_transform = population_raster.transform
+    pop_crs = population_raster.crs
+
+    hazard_array_resampled = np.zeros(pop_array.shape, dtype=np.float32)
+    reproject(
+        source=hazard_extent_raster.array.astype(np.float32),
+        destination=hazard_array_resampled,
+        src_transform=hazard_extent_raster.transform,
+        src_crs=hazard_extent_raster.crs,
+        dst_transform=pop_transform,
+        dst_crs=pop_crs,
+        resampling=Resampling.nearest,
+    )
+
+    binary_hazard_extent = (hazard_array_resampled > 0).astype(np.uint8)
+    population_in_hazard_extent = np.where(binary_hazard_extent == 1, pop_array, 0.0)
+
+    return RasterData(
+        array=population_in_hazard_extent.astype(np.float32),
+        transform=pop_transform,
+        crs=pop_crs,
+        nodata=population_raster.nodata,
+    )
 
 
 def clip_raster_to_admin_areas(
