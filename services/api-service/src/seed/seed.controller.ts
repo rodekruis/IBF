@@ -159,11 +159,12 @@ export class SeedController {
       issuedAt: issuedAt ? new Date(issuedAt) : undefined,
     });
 
-    res
-      .status(HttpStatus.OK)
-      .header('Content-Type', 'text/plain')
-      .send(
-        `Mock scenario '${scenario}' applied for ${countryCode}. clearEvents: ${String(clearEvents ?? false)}. issuedAt: ${issuedAt ?? 'now'}.`,
-      );
+    res.status(HttpStatus.OK).json({
+      message: 'Mock scenario applied.',
+      countryCode,
+      scenario,
+      clearEvents: clearEvents ?? false,
+      issuedAt: issuedAt ?? null,
+    });
   }
 }
