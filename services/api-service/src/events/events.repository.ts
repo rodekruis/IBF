@@ -295,20 +295,20 @@ export class EventsRepository {
       return 0;
     }
 
-    // Delete alerts linked to events (children cascade via onDelete: Cascade)
-    await this.prisma.alert.deleteMany({
-      where: { eventId: { in: eventIds } },
-    });
+    const [, , deleteResult] = await this.prisma.$transaction([
+      // Delete alerts linked to events (children cascade via onDelete: Cascade)
+      this.prisma.alert.deleteMany({
+        where: { eventId: { in: eventIds } },
+      }),
+      // Delete orphan alerts for this country (not linked to an event)
+      this.prisma.alert.deleteMany({
+        where: { eventName: { startsWith: `${countryCodeIso3}_` } },
+      }),
+      this.prisma.event.deleteMany({
+        where: { id: { in: eventIds } },
+      }),
+    ]);
 
-    // Delete orphan alerts for this country (not linked to an event)
-    await this.prisma.alert.deleteMany({
-      where: { eventName: { startsWith: `${countryCodeIso3}_` } },
-    });
-
-    const result = await this.prisma.event.deleteMany({
-      where: { id: { in: eventIds } },
-    });
-
-    return result.count;
+    return deleteResult.count;
   }
 }

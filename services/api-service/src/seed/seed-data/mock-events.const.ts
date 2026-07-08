@@ -21,22 +21,28 @@ const MOCK_BUILDERS: Record<string, MockCountryBuilder> = {
 
 export const SUPPORTED_MOCK_COUNTRIES = Object.keys(MOCK_BUILDERS);
 
-type MockCountryBuilder = (now: Date) => AlertCreateDto[];
+type MockCountryBuilder = (issuedAt: Date) => AlertCreateDto[];
 
-function buildEthiopiaAlerts(now: Date): AlertCreateDto[] {
+function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'ETH_floods_awash-metehara',
       centroid: { latitude: 8.9, longitude: 39.9 },
       severity: [
         {
-          timeInterval: { start: addDays(now, -1), end: addDays(now, 7) },
+          timeInterval: {
+            start: addDays(issuedAt, 1),
+            end: addDays(issuedAt, 9),
+          },
           ensembleMemberType: EnsembleMemberType.median,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 25,
         },
         ...Array.from({ length: 5 }, () => ({
-          timeInterval: { start: addDays(now, -1), end: addDays(now, 7) },
+          timeInterval: {
+            start: addDays(issuedAt, 1),
+            end: addDays(issuedAt, 9),
+          },
           ensembleMemberType: EnsembleMemberType.run,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 25,
@@ -125,13 +131,19 @@ function buildEthiopiaAlerts(now: Date): AlertCreateDto[] {
       centroid: { latitude: 8.25, longitude: 34.59 },
       severity: [
         {
-          timeInterval: { start: addDays(now, 1), end: addDays(now, 8) },
+          timeInterval: {
+            start: addDays(issuedAt, 3),
+            end: addDays(issuedAt, 10),
+          },
           ensembleMemberType: EnsembleMemberType.median,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 5,
         },
         ...Array.from({ length: 3 }, () => ({
-          timeInterval: { start: addDays(now, 1), end: addDays(now, 8) },
+          timeInterval: {
+            start: addDays(issuedAt, 3),
+            end: addDays(issuedAt, 10),
+          },
           ensembleMemberType: EnsembleMemberType.run,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 5,
@@ -184,13 +196,19 @@ function buildEthiopiaAlerts(now: Date): AlertCreateDto[] {
       centroid: { latitude: 5.5, longitude: 39.5 },
       severity: [
         {
-          timeInterval: { start: addDays(now, 0), end: addDays(now, 5) },
+          timeInterval: {
+            start: addDays(issuedAt, 2),
+            end: addDays(issuedAt, 7),
+          },
           ensembleMemberType: EnsembleMemberType.median,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 3,
         },
         {
-          timeInterval: { start: addDays(now, 0), end: addDays(now, 5) },
+          timeInterval: {
+            start: addDays(issuedAt, 2),
+            end: addDays(issuedAt, 7),
+          },
           ensembleMemberType: EnsembleMemberType.run,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 3,
@@ -235,20 +253,26 @@ function buildEthiopiaAlerts(now: Date): AlertCreateDto[] {
   ];
 }
 
-function buildUgandaAlerts(now: Date): AlertCreateDto[] {
+function buildUgandaAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'UGA_floods_nile-jinja',
       centroid: { latitude: 0.44, longitude: 33.2 },
       severity: [
         {
-          timeInterval: { start: addDays(now, -1), end: addDays(now, 5) },
+          timeInterval: {
+            start: addDays(issuedAt, 1),
+            end: addDays(issuedAt, 7),
+          },
           ensembleMemberType: EnsembleMemberType.median,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 5,
         },
         ...Array.from({ length: 4 }, () => ({
-          timeInterval: { start: addDays(now, -1), end: addDays(now, 5) },
+          timeInterval: {
+            start: addDays(issuedAt, 1),
+            end: addDays(issuedAt, 7),
+          },
           ensembleMemberType: EnsembleMemberType.run,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 5,
@@ -313,13 +337,19 @@ function buildUgandaAlerts(now: Date): AlertCreateDto[] {
       centroid: { latitude: 3.45, longitude: 34.5 },
       severity: [
         {
-          timeInterval: { start: now, end: addDays(now, 4) },
+          timeInterval: {
+            start: addDays(issuedAt, 2),
+            end: addDays(issuedAt, 6),
+          },
           ensembleMemberType: EnsembleMemberType.median,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 2,
         },
         ...Array.from({ length: 3 }, () => ({
-          timeInterval: { start: now, end: addDays(now, 4) },
+          timeInterval: {
+            start: addDays(issuedAt, 2),
+            end: addDays(issuedAt, 6),
+          },
           ensembleMemberType: EnsembleMemberType.run,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 2,
@@ -378,13 +408,19 @@ function buildUgandaAlerts(now: Date): AlertCreateDto[] {
       centroid: { latitude: 1.1, longitude: 31.8 },
       severity: [
         {
-          timeInterval: { start: addDays(now, 0), end: addDays(now, 3) },
+          timeInterval: {
+            start: addDays(issuedAt, 2),
+            end: addDays(issuedAt, 5),
+          },
           ensembleMemberType: EnsembleMemberType.median,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 1.5,
         },
         ...Array.from({ length: 2 }, () => ({
-          timeInterval: { start: addDays(now, 0), end: addDays(now, 3) },
+          timeInterval: {
+            start: addDays(issuedAt, 2),
+            end: addDays(issuedAt, 5),
+          },
           ensembleMemberType: EnsembleMemberType.run,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 1.5,
@@ -435,7 +471,7 @@ function buildUgandaAlerts(now: Date): AlertCreateDto[] {
   ];
 }
 
-function buildMalawiAlerts(now: Date): AlertCreateDto[] {
+function buildMalawiAlerts(issuedAt: Date): AlertCreateDto[] {
   // NOTE: MWI currently has single threshold for both severity and probability, and therefore only 'high' alert-class is possible. Therefore only 1 event is mocked here.
   return [
     {
@@ -443,13 +479,19 @@ function buildMalawiAlerts(now: Date): AlertCreateDto[] {
       centroid: { latitude: -16.03, longitude: 34.77 },
       severity: [
         {
-          timeInterval: { start: addDays(now, -1), end: addDays(now, 6) },
+          timeInterval: {
+            start: addDays(issuedAt, 1),
+            end: addDays(issuedAt, 8),
+          },
           ensembleMemberType: EnsembleMemberType.median,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 10,
         },
         ...Array.from({ length: 5 }, () => ({
-          timeInterval: { start: addDays(now, -1), end: addDays(now, 6) },
+          timeInterval: {
+            start: addDays(issuedAt, 1),
+            end: addDays(issuedAt, 8),
+          },
           ensembleMemberType: EnsembleMemberType.run,
           severityKey: SeverityKey.returnPeriod,
           severityValue: 10,
@@ -508,11 +550,9 @@ function buildMalawiAlerts(now: Date): AlertCreateDto[] {
 
 export function buildMockForecast(
   countryCode: string,
-  issuedAt?: Date,
+  issuedAt: Date,
   alertsOverride?: AlertCreateDto[],
 ): ForecastCreateDto {
-  const now = issuedAt ?? new Date();
-
   let alerts: AlertCreateDto[];
   if (alertsOverride !== undefined) {
     alerts = alertsOverride;
@@ -523,11 +563,11 @@ export function buildMockForecast(
         `No mock event configuration for country '${countryCode}'. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
       );
     }
-    alerts = builder(now);
+    alerts = builder(issuedAt);
   }
 
   return {
-    issuedAt: addDays(now, -2),
+    issuedAt,
     hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofas],
     countryCodeIso3: countryCode,

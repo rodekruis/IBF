@@ -47,7 +47,7 @@ export class SeedService {
     countryCode: string;
     scenario: MockScenario;
     clearEvents: boolean;
-    issuedAt?: Date;
+    issuedAt: Date;
   }): Promise<void> {
     this.logger.log(
       `Mock events - Country: ${countryCode} - Scenario: ${scenario} - Clear: ${String(clearEvents)}`,

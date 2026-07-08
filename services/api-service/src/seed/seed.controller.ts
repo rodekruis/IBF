@@ -61,7 +61,7 @@ export class SeedController {
     type: String,
     example: 'MWI',
     description:
-      'ISO3 country codes to seed, comma-separated (e.g. MWI,UGA). If omitted, all countries are seeded.',
+      'ISO3 country codes to seed. Provide comma-separated (e.g. MWI,UGA) or repeat the query param (e.g. countryCodes=MWI&countryCodes=UGA). If omitted, all countries are seeded.',
   })
   public async resetDb(
     @Body() body: SecretDto,
