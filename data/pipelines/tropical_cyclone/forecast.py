@@ -2,13 +2,14 @@
 Orchestration for the tropical-cyclone hazard forecast.
 
 STATUS: skeleton, not yet runnable end to end. The step-by-step orchestration below still calls
-`_placeholder_*` functions in place of `extract_track`, `determine_alert`, `compute_alert_extent`,
-and `determine_spatial_extent` — each placeholder's docstring names the module/function that will
+`_placeholder_*` functions in place of `determine_alert`, `compute_alert_extent`, and
+`determine_spatial_extent` — each placeholder's docstring names the module/function that will
 replace it, mirroring flood's file split. Land one placeholder swap per commit (add the new
 module, import the real function, delete the placeholder) so each commit stays small and
-reviewable. Wind-speed extraction (`extract_wind_speed`, from `tropical_cyclone/extract_forecast.py`)
-and population-exposure computation (`compute_population_exposed`, from `infra.utils.exposure`)
-are both real, wired-in implementations already, not placeholders.
+reviewable. Wind-speed extraction (`extract_wind_speed`, from `tropical_cyclone/extract_forecast.py`),
+track extraction (`extract_track`, from `tropical_cyclone/extract_track.py`), and
+population-exposure computation (`compute_population_exposed`, from `infra.utils.exposure`) are
+all real, wired-in implementations already, not placeholders.
 
 The hazard is fully registered: `HazardType.TROPICAL_CYCLONE`, `ForecastSource.GEFS`,
 `SeverityKey.WIND_SPEED`, `LayerName.WIND_SPEED` all resolve, and the CLI dispatches to this
@@ -52,6 +53,7 @@ from pipelines.tropical_cyclone.extract_forecast import (
     extract_wind_speed,
     TimeIntervalWindSpeed,
 )
+from pipelines.tropical_cyclone.extract_track import extract_track, TimeIntervalTrackFix
 
 
 def calculate_tropical_cyclone_forecasts(
@@ -145,8 +147,7 @@ def calculate_tropical_cyclone_forecasts(
         return
 
     ### Step 7 - Extract track fixes for the alert centroid ###
-    # Track data is now in scope. Used only for the real storm-center
-    track_fixes = _placeholder_extract_track(gefs_track_member_paths, country_bounds)
+    track_fixes = extract_track(gefs_track_member_paths, country_bounds)
 
     ### Step 8 - Compute the alert extent and its spatial exposure ###
     wind_extent = _placeholder_compute_alert_extent(time_interval_severities)
@@ -274,20 +275,6 @@ class _PlaceholderTimeIntervalSeverity:
     ensemble_wind_speeds: list[float]
 
 
-@dataclass
-class _PlaceholderTrackFix:
-    """
-    Placeholder shape for tropical_cyclone/extract_track.py's per-member, per-lead-time ATCF fix
-    (columns DTG/TAU/lat/lon/VMAX/MSLP). Delete this
-    once extract_track.py exists and import the real dataclass instead.
-    """
-
-    time_interval_start: str
-    time_interval_end: str
-    latitude: float
-    longitude: float
-
-
 def _placeholder_load_local_gefs_wind_paths(country: str) -> list[str]:
     """
     TODO-infra: replace with DataSource.GEFS_WIND once a fetcher exists. Until then, should read
@@ -300,9 +287,10 @@ def _placeholder_load_local_gefs_wind_paths(country: str) -> list[str]:
 
 def _placeholder_load_local_gefs_track_paths(country: str) -> list[str]:
     """
-    TODO-infra: replace with DataSource.GEFS_TRACK once a fetcher exists. Until then, should read local GEFS ATCF
-    track member file paths for `country`. Returns an
-    empty list until implemented, which correctly halts the pipeline at the Step 4 guard above.
+    TODO-infra: replace with DataSource.GEFS_TRACK once a fetcher exists. Until then, should read
+    local GEFS ATCF track member file paths for `country` (see extract_track.py's
+    _GEFS_TRACK_PATH_PATTERN for the expected naming convention). Returns an empty list until
+    implemented, which correctly halts the pipeline at the Step 4 guard above.
     """
     return []
 
@@ -317,18 +305,6 @@ def _placeholder_determine_alert(
     land mask) - then take that raster's max as both the gate scalar and the MEDIAN severity value
     (compared directly against the flat MIN_SEVERITY_MS, no category lookup); per-member
     land-masked max scalars are the RUN severity values.
-    """
-    return []
-
-
-def _placeholder_extract_track(
-    gefs_track_member_paths: list[str],
-    bounds: BoundingBox,
-) -> list[_PlaceholderTrackFix]:
-    """
-    TODO(tropical_cyclone/extract_track.py): extract_track(track_member_paths, bounds) ->
-    list[TimeIntervalTrackFix]. Parses gunzipped ATCF CSV per member (DTG/TAU/lat/lon/VMAX/MSLP),
-    sliced to `bounds`.
     """
     return []
 
@@ -369,20 +345,27 @@ def _placeholder_issued_datetime() -> str:
 
 
 def _placeholder_derive_storm_centroid(
-    track_fixes: list[_PlaceholderTrackFix],
+    time_interval_track_fixes: list[TimeIntervalTrackFix],
     admin_areas: AdminAreasSet,
 ) -> Centroid:
     """
-    Real per-bucket ensemble storm-center fix (e.g. median lat/lon across members at the
-    alert-triggering bucket), once tropical_cyclone/extract_track.py exists and `track_fixes` is
-    non-empty. Falls back to the admin-area centroid only as a temporary stand-in while track_fixes
-    is always `[]` (extract_track.py not implemented yet) - delete the fallback once it is, since a
-    real alert should always have real track fixes by then.
+    Averages every ensemble member's fix across every lead-time bucket. This is a simplified
+    stand-in for the real design - the alert centroid should come from just the single bucket
+    determine_alert flags as the alert-triggering one (mirrors compute_alert_extent picking the
+    peak-intensity bucket), not a flat average across the whole forecast window - but
+    determine_alerts.py doesn't exist yet to identify that bucket. Revisit once it does. Falls back
+    to the admin-area centroid only when there are no track fixes at all (e.g. no storm currently
+    within the country's monitoring box).
     """
-    if track_fixes:
+    all_fixes = [
+        fix
+        for bucket in time_interval_track_fixes
+        for fix in bucket.ensemble_track_fixes
+    ]
+    if all_fixes:
         return Centroid(
-            latitude=fmean(fix.latitude for fix in track_fixes),
-            longitude=fmean(fix.longitude for fix in track_fixes),
+            latitude=fmean(fix.latitude for fix in all_fixes),
+            longitude=fmean(fix.longitude for fix in all_fixes),
         )
 
     geometries = [area.to_geometry() for area in admin_areas.admin_areas.values()]

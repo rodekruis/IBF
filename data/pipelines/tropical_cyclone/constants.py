@@ -97,3 +97,8 @@ MIN_SEVERITY_MS = 33.0
 GEFS_ENSEMBLE_COUNT = 31
 GEFS_WIND_MEMBER_IDS: list[str] = ["gec00", *[f"gep{i:02d}" for i in range(1, 31)]]
 GEFS_TRACK_MEMBER_IDS: list[str] = ["ac00", *[f"ap{i:02d}" for i in range(1, 31)]]
+
+# ATCF "radius of specified wind" (RAD) threshold, in knots. Each (member, lead hour) is repeated
+# once per RAD present (34/50/64 kt) with identical VMAX/MSLP each time - filtering to one RAD
+# value keeps exactly one row per (member, lead hour).
+ATCF_WIND_RADII_THRESHOLD_KNOTS = 34

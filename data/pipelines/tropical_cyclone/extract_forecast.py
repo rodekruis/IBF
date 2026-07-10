@@ -21,8 +21,6 @@ from pipelines.tropical_cyclone.constants import (
 
 logger = logging.getLogger(__name__)
 
-GEFS_WIND_NODATA = -9999.0
-
 
 @dataclass
 class TimeIntervalWindSpeed:
@@ -159,6 +157,7 @@ def _read_wind_speed_raster(path: str, bounds: BoundingBox) -> RasterData:
             latitude=slice(max_lat, min_lat),
             longitude=slice(min_lon % 360, max_lon % 360),
         )
+        nodata = float(sliced["u10"].attrs["GRIB_missingValue"])
         u_wind = sliced["u10"].to_numpy().astype(np.float32)
         v_wind = sliced["v10"].to_numpy().astype(np.float32)
         latitudes = sliced["latitude"].to_numpy()
@@ -175,5 +174,5 @@ def _read_wind_speed_raster(path: str, bounds: BoundingBox) -> RasterData:
         array=np.sqrt(u_wind**2 + v_wind**2),
         transform=transform,
         crs="EPSG:4326",
-        nodata=GEFS_WIND_NODATA,
+        nodata=nodata,
     )
