@@ -62,11 +62,15 @@ COUNTRY_CONFIGS: dict[CountryCodeIso3, CountryConfig] = {
 
 # Buffer added around each country's admin-area bounding box before slicing the global GRIB2/ATCF
 # data, so the monitoring box can see the storm approaching over open ocean before landfall — a
-# small island's own land extent doesn't capture that, and the right buffer is a function of track
-# uncertainty growth and desired lead time, not country size.
-# TODO(data-scientist): 200 km is a starting placeholder, not validated against GEFS/ATCF track
-# spread by lead time for the countries in scope.
-MONITORING_BOX_BUFFER_KM = 200.0
+# small island's own land extent doesn't capture that. Also doubles as the monitoring-trigger
+# radius: a country is "watched" once a storm's track enters this padded box.
+# 1000 km = WMO's upper bound on tropical-cyclone diameter, chosen deliberately generous to avoid
+# missing storms whose wind field reaches land while the track/centroid itself stays offshore
+# (a real scenario - wind extent is not bounded by the track). A track further than this cannot
+# physically have a wind field reaching the country, so the severity gate (wind-driven, not
+# track-driven - see MIN_SEVERITY_MS below) never needs a track-based fallback for that case.
+# Revisit if this introduces too much noise in production.
+MONITORING_BOX_BUFFER_KM = 1000.0
 
 # WMO/Harper (2010) exposure-dependent gust factor converting a 10-minute mean wind speed to a
 # 1-minute sustained estimate. Only applied for countries whose convention is ONE_MINUTE — a
@@ -89,6 +93,11 @@ WMO_HARPER_10MIN_TO_1MIN_FACTOR: dict[ExposureClass, float] = {
 # GEFS's wind speed into each country's own averaging-period convention first: ~33 m/s is both
 # Saffir-Simpson Category 1 (1-minute convention, e.g. KNA/DMA/ATG) and PAGASA's Typhoon threshold
 # (10-minute convention, PHL) independently.
+# This gate is wind-driven, not track-driven: extract_wind_speed() reads GRIB wind data directly
+# and never looks at the track, so a storm whose centroid stays offshore while its wind field still
+# reaches hurricane force over land already trips this gate correctly - no track-based special case
+# needed. Whether to lower this to 0 (alert on any monitored storm, including sub-hurricane-force
+# systems) is a separate, deferred product-scope decision, not a fix for the offshore-track case.
 MIN_SEVERITY_MS = 33.0
 
 # NOAA GEFS ensemble member naming (31-member ensemble: 1 control + 30 perturbed).
