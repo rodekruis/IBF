@@ -1,19 +1,21 @@
 """
 Orchestration for the tropical-cyclone hazard forecast.
 
-STATUS: skeleton, not yet runnable end to end. The step-by-step orchestration below still calls
-`_placeholder_*` functions in place of `determine_alert`, `compute_alert_extent`, and
-`determine_spatial_extent` — each placeholder's docstring names the module/function that will
-replace it, mirroring flood's file split. Land one placeholder swap per commit (add the new
-module, import the real function, delete the placeholder) so each commit stays small and
-reviewable. Wind-speed extraction (`extract_wind_speed`, from `tropical_cyclone/extract_forecast.py`),
-track extraction (`extract_track`, from `tropical_cyclone/extract_track.py`), and
-population-exposure computation (`compute_population_exposed`, from `infra.utils.exposure`) are
-all real, wired-in implementations already, not placeholders.
+STATUS: all five hazard-logic modules are real, wired-in implementations, each verified against
+real GEFS/ATCF data - `extract_wind_speed` (`tropical_cyclone/extract_forecast.py`), `extract_track`
+(`tropical_cyclone/extract_track.py`), `determine_alert` (`tropical_cyclone/determine_alerts.py`),
+`compute_alert_extent` (`tropical_cyclone/compute_wind_extent.py`), `determine_spatial_extent`
+(`tropical_cyclone/determine_exposure.py`), and `compute_population_exposed`
+(`infra.utils.exposure`). Two `_placeholder_*` functions remain, both intentionally: Step 4's
+local-file-path loaders are `# TODO-infra` stubs pending real `DataSource.GEFS_WIND`/
+`DataSource.GEFS_TRACK` fetchers, and `_placeholder_issued_datetime` (Step 11's event-name
+timestamp) stays a v1 per-run identifier pending a decision on persistent per-storm identity
+(IBTrACS/ATCF `CY`) - see that function's docstring.
 
 The hazard is fully registered: `HazardType.TROPICAL_CYCLONE`, `ForecastSource.GEFS`,
 `SeverityKey.WIND_SPEED`, `LayerName.WIND_SPEED` all resolve, and the CLI dispatches to this
-function for the `tropicalCyclone` hazard type.
+function for the `tropicalCyclone` hazard type. Still not runnable end to end until the Step 4
+data-provider fetchers exist - everything downstream of real wind/track paths is real code now.
 """
 
 from __future__ import annotations
@@ -49,7 +51,11 @@ from pipelines.tropical_cyclone.constants import (
     MIN_SEVERITY_MS,
     MONITORING_BOX_BUFFER_KM,
 )
-from pipelines.tropical_cyclone.determine_alerts import determine_alert
+from pipelines.tropical_cyclone.determine_alerts import (
+    determine_alert,
+    TimeIntervalSeverity,
+)
+from pipelines.tropical_cyclone.determine_exposure import determine_spatial_extent
 from pipelines.tropical_cyclone.extract_forecast import extract_wind_speed
 from pipelines.tropical_cyclone.extract_track import extract_track, TimeIntervalTrackFix
 
@@ -149,7 +155,7 @@ def calculate_tropical_cyclone_forecasts(
 
     ### Step 8 - Compute the alert extent and its spatial exposure ###
     wind_extent = compute_alert_extent(time_interval_severities)
-    clipped_wind_extent = _placeholder_determine_spatial_extent(
+    clipped_wind_extent = determine_spatial_extent(
         wind_extent, spatial_extent_place_codes, target_admin_areas
     )
 
@@ -188,9 +194,11 @@ def calculate_tropical_cyclone_forecasts(
     # operationally that hasn't been made yet.
     event_name = f"{country}_tropical-cyclone_{_placeholder_issued_datetime()}"
 
-    # Real storm-center fix derived from track data (falls back to the admin-area centroid only
-    # while extract_track.py doesn't exist yet - see the function's docstring).
-    centroid = _placeholder_derive_storm_centroid(track_fixes, target_admin_areas)
+    # Storm-center fix from the same bucket compute_alert_extent picked as peak-intensity (falls
+    # back to the admin-area centroid only if there are no track fixes at all - see docstring).
+    centroid = _derive_storm_centroid(
+        track_fixes, time_interval_severities, target_admin_areas
+    )
 
     data_submitter.create_alert(event_name=event_name, centroid=centroid)
 
@@ -278,19 +286,6 @@ def _placeholder_load_local_gefs_track_paths(country: str) -> list[str]:
     return []
 
 
-def _placeholder_determine_spatial_extent(
-    wind_extent: RasterData,
-    place_codes: list[str],
-    admin_areas: AdminAreasSet,
-) -> RasterData | None:
-    """
-    TODO(tropical_cyclone/determine_exposure.py): determine_spatial_extent(...) - a thin wrapper
-    over infra.utils.exposure.clip_raster_to_admin_areas (no per-station filtering needed - TC's
-    extent is whole-country).
-    """
-    return None
-
-
 def _placeholder_issued_datetime() -> str:
     """Placeholder for the event-name timestamp, used until a persistent per-storm identity (keyed
     off ATCF's CY cyclone number) replaces this per-run identifier - see the note above this
@@ -298,28 +293,45 @@ def _placeholder_issued_datetime() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
-def _placeholder_derive_storm_centroid(
+def _derive_storm_centroid(
     time_interval_track_fixes: list[TimeIntervalTrackFix],
+    time_interval_severities: list[TimeIntervalSeverity],
     admin_areas: AdminAreasSet,
 ) -> Centroid:
     """
-    Averages every ensemble member's fix across every lead-time bucket. This is a simplified
-    stand-in for the real design - the alert centroid should come from just the single bucket
-    determine_alert flags as the alert-triggering one (mirrors compute_alert_extent picking the
-    peak-intensity bucket), not a flat average across the whole forecast window - but
-    determine_alerts.py doesn't exist yet to identify that bucket. Revisit once it does. Falls back
-    to the admin-area centroid only when there are no track fixes at all (e.g. no storm currently
-    within the country's monitoring box).
+    Mean lat/lon across ensemble members at the same bucket compute_alert_extent picks as
+    peak-intensity (highest MEDIAN wind speed) - the alert centroid should reflect where the storm
+    actually is at the moment being reported, not a flat average smeared across the whole forecast
+    window. Falls back to every bucket's fixes combined if track data has no fix at exactly that
+    time (track's native cadence can differ from whatever wind lead times were fetched), and to the
+    admin-area centroid only when there are no track fixes at all (e.g. no storm currently within
+    the country's monitoring box).
     """
-    all_fixes = [
-        fix
-        for bucket in time_interval_track_fixes
-        for fix in bucket.ensemble_track_fixes
-    ]
-    if all_fixes:
+    peak_bucket = max(
+        time_interval_severities, key=lambda severity: severity.median_wind_speed
+    )
+    peak_track_bucket = next(
+        (
+            bucket
+            for bucket in time_interval_track_fixes
+            if bucket.time_interval_start == peak_bucket.time_interval_start
+        ),
+        None,
+    )
+
+    fixes = (
+        peak_track_bucket.ensemble_track_fixes
+        if peak_track_bucket is not None and peak_track_bucket.ensemble_track_fixes
+        else [
+            fix
+            for bucket in time_interval_track_fixes
+            for fix in bucket.ensemble_track_fixes
+        ]
+    )
+    if fixes:
         return Centroid(
-            latitude=fmean(fix.latitude for fix in all_fixes),
-            longitude=fmean(fix.longitude for fix in all_fixes),
+            latitude=fmean(fix.latitude for fix in fixes),
+            longitude=fmean(fix.longitude for fix in fixes),
         )
 
     geometries = [area.to_geometry() for area in admin_areas.admin_areas.values()]
