@@ -72,8 +72,9 @@ MONITORING_BOX_BUFFER_KM = 200.0
 # 1-minute sustained estimate. Only applied for countries whose convention is ONE_MINUTE — a
 # TEN_MINUTE-convention country (e.g. PHL) needs no correction on this axis.
 # Assumes GEFS's native 10 m wind approximates a 10-minute-equivalent mean (the common NWP
-# convention) — TODO(data-scientist): this GEFS-specific assumption is unconfirmed, see the plan's
-# Open Items.
+# convention) — TODO(data-scientist): this GEFS-specific assumption hasn't been confirmed against
+# NOAA documentation; if wrong, every ONE_MINUTE-convention country's converted wind speed is off
+# by a knowable but currently-unapplied correction.
 # Source: Harper, Kepert & Ginger, "Guidelines for Converting Between Various Wind Averaging
 # Periods in Tropical Cyclone Conditions", WMO/TD-No. 1555 (2010).
 WMO_HARPER_10MIN_TO_1MIN_FACTOR: dict[ExposureClass, float] = {

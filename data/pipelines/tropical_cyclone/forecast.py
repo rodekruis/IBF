@@ -1,26 +1,18 @@
 """
 Orchestration for the tropical-cyclone hazard forecast.
 
-STATUS: skeleton, not yet runnable end to end.
-"Orchestration in forecast.py" step by step. Steps 4, 6, 7 and 10 currently call `_placeholder_*`
-functions instead of real hazard modules — each placeholder's docstring names the file/function
-mirrors flood logic. Land one placeholder per commit (add the new
+STATUS: skeleton, not yet runnable end to end. The step-by-step orchestration below still calls
+`_placeholder_*` functions in place of `extract_track`, `determine_alert`, `compute_alert_extent`,
+and `determine_spatial_extent` — each placeholder's docstring names the module/function that will
+replace it, mirroring flood's file split. Land one placeholder swap per commit (add the new
 module, import the real function, delete the placeholder) so each commit stays small and
-reviewable.
+reviewable. Wind-speed extraction (`extract_wind_speed`, from `tropical_cyclone/extract_forecast.py`)
+and population-exposure computation (`compute_population_exposed`, from `infra.utils.exposure`)
+are both real, wired-in implementations already, not placeholders.
 
-Two things are deliberately ON HOLD as of 2026-07-03 — do not restart either without checking with
-the relevant owner first:
-- Plan Batch 2 "Step 0" (moving `compute_population_exposed` out of `flood/determine_exposure.py`
-  into shared `infra.utils.exposure`) is the flood data scientist's call, since it's their module
-  and call site to change, not made here. `_placeholder_compute_population_exposed` below is a
-  tropical-cyclone-local stand-in until that happens; see its docstring for the one-line swap once
-  it does.
-- Plan Batch 1.2 (`npm run generate:python`) and Batch 1.3 (register in `run_forecasts.py`) both
-  wait on data-scientist sign-off before running. This file already references the enum members it
-  will need once that regen lands (`SeverityKey.WIND_SPEED`, `LayerName.WIND_SPEED`) — they don't exist
-  in `enums.py` yet, so *calling* this function today raises `AttributeError`, but *importing* it
-  does not.
-
+The hazard is fully registered: `HazardType.TROPICAL_CYCLONE`, `ForecastSource.GEFS`,
+`SeverityKey.WIND_SPEED`, `LayerName.WIND_SPEED` all resolve, and the CLI dispatches to this
+function for the `tropicalCyclone` hazard type.
 """
 
 from __future__ import annotations
@@ -42,6 +34,7 @@ from pipelines.infra.data_types.enums import EnsembleMemberType, LayerName, Seve
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.utils.exposure import (
     aggregate_population_exposed,
+    compute_population_exposed,
     get_place_codes_for_alert_config,
 )
 from pipelines.infra.utils.raster import (
@@ -52,9 +45,12 @@ from pipelines.infra.utils.raster import (
 )
 from pipelines.tropical_cyclone.constants import (
     COUNTRY_CONFIGS,
-    CountryConfig,
     MIN_SEVERITY_MS,
     MONITORING_BOX_BUFFER_KM,
+)
+from pipelines.tropical_cyclone.extract_forecast import (
+    extract_wind_speed,
+    TimeIntervalWindSpeed,
 )
 
 
@@ -133,7 +129,7 @@ def calculate_tropical_cyclone_forecasts(
     # extract_wind_speed resolves the per-country conversion factor internally (Axis 1: the
     # country's averaging-period convention; Axis 2: WMO/Harper exposure-class gust factor when
     # Axis 1 is ONE_MINUTE).
-    wind_speeds = _placeholder_extract_wind_speed(
+    wind_speeds = extract_wind_speed(
         gefs_wind_member_paths, country_bounds, country_config
     )
     time_interval_severities = _placeholder_determine_alert(
@@ -172,7 +168,7 @@ def calculate_tropical_cyclone_forecasts(
     )
 
     ### Step 10 - Compute and aggregate population exposure ###
-    population_exposed_raster = _placeholder_compute_population_exposed(
+    population_exposed_raster = compute_population_exposed(
         population_raster, clipped_wind_extent
     )
     if population_exposed_raster is None:
@@ -186,9 +182,11 @@ def calculate_tropical_cyclone_forecasts(
     )
 
     ### Step 11 - Create alert and submit severity/exposure payloads ###
-    # v1 identifier: per-country-per-run using the issued datetime, since ATCF's CY (cyclone
-    # number) isn't yet adopted for a persistent per-storm identity (see TROPICAL_CYCLONE_PLAN.md
-    # Open Items, "Event identity").
+    # v1 identifier: per-country-per-run using the issued datetime. ATCF's CY (cyclone number) is
+    # available from track data and could support a persistent per-storm identity across pipeline
+    # runs later (so a re-run against an already-alerted storm updates the same event instead of
+    # creating a duplicate), but that needs a decision on what "the same storm across runs" means
+    # operationally that hasn't been made yet.
     event_name = f"{country}_tropical-cyclone_{_placeholder_issued_datetime()}"
 
     # Real storm-center fix derived from track data (falls back to the admin-area centroid only
@@ -292,9 +290,10 @@ class _PlaceholderTrackFix:
 
 def _placeholder_load_local_gefs_wind_paths(country: str) -> list[str]:
     """
-    TODO-infra: replace with DataSource.GEFS_WIND once a fetcher exists. Until then, should read local GEFS GRIB2
-    wind member file paths for `country` (see Batch 3: typhoon/bronze/gefs_wind/). Returns an empty
-    list until implemented, which correctly halts the pipeline at the Step 4 guard above.
+    TODO-infra: replace with DataSource.GEFS_WIND once a fetcher exists. Until then, should read
+    local GEFS GRIB2 wind member file paths for `country` (see extract_forecast.py's
+    _GEFS_WIND_PATH_PATTERN for the expected naming convention). Returns an empty list until
+    implemented, which correctly halts the pipeline at the Step 4 guard above.
     """
     return []
 
@@ -308,25 +307,8 @@ def _placeholder_load_local_gefs_track_paths(country: str) -> list[str]:
     return []
 
 
-def _placeholder_extract_wind_speed(
-    gefs_wind_member_paths: list[str],
-    bounds: BoundingBox,
-    country_config: CountryConfig,
-) -> list:
-    """
-    TODO(tropical_cyclone/extract_forecast.py):
-    extract_wind_speed(gefs_member_paths, bounds, country_config) -> list[TimeIntervalWindSpeed].
-    Reads GEFS UGRD/VGRD (cfgrib), computes sqrt(u^2+v^2) per member per native 3h step to +240h,
-    sliced to `bounds`, then applies the resolved conversion factor: 1.0 if
-    `country_config.sustained_wind_averaging_period` is TEN_MINUTE, else
-    `WMO_HARPER_10MIN_TO_1MIN_FACTOR[country_config.exposure_class]`. See
-    TROPICAL_CYCLONE_PLAN.md "Averaging-period conversion" and Batch 2 table.
-    """
-    return []
-
-
 def _placeholder_determine_alert(
-    wind_speeds: list,
+    wind_speeds: list[TimeIntervalWindSpeed],
     admin_areas: AdminAreasSet,
 ) -> list[_PlaceholderTimeIntervalSeverity]:
     """
@@ -379,21 +361,10 @@ def _placeholder_determine_spatial_extent(
     return None
 
 
-def _placeholder_compute_population_exposed(
-    population_raster: RasterData,
-    wind_extent_raster: RasterData,
-) -> RasterData | None:
-    """
-    Tropical-cyclone-local stand-in for infra.utils.exposure.compute_population_exposed. Plan moving this out of flood/determine_exposure.py into shared infra) is ON HOLD,
-    owned by the flood data scientist - not this hazard's call to make. Once it moves: delete this
-    function and replace its one call site above with
-    `from pipelines.infra.utils.exposure import compute_population_exposed`.
-    """
-    return None
-
-
 def _placeholder_issued_datetime() -> str:
-    """Placeholder for the event-name timestamp. See Open Items: 'Event identity'."""
+    """Placeholder for the event-name timestamp, used until a persistent per-storm identity (keyed
+    off ATCF's CY cyclone number) replaces this per-run identifier - see the note above this
+    function's one call site."""
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
