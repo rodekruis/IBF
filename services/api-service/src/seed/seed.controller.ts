@@ -107,7 +107,7 @@ export class SeedController {
     type: String,
     example: 'MWI',
     description:
-      'ISO3 country code to generate mock events for. Supported: ETH, MWI, UGA.',
+      'ISO3 country code to generate mock events for. Supported: ETH, KEN, MWI, PHL, SSD, UGA, ZMB.',
   })
   @ApiQuery({
     name: 'scenario',
