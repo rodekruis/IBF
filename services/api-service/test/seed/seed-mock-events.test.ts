@@ -58,7 +58,7 @@ describe('POST /mock', () => {
       expect(response.body.length).toBeGreaterThan(0);
 
       for (const event of response.body) {
-        expect(event.eventName).toMatch(new RegExp(`^${COUNTRY_CODE_ISO3}_`));
+        expect(event.countryCodeIso3).toBe(COUNTRY_CODE_ISO3);
       }
     });
   });
