@@ -5,17 +5,7 @@ import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { AlertReadDto } from '@api-service/src/alerts/dto/alert-read.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
-import {
-  EnsembleMemberType,
-  HazardType,
-  LayerName,
-} from '@api-service/src/shared-enums';
-
-// This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
-// Keep in line with definition in alert type definitions
-const EVENT_NAME_PATTERN = new RegExp(
-  `^[A-Z]{3}_(${Object.values(HazardType).join('|')})_.+$`,
-);
+import { EnsembleMemberType, LayerName } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class AlertsService {
@@ -89,23 +79,12 @@ export class AlertsService {
     // NOTE: this validation mimics the validation on the pipeline-side. Make sure to keep this in sync.
     const errors: string[] = [];
     for (const alert of alerts) {
-      errors.push(...this.checkEventNameFormat(alert));
       errors.push(...this.checkCentroid(alert));
       errors.push(...this.checkSeverity(alert));
       errors.push(...this.checkExposureAdminAreas(alert));
       errors.push(...this.checkExposureRasters(alert));
     }
     return errors;
-  }
-
-  private checkEventNameFormat(alert: AlertCreateDto): string[] {
-    // TODO: this and more integrity checks could be moved to class-validators. Make sure that clear alignment with pipeline-side integrity checks remains.
-    if (!EVENT_NAME_PATTERN.test(alert.eventName)) {
-      return [
-        `Alert '${alert.eventName}' does not match expected format '{COUNTRY}_{hazardType}_{identifier}'`,
-      ];
-    }
-    return [];
   }
 
   private checkCentroid(alert: AlertCreateDto): string[] {

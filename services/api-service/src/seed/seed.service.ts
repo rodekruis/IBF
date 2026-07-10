@@ -39,38 +39,38 @@ export class SeedService {
   }
 
   public async mockEvents({
-    countryCode,
+    countryCodeIso3,
     scenario,
     clearEvents,
     issuedAt,
   }: {
-    countryCode: string;
+    countryCodeIso3: string;
     scenario: MockScenario;
     clearEvents: boolean;
     issuedAt: Date;
   }): Promise<void> {
     this.logger.log(
-      `Mock events - Country: ${countryCode} - Scenario: ${scenario} - Clear: ${String(clearEvents)}`,
+      `Mock events - Country: ${countryCodeIso3} - Scenario: ${scenario} - Clear: ${String(clearEvents)}`,
     );
 
-    if (!SUPPORTED_MOCK_COUNTRIES.includes(countryCode)) {
+    if (!SUPPORTED_MOCK_COUNTRIES.includes(countryCodeIso3)) {
       throw new BadRequestException(
-        `Unsupported country '${countryCode}'. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
+        `Unsupported country '${countryCodeIso3}'. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
       );
     }
 
     if (clearEvents) {
-      await this.eventsService.deleteEventsByCountry(countryCode);
+      await this.eventsService.deleteEventsByCountry(countryCodeIso3);
     }
 
     if (scenario === MockScenario.noEvents) {
       await this.alertsService.createAlerts(
-        buildMockForecast(countryCode, issuedAt, []),
+        buildMockForecast(countryCodeIso3, issuedAt, []),
       );
       return;
     }
 
-    const forecast = buildMockForecast(countryCode, issuedAt);
+    const forecast = buildMockForecast(countryCodeIso3, issuedAt);
     await this.alertsService.createAlerts(forecast);
   }
 }

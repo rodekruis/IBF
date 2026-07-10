@@ -22,7 +22,7 @@
     "method": "post",
     "path": "/api/seed/mock-events",
     "params": [
-      "countryCode",
+      "countryCodeIso3",
       "scenario",
       "clearEvents",
       "issuedAt"

@@ -31,7 +31,7 @@ describe('/rasters', () => {
 
   beforeAll(async () => {
     await resetDB(['MWI'], __filename);
-    const alert = buildAlert({ eventName: 'MWI_floods_raster-test' });
+    const alert = buildAlert({ eventName: 'raster-test' });
     const createResponse = await createAlerts(buildForecast([alert]));
     const createdAlert = createResponse.body[0];
     rasterId = createdAlert.exposure.rasters[0].id;

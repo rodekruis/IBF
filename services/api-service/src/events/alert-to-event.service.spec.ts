@@ -117,6 +117,7 @@ describe('AlertToEventService', () => {
 
       expect(result).toBe(99);
       expect(repository.createEvent).toHaveBeenCalledWith({
+        countryCodeIso3: forecast.countryCodeIso3,
         eventName: alert.eventName,
         hazardType: forecast.hazardType,
         forecastSources: forecast.forecastSources,
@@ -151,7 +152,8 @@ describe('AlertToEventService', () => {
         id: 42,
         created: new Date(),
         updated: new Date(),
-        eventName: 'ETH_floods_station-A',
+        countryCodeIso3: 'ETH',
+        eventName: 'station-A',
         hazardType: HazardType.floods,
         forecastSources: [ForecastSource.glofas],
         alertClass: AlertClass.medium,
@@ -167,7 +169,8 @@ describe('AlertToEventService', () => {
       repository.getOpenEventByName.mockResolvedValue(existingEvent);
       repository.getAlertHistoryForEvent.mockResolvedValue([
         {
-          eventName: 'ETH_floods_station-A',
+          countryCodeIso3: 'ETH',
+          eventName: 'station-A',
           issuedAt: new Date('2026-04-01T00:00:00Z'),
           hazardType: HazardType.floods,
           severityData: [],
@@ -211,7 +214,8 @@ describe('AlertToEventService', () => {
         id: 42,
         created: new Date(),
         updated: new Date(),
-        eventName: 'ETH_floods_station-A',
+        countryCodeIso3: 'ETH',
+        eventName: 'station-A',
         hazardType: HazardType.floods,
         forecastSources: [ForecastSource.glofas],
         alertClass: AlertClass.medium,
@@ -227,13 +231,15 @@ describe('AlertToEventService', () => {
       repository.getOpenEventByName.mockResolvedValue(existingEvent);
       repository.getAlertHistoryForEvent.mockResolvedValue([
         {
-          eventName: 'ETH_floods_station-A',
+          countryCodeIso3: 'ETH',
+          eventName: 'station-A',
           issuedAt: new Date('2026-03-30T00:00:00Z'),
           hazardType: HazardType.floods,
           severityData: [],
         },
         {
-          eventName: 'ETH_floods_station-A',
+          countryCodeIso3: 'ETH',
+          eventName: 'station-A',
           issuedAt: new Date('2026-04-01T00:00:00Z'),
           hazardType: HazardType.floods,
           severityData: [],

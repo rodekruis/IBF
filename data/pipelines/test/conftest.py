@@ -21,7 +21,7 @@ from pipelines.infra.data_types.dtos import (
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
 
-EVENT_NAME = "ETH_floods_station-test"
+EVENT_NAME = "station-test"
 
 
 def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:

@@ -35,7 +35,7 @@ curl --silent --show-error --fail -X 'POST' \
 print_header "Creating mock events"
 
 curl --silent --show-error --fail -X 'POST' \
-  'http://localhost:4000/api/seed/mock-events?countryCode=MWI&scenario=events' \
+  'http://localhost:4000/api/seed/mock-events?countryCodeIso3=MWI&scenario=events' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
   -d '{"secret":"fill_in_secret"}' \

@@ -34,7 +34,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     // median=2 → severity 'medium' (≥2), runs all exceed 2 → prob=1.0 → 'single'
     // matrix[medium][single] = 'medium', below triggerAlertClass 'high' → trigger false
     const alertA = buildAlert({
-      eventName: 'UGA_floods_station-A',
+      eventName: 'station-A',
       severity: buildSeverityData({
         start: new Date('2026-03-25T00:00:00Z'),
         end: new Date('2026-03-26T00:00:00Z'),
@@ -46,7 +46,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     // Same station, upgraded severity: median=25 → severity 'high', prob=1.0 → 'single'
     // matrix[high][single] = 'high', within P5D of issuedAt → trigger true
     const alertAUpgraded = buildAlert({
-      eventName: 'UGA_floods_station-A',
+      eventName: 'station-A',
       severity: buildSeverityData({
         start: new Date('2026-03-25T00:00:00Z'),
         end: new Date('2026-03-26T00:00:00Z'),
@@ -58,7 +58,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     // Different station: median=10 → severity 'high', prob=1.0 → 'single'
     // matrix[high][single] = 'high', within P5D of issuedAt → trigger true
     const alertB = buildAlert({
-      eventName: 'UGA_floods_station-B',
+      eventName: 'station-B',
       severity: buildSeverityData({
         start: new Date('2026-03-27T00:00:00Z'),
         end: new Date('2026-03-28T00:00:00Z'),
@@ -82,7 +82,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     expect(response.status).toBe(HttpStatus.OK);
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
-      eventName: 'UGA_floods_station-A',
+      eventName: 'station-A',
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
       alertClass: AlertClass.medium,
@@ -115,7 +115,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     );
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
-      eventName: 'UGA_floods_station-A',
+      eventName: 'station-A',
       alertClass: AlertClass.high,
       trigger: true,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
@@ -146,7 +146,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     const names = response.body
       .map((e: { eventName: string }) => e.eventName)
       .sort();
-    expect(names).toEqual(['UGA_floods_station-A', 'UGA_floods_station-B']);
+    expect(names).toEqual(['station-A', 'station-B']);
 
     // Step 4: Create only alertB → stale event for alertA is closed
     await createAlerts(
@@ -161,7 +161,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       laterViewTimestamp,
     );
     expect(response.body).toHaveLength(1);
-    expect(response.body[0].eventName).toBe('UGA_floods_station-B');
+    expect(response.body[0].eventName).toBe('station-B');
     expect(response.body[0].isOngoing).toBe(true);
   });
 
@@ -171,7 +171,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       const laterViewTimestamp = '2026-03-24T12:00:00Z';
 
       const alertThatStartsNextDay = buildAlert({
-        eventName: 'UGA_floods_station-no-rerun',
+        eventName: 'station-no-rerun',
         severity: buildSeverityData({
           start: new Date('2026-03-24T00:00:00Z'),
           end: new Date('2026-03-25T00:00:00Z'),
@@ -195,7 +195,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       expect(responseBeforeStart.status).toBe(HttpStatus.OK);
       expect(responseBeforeStart.body).toHaveLength(1);
       expect(responseBeforeStart.body[0]).toMatchObject({
-        eventName: 'UGA_floods_station-no-rerun',
+        eventName: 'station-no-rerun',
         startAt: '2026-03-24T00:00:00.000Z',
         endAt: '2026-03-25T00:00:00.000Z',
         isOngoing: false,
@@ -209,7 +209,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       expect(responseOnStartDay.status).toBe(HttpStatus.OK);
       expect(responseOnStartDay.body).toHaveLength(1);
       expect(responseOnStartDay.body[0]).toMatchObject({
-        eventName: 'UGA_floods_station-no-rerun',
+        eventName: 'station-no-rerun',
         startAt: '2026-03-24T00:00:00.000Z',
         endAt: '2026-03-25T00:00:00.000Z',
         isOngoing: true,
@@ -221,7 +221,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       const laterViewTimestamp = '2026-03-25T12:00:00Z';
 
       const expiredAlert = buildAlert({
-        eventName: 'UGA_floods_station-expired',
+        eventName: 'station-expired',
         severity: buildSeverityData({
           start: new Date('2026-03-24T00:00:00Z'),
           end: new Date('2026-03-25T00:00:00Z'),
@@ -245,7 +245,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       expect(responseBeforeExpiry.status).toBe(HttpStatus.OK);
       expect(responseBeforeExpiry.body).toHaveLength(1);
       expect(responseBeforeExpiry.body[0]).toMatchObject({
-        eventName: 'UGA_floods_station-expired',
+        eventName: 'station-expired',
         startAt: '2026-03-24T00:00:00.000Z',
         endAt: '2026-03-25T00:00:00.000Z',
         isOngoing: true,
@@ -262,7 +262,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
   });
 
   it('should keep startAt pinned to startAt of first ongoing alert, even if later alerts forecast upcoming alert again', async () => {
-    const eventName = 'UGA_floods_station-pinned-start-at';
+    const eventName = 'station-pinned-start-at';
 
     const firstUpcomingAlert = buildAlert({
       eventName,
@@ -334,7 +334,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
   });
 
   it('should update startAt to latest alert startAt when no history is ongoing', async () => {
-    const eventName = 'UGA_floods_station-latest-start-at';
+    const eventName = 'station-latest-start-at';
 
     const firstUpcomingAlert = buildAlert({
       eventName,
@@ -391,7 +391,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
   it('should close old events of same hazardType when current forecast produces no alerts', async () => {
     const oldForecastTimestamp = '2026-04-10T00:00:00Z';
-    const oldFloodsEventName = 'UGA_floods_station-close-previous';
+    const oldFloodsEventName = 'station-close-previous';
     const oldFloodsAlert = buildAlert({
       eventName: oldFloodsEventName,
       severity: buildSeverityData({
@@ -407,7 +407,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       issuedAt: new Date(oldForecastTimestamp),
     });
 
-    const oldDroughtEventName = 'UGA_drought_event-close-previous';
+    const oldDroughtEventName = 'event-close-previous';
     const oldDroughtAlert = buildAlert({
       eventName: oldDroughtEventName,
       severity: buildSeverityData({

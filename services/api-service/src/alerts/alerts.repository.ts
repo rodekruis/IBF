@@ -45,6 +45,7 @@ export class AlertsRepository {
       id: alert.id,
       created: alert.created,
       updated: alert.updated,
+      countryCodeIso3: alert.countryCodeIso3,
       eventName: alert.eventName,
       issuedAt: alert.issuedAt,
       centroid: alert.centroid as unknown as CentroidDto,
@@ -101,6 +102,7 @@ export class AlertsRepository {
         const eventId = eventIds.get(alertCreateDto.eventName) ?? null;
         const record = await tx.alert.create({
           data: {
+            countryCodeIso3: forecastMetadata.countryCodeIso3,
             eventName: alertCreateDto.eventName,
             issuedAt: new Date(forecastMetadata.issuedAt),
             centroid: { ...alertCreateDto.centroid },

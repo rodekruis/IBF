@@ -25,7 +25,7 @@ describe('GET /events', () => {
     await resetDB(['MWI'], __filename);
 
     const closedAlert = buildAlert({
-      eventName: 'MWI_floods_station-closed',
+      eventName: 'station-closed',
       severity: buildSeverityData({
         start: new Date('2026-03-27T00:00:00Z'),
         end: new Date('2026-03-28T00:00:00Z'),
@@ -35,7 +35,7 @@ describe('GET /events', () => {
     });
 
     const ongoingAlert = buildAlert({
-      eventName: 'MWI_floods_station-ongoing',
+      eventName: 'station-ongoing',
       severity: buildSeverityData({
         start: new Date('2026-03-25T00:00:00Z'),
         end: new Date('2026-03-26T00:00:00Z'),
@@ -45,7 +45,7 @@ describe('GET /events', () => {
     });
 
     const expiredAlert = buildAlert({
-      eventName: 'MWI_floods_station-expired',
+      eventName: 'station-expired',
       severity: buildSeverityData({
         start: new Date('2026-03-24T00:00:00Z'),
         end: new Date('2026-03-25T00:00:00Z'),
@@ -82,11 +82,7 @@ describe('GET /events', () => {
         response.body
           .map((event: { eventName: string }) => event.eventName)
           .sort(),
-      ).toEqual([
-        'MWI_floods_station-closed',
-        'MWI_floods_station-expired',
-        'MWI_floods_station-ongoing',
-      ]);
+      ).toEqual(['station-closed', 'station-expired', 'station-ongoing']);
     });
 
     it('should return only ongoing open events when active is true', async () => {
@@ -98,7 +94,7 @@ describe('GET /events', () => {
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body).toHaveLength(1);
       expect(response.body[0]).toMatchObject({
-        eventName: 'MWI_floods_station-ongoing',
+        eventName: 'station-ongoing',
         eventLabel: 'station-ongoing',
         isOngoing: true,
       });
@@ -116,15 +112,13 @@ describe('GET /events', () => {
         response.body
           .map((event: { eventName: string }) => event.eventName)
           .sort(),
-      ).toEqual(['MWI_floods_station-closed', 'MWI_floods_station-expired']);
+      ).toEqual(['station-closed', 'station-expired']);
 
       const closedEvent = response.body.find(
-        (event: { eventName: string }) =>
-          event.eventName === 'MWI_floods_station-closed',
+        (event: { eventName: string }) => event.eventName === 'station-closed',
       );
       const expiredEvent = response.body.find(
-        (event: { eventName: string }) =>
-          event.eventName === 'MWI_floods_station-expired',
+        (event: { eventName: string }) => event.eventName === 'station-expired',
       );
 
       expect(closedEvent.isOngoing).toBe(false);
@@ -134,7 +128,7 @@ describe('GET /events', () => {
 
   describe('event label derivation', () => {
     it('should derive event label from event name', async () => {
-      const eventName = 'MWI_floods_Meher_MAM';
+      const eventName = 'Meher_MAM';
       await createAlerts(
         buildForecast([
           buildAlert({
@@ -148,7 +142,7 @@ describe('GET /events', () => {
         (event: { eventName: string }) => event.eventName === eventName,
       );
 
-      expect(event.eventLabel).toBe('Meher MAM');
+      expect(event.eventLabel).toBe('Meher_MAM');
     });
   });
 
@@ -165,8 +159,9 @@ describe('GET /events', () => {
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body).toHaveLength(3);
       expect(
-        response.body.every((event: { eventName: string }) =>
-          event.eventName.startsWith('MWI_'),
+        response.body.every(
+          (event: { countryCodeIso3: string }) =>
+            event.countryCodeIso3 === 'MWI',
         ),
       ).toBe(true);
     });

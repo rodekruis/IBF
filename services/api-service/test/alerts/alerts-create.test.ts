@@ -35,7 +35,7 @@ describe('POST /alerts', () => {
 
     it('should not create event on too low alert severity', async () => {
       const lowSeverityAlert = buildAlert({
-        eventName: 'MWI_floods_low-severity',
+        eventName: 'low-severity',
         severity: [
           {
             timeInterval: {

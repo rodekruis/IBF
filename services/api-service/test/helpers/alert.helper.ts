@@ -51,7 +51,7 @@ export function buildAlert(
   const now = new Date();
   const tomorrow = addDays(now, 1);
   return {
-    eventName: 'MWI_floods_test-station',
+    eventName: 'test-station',
     centroid: { latitude: -16.0, longitude: 34.8 },
     severity: [
       {

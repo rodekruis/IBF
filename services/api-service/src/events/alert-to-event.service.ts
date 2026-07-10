@@ -66,6 +66,7 @@ export class AlertToEventService {
     classification: ClassificationResult,
   ): Promise<Event> {
     return this.eventsRepository.createEvent({
+      countryCodeIso3: forecast.countryCodeIso3,
       eventName: alert.eventName,
       hazardType: forecast.hazardType,
       forecastSources: forecast.forecastSources,
@@ -141,7 +142,7 @@ export class AlertToEventService {
     historicalAlert: EventAlertHistoryRecord,
   ): Promise<ClassificationResult> {
     return this.alertClassificationService.classifyAlert({
-      countryCodeIso3: historicalAlert.eventName.split('_')[0],
+      countryCodeIso3: historicalAlert.countryCodeIso3,
       hazardType: historicalAlert.hazardType,
       issuedAt: historicalAlert.issuedAt,
       severity: historicalAlert.severityData.map((severity) => ({

@@ -14,7 +14,7 @@ from pipelines.infra.data_types.dtos import (
 )
 from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
 
-EVENT_NAME = "ETH_floods_station-test"
+EVENT_NAME = "station-test"
 
 
 def test_incomplete_alert_is_rejected(tmp_output: Path):

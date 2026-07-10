@@ -102,7 +102,7 @@ export class SeedController {
     description: 'Mock scenario applied.',
   })
   @ApiQuery({
-    name: 'countryCode',
+    name: 'countryCodeIso3',
     required: true,
     type: String,
     example: 'MWI',
@@ -132,7 +132,7 @@ export class SeedController {
   })
   public async mockEvents(
     @Body() body: SecretDto,
-    @Query('countryCode') countryCode: string,
+    @Query('countryCodeIso3') countryCodeIso3: string,
     @Query('scenario') scenario: string,
     @Query('clearEvents', new ParseBoolPipe({ optional: true }))
     clearEvents: boolean,
@@ -160,7 +160,7 @@ export class SeedController {
     }
 
     await this.seedService.mockEvents({
-      countryCode,
+      countryCodeIso3,
       scenario: scenario as MockScenario,
       clearEvents: clearEvents ?? false,
       issuedAt: issuedAtDate,

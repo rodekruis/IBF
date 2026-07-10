@@ -20,6 +20,7 @@ interface EventAlertHistorySeverity {
 }
 
 export interface EventAlertHistoryRecord {
+  readonly countryCodeIso3: string;
   readonly eventName: string;
   readonly issuedAt: Date;
   readonly hazardType: HazardType;
@@ -45,9 +46,7 @@ export class EventsRepository {
     active?: boolean,
     countryCodeIso3?: string,
   ): Promise<Event[]> {
-    const countryFilter = countryCodeIso3
-      ? { eventName: { startsWith: `${countryCodeIso3}_` } }
-      : {};
+    const countryFilter = countryCodeIso3 ? { countryCodeIso3 } : {};
 
     if (active === undefined) {
       return await this.prisma.event.findMany({ where: countryFilter });
@@ -127,6 +126,7 @@ export class EventsRepository {
       },
       orderBy: { issuedAt: 'asc' },
       select: {
+        countryCodeIso3: true,
         eventName: true,
         issuedAt: true,
         hazardType: true,
@@ -142,6 +142,7 @@ export class EventsRepository {
     });
 
     return alerts.map((alert) => ({
+      countryCodeIso3: alert.countryCodeIso3,
       eventName: alert.eventName,
       issuedAt: alert.issuedAt,
       hazardType: alert.hazardType,
@@ -242,8 +243,8 @@ export class EventsRepository {
       where: {
         closedAt: null,
         hazardType,
+        countryCodeIso3,
         eventName: {
-          startsWith: `${countryCodeIso3}_`,
           notIn: excludeEventNames,
         },
       },
@@ -286,7 +287,7 @@ export class EventsRepository {
 
   public async deleteEventsByCountry(countryCodeIso3: string): Promise<number> {
     const events = await this.prisma.event.findMany({
-      where: { eventName: { startsWith: `${countryCodeIso3}_` } },
+      where: { countryCodeIso3 },
       select: { id: true },
     });
     const eventIds = events.map((e) => e.id);
@@ -302,7 +303,7 @@ export class EventsRepository {
       }),
       // Delete orphan alerts for this country (not linked to an event)
       this.prisma.alert.deleteMany({
-        where: { eventName: { startsWith: `${countryCodeIso3}_` } },
+        where: { countryCodeIso3 },
       }),
       this.prisma.event.deleteMany({
         where: { id: { in: eventIds } },

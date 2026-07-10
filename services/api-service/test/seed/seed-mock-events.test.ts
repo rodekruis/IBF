@@ -9,10 +9,10 @@ import {
   resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
-const countryCodeIso3 = 'MWI';
+const COUNTRY_CODE_ISO3 = 'MWI';
 
 function mockEvents(params: {
-  countryCode: string;
+  countryCodeIso3: string;
   scenario: string;
   clearEvents?: boolean;
   issuedAt?: string;
@@ -20,7 +20,7 @@ function mockEvents(params: {
   return getServer()
     .post('/seed/mock-events')
     .query({
-      countryCode: params.countryCode,
+      countryCodeIso3: params.countryCodeIso3,
       scenario: params.scenario,
       ...(params.clearEvents !== undefined && {
         clearEvents: params.clearEvents,
@@ -36,21 +36,21 @@ describe('POST /seed/mock-events', () => {
   jest.setTimeout(60_000);
 
   beforeAll(async () => {
-    await resetDB([countryCodeIso3], __filename);
+    await resetDB([COUNTRY_CODE_ISO3], __filename);
     accessToken = await getAccessToken();
   });
 
   describe('scenario: events', () => {
     beforeEach(async () => {
       await mockEvents({
-        countryCode: countryCodeIso3,
+        countryCodeIso3: COUNTRY_CODE_ISO3,
         scenario: MockScenario.events,
         clearEvents: true,
       });
     });
 
     it('should create events for the country', async () => {
-      const response = await readEvents(accessToken, countryCodeIso3, {
+      const response = await readEvents(accessToken, COUNTRY_CODE_ISO3, {
         active: true,
       });
 
@@ -58,7 +58,7 @@ describe('POST /seed/mock-events', () => {
       expect(response.body.length).toBeGreaterThan(0);
 
       for (const event of response.body) {
-        expect(event.eventName).toMatch(new RegExp(`^${countryCodeIso3}_`));
+        expect(event.eventName).toMatch(new RegExp(`^${COUNTRY_CODE_ISO3}_`));
       }
     });
   });
@@ -66,17 +66,17 @@ describe('POST /seed/mock-events', () => {
   describe('scenario: no-events', () => {
     it('should close all events for the country', async () => {
       await mockEvents({
-        countryCode: countryCodeIso3,
+        countryCodeIso3: COUNTRY_CODE_ISO3,
         scenario: MockScenario.events,
         clearEvents: true,
       });
 
       await mockEvents({
-        countryCode: countryCodeIso3,
+        countryCodeIso3: COUNTRY_CODE_ISO3,
         scenario: MockScenario.noEvents,
       });
 
-      const response = await readEvents(accessToken, countryCodeIso3, {
+      const response = await readEvents(accessToken, COUNTRY_CODE_ISO3, {
         active: true,
       });
 
@@ -88,17 +88,17 @@ describe('POST /seed/mock-events', () => {
   describe('clearEvents', () => {
     it('should remove existing events when clearEvents is true', async () => {
       await mockEvents({
-        countryCode: countryCodeIso3,
+        countryCodeIso3: COUNTRY_CODE_ISO3,
         scenario: MockScenario.events,
       });
 
       await mockEvents({
-        countryCode: countryCodeIso3,
+        countryCodeIso3: COUNTRY_CODE_ISO3,
         scenario: MockScenario.events,
         clearEvents: true,
       });
 
-      const response = await readEvents(accessToken, countryCodeIso3, {
+      const response = await readEvents(accessToken, COUNTRY_CODE_ISO3, {
         active: true,
       });
 
@@ -112,13 +112,13 @@ describe('POST /seed/mock-events', () => {
       const pastDate = '2026-01-15T00:00:00.000Z';
 
       await mockEvents({
-        countryCode: countryCodeIso3,
+        countryCodeIso3: COUNTRY_CODE_ISO3,
         scenario: MockScenario.events,
         clearEvents: true,
         issuedAt: pastDate,
       });
 
-      const response = await readEvents(accessToken, countryCodeIso3);
+      const response = await readEvents(accessToken, COUNTRY_CODE_ISO3);
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.length).toBeGreaterThan(0);
@@ -129,7 +129,7 @@ describe('POST /seed/mock-events', () => {
   describe('validation', () => {
     it('should return 400 for unsupported country', async () => {
       const response = await mockEvents({
-        countryCode: 'XXX',
+        countryCodeIso3: 'XXX',
         scenario: MockScenario.events,
       });
 
@@ -140,7 +140,7 @@ describe('POST /seed/mock-events', () => {
       const response = await getServer()
         .post('/seed/mock-events')
         .query({
-          countryCode: countryCodeIso3,
+          countryCodeIso3: COUNTRY_CODE_ISO3,
           scenario: MockScenario.events,
         })
         .send({ secret: 'wrong' });
@@ -149,18 +149,18 @@ describe('POST /seed/mock-events', () => {
     });
 
     it('should not affect other countries', async () => {
-      await resetDB([countryCodeIso3, 'UGA'], __filename);
+      await resetDB([COUNTRY_CODE_ISO3, 'UGA'], __filename);
       accessToken = await getAccessToken();
 
       // mock events for another country (UGA)
       await mockEvents({
-        countryCode: 'UGA',
+        countryCodeIso3: 'UGA',
         scenario: MockScenario.events,
       });
 
       // clear events for MWI, which should then not clear UGA
       await mockEvents({
-        countryCode: countryCodeIso3,
+        countryCodeIso3: COUNTRY_CODE_ISO3,
         scenario: MockScenario.events,
         clearEvents: true,
       });

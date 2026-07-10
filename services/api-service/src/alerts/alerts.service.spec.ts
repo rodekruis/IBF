@@ -36,7 +36,7 @@ function createMockValidAlert(
   overrides: Partial<AlertCreateDto> = {},
 ): AlertCreateDto {
   return {
-    eventName: 'ETH_floods_station-A',
+    eventName: 'station-A',
     centroid: { latitude: 0.35, longitude: 32.6 },
     severity: [
       {
@@ -157,7 +157,7 @@ describe('AlertsService', () => {
     it('should include alert name in centroid error message', async () => {
       const alerts = [
         createMockValidAlert({
-          eventName: 'ETH_floods_bad-centroid',
+          eventName: 'bad-centroid',
           centroid: { latitude: 100, longitude: 200 },
         }),
       ];
@@ -170,7 +170,7 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining('ETH_floods_bad-centroid'),
+          expect.stringContaining('bad-centroid'),
           expect.stringContaining('latitude'),
         ]),
       );
@@ -640,7 +640,7 @@ describe('AlertsService', () => {
         expect.objectContaining({
           countryCodeIso3: 'UGA',
           hazardType: HazardType.floods,
-          excludeEventNames: ['ETH_floods_station-A'],
+          excludeEventNames: ['station-A'],
         }),
       );
     });

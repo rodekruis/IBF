@@ -26,7 +26,7 @@ type MockCountryBuilder = (issuedAt: Date) => AlertCreateDto[];
 function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
-      eventName: 'ETH_floods_awash-metehara',
+      eventName: 'awash-metehara',
       centroid: { latitude: 8.9, longitude: 39.9 },
       severity: [
         {
@@ -127,7 +127,7 @@ function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
       },
     },
     {
-      eventName: 'ETH_floods_baro-gambella',
+      eventName: 'baro-gambella',
       centroid: { latitude: 8.25, longitude: 34.59 },
       severity: [
         {
@@ -192,7 +192,7 @@ function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
       },
     },
     {
-      eventName: 'ETH_floods_dawa-borena',
+      eventName: 'dawa-borena',
       centroid: { latitude: 5.5, longitude: 39.5 },
       severity: [
         {
@@ -256,7 +256,7 @@ function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
 function buildUgandaAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
-      eventName: 'UGA_floods_nile-jinja',
+      eventName: 'nile-jinja',
       centroid: { latitude: 0.44, longitude: 33.2 },
       severity: [
         {
@@ -333,7 +333,7 @@ function buildUgandaAlerts(issuedAt: Date): AlertCreateDto[] {
       },
     },
     {
-      eventName: 'UGA_floods_lokok-karamoja',
+      eventName: 'lokok-karamoja',
       centroid: { latitude: 3.45, longitude: 34.5 },
       severity: [
         {
@@ -404,7 +404,7 @@ function buildUgandaAlerts(issuedAt: Date): AlertCreateDto[] {
       },
     },
     {
-      eventName: 'UGA_floods_mpologoma-kyankwanzi',
+      eventName: 'mpologoma-kyankwanzi',
       centroid: { latitude: 1.1, longitude: 31.8 },
       severity: [
         {
@@ -475,7 +475,7 @@ function buildMalawiAlerts(issuedAt: Date): AlertCreateDto[] {
   // NOTE: MWI currently has single threshold for both severity and probability, and therefore only 'high' alert-class is possible. Therefore only 1 event is mocked here.
   return [
     {
-      eventName: 'MWI_floods_shire-chikwawa',
+      eventName: 'shire-chikwawa',
       centroid: { latitude: -16.03, longitude: 34.77 },
       severity: [
         {
@@ -549,7 +549,7 @@ function buildMalawiAlerts(issuedAt: Date): AlertCreateDto[] {
 }
 
 export function buildMockForecast(
-  countryCode: string,
+  countryCodeIso3: string,
   issuedAt: Date,
   alertsOverride?: AlertCreateDto[],
 ): ForecastCreateDto {
@@ -557,10 +557,10 @@ export function buildMockForecast(
   if (alertsOverride !== undefined) {
     alerts = alertsOverride;
   } else {
-    const builder = MOCK_BUILDERS[countryCode];
+    const builder = MOCK_BUILDERS[countryCodeIso3];
     if (!builder) {
       throw new Error(
-        `No mock event configuration for country '${countryCode}'. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
+        `No mock event configuration for country '${countryCodeIso3}'. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
       );
     }
     alerts = builder(issuedAt);
@@ -570,7 +570,7 @@ export function buildMockForecast(
     issuedAt,
     hazardType: HazardType.floods, // TODO: for now we mock only flood events. To be extended later.
     forecastSources: [ForecastSource.glofas],
-    countryCodeIso3: countryCode,
+    countryCodeIso3,
     alerts,
   };
 }
