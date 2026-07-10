@@ -82,6 +82,7 @@ function createMockValidAlert(
 describe('AlertsService', () => {
   let service: AlertsService;
   let repository: AlertsRepository;
+  let alertToEventService: AlertToEventService;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -108,6 +109,7 @@ describe('AlertsService', () => {
 
     service = module.get(AlertsService);
     repository = module.get(AlertsRepository);
+    alertToEventService = module.get(AlertToEventService);
   });
 
   it('should be defined', () => {
@@ -626,14 +628,6 @@ describe('AlertsService', () => {
   });
 
   describe('createAlerts – closeStaleEvents', () => {
-    let alertToEventService: AlertToEventService;
-
-    beforeEach(() => {
-      alertToEventService = (
-        service as unknown as { alertToEventService: AlertToEventService }
-      ).alertToEventService;
-    });
-
     it('should call closeStaleEvents with countryCodeIso3 from forecast', async () => {
       const alerts = [createMockValidAlert()];
       const forecast = createMockValidForecast(alerts, {
