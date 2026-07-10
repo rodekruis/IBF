@@ -267,9 +267,9 @@ class _PlaceholderTimeIntervalSeverity:
     flood/determine_alerts.py's TimeIntervalSeverity dataclass, renamed for wind speed instead of
     return period. Delete this once determine_alerts.py exists and import the real dataclass
     instead. Known incomplete: `ensemble_wind_speeds` here is scalars only, but
-    compute_wind_extent.py needs the raster behind whichever member is closest to
-    `median_wind_speed` (see _placeholder_compute_alert_extent) - the real dataclass will need to
-    carry that too, e.g. `list[tuple[float, RasterData]]` or similar, not just `list[float]`.
+    compute_wind_extent.py needs every member's own raster to build the per-cell-max envelope (see
+    _placeholder_compute_alert_extent) - the real dataclass will need to carry those too, e.g.
+    `list[tuple[float, RasterData]]` or similar, not just `list[float]`.
     """
 
     time_interval_start: str
@@ -312,9 +312,9 @@ def _placeholder_determine_alert(
     cell sees a high value in only a few members, so a per-cell median is low everywhere, and the
     max of that raster wrongly reads as a weak event; per-member-max-first correctly captures that
     most members saw a severe event, just in different places). Compare the MEDIAN value directly
-    against the flat MIN_SEVERITY_MS, no category lookup. Must also retain each member's own raster
-    (or enough to look it back up) - compute_wind_extent.py needs the raster belonging to whichever
-    member's max is closest to the bucket's MEDIAN value, not just the scalars.
+    against the flat MIN_SEVERITY_MS, no category lookup. Must also retain each member's own raster,
+    not just its scalar max - compute_wind_extent.py needs all 31 to build the per-cell-max
+    envelope (see _placeholder_compute_alert_extent).
     """
     return []
 
@@ -326,12 +326,16 @@ def _placeholder_compute_alert_extent(
     TODO(tropical_cyclone/compute_wind_extent.py): compute_alert_extent(time_interval_severities)
     -> RasterData. Picks the qualifying bucket with the highest median wind speed (peak-intensity
     moment, mirrors flood picking the worst return-period day). Within that bucket, the footprint
-    raster is the "representative member"'s own wind-speed raster - the member whose land-masked
-    max is closest to the bucket's MEDIAN value - masked where > MIN_SEVERITY_MS. Deliberately not
-    a per-cell max/median composite across members: that would be a synthetic blend no single
-    forecast realization actually produced, and would let the reported MEDIAN severity number and
-    the footprint raster's own max silently disagree. Using one real member's raster guarantees
-    they always match exactly.
+    raster is a per-cell max across all 31 members' rasters (`patched[x,y] = max(member_1[x,y], ...,
+    member_31[x,y])`), masked where > MIN_SEVERITY_MS - deliberately precautionary: shows everywhere
+    any plausible ensemble member puts hurricane-force wind, appropriate for a population-exposure
+    product where over-covering is the safer default. Every value in it is real (each cell's value
+    came from some actual member at that location), but its own peak is the MAXIMUM of the 31
+    per-member maxes, not their MEDIAN - it will generally read more severe than the MEDIAN severity
+    value reported alongside it, and that's expected, not a bug: they represent different things
+    (typical-event severity vs. worst-case footprint). Locked 2026-07-10; redesign (e.g. switch to a
+    single representative member's raster instead, for exact numeric agreement with MEDIAN) if this
+    proves too aggressive/noisy in production.
     """
     raise NotImplementedError(
         "compute_alert_extent placeholder reached with non-empty time_interval_severities; "
