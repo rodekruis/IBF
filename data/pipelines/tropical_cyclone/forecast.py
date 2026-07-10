@@ -19,7 +19,7 @@ the relevant owner first:
   wait on data-scientist sign-off before running. This file already references the enum members it
   will need once that regen lands (`SeverityKey.WIND_SPEED`, `LayerName.WIND_SPEED`) — they don't exist
   in `enums.py` yet, so *calling* this function today raises `AttributeError`, but *importing* it
-  does not. 
+  does not.
 
 """
 
@@ -30,6 +30,8 @@ import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from statistics import fmean
+
+from shared.country_data import CountryCodeIso3
 
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
@@ -49,8 +51,8 @@ from pipelines.infra.utils.raster import (
     raster_to_base64_png,
 )
 from pipelines.tropical_cyclone.constants import (
-    CountryConfig,
     COUNTRY_CONFIGS,
+    CountryConfig,
     MIN_SEVERITY_MS,
     MONITORING_BOX_BUFFER_KM,
 )
@@ -73,7 +75,7 @@ def calculate_tropical_cyclone_forecasts(
         return
 
     ### Step 2 - Resolve the country's config (exposure class, sustained-wind convention) ###
-    country_config = COUNTRY_CONFIGS.get(country)
+    country_config = COUNTRY_CONFIGS.get(CountryCodeIso3(country))
     if country_config is None:
         data_submitter.add_error(
             f"No config for country '{country}' (see tropical_cyclone/constants.py COUNTRY_CONFIGS)"
@@ -134,7 +136,9 @@ def calculate_tropical_cyclone_forecasts(
     wind_speeds = _placeholder_extract_wind_speed(
         gefs_wind_member_paths, country_bounds, country_config
     )
-    time_interval_severities = _placeholder_determine_alert(wind_speeds, target_admin_areas)
+    time_interval_severities = _placeholder_determine_alert(
+        wind_speeds, target_admin_areas
+    )
 
     # If no time bucket clears MIN_SEVERITY_MS, there is no alert for this country.
     if not time_interval_severities:
@@ -155,7 +159,9 @@ def calculate_tropical_cyclone_forecasts(
     )
 
     if clipped_wind_extent is None:
-        data_submitter.add_error(f"Could not compute wind extent for country '{country}'")
+        data_submitter.add_error(
+            f"Could not compute wind extent for country '{country}'"
+        )
         return
 
     ### Step 9 - Lazily load the population raster ###
@@ -217,13 +223,13 @@ def calculate_tropical_cyclone_forecasts(
         values_by_place_code=population_exposed,
     )
 
-    # No add_geo_feature_exposure for individual track points yet 
+    # No add_geo_feature_exposure for individual track points yet
     # Track data is used above only for the derived centroid.
 
     data_submitter.add_raster_exposure(
         event_name=event_name,
         layer=LayerName.WIND_SPEED,
-        value_black_white=raster_to_base64_png(clipped_wind_extent),
+        value_greyscale=raster_to_base64_png(clipped_wind_extent),
         extent=get_raster_extent(clipped_wind_extent),
     )
 
@@ -238,7 +244,9 @@ def _pad_bounding_box(bounds: BoundingBox, buffer_km: float) -> BoundingBox:
     min_lon, min_lat, max_lon, max_lat = bounds
     km_per_degree_latitude = 111.32
     mid_latitude = (min_lat + max_lat) / 2
-    km_per_degree_longitude = km_per_degree_latitude * math.cos(math.radians(mid_latitude))
+    km_per_degree_longitude = km_per_degree_latitude * math.cos(
+        math.radians(mid_latitude)
+    )
 
     latitude_buffer_degrees = buffer_km / km_per_degree_latitude
     longitude_buffer_degrees = (
