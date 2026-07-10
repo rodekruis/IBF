@@ -14,7 +14,7 @@ from pipelines.infra.data_types.dtos import (
 )
 from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
 
-EVENT_NAME = "ETH_floods_station-test"
+EVENT_NAME = "station-test"
 
 
 def test_incomplete_alert_is_rejected(tmp_output: Path):
@@ -24,6 +24,7 @@ def test_incomplete_alert_is_rejected(tmp_output: Path):
         issued_at=datetime.now(timezone.utc),
         hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
+        country_code_iso3="ETH",
     )
     submitter.create_alert(
         event_name=EVENT_NAME,
@@ -100,6 +101,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
         issued_at=datetime.now(timezone.utc),
         hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
+        country_code_iso3="ETH",
     )
     submitter.create_alert(
         event_name=EVENT_NAME,
@@ -184,6 +186,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
         issued_at=datetime.now(timezone.utc),
         hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
+        country_code_iso3="ETH",
     )
     submitter.create_alert(
         event_name=EVENT_NAME,
@@ -225,6 +228,7 @@ def test_naive_datetime_is_rejected(tmp_output: Path):
         issued_at=datetime(2026, 3, 20, 12, 0, 0),
         hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
+        country_code_iso3="ETH",
     )
 
     errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
@@ -240,6 +244,7 @@ def test_hazard_type_missing_is_rejected(tmp_output: Path):
         issued_at=datetime.now(timezone.utc),
         hazard_type=None,  # type: ignore
         forecast_sources=[ForecastSource.GLOFAS],
+        country_code_iso3="ETH",
     )
 
     errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
@@ -255,6 +260,7 @@ def test_empty_forecast_sources_is_rejected(tmp_output: Path):
         issued_at=datetime.now(timezone.utc),
         hazard_type=HazardType.FLOODS,
         forecast_sources=[],
+        country_code_iso3="ETH",
     )
 
     errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))

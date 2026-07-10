@@ -46,12 +46,7 @@ services:
     restart: on-failure
     healthcheck:
       test:
-        [
-          'CMD',
-          'curl',
-          '-f',
-          'http://localhost:${PORT_API_SERVICE}/api/instance/health',
-        ]
+        ['CMD', 'curl', '-f', 'http://localhost:${PORT_API_SERVICE}/api/health']
       interval: 10s
       timeout: 5s
       retries: 10

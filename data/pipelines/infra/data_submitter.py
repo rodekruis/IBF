@@ -26,7 +26,6 @@ from pipelines.infra.data_types.dtos import (
 from pipelines.infra.utils.alert_integrity_checks import (
     check_admin_area_integrity,
     check_centroid,
-    check_event_name_format,
     check_raster_integrity,
     check_severity_integrity,
 )
@@ -51,6 +50,7 @@ class DataSubmitter:
         issued_at: datetime,
         hazard_type: HazardType,
         forecast_sources: list[ForecastSource],
+        country_code_iso3: str,
     ) -> None:
         self._forecast = Forecast(
             issued_at=(
@@ -60,6 +60,7 @@ class DataSubmitter:
             ),
             hazard_type=hazard_type,
             forecast_sources=forecast_sources,
+            country_code_iso3=country_code_iso3,
         )
 
     def create_alert(
@@ -255,7 +256,6 @@ class DataSubmitter:
         # NOTE 2: a lot more checks could be added and will be added in the future, but for now we focus on a few key ones to demonstrate the concept
         for event_name, alert in self._alerts.items():
             # NOTE: this validation mimics the validation on the API-side. Make sure to keep this in sync.
-            errors.extend(check_event_name_format(event_name))
             errors.extend(check_centroid(event_name, alert.centroid))
             errors.extend(check_severity_integrity(event_name, alert))
             errors.extend(check_admin_area_integrity(event_name, alert))

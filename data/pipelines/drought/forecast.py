@@ -57,7 +57,7 @@ def calculate_drought_forecasts(
         # REQUIRED: loop over temporal extents (seasons)
         for temporal_extent in config.temporal_extents:
             season = next(iter(temporal_extent.keys()), config.spatial_extent_name)
-            event_name = f"{country}_drought_{config.spatial_extent_name}_{season}"
+            event_name = f"{config.spatial_extent_name}_{season}"
 
             data_submitter.create_alert(
                 event_name=event_name,

@@ -10,11 +10,11 @@ logic that is not yet replaced with real hazard-specific computations.
 
 
 def test_drought_pipeline(pipeline):
-    """Run the drought pipeline end-to-end for ETH."""
+    """Run the drought pipeline end-to-end for UGA."""
     result = pipeline.run_pipeline(
         "pipelines/infra/configs/drought.yaml",
         1,
-        country="ETH",
+        country="UGA",
     )
     assert (
         result.returncode == 0

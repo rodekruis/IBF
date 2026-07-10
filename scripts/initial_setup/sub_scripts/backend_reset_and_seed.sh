@@ -16,7 +16,7 @@ print_header() {
 
 print_header "Checking backend is running"
 
-if ! curl --silent --fail 'http://localhost:4000/api/instance/health' > /dev/null; then
+if ! curl --silent --fail 'http://localhost:4000/api/health' > /dev/null; then
     echo "Error: Backend is not running or not healthy at http://localhost:4000"
     echo "Please start the backend first using backend_start.sh"
     exit 1
@@ -26,7 +26,16 @@ echo "✅ Backend is running"
 print_header "Resetting IBF instance"
 
 curl --silent --show-error --fail -X 'POST' \
-  'http://localhost:4000/api/instance/reset?script=ethiopia-with-events' \
+  'http://localhost:4000/api/reset?countryCodes=MWI' \
+  -H 'accept: */*' \
+  -H 'Content-Type: application/json' \
+  -d '{"secret":"fill_in_secret"}' \
+  > /dev/null
+
+print_header "Creating mock events"
+
+curl --silent --show-error --fail -X 'POST' \
+  'http://localhost:4000/api/mock?countryCodeIso3=MWI&scenario=events' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
   -d '{"secret":"fill_in_secret"}' \

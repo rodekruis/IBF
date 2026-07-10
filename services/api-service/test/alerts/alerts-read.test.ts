@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   buildAlert,
   buildForecast,
@@ -13,14 +12,14 @@ import {
   resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
-const ALERT_NAME = 'ETH_floods_get-test';
+const ALERT_NAME = 'get-test';
 
 describe('/ Alerts', () => {
   let adminAccessToken: string;
   let seededAlertId: number;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(['MWI'], __filename);
     const alert = buildAlert({ eventName: ALERT_NAME });
     await createAlerts(buildForecast([alert]));
     adminAccessToken = await getAccessToken();

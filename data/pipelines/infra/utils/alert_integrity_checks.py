@@ -1,31 +1,14 @@
 from __future__ import annotations
 
 import base64
-import re
 from datetime import datetime
 
 from pipelines.infra.data_types.dtos import (
     Alert,
     Centroid,
     EnsembleMemberType,
-    HazardType,
     LayerName,
 )
-
-# This enforces that alert event names follow the pattern "{countryCodeISO3}_{hazardType}_{identifier}", where the latter can consist of any number of parts
-# Keep in line with definition in alerts.service.ts
-EVENT_NAME_PATTERN = re.compile(
-    r"^[A-Z]{3}_(" + "|".join(re.escape(h.value) for h in HazardType) + r")_.+$"
-)
-
-
-def check_event_name_format(event_name: str) -> list[str]:
-    if not EVENT_NAME_PATTERN.match(event_name):
-        return [
-            f"Alert '{event_name}' does not match expected format "
-            f"'{{COUNTRY}}_{{hazardType}}_{{identifier}}'"
-        ]
-    return []
 
 
 def check_centroid(event_name: str, centroid: Centroid) -> list[str]:

@@ -16,3 +16,6 @@ countries:
   - iso_3_code: ETH
     target_admin_level: 2
     data_sources: *data_sources
+  - iso_3_code: UGA
+    target_admin_level: 2
+    data_sources: *data_sources

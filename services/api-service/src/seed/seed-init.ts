@@ -17,11 +17,11 @@ import {
   FLOOD_LEAD_TIME_SPECTRUM,
   SEED_DROUGHT_ALERT_CONFIGS,
   SeedAlertConfig,
-} from '@api-service/src/scripts/seed-data/seed-alert-configs.const';
+} from '@api-service/src/seed/seed-data/seed-alert-configs.const';
 import {
   SEED_COUNTRIES,
   SeedCountry,
-} from '@api-service/src/scripts/seed-data/seed-countries.const';
+} from '@api-service/src/seed/seed-data/seed-countries.const';
 import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 import { HazardType, LayerName } from '@api-service/src/shared-enums';
 import { hashPassword } from '@api-service/src/utils/hash-password.helper';

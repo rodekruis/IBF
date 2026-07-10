@@ -44,6 +44,7 @@ class TestLocalMode:
             issued_at=datetime.now(timezone.utc),
             hazard_type=HazardType.FLOODS,
             forecast_sources=[ForecastSource.GLOFAS],
+            country_code_iso3="MWI",
         )
 
         errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
@@ -57,6 +58,26 @@ class TestLocalMode:
         assert forecast["hazardType"] == "floods"
         assert forecast["forecastSources"] == ["glofas"]
         assert forecast["alerts"] == []
+
+    def test_includes_country_code_iso3_when_provided(self, tmp_output: Path):
+        """Local mode includes countryCodeIso3 in the forecast JSON when provided."""
+        api_client = MagicMock()
+        submitter = DataSubmitter(api_client)
+        submitter.set_forecast_metadata(
+            issued_at=datetime.now(timezone.utc),
+            hazard_type=HazardType.FLOODS,
+            forecast_sources=[ForecastSource.GLOFAS],
+            country_code_iso3="MWI",
+        )
+
+        errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+        assert errors == []
+        file_path = tmp_output / "forecast.json"
+        with file_path.open("r", encoding="utf-8") as f:
+            forecast = json.load(f)
+
+        assert forecast["countryCodeIso3"] == "MWI"
 
 
 class TestApiMode:
@@ -116,6 +137,7 @@ class TestApiMode:
             issued_at=datetime.now(timezone.utc),
             hazard_type=HazardType.FLOODS,
             forecast_sources=[ForecastSource.GLOFAS],
+            country_code_iso3="MWI",
         )
 
         errors = submitter.send_all(OutputMode.API, str(tmp_output))

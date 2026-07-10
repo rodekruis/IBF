@@ -5,6 +5,7 @@ import {
   IsArray,
   IsDate,
   IsEnum,
+  IsString,
   ValidateNested,
 } from 'class-validator';
 
@@ -14,6 +15,10 @@ import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
 // The data pipelines also use this definition.
 // If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py
 export class ForecastCreateDto {
+  @ApiProperty({ example: 'MWI' })
+  @IsString()
+  public readonly countryCodeIso3: string;
+
   @ApiProperty({ example: '2026-03-20T12:00:00Z' })
   @IsDate()
   @Type(() => Date)

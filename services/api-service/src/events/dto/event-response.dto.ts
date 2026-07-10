@@ -12,6 +12,9 @@ export class EventResponseDto {
   @ApiProperty()
   public readonly eventId: number;
 
+  @ApiProperty({ example: 'KEN' })
+  public readonly countryCodeIso3: string;
+
   @ApiProperty()
   public readonly eventName: string;
 

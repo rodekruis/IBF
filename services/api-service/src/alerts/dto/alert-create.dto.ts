@@ -10,7 +10,7 @@ import { EnsembleMemberType, SeverityKey } from '@api-service/src/shared-enums';
 // The data pipelines also use this definition.
 // If you make changes here, also update the data class in data/pipelines/infra/data_types/dtos.py
 export class AlertCreateDto {
-  @ApiProperty({ example: 'KEN_floods_station-A' })
+  @ApiProperty({ example: 'station-A' })
   @IsString()
   public readonly eventName: string;
 

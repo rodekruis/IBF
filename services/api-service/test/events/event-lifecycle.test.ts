@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   AlertClass,
   ForecastSource,
@@ -19,10 +18,12 @@ import {
 } from '@api-service/test/helpers/utility.helper';
 
 describe('GET /events - lifecycle across multiple forecasts', () => {
+  // Uses UGA because it has multi-level severity classification and both floods + drought configs
+  const countryCodeIso3 = 'UGA';
   let accessToken: string;
 
   beforeEach(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB([countryCodeIso3], __filename);
     accessToken = await getAccessToken();
   });
 
@@ -30,10 +31,10 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     const viewTimestamp = '2026-03-25T00:00:00Z';
     const laterViewTimestamp = '2026-03-27T00:00:00Z';
 
-    // median=2 → severity 'low' (≥2), runs all exceed 2 → prob=1.0 → 'single'
-    // matrix[low][single] = 'low', below triggerAlertClass 'high' → trigger false
+    // median=2 → severity 'medium' (≥2), runs all exceed 2 → prob=1.0 → 'single'
+    // matrix[medium][single] = 'medium', below triggerAlertClass 'high' → trigger false
     const alertA = buildAlert({
-      eventName: 'ETH_floods_station-A',
+      eventName: 'station-A',
       severity: buildSeverityData({
         start: new Date('2026-03-25T00:00:00Z'),
         end: new Date('2026-03-26T00:00:00Z'),
@@ -43,9 +44,9 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     });
 
     // Same station, upgraded severity: median=25 → severity 'high', prob=1.0 → 'single'
-    // matrix[high][single] = 'high', within P7D of issuedAt → trigger true
+    // matrix[high][single] = 'high', within P5D of issuedAt → trigger true
     const alertAUpgraded = buildAlert({
-      eventName: 'ETH_floods_station-A',
+      eventName: 'station-A',
       severity: buildSeverityData({
         start: new Date('2026-03-25T00:00:00Z'),
         end: new Date('2026-03-26T00:00:00Z'),
@@ -55,9 +56,9 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     });
 
     // Different station: median=10 → severity 'high', prob=1.0 → 'single'
-    // matrix[high][single] = 'high', within P7D of issuedAt → trigger true
+    // matrix[high][single] = 'high', within P5D of issuedAt → trigger true
     const alertB = buildAlert({
-      eventName: 'ETH_floods_station-B',
+      eventName: 'station-B',
       severity: buildSeverityData({
         start: new Date('2026-03-27T00:00:00Z'),
         end: new Date('2026-03-28T00:00:00Z'),
@@ -68,16 +69,23 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
     // Step 1: Create alert → creates event
     await createAlerts(
-      buildForecast([alertA], { issuedAt: new Date('2026-03-23T12:00:00Z') }),
+      buildForecast([alertA], {
+        countryCodeIso3,
+        issuedAt: new Date('2026-03-23T12:00:00Z'),
+      }),
     );
-    let response = await getActiveEvents(accessToken, 'ETH', viewTimestamp);
+    let response = await getActiveEvents(
+      accessToken,
+      countryCodeIso3,
+      viewTimestamp,
+    );
     expect(response.status).toBe(HttpStatus.OK);
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
-      eventName: 'ETH_floods_station-A',
+      eventName: 'station-A',
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
-      alertClass: AlertClass.low,
+      alertClass: AlertClass.medium,
       trigger: false,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
       lastUpdatedAt: '2026-03-23T12:00:00.000Z',
@@ -86,7 +94,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       isOngoing: true,
       exposedAdminAreas: [
         {
-          placeCode: 'ETH_01',
+          placeCode: 'MW31001',
           adminLevel: 3,
           exposure: [{ layerName: 'populationExposed', exposed: 1000 }],
         },
@@ -96,13 +104,18 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     // Step 2: Create an alert with higher severity → updates event
     await createAlerts(
       buildForecast([alertAUpgraded], {
+        countryCodeIso3,
         issuedAt: new Date('2026-03-24T12:00:00Z'),
       }),
     );
-    response = await getActiveEvents(accessToken, 'ETH', viewTimestamp);
+    response = await getActiveEvents(
+      accessToken,
+      countryCodeIso3,
+      viewTimestamp,
+    );
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
-      eventName: 'ETH_floods_station-A',
+      eventName: 'station-A',
       alertClass: AlertClass.high,
       trigger: true,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
@@ -110,7 +123,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       isOngoing: true,
       exposedAdminAreas: [
         {
-          placeCode: 'ETH_01',
+          placeCode: 'MW31001',
           adminLevel: 3,
           exposure: [{ layerName: 'populationExposed', exposed: 1000 }],
         },
@@ -120,23 +133,35 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     // Step 3: Create two alerts → both events open
     await createAlerts(
       buildForecast([alertAUpgraded, alertB], {
+        countryCodeIso3,
         issuedAt: new Date('2026-03-24T12:00:00Z'),
       }),
     );
-    response = await getActiveEvents(accessToken, 'ETH', viewTimestamp);
+    response = await getActiveEvents(
+      accessToken,
+      countryCodeIso3,
+      viewTimestamp,
+    );
     expect(response.body).toHaveLength(2);
     const names = response.body
       .map((e: { eventName: string }) => e.eventName)
       .sort();
-    expect(names).toEqual(['ETH_floods_station-A', 'ETH_floods_station-B']);
+    expect(names).toEqual(['station-A', 'station-B']);
 
     // Step 4: Create only alertB → stale event for alertA is closed
     await createAlerts(
-      buildForecast([alertB], { issuedAt: new Date('2026-03-24T12:00:00Z') }),
+      buildForecast([alertB], {
+        countryCodeIso3,
+        issuedAt: new Date('2026-03-24T12:00:00Z'),
+      }),
     );
-    response = await getActiveEvents(accessToken, 'ETH', laterViewTimestamp);
+    response = await getActiveEvents(
+      accessToken,
+      countryCodeIso3,
+      laterViewTimestamp,
+    );
     expect(response.body).toHaveLength(1);
-    expect(response.body[0].eventName).toBe('ETH_floods_station-B');
+    expect(response.body[0].eventName).toBe('station-B');
     expect(response.body[0].isOngoing).toBe(true);
   });
 
@@ -146,7 +171,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       const laterViewTimestamp = '2026-03-24T12:00:00Z';
 
       const alertThatStartsNextDay = buildAlert({
-        eventName: 'ETH_floods_station-no-rerun',
+        eventName: 'station-no-rerun',
         severity: buildSeverityData({
           start: new Date('2026-03-24T00:00:00Z'),
           end: new Date('2026-03-25T00:00:00Z'),
@@ -157,19 +182,20 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       await createAlerts(
         buildForecast([alertThatStartsNextDay], {
+          countryCodeIso3,
           issuedAt: new Date('2026-03-23T12:00:00Z'),
         }),
       );
 
       const responseBeforeStart = await getActiveEvents(
         accessToken,
-        'ETH',
+        countryCodeIso3,
         viewTimestamp,
       );
       expect(responseBeforeStart.status).toBe(HttpStatus.OK);
       expect(responseBeforeStart.body).toHaveLength(1);
       expect(responseBeforeStart.body[0]).toMatchObject({
-        eventName: 'ETH_floods_station-no-rerun',
+        eventName: 'station-no-rerun',
         startAt: '2026-03-24T00:00:00.000Z',
         endAt: '2026-03-25T00:00:00.000Z',
         isOngoing: false,
@@ -177,13 +203,13 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       const responseOnStartDay = await getActiveEvents(
         accessToken,
-        'ETH',
+        countryCodeIso3,
         laterViewTimestamp,
       );
       expect(responseOnStartDay.status).toBe(HttpStatus.OK);
       expect(responseOnStartDay.body).toHaveLength(1);
       expect(responseOnStartDay.body[0]).toMatchObject({
-        eventName: 'ETH_floods_station-no-rerun',
+        eventName: 'station-no-rerun',
         startAt: '2026-03-24T00:00:00.000Z',
         endAt: '2026-03-25T00:00:00.000Z',
         isOngoing: true,
@@ -195,7 +221,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       const laterViewTimestamp = '2026-03-25T12:00:00Z';
 
       const expiredAlert = buildAlert({
-        eventName: 'ETH_floods_station-expired',
+        eventName: 'station-expired',
         severity: buildSeverityData({
           start: new Date('2026-03-24T00:00:00Z'),
           end: new Date('2026-03-25T00:00:00Z'),
@@ -206,19 +232,20 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       await createAlerts(
         buildForecast([expiredAlert], {
+          countryCodeIso3,
           issuedAt: new Date('2026-03-23T12:00:00Z'),
         }),
       );
 
       const responseBeforeExpiry = await getActiveEvents(
         accessToken,
-        'ETH',
+        countryCodeIso3,
         viewTimestamp,
       );
       expect(responseBeforeExpiry.status).toBe(HttpStatus.OK);
       expect(responseBeforeExpiry.body).toHaveLength(1);
       expect(responseBeforeExpiry.body[0]).toMatchObject({
-        eventName: 'ETH_floods_station-expired',
+        eventName: 'station-expired',
         startAt: '2026-03-24T00:00:00.000Z',
         endAt: '2026-03-25T00:00:00.000Z',
         isOngoing: true,
@@ -226,7 +253,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       const responseAfterExpiry = await getActiveEvents(
         accessToken,
-        'ETH',
+        countryCodeIso3,
         laterViewTimestamp,
       );
       expect(responseAfterExpiry.status).toBe(HttpStatus.OK);
@@ -235,7 +262,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
   });
 
   it('should keep startAt pinned to startAt of first ongoing alert, even if later alerts forecast upcoming alert again', async () => {
-    const eventName = 'ETH_floods_station-pinned-start-at';
+    const eventName = 'station-pinned-start-at';
 
     const firstUpcomingAlert = buildAlert({
       eventName,
@@ -269,23 +296,26 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
     await createAlerts(
       buildForecast([firstUpcomingAlert], {
+        countryCodeIso3,
         issuedAt: new Date('2026-03-20T12:00:00Z'),
       }),
     );
     await createAlerts(
       buildForecast([firstOngoingAlert], {
+        countryCodeIso3,
         issuedAt: new Date('2026-03-27T12:00:00Z'),
       }),
     );
     await createAlerts(
       buildForecast([laterUpcomingAlert], {
+        countryCodeIso3,
         issuedAt: new Date('2026-03-28T12:00:00Z'),
       }),
     );
 
     const response = await getActiveEvents(
       accessToken,
-      'ETH',
+      countryCodeIso3,
       '2026-03-29T00:00:00Z',
     );
     expect(response.status).toBe(HttpStatus.OK);
@@ -304,7 +334,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
   });
 
   it('should update startAt to latest alert startAt when no history is ongoing', async () => {
-    const eventName = 'ETH_floods_station-latest-start-at';
+    const eventName = 'station-latest-start-at';
 
     const firstUpcomingAlert = buildAlert({
       eventName,
@@ -328,18 +358,20 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
     await createAlerts(
       buildForecast([firstUpcomingAlert], {
+        countryCodeIso3,
         issuedAt: new Date('2026-04-01T12:00:00Z'),
       }),
     );
     await createAlerts(
       buildForecast([secondUpcomingAlert], {
+        countryCodeIso3,
         issuedAt: new Date('2026-04-02T12:00:00Z'),
       }),
     );
 
     const response = await getActiveEvents(
       accessToken,
-      'ETH',
+      countryCodeIso3,
       '2026-04-03T00:00:00Z',
     );
     expect(response.status).toBe(HttpStatus.OK);
@@ -358,9 +390,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
   });
 
   it('should close old events of same hazardType when current forecast produces no alerts', async () => {
-    // Arrange
     const oldForecastTimestamp = '2026-04-10T00:00:00Z';
-    const oldFloodsEventName = 'ETH_floods_station-close-previous';
+    const oldFloodsEventName = 'station-close-previous';
     const oldFloodsAlert = buildAlert({
       eventName: oldFloodsEventName,
       severity: buildSeverityData({
@@ -371,11 +402,12 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       }),
     });
     const oldFloodsForecast = buildForecast([oldFloodsAlert], {
+      countryCodeIso3,
       hazardType: HazardType.floods,
       issuedAt: new Date(oldForecastTimestamp),
     });
 
-    const oldDroughtEventName = 'ETH_drought_event-close-previous';
+    const oldDroughtEventName = 'event-close-previous';
     const oldDroughtAlert = buildAlert({
       eventName: oldDroughtEventName,
       severity: buildSeverityData({
@@ -386,6 +418,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       }),
     });
     const oldDroughtForecast = buildForecast([oldDroughtAlert], {
+      countryCodeIso3,
       hazardType: HazardType.drought,
       issuedAt: new Date(oldForecastTimestamp),
     });
@@ -395,17 +428,17 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
     // Act
     const currentForecastTimestamp = '2026-04-11T00:00:00Z';
-    const currentFloodsAlerts = [];
+    const currentFloodsAlerts: never[] = [];
     const currentFloodsForecast = buildForecast(currentFloodsAlerts, {
+      countryCodeIso3,
       hazardType: HazardType.floods,
       issuedAt: new Date(currentForecastTimestamp),
     });
     await createAlerts(currentFloodsForecast);
 
-    // Assert: Get events immediately after forecast
     const response = await getActiveEvents(
       accessToken,
-      'ETH',
+      countryCodeIso3,
       currentForecastTimestamp,
     );
     expect(response.status).toBe(HttpStatus.OK);
