@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import logging
 import math
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from statistics import fmean
 
@@ -49,10 +48,11 @@ from pipelines.tropical_cyclone.constants import (
     MIN_SEVERITY_MS,
     MONITORING_BOX_BUFFER_KM,
 )
-from pipelines.tropical_cyclone.extract_forecast import (
-    extract_wind_speed,
-    TimeIntervalWindSpeed,
+from pipelines.tropical_cyclone.determine_alerts import (
+    determine_alert,
+    TimeIntervalSeverity,
 )
+from pipelines.tropical_cyclone.extract_forecast import extract_wind_speed
 from pipelines.tropical_cyclone.extract_track import extract_track, TimeIntervalTrackFix
 
 
@@ -134,8 +134,8 @@ def calculate_tropical_cyclone_forecasts(
     wind_speeds = extract_wind_speed(
         gefs_wind_member_paths, country_bounds, country_config
     )
-    time_interval_severities = _placeholder_determine_alert(
-        wind_speeds, target_admin_areas
+    time_interval_severities = determine_alert(
+        wind_speeds, spatial_extent_place_codes, target_admin_areas
     )
 
     # If no time bucket clears MIN_SEVERITY_MS, there is no alert for this country.
@@ -260,24 +260,6 @@ def _pad_bounding_box(bounds: BoundingBox, buffer_km: float) -> BoundingBox:
     )
 
 
-@dataclass
-class _PlaceholderTimeIntervalSeverity:
-    """
-    Placeholder shape for tropical_cyclone/determine_alerts.py's TimeIntervalSeverity — mirrors
-    flood/determine_alerts.py's TimeIntervalSeverity dataclass, renamed for wind speed instead of
-    return period. Delete this once determine_alerts.py exists and import the real dataclass
-    instead. Known incomplete: `ensemble_wind_speeds` here is scalars only, but
-    compute_wind_extent.py needs every member's own raster to build the per-cell-max envelope (see
-    _placeholder_compute_alert_extent) - the real dataclass will need to carry those too, e.g.
-    `list[tuple[float, RasterData]]` or similar, not just `list[float]`.
-    """
-
-    time_interval_start: str
-    time_interval_end: str
-    median_wind_speed: float
-    ensemble_wind_speeds: list[float]
-
-
 def _placeholder_load_local_gefs_wind_paths(country: str) -> list[str]:
     """
     TODO-infra: replace with DataSource.GEFS_WIND once a fetcher exists. Until then, should read
@@ -298,29 +280,8 @@ def _placeholder_load_local_gefs_track_paths(country: str) -> list[str]:
     return []
 
 
-def _placeholder_determine_alert(
-    wind_speeds: list[TimeIntervalWindSpeed],
-    admin_areas: AdminAreasSet,
-) -> list[_PlaceholderTimeIntervalSeverity]:
-    """
-    TODO(tropical_cyclone/determine_alerts.py): determine_alert(...). Per time bucket, per member:
-    clip that member's wind-speed raster to the country's own admin-area union (the land mask),
-    take its max - that's the RUN severity value (31 of them). The MEDIAN severity value is the
-    median of those 31 per-member land-masked max scalars, NOT a per-cell median-then-max - max and
-    median don't commute, and per-cell-median-first systematically underestimates severity for a
-    high track-position-variance event (e.g. a Cat 5 with a wide track spread: every individual
-    cell sees a high value in only a few members, so a per-cell median is low everywhere, and the
-    max of that raster wrongly reads as a weak event; per-member-max-first correctly captures that
-    most members saw a severe event, just in different places). Compare the MEDIAN value directly
-    against the flat MIN_SEVERITY_MS, no category lookup. Must also retain each member's own raster,
-    not just its scalar max - compute_wind_extent.py needs all 31 to build the per-cell-max
-    envelope (see _placeholder_compute_alert_extent).
-    """
-    return []
-
-
 def _placeholder_compute_alert_extent(
-    time_interval_severities: list[_PlaceholderTimeIntervalSeverity],
+    time_interval_severities: list[TimeIntervalSeverity],
 ) -> RasterData:
     """
     TODO(tropical_cyclone/compute_wind_extent.py): compute_alert_extent(time_interval_severities)
