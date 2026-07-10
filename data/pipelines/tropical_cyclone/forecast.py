@@ -43,15 +43,13 @@ from pipelines.infra.utils.raster import (
     get_raster_extent,
     raster_to_base64_png,
 )
+from pipelines.tropical_cyclone.compute_wind_extent import compute_alert_extent
 from pipelines.tropical_cyclone.constants import (
     COUNTRY_CONFIGS,
     MIN_SEVERITY_MS,
     MONITORING_BOX_BUFFER_KM,
 )
-from pipelines.tropical_cyclone.determine_alerts import (
-    determine_alert,
-    TimeIntervalSeverity,
-)
+from pipelines.tropical_cyclone.determine_alerts import determine_alert
 from pipelines.tropical_cyclone.extract_forecast import extract_wind_speed
 from pipelines.tropical_cyclone.extract_track import extract_track, TimeIntervalTrackFix
 
@@ -150,7 +148,7 @@ def calculate_tropical_cyclone_forecasts(
     track_fixes = extract_track(gefs_track_member_paths, country_bounds)
 
     ### Step 8 - Compute the alert extent and its spatial exposure ###
-    wind_extent = _placeholder_compute_alert_extent(time_interval_severities)
+    wind_extent = compute_alert_extent(time_interval_severities)
     clipped_wind_extent = _placeholder_determine_spatial_extent(
         wind_extent, spatial_extent_place_codes, target_admin_areas
     )
@@ -278,30 +276,6 @@ def _placeholder_load_local_gefs_track_paths(country: str) -> list[str]:
     implemented, which correctly halts the pipeline at the Step 4 guard above.
     """
     return []
-
-
-def _placeholder_compute_alert_extent(
-    time_interval_severities: list[TimeIntervalSeverity],
-) -> RasterData:
-    """
-    TODO(tropical_cyclone/compute_wind_extent.py): compute_alert_extent(time_interval_severities)
-    -> RasterData. Picks the qualifying bucket with the highest median wind speed (peak-intensity
-    moment, mirrors flood picking the worst return-period day). Within that bucket, the footprint
-    raster is a per-cell max across all 31 members' rasters (`patched[x,y] = max(member_1[x,y], ...,
-    member_31[x,y])`), masked where > MIN_SEVERITY_MS - deliberately precautionary: shows everywhere
-    any plausible ensemble member puts hurricane-force wind, appropriate for a population-exposure
-    product where over-covering is the safer default. Every value in it is real (each cell's value
-    came from some actual member at that location), but its own peak is the MAXIMUM of the 31
-    per-member maxes, not their MEDIAN - it will generally read more severe than the MEDIAN severity
-    value reported alongside it, and that's expected, not a bug: they represent different things
-    (typical-event severity vs. worst-case footprint). Locked 2026-07-10; redesign (e.g. switch to a
-    single representative member's raster instead, for exact numeric agreement with MEDIAN) if this
-    proves too aggressive/noisy in production.
-    """
-    raise NotImplementedError(
-        "compute_alert_extent placeholder reached with non-empty time_interval_severities; "
-        "implement tropical_cyclone/compute_wind_extent.py before this can run for real."
-    )
 
 
 def _placeholder_determine_spatial_extent(
