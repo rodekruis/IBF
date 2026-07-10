@@ -31,8 +31,8 @@ class SecretDto {
   public readonly secret: string;
 }
 
-@ApiTags('--- seed ---')
-@Controller('seed')
+@ApiTags('--- root ---')
+@Controller()
 export class SeedController {
   public constructor(private readonly seedService: SeedService) {}
 
@@ -92,7 +92,7 @@ export class SeedController {
     return 'Database reset to initial state.';
   }
 
-  @Post('/mock-events')
+  @Post('/mock')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Generate mock events for a country.',

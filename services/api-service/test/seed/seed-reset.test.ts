@@ -7,7 +7,7 @@ import {
   resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
-describe('POST /seed/reset', () => {
+describe('POST /reset', () => {
   let accessToken: string;
 
   // Use Uganda as test-country here, as it covers both flood and drought

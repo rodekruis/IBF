@@ -16,7 +16,7 @@ print_header() {
 
 print_header "Checking backend is running"
 
-if ! curl --silent --fail 'http://localhost:4000/api/instance/health' > /dev/null; then
+if ! curl --silent --fail 'http://localhost:4000/api/health' > /dev/null; then
     echo "Error: Backend is not running or not healthy at http://localhost:4000"
     echo "Please start the backend first using backend_start.sh"
     exit 1

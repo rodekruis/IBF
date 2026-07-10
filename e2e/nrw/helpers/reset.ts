@@ -4,7 +4,7 @@ export async function resetDb(
   countryCodes: string[] = ['MWI'],
   resetIdentifier = 'e2e',
 ): Promise<void> {
-  const url = new URL(`${env.API_SERVICE_URL}/api/seed/reset`);
+  const url = new URL(`${env.API_SERVICE_URL}/api/reset`);
   for (const code of countryCodes) {
     url.searchParams.append('countryCodes', code);
   }

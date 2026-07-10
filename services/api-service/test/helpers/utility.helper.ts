@@ -19,7 +19,7 @@ export function resetDB(
   skipStaticRasters = true,
 ): Promise<request.Response> {
   return getServer()
-    .post('/seed/reset')
+    .post('/reset')
     .query({
       countryCodes,
       resetIdentifier,

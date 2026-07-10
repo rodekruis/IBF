@@ -18,7 +18,7 @@ function mockEvents(params: {
   issuedAt?: string;
 }) {
   return getServer()
-    .post('/seed/mock-events')
+    .post('/mock')
     .query({
       countryCodeIso3: params.countryCodeIso3,
       scenario: params.scenario,
@@ -30,7 +30,7 @@ function mockEvents(params: {
     .send({ secret: env.RESET_SECRET });
 }
 
-describe('POST /seed/mock-events', () => {
+describe('POST /mock', () => {
   let accessToken: string;
 
   jest.setTimeout(60_000);
@@ -138,7 +138,7 @@ describe('POST /seed/mock-events', () => {
 
     it('should return 403 for wrong secret', async () => {
       const response = await getServer()
-        .post('/seed/mock-events')
+        .post('/mock')
         .query({
           countryCodeIso3: COUNTRY_CODE_ISO3,
           scenario: MockScenario.events,

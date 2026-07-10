@@ -11,8 +11,8 @@ import { APP_VERSION } from '@api-service/src/config';
 import { GetVersionDto } from '@api-service/src/health/dto/get-version.dto';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 
-@ApiTags('--- instance ---')
-@Controller('instance')
+@ApiTags('--- root ---')
+@Controller()
 export class HealthController {
   public constructor(
     private health: HealthCheckService,

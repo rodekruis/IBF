@@ -1,17 +1,17 @@
 [
   {
     "method": "get",
-    "path": "/api/instance/health",
+    "path": "/api/health",
     "params": []
   },
   {
     "method": "get",
-    "path": "/api/instance/version",
+    "path": "/api/version",
     "params": []
   },
   {
     "method": "post",
-    "path": "/api/seed/reset",
+    "path": "/api/reset",
     "params": [
       "skipStaticRasters",
       "resetIdentifier",
@@ -20,7 +20,7 @@
   },
   {
     "method": "post",
-    "path": "/api/seed/mock-events",
+    "path": "/api/mock",
     "params": [
       "countryCodeIso3",
       "scenario",
