@@ -47,6 +47,24 @@ If you need to add more directories to the checkout, such as for `/a-new-dir/my-
 
 Note: `cone` is the default setting and also checks out all files in the base-level directories of all parents of what you check out. `--no-cone` gives you just the directories you indicate.
 
+## Making a PR branch for the front end directly from the submodule
+
+For very large changes, it's better to make and test them from the `go-web-app` project directly so you can correctly handle dependencies from outside the submodule. For most changes though, you can make them directly through this project. Directions are given for VS Code, but other Git UI tools can do this, as well as from command line.
+
+It works similarly to normal branch commits, with two exceptions:
+
+- When you create a new branch in the submodule, it will also change the submodule pointer in the parent repo. Don't check this pointer change in. If you accidentally do, revert it before your PR into main.
+- When you want to switch back to the 'main' submodule, instead of changing the branch via the UI or the command line, discard or revert the change in the parent repo to the submodule pointer. In the VS Code UI, you will see the submodule branch change back to the pointer.
+
+Creating a new branch from the submodule works as it would for any repo.
+
+1. Click on the branch name
+2. Click on `+ Create New Branch`
+3. Type in the branch name and hit enter.
+4. You can now commit directly to this branch just like you would to any branch.
+
+Your changes are commited to the `go-web-app` repo, not this repo. Once your PR merges in that repo, you can bring them back into this repo with a submodule update. See the **Updating the submodule** section above.
+
 ## Other changes from Go
 
 To match styling, these files outside the submodule had styling copied from Go:
