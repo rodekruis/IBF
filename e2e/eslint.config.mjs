@@ -1,7 +1,7 @@
 import js from '@eslint/js';
 import typescript from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
-import eslintComments from 'eslint-plugin-eslint-comments';
+import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import n from 'eslint-plugin-n';
 import prettier from 'eslint-plugin-prettier';
 import promise from 'eslint-plugin-promise';
@@ -11,6 +11,13 @@ import globals from 'globals';
 export default [
   {
     ignores: ['node_modules/', 'test-results/', 'playwright-report/', 'dist/'],
+  },
+  comments.recommended,
+  {
+    rules: {
+      '@eslint-community/eslint-comments/no-unused-disable': 'error',
+      '@eslint-community/eslint-comments/require-description': 'error',
+    },
   },
   {
     files: ['**/*.{js,mjs}'],
@@ -22,18 +29,14 @@ export default [
       },
     },
     plugins: {
-      'eslint-comments': eslintComments,
       n,
       prettier,
       'simple-import-sort': simpleImportSort,
     },
     rules: {
       ...js.configs.recommended.rules,
-      ...eslintComments.configs.recommended.rules,
       ...n.configs.recommended.rules,
       ...prettier.configs.recommended.rules,
-      'eslint-comments/no-unused-disable': 'error',
-      'eslint-comments/require-description': 'error',
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
@@ -50,7 +53,6 @@ export default [
     },
     plugins: {
       '@typescript-eslint': typescript,
-      'eslint-comments': eslintComments,
       promise,
       prettier,
       'simple-import-sort': simpleImportSort,
@@ -59,7 +61,6 @@ export default [
     rules: {
       ...typescript.configs.recommended.rules,
       ...typescript.configs['stylistic-type-checked'].rules,
-      ...eslintComments.configs.recommended.rules,
       ...promise.configs.recommended.rules,
       ...prettier.configs.recommended.rules,
       '@typescript-eslint/no-floating-promises': 'error',
@@ -72,8 +73,6 @@ export default [
           caughtErrors: 'none',
         },
       ],
-      'eslint-comments/no-unused-disable': 'error',
-      'eslint-comments/require-description': 'error',
       'n/no-process-env': 'error',
       'n/prefer-node-protocol': 'error',
       'object-shorthand': 'error',
