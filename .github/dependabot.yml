@@ -7,6 +7,9 @@ updates:
     schedule:
       interval: 'monthly'
       day: 'tuesday'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']
 
   - directory: '/'
     package-ecosystem: 'npm'
@@ -17,6 +20,9 @@ updates:
       default-days: 8
     open-pull-requests-limit: 5
     versioning-strategy: increase
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']
 
   - directory: '/services/api-service'
     package-ecosystem: npm
@@ -39,14 +45,14 @@ updates:
       prisma:
         patterns: ['@prisma/*', 'prisma']
     ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']
       # Dependencies below are ordered alphabetically!
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
       - dependency-name: 'applicationinsights'
         update-types: ['version-update:semver-major']
-      - dependency-name: 'bwip-js'
       - dependency-name: 'eslint-plugin-custom-rules' # Local package, no need to check
-      - dependency-name: 'jimp'
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
       - dependency-name: eslint # eslint v10 has conflict with eslint-plugin-eslint-comments
@@ -74,6 +80,8 @@ updates:
       playwright:
         patterns: ['@playwright/*', 'playwright']
     ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']
       # Dependencies below are ordered alphabetically!
       - dependency-name: '@eslint/js'
         update-types:
@@ -94,3 +102,6 @@ updates:
     cooldown:
       default-days: 8
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']
