@@ -58,7 +58,7 @@ jobs:
       # pull-requests: write
     environment: 'test'
     env:
-      APP_IBF_API_BACKEND: ${{ vars.APP_IBF_API_BACKEND }}
+      APP_IBF_API_BACKEND: ${{ vars.APP_NRW_API_BACKEND }}
       APP_SEED_DATA_REPO: ${{ vars.APP_SEED_DATA_REPO }}
       APP_MAPBOX_ACCESS_TOKEN: ${{ secrets.APP_MAPBOX_ACCESS_TOKEN }}
       FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
