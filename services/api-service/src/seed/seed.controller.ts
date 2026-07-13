@@ -42,7 +42,7 @@ export class SeedController {
     summary: 'Reset database and seed initial (non-event) data.',
     description:
       'Drops all data and re-seeds initial static data (admin areas, countries, etc.). ' +
-      'Call for one, multiple, or all countries.' +
+      'Call for one, multiple, or all countries. ' +
       'Not available in production.',
   })
   @ApiResponse({

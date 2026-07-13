@@ -23,7 +23,7 @@ else
     exit 1
 fi
 
-RESET_SECRET=$(grep '^RESET_SECRET=' "${ENV_FILE}" | cut -d= -f2-)
+RESET_SECRET=$(grep '^RESET_SECRET=' "${ENV_FILE}" | cut -d= -f2- || true)
 if [[ -z "${RESET_SECRET}" ]]; then
     echo "Error: RESET_SECRET not found in ${ENV_FILE}"
     exit 1

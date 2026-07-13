@@ -33,7 +33,7 @@ else
     exit 1
 fi
 
-DB_PASSWORD=$(grep '^POSTGRES_PASSWORD=' "${ENV_FILE}" | cut -d= -f2-)
+DB_PASSWORD=$(grep '^POSTGRES_PASSWORD=' "${ENV_FILE}" | cut -d= -f2- || true)
 if [[ -z "${DB_PASSWORD}" ]]; then
     echo "Error: POSTGRES_PASSWORD not found in ${ENV_FILE}"
     exit 1
