@@ -40,6 +40,10 @@ export class SeedController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Reset database and seed initial (non-event) data.',
+    description:
+      'Drops all data and re-seeds initial static data (admin areas, countries, etc.). ' +
+      'Call for one, multiple, or all countries.' +
+      'Not available in production.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -55,7 +59,7 @@ export class SeedController {
     name: 'skipStaticRasters',
     required: false,
     description:
-      'If true, skip seeding static rasters (population) to speed up resets.',
+      'If true, skip seeding static rasters (population) to speed up resets for testing.',
   })
   @ApiQuery({
     name: 'countryCodes',
@@ -63,7 +67,7 @@ export class SeedController {
     type: String,
     example: 'MWI',
     description:
-      'ISO3 country codes to seed. Provide comma-separated (e.g. MWI,UGA) or repeat the query param (e.g. countryCodes=MWI&countryCodes=UGA). If omitted, all countries are seeded.',
+      'ISO3 country codes to seed. Provide comma-separated (e.g. MWI,UGA). If omitted, all countries are seeded.',
   })
   public async resetDb(
     @Body() body: SecretDto,
@@ -85,7 +89,7 @@ export class SeedController {
 
     await this.seedService.reset({
       resetIdentifier,
-      countryCodes,
+      countryCodes: countryCodes?.map((code) => code.trim()),
       skipStaticRasters: skipStaticRasters ?? false,
     });
 
@@ -96,6 +100,9 @@ export class SeedController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Generate mock events for a country.',
+    description:
+      'Creates mock forecast events, for testing without pipeline data. ' +
+      'Not available in production.',
   })
   @ApiResponse({
     status: HttpStatus.OK,

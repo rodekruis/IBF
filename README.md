@@ -52,6 +52,11 @@ The following URLs are now available
 - [http://localhost:9000/](http://localhost:9000/) for pg_featureserv (GIS feature service)
 - [http://localhost:7800/](http://localhost:7800/) for pg_tileserv (vector tile service)
 
+After the backend is running, seed it with base data and (optionally) mock events:
+
+1. **Reset** — `POST /api/reset?countryCodes=MWI` seeds admin areas, and other static data.
+2. **Mock** (optional) — `POST /api/mock?countryCodeIso3=MWI&scenario=events` creates test forecast events so the portal shows data.
+
 #### Frontend (`go-web-app` directory)
 
 In the `go-web-app` directory, follow [the instructions from that repository](https://github.com/rodekruis/go-web-app/tree/ibf-main#local-development) on how to install dependencies and start the frontend.
@@ -81,6 +86,10 @@ The code for the pipelines lives in the `IBF` repository under `/data`. See the 
 This is under construction. There are currently some seeding scripts in `data/data_management/data_upload` for dev use. See the [data/ folder readme](/data/README.md) for more information.
 
 ## Troubleshooting
+
+### Prisma generate or migration issues
+
+Run `./scripts/reset_local_database.sh` to recreate your local database schema, restart your services (which in turn run prisma generate and prisma migrations), and seed static and mock event data.
 
 ### When running locally, `api-service` tries to connect to the wrong local port for the DB (localhost:5432)
 
