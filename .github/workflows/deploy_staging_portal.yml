@@ -6,6 +6,7 @@ env:
   workingDirectory: portal/nrw-standalone
 
 permissions:
+  contents: read
   actions: read
   deployments: write
   id-token: write

@@ -11,6 +11,7 @@ defaults:
     working-directory: services/api-service
 
 permissions:
+  contents: read
   actions: read
   deployments: write
   id-token: write

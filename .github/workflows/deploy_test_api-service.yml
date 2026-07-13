@@ -13,6 +13,7 @@ defaults:
 
 permissions:
   contents: read
+  actions: read
   deployments: write
   id-token: write
 on:

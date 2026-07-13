@@ -3,6 +3,7 @@
 name: 'Deploy [test] All'
 
 permissions:
+  contents: read
   actions: read
   deployments: write
   id-token: write
@@ -16,6 +17,7 @@ jobs:
     name: 'Build + Deploy: portal'
     uses: ./.github/workflows/deploy_test_portal.yml
     permissions:
+      contents: read # Copy of above
       actions: read # Copy of above
       deployments: write # Copy of above
       id-token: write # Copy of above
