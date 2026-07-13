@@ -86,7 +86,7 @@ jobs:
         id: get-api-key
         uses: azure/cli@v3
         with:
-          azcliversion: latest
+          azcliversion: 2.88.0
           inlineScript: |
             apiKey=$(az staticwebapp secrets list --name nrw-portal-test --query "properties.apiKey" -o tsv)
             if [ -z "$apiKey" ]; then
