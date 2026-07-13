@@ -51,6 +51,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: read
+      deployments: write
+      id-token: write
       # Disabling this to avoid spamming the PR with "Your stage site is ready!" comments
       # https://github.com/Azure/static-web-apps/issues/1135#issuecomment-1750066331
       # pull-requests: write
