@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   getAccessToken,
   getServer,
@@ -11,7 +10,7 @@ describe('/ Countries', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(['MWI'], __filename);
     accessToken = await getAccessToken();
   });
 
@@ -31,11 +30,11 @@ describe('/ Countries', () => {
   describe('GET /countries/:countryCodeIso3', () => {
     it('should return a country by ISO3 code', async () => {
       const response = await getServer()
-        .get('/countries/ETH')
+        .get('/countries/MWI')
         .set('Cookie', [accessToken]);
 
       expect(response.status).toBe(HttpStatus.OK);
-      expect(response.body.countryCodeIso3).toBe('ETH');
+      expect(response.body.countryCodeIso3).toBe('MWI');
     });
 
     it('should return 404 for non-existent country', async () => {

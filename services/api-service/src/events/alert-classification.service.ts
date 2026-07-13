@@ -72,6 +72,7 @@ interface TimeIntervalGroup {
 }
 
 export interface AlertClassificationInput {
+  readonly countryCodeIso3: string;
   readonly hazardType: HazardType;
   readonly issuedAt: Date;
   readonly severity: SeverityDto[];
@@ -87,6 +88,7 @@ export class AlertClassificationService {
     classificationInput: AlertClassificationInput,
   ): Promise<ClassificationResult> {
     const config = await this.alertConfigsService.getAlertConfigs({
+      countryCodeIso3: classificationInput.countryCodeIso3,
       hazardType: classificationInput.hazardType,
     });
     if (!config[0]) {

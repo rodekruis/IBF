@@ -1,21 +1,31 @@
 [
   {
     "method": "get",
-    "path": "/api/instance/health",
+    "path": "/api/health",
     "params": []
   },
   {
     "method": "get",
-    "path": "/api/instance/version",
+    "path": "/api/version",
     "params": []
   },
   {
     "method": "post",
-    "path": "/api/instance/reset",
+    "path": "/api/reset",
     "params": [
-      "resetIdentifier",
       "skipStaticRasters",
-      "script"
+      "resetIdentifier",
+      "countryCodes"
+    ]
+  },
+  {
+    "method": "post",
+    "path": "/api/mock",
+    "params": [
+      "countryCodeIso3",
+      "scenario",
+      "clearEvents",
+      "issuedAt"
     ]
   },
   {

@@ -8,7 +8,10 @@ import { BaseDto } from '@api-service/src/shared/dto/base.dto';
 import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
 
 export class AlertReadDto extends IntersectionType(BaseDto) {
-  @ApiProperty({ example: 'KEN_floods_station-A' })
+  @ApiProperty({ example: 'KEN' })
+  public readonly countryCodeIso3: string;
+
+  @ApiProperty({ example: 'station-A' })
   public readonly eventName: string;
 
   @ApiProperty()

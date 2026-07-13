@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { HazardType, LayerName } from '@api-service/src/shared-enums';
 import {
   getAccessToken,
@@ -8,21 +7,24 @@ import {
   resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
-describe('Seed', () => {
+describe('POST /reset', () => {
   let accessToken: string;
+
+  // Use Uganda as test-country here, as it covers both flood and drought
+  const countryCodeIso3 = 'UGA';
 
   jest.setTimeout(60_000);
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename, false);
+    await resetDB([countryCodeIso3], __filename, false);
     accessToken = await getAccessToken();
   });
 
   describe('Admin areas', () => {
-    it('should have admin areas seeded up to level 3', async () => {
+    it('should have admin areas seeded up to level 4', async () => {
       const response = await getServer()
         .get('/admin-areas')
-        .query({ countryCodeIso3: 'ETH' })
+        .query({ countryCodeIso3 })
         .set('Cookie', [accessToken]);
 
       expect(response.status).toBe(HttpStatus.OK);
@@ -36,7 +38,7 @@ describe('Seed', () => {
           ),
         ),
       ];
-      for (let level = 0; level <= 3; level++) {
+      for (let level = 0; level <= 4; level++) {
         expect(adminLevels).toContain(level);
       }
     });
@@ -46,14 +48,17 @@ describe('Seed', () => {
     it('should have flood alert configs', async () => {
       const response = await getServer()
         .get('/alert-configs')
-        .query({ countryCodeIso3: 'ETH', hazardType: HazardType.floods })
+        .query({
+          countryCodeIso3,
+          hazardType: HazardType.floods,
+        })
         .set('Cookie', [accessToken]);
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.length).toBeGreaterThan(0);
 
       for (const config of response.body) {
-        expect(config.countryCodeIso3).toBe('ETH');
+        expect(config.countryCodeIso3).toBe(countryCodeIso3);
         expect(config.hazardType).toBe(HazardType.floods);
         expect(config.spatialExtentName).toBeTruthy();
         expect(Array.isArray(config.spatialExtentPlaceCodes)).toBe(true);
@@ -66,14 +71,17 @@ describe('Seed', () => {
     it('should have drought alert configs', async () => {
       const response = await getServer()
         .get('/alert-configs')
-        .query({ countryCodeIso3: 'ETH', hazardType: HazardType.drought })
+        .query({
+          countryCodeIso3,
+          hazardType: HazardType.drought,
+        })
         .set('Cookie', [accessToken]);
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.length).toBeGreaterThan(0);
 
       for (const config of response.body) {
-        expect(config.countryCodeIso3).toBe('ETH');
+        expect(config.countryCodeIso3).toBe(countryCodeIso3);
         expect(config.hazardType).toBe(HazardType.drought);
         expect(config.spatialExtentName).toBeTruthy();
         expect(Array.isArray(config.temporalExtents)).toBe(true);
@@ -87,7 +95,7 @@ describe('Seed', () => {
       const response = await getServer()
         .get('/geo-features')
         .query({
-          filter: `countryCodeIso3='ETH' AND layer='${LayerName.glofasStations}'`,
+          filter: `countryCodeIso3='${countryCodeIso3}' AND layer='${LayerName.glofasStations}'`,
         })
         .set('Cookie', [accessToken]);
 
@@ -98,7 +106,7 @@ describe('Seed', () => {
       const feature = response.body.features[0];
       expect(feature.type).toBe('Feature');
       expect(feature.geometry).toBeDefined();
-      expect(feature.properties.countryCodeIso3).toBe('ETH');
+      expect(feature.properties.countryCodeIso3).toBe(countryCodeIso3);
       expect(feature.properties.layer).toBe(LayerName.glofasStations);
     });
   });
@@ -106,7 +114,7 @@ describe('Seed', () => {
   describe('Population raster', () => {
     it('should have a population raster with metadata', async () => {
       const response = await getServer().get(
-        `/rasters/static/ETH/${LayerName.population}`,
+        `/rasters/static/${countryCodeIso3}/${LayerName.population}`,
       );
 
       expect(response.status).toBe(HttpStatus.OK);

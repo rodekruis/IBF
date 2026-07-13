@@ -1,6 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
 
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import {
   AlertClass,
   AlertClassificationLevel,
@@ -16,15 +15,15 @@ describe('/ Alert Configs', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(SeedScript.ethiopiaOnly, __filename);
+    await resetDB(['MWI'], __filename);
     accessToken = await getAccessToken();
   });
 
   const validAlertConfig = {
-    countryCodeIso3: 'ETH',
+    countryCodeIso3: 'MWI',
     hazardType: HazardType.floods,
     spatialExtentName: 'TEST_STATION',
-    spatialExtentPlaceCodes: ['ET0101'],
+    spatialExtentPlaceCodes: ['MW101'],
     temporalExtents: [{ 'lead-time-spectrum': ['0-day', '1-day', '2-day'] }],
     severityClassLevels: [
       { label: AlertClassificationLevel.low, threshold: 100 },
@@ -49,10 +48,10 @@ describe('/ Alert Configs', () => {
 
       expect(response.status).toBe(HttpStatus.CREATED);
       expect(response.body[0].id).toBeDefined();
-      expect(response.body[0].countryCodeIso3).toBe('ETH');
+      expect(response.body[0].countryCodeIso3).toBe('MWI');
       expect(response.body[0].hazardType).toBe(HazardType.floods);
       expect(response.body[0].spatialExtentName).toBe('TEST_STATION');
-      expect(response.body[0].spatialExtentPlaceCodes).toEqual(['ET0101']);
+      expect(response.body[0].spatialExtentPlaceCodes).toEqual(['MW101']);
     });
 
     it('should reject invalid hazard type', async () => {
@@ -78,14 +77,14 @@ describe('/ Alert Configs', () => {
     it('should return alert configs filtered by country and hazard type', async () => {
       const response = await getServer()
         .get('/alert-configs')
-        .query({ countryCodeIso3: 'ETH', hazardType: HazardType.floods })
+        .query({ countryCodeIso3: 'MWI', hazardType: HazardType.floods })
         .set('Cookie', [accessToken]);
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.length).toBeGreaterThan(0);
 
       for (const config of response.body) {
-        expect(config.countryCodeIso3).toBe('ETH');
+        expect(config.countryCodeIso3).toBe('MWI');
         expect(config.hazardType).toBe(HazardType.floods);
       }
     });
@@ -103,7 +102,7 @@ describe('/ Alert Configs', () => {
     it('should reject invalid hazard type query parameter', async () => {
       const response = await getServer()
         .get('/alert-configs')
-        .query({ countryCodeIso3: 'ETH', hazardType: 'typhoon' })
+        .query({ countryCodeIso3: 'MWI', hazardType: 'typhoon' })
         .set('Cookie', [accessToken]);
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
@@ -133,7 +132,7 @@ describe('/ Alert Configs', () => {
 
       const getResponse = await getServer()
         .get('/alert-configs')
-        .query({ countryCodeIso3: 'ETH', hazardType: HazardType.floods })
+        .query({ countryCodeIso3: 'MWI', hazardType: HazardType.floods })
         .set('Cookie', [accessToken]);
 
       const deleted = getResponse.body.find((c: { id: number }) => c.id === id);

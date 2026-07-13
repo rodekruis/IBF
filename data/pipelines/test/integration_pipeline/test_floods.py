@@ -13,11 +13,11 @@ import pytest
 
 @pytest.mark.parametrize("mock", [1, 0])
 def test_floods_pipeline(pipeline, mock):
-    """Run the floods pipeline end-to-end for ETH with mock GloFAS data."""
+    """Run the floods pipeline end-to-end for UGA with mock GloFAS data."""
     result = pipeline.run_pipeline(
         "pipelines/infra/configs/floods.yaml",
         mock,
-        country="ETH",
+        country="UGA",
     )
     assert (
         result.returncode == 0

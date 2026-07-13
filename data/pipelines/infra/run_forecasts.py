@@ -83,6 +83,7 @@ def _run_country(
         issued_at=issued_at or datetime.now(timezone.utc),
         hazard_type=hazard_type,
         forecast_sources=forecast_sources,
+        country_code_iso3=country.country_code_iso_3,
     )
 
     # --- Hazard-specific forecast logic (implemented by data scientists) ---

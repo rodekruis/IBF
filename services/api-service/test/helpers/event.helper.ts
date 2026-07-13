@@ -24,7 +24,7 @@ export async function readEvents(
 
 export async function getActiveEvents(
   accessToken: string,
-  countryCodeIso3 = 'ETH',
+  countryCodeIso3 = 'MWI',
   timestamp?: string,
 ): Promise<request.Response> {
   return readEvents(accessToken, countryCodeIso3, { active: true, timestamp });

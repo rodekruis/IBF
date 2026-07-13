@@ -1,7 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
 import { env } from '@api-service/src/env';
-import { SeedScript } from '@api-service/src/scripts/enum/seed-script.enum';
 import { CookieNames } from '@api-service/src/shared/enum/cookie.enums';
 import { loginApi, resetDB } from '@api-service/test/helpers/utility.helper';
 
@@ -13,7 +12,7 @@ describe('/ Users', () => {
     };
 
     beforeAll(async () => {
-      await resetDB(SeedScript.ethiopiaOnly, __filename);
+      await resetDB(['MWI'], __filename);
     });
 
     it('should log-in with valid credentials', async () => {

@@ -108,6 +108,7 @@ model Alert {
   id              Int      @id @default(autoincrement())
   created         DateTime @default(now())
   updated         DateTime @updatedAt
+  countryCodeIso3 String
   eventName       String
   issuedAt        DateTime
   centroid        Json
@@ -122,6 +123,7 @@ model Alert {
   exposureRasterData   AlertExposureRasterData[]
 
   @@index([eventId])
+  @@index([countryCodeIso3])
 }
 
 model Event {
@@ -131,6 +133,7 @@ model Event {
   id                        Int       @id @default(autoincrement())
   created                   DateTime  @default(now())
   updated                   DateTime  @updatedAt
+  countryCodeIso3           String
   eventName                 String
   hazardType                HazardType
   forecastSources           ForecastSource[]
@@ -147,6 +150,7 @@ model Event {
   alerts                    Alert[]
 
   @@index([eventName])
+  @@index([countryCodeIso3])
 }
 
 model AlertSeverity {

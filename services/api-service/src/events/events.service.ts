@@ -47,6 +47,7 @@ export class EventsService {
   ): EventResponseDto {
     return {
       eventId: event.id,
+      countryCodeIso3: event.countryCodeIso3,
       eventName: event.eventName,
       eventLabel: this.deriveEventLabel(event.eventName),
       hazardType: event.hazardType,
@@ -83,9 +84,11 @@ export class EventsService {
     }));
   }
 
+  // NOTE: eventName and eventLabel currently have the same value. Both are kept for now because
+  // eventName is the stable identifier, while eventLabel is the
+  // display name shown in the UI. They may diverge in the future.
   private deriveEventLabel(eventName: string): string {
-    const parts = eventName.split('_');
-    return parts.slice(2).join(' ') || eventName;
+    return eventName;
   }
 
   private mapAvailableLayers(
@@ -103,5 +106,9 @@ export class EventsService {
       layerName: raster.layer,
       layerType: LayerType.raster,
     }));
+  }
+
+  public async deleteEventsByCountry(countryCodeIso3: string): Promise<number> {
+    return this.eventsRepository.deleteEventsByCountry(countryCodeIso3);
   }
 }

@@ -22,7 +22,7 @@ This service uses [Prisma](https://www.prisma.io/) with a PostgreSQL database.
 
 ### Seed the database
 
-You can seed the database by using the `api/instance/reset` endpoint from the Swagger UI.
+You can seed the database by using the `api/reset` endpoint from the Swagger UI.
 
 ### API Sign-up/Log-in
 
