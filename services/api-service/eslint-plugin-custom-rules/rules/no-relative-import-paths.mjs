@@ -1,4 +1,6 @@
-// Based on https://github.com/MelvinVermeer/eslint-plugin-no-relative-import-paths (ISC license)
+// Portions of this rule are based on https://github.com/MelvinVermeer/eslint-plugin-no-relative-import-paths
+// Copyright (c) Melvin Vermeer
+// Licensed under the ISC License. See https://github.com/MelvinVermeer/eslint-plugin-no-relative-import-paths/blob/main/LICENSE
 // Adapted for ESLint 10 compatibility (context.cwd / context.filename)
 import path from 'node:path';
 
