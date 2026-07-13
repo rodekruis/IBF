@@ -1,18 +1,24 @@
 import js from '@eslint/js';
-import eslintComments from 'eslint-plugin-eslint-comments';
+import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import n from 'eslint-plugin-n';
 import prettier from 'eslint-plugin-prettier';
 import promise from 'eslint-plugin-promise';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import typescript from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
-import noRelativeImportPaths from 'eslint-plugin-no-relative-import-paths';
 import customRules from './eslint-plugin-custom-rules/index.mjs';
 import jest from 'eslint-plugin-jest';
 
 export default [
   {
     ignores: ['dist/', 'tmp/', 'documentation/', 'coverage/', 'knip.config.js'],
+  },
+  comments.recommended,
+  {
+    rules: {
+      '@eslint-community/eslint-comments/no-unused-disable': 'error',
+      '@eslint-community/eslint-comments/require-description': 'error',
+    },
   },
   {
     files: ['**/*.js'],
@@ -21,18 +27,14 @@ export default [
       sourceType: 'script',
     },
     plugins: {
-      'eslint-comments': eslintComments,
       n,
       prettier,
       'simple-import-sort': simpleImportSort,
     },
     rules: {
       ...js.configs.recommended.rules,
-      ...eslintComments.configs.recommended.rules,
       ...n.configs.recommended.rules,
       ...prettier.configs.recommended.rules,
-      'eslint-comments/no-unused-disable': 'error',
-      'eslint-comments/require-description': 'error',
     },
   },
   {
@@ -55,18 +57,15 @@ export default [
     },
     plugins: {
       '@typescript-eslint': typescript,
-      'eslint-comments': eslintComments,
       promise,
       prettier,
       'simple-import-sort': simpleImportSort,
       n,
-      'no-relative-import-paths': noRelativeImportPaths,
       'custom-rules': customRules,
     },
     rules: {
       ...typescript.configs.recommended.rules,
       ...typescript.configs.stylistic.rules,
-      ...eslintComments.configs.recommended.rules,
       ...promise.configs.recommended.rules,
       ...prettier.configs.recommended.rules,
       ...n.configs.recommended.rules,
@@ -84,8 +83,6 @@ export default [
           caughtErrors: 'none',
         },
       ],
-      'eslint-comments/no-unused-disable': 'error',
-      'eslint-comments/require-description': 'error',
       'no-restricted-imports': [
         'error',
         {
@@ -116,7 +113,7 @@ export default [
         },
       ],
       'n/prefer-node-protocol': 'error',
-      'no-relative-import-paths/no-relative-import-paths': [
+      'custom-rules/no-relative-import-paths': [
         'warn',
         {
           prefix: '@api-service',
@@ -130,7 +127,7 @@ export default [
         },
       ],
       'simple-import-sort/exports': 'error',
-      'eslint-comments/disable-enable-pair': [
+      '@eslint-community/eslint-comments/disable-enable-pair': [
         'error',
         { allowWholeFile: true },
       ],
