@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
 import { EventsService } from '@api-service/src/events/events.service';
@@ -9,6 +9,8 @@ import { SeedInit } from '@api-service/src/seed/seed-init';
 @Injectable()
 export class SeedService {
   private readonly logger = new Logger(SeedService.name);
+  private resetInProgress = false;
+  private lastResetError: string | null = null;
 
   public constructor(
     private readonly seedInit: SeedInit,
@@ -16,7 +18,11 @@ export class SeedService {
     private readonly eventsService: EventsService,
   ) {}
 
-  public async reset({
+  public getResetStatus(): { inProgress: boolean; error: string | null } {
+    return { inProgress: this.resetInProgress, error: this.lastResetError };
+  }
+
+  public startReset({
     countryCodes,
     resetIdentifier,
     skipStaticRasters = false,
@@ -24,15 +30,30 @@ export class SeedService {
     countryCodes?: string[];
     resetIdentifier?: string;
     skipStaticRasters?: boolean;
-  }): Promise<void> {
+  }): void {
+    if (this.resetInProgress) {
+      throw new ConflictException('A reset is already in progress');
+    }
+
     this.logger.log(
       `DB reset - Countries: ${countryCodes?.join(', ') ?? 'all'} - Identifier: ${resetIdentifier}`,
     );
 
-    await this.seedInit.run({
-      countryCodes,
-      skipStaticRasters,
-    });
+    this.resetInProgress = true;
+    this.lastResetError = null;
+    void (async () => {
+      try {
+        await this.seedInit.run({ countryCodes, skipStaticRasters });
+        this.logger.log('DB reset completed successfully');
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : 'Unknown error';
+        this.lastResetError = message;
+        this.logger.error('DB reset failed', error);
+      } finally {
+        this.resetInProgress = false;
+      }
+    })();
   }
 
   public async mockEvents({

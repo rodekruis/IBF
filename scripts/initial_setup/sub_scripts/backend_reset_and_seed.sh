@@ -46,6 +46,22 @@ curl --silent --show-error --fail -X 'POST' \
   -d "{\"secret\": \"${RESET_SECRET}\"}" \
   > /dev/null
 
+echo "Waiting for reset to complete..."
+while true; do
+  STATUS=$(curl --silent "http://localhost:4000/api/reset/status")
+  IN_PROGRESS=$(echo "$STATUS" | jq -r '.inProgress')
+  ERROR=$(echo "$STATUS" | jq -r '.error')
+  if [ "$IN_PROGRESS" = "false" ]; then
+    if [ "$ERROR" != "null" ]; then
+      echo "Reset failed: $ERROR"
+      exit 1
+    fi
+    break
+  fi
+  sleep 1
+done
+echo "✅ Reset completed"
+
 print_header "Creating mock events"
 
 curl --silent --show-error --fail -X 'POST' \
