@@ -108,8 +108,8 @@ jobs:
             --data '{"secret":"fill_in_secret"}'
 
           echo "Waiting for reset to complete..."
-          for i in $(seq 1 600); do
-            STATUS=$(curl --silent "http://localhost:4000/api/reset/status")
+          for _ in $(seq 1 600); do
+            STATUS=$(curl --silent --show-error --fail "http://localhost:4000/api/reset/status")
             IN_PROGRESS=$(echo "$STATUS" | jq -r '.inProgress')
             ERROR=$(echo "$STATUS" | jq -r '.error')
             if [ "$IN_PROGRESS" = "false" ]; then

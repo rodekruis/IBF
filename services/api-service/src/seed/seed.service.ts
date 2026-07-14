@@ -49,7 +49,7 @@ export class SeedService {
         const message =
           error instanceof Error ? error.message : 'Unknown error';
         this.lastResetError = message;
-        this.logger.error('DB reset failed', error);
+        this.logger.error(`DB reset failed: ${message}`);
       } finally {
         this.resetInProgress = false;
       }

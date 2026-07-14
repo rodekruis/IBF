@@ -47,8 +47,8 @@ curl --silent --show-error --fail -X 'POST' \
   > /dev/null
 
 echo "Waiting for reset to complete..."
-while true; do
-  STATUS=$(curl --silent "http://localhost:4000/api/reset/status")
+for _ in $(seq 1 600); do
+  STATUS=$(curl --silent --show-error --fail "http://localhost:4000/api/reset/status")
   IN_PROGRESS=$(echo "$STATUS" | jq -r '.inProgress')
   ERROR=$(echo "$STATUS" | jq -r '.error')
   if [ "$IN_PROGRESS" = "false" ]; then
@@ -60,6 +60,11 @@ while true; do
   fi
   sleep 1
 done
+
+if [ "$IN_PROGRESS" != "false" ]; then
+  echo "Reset did not complete within 600 seconds."
+  exit 1
+fi
 echo "✅ Reset completed"
 
 print_header "Creating mock events"

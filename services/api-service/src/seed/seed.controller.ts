@@ -47,6 +47,11 @@ export class SeedController {
     description: 'Current reset status.',
   })
   public getResetStatus(): { inProgress: boolean; error: string | null } {
+    if (IS_PRODUCTION) {
+      throw new ForbiddenException(
+        'Reset status is not available in production',
+      );
+    }
     return this.seedService.getResetStatus();
   }
 
