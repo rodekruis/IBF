@@ -23,6 +23,7 @@ import { IS_PRODUCTION } from '@api-service/src/config';
 import { env } from '@api-service/src/env';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import { SeedService } from '@api-service/src/seed/seed.service';
+import { SUPPORTED_MOCK_COUNTRIES } from '@api-service/src/seed/seed-data/mock-events.const';
 
 class SecretDto {
   @ApiProperty({ example: 'fill_in_secret' })
@@ -40,6 +41,10 @@ export class SeedController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Reset database and seed initial (non-event) data.',
+    description:
+      'Drops all data and re-seeds initial static data (admin areas, countries, etc.). ' +
+      'Call for one, multiple, or all countries. ' +
+      'Not available in production.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -55,7 +60,7 @@ export class SeedController {
     name: 'skipStaticRasters',
     required: false,
     description:
-      'If true, skip seeding static rasters (population) to speed up resets.',
+      'If true, skip seeding static rasters (population) to speed up resets for testing.',
   })
   @ApiQuery({
     name: 'countryCodes',
@@ -63,7 +68,7 @@ export class SeedController {
     type: String,
     example: 'MWI',
     description:
-      'ISO3 country codes to seed. Provide comma-separated (e.g. MWI,UGA) or repeat the query param (e.g. countryCodes=MWI&countryCodes=UGA). If omitted, all countries are seeded.',
+      'ISO3 country codes to seed. Provide comma-separated (e.g. MWI,UGA). If omitted, all countries are seeded.',
   })
   public async resetDb(
     @Body() body: SecretDto,
@@ -85,7 +90,7 @@ export class SeedController {
 
     await this.seedService.reset({
       resetIdentifier,
-      countryCodes,
+      countryCodes: countryCodes?.map((code) => code.trim()),
       skipStaticRasters: skipStaticRasters ?? false,
     });
 
@@ -95,7 +100,10 @@ export class SeedController {
   @Post('/mock')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Generate mock events for a country.',
+    summary: 'Generate mock events for a single country.',
+    description:
+      'Creates mock forecast events, for testing without pipeline data. ' +
+      'Not available in production.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -107,7 +115,7 @@ export class SeedController {
     type: String,
     example: 'MWI',
     description:
-      'ISO3 country code to generate mock events for. Supported: ETH, KEN, MWI, PHL, SSD, UGA, ZMB.',
+      'A single ISO3 country code to generate mock events for. Supported: ETH, KEN, MWI, PHL, SSD, UGA, ZMB.',
   })
   @ApiQuery({
     name: 'scenario',
@@ -143,6 +151,12 @@ export class SeedController {
     }
     if (body.secret !== env.RESET_SECRET) {
       throw new ForbiddenException('Not allowed');
+    }
+
+    if (!SUPPORTED_MOCK_COUNTRIES.includes(countryCodeIso3)) {
+      throw new BadRequestException(
+        `Unsupported country '${countryCodeIso3}'. Supported (single country only): ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
+      );
     }
 
     const validScenarios = Object.values(MockScenario) as string[];
