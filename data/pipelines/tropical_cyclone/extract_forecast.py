@@ -163,6 +163,15 @@ def _read_wind_speed_raster(path: str, bounds: BoundingBox) -> RasterData:
         latitudes = sliced["latitude"].to_numpy()
         longitudes = sliced["longitude"].to_numpy()
 
+    missing_mask = (
+        (u_wind == nodata)
+        | (v_wind == nodata)
+        | ~np.isfinite(u_wind)
+        | ~np.isfinite(v_wind)
+    )
+    wind_speed = np.sqrt(u_wind**2 + v_wind**2).astype(np.float32)
+    wind_speed[missing_mask] = nodata
+
     x_res = float(longitudes[1] - longitudes[0])
     y_res = float(latitudes[0] - latitudes[1])
     west = float(longitudes[0]) - x_res / 2
@@ -171,7 +180,7 @@ def _read_wind_speed_raster(path: str, bounds: BoundingBox) -> RasterData:
     transform = Affine(x_res, 0, west, 0, -y_res, north)
 
     return RasterData(
-        array=np.sqrt(u_wind**2 + v_wind**2),
+        array=wind_speed,
         transform=transform,
         crs="EPSG:4326",
         nodata=nodata,
