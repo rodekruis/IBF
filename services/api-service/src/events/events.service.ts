@@ -71,7 +71,7 @@ export class EventsService {
 
   private mapExposedAdminAreas(
     exposedAdminAreas: ExposedAdminAreaRecord[],
-  ): Record<number, ExposedAdminAreaDto[]> {
+  ): Record<string, ExposedAdminAreaDto[]> {
     const dtos = exposedAdminAreas.map((area) => ({
       placeCode: area.placeCode,
       adminLevel: area.adminLevel,
@@ -82,8 +82,8 @@ export class EventsService {
         exposed: exp.exposed,
       })),
     }));
-    return Object.groupBy(dtos, (dto) => dto.adminLevel) as Record<
-      number,
+    return Object.groupBy(dtos, (dto) => String(dto.adminLevel)) as Record<
+      string,
       ExposedAdminAreaDto[]
     >;
   }

@@ -103,7 +103,7 @@ describe('EventsService', () => {
       expect(result[0].hazardType).toEqual(HazardType.floods);
     });
 
-    it('should return exposedAdminAreas grouped by adminLevel with renamed fields', async () => {
+    it('should return exposedAdminAreas grouped by adminLevel', async () => {
       const event = buildEvent({ id: 42 });
       const exposedAreas: ExposedAdminAreaRecord[] = [
         {
