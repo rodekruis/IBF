@@ -7,10 +7,11 @@ real GEFS/ATCF data - `extract_wind_speed` (`tropical_cyclone/extract_forecast.p
 `compute_alert_extent` (`tropical_cyclone/compute_wind_extent.py`), `determine_spatial_extent`
 (`tropical_cyclone/determine_exposure.py`), and `compute_population_exposed`
 (`infra.utils.exposure`). Two `_placeholder_*` functions remain, both intentionally: Step 3's
-local-file-path loaders are `# TODO-infra` stubs pending real `DataSource.GEFS_WIND`/
-`DataSource.GEFS_TRACK` fetchers, and `_placeholder_issued_datetime` (Step 11's event-name
-timestamp) stays a v1 per-run identifier pending a decision on persistent per-storm identity
-(IBTrACS/ATCF `CY`) - see that function's docstring.
+local-file-path loaders now read from a local test-fixture directory (`tropical_cyclone/bronze/`,
+most recent forecast cycle only) rather than a real data source - still `# TODO-infra` pending real
+`DataSource.GEFS_WIND`/`DataSource.GEFS_TRACK` fetchers - and `_placeholder_issued_datetime` (Step
+11's event-name timestamp) stays a v1 per-run identifier pending a decision on persistent per-storm
+identity (IBTrACS/ATCF `CY`) - see that function's docstring.
 
 Step 1 now fetches `AlertConfig`s (spatial + temporal extents) from `DataSource.ALERT_CONFIGS_IBF_API`
 instead of synthesizing one locally - PR #307 seeded a real per-country config
@@ -22,8 +23,10 @@ hours, aggregating GEFS's native cadence up if the configured interval is coarse
 
 The hazard is fully registered: `HazardType.TROPICAL_CYCLONE`, `ForecastSource.GEFS`,
 `SeverityKey.WIND_SPEED`, `LayerName.WIND_SPEED` all resolve, and the CLI dispatches to this
-function for the `tropicalCyclone` hazard type. Still not runnable end to end until the Step 3
-data-provider fetchers exist - everything downstream of real wind/track paths is real code now.
+function for the `tropicalCyclone` hazard type. Runnable end to end today by direct function call
+against local test-fixture data (see Step 3); not runnable via the `pipeline` CLI yet, since the
+hazard's config YAML has no data source tagged for a `source_target`, which the CLI's config
+validation requires outside of `--infra-only` (which bypasses this function entirely).
 """
 
 from __future__ import annotations
@@ -31,6 +34,7 @@ from __future__ import annotations
 import logging
 import math
 from datetime import datetime, timezone
+from pathlib import Path
 from statistics import fmean
 
 from shared.country_data import CountryCodeIso3
@@ -277,24 +281,68 @@ def _pad_bounding_box(bounds: BoundingBox, buffer_km: float) -> BoundingBox:
     )
 
 
+# Local test-fixture roots, not a real data source - see the two functions below. Deliberately
+# just `tropical_cyclone/bronze/<dataset>/`, not driven by an env var or CLI flag like floods'
+# DATA_CACHE_DIR/--local-data: whoever builds the real DataSource.GEFS_WIND/GEFS_TRACK fetcher
+# should feel free to pick whatever directory layout and live/mock source-target wiring suits
+# that fetcher - nothing here is meant to constrain that design.
+_LOCAL_GEFS_WIND_ROOT = Path(__file__).parent / "bronze" / "gefs_wind"
+_LOCAL_GEFS_TRACK_ROOT = Path(__file__).parent / "bronze" / "gefs_track"
+
+
 def _placeholder_load_local_gefs_wind_paths(country: str) -> list[str]:
     """
-    TODO-infra: replace with DataSource.GEFS_WIND once a fetcher exists. Until then, should read
-    local GEFS GRIB2 wind member file paths for `country` (see extract_forecast.py's
-    _GEFS_WIND_PATH_PATTERN for the expected naming convention). Returns an empty list until
-    implemented, which correctly halts the pipeline at the Step 3 guard above.
+    TODO-infra: replace with DataSource.GEFS_WIND once a fetcher exists. Local-testing stand-in
+    only: reads every file under the most recent `gefs.<date>/<hour>` cycle directory found
+    locally, regardless of `country` - there is currently only ever one local dataset on disk, and
+    every supported country shares the same GEFS wind product (only the bounds passed to
+    extract_wind_speed differ per country). Returns an empty list (halting the pipeline at the
+    Step 3 guard above) if no local fixture data exists.
     """
-    return []
+    return _most_recent_cycle_files(_LOCAL_GEFS_WIND_ROOT)
 
 
 def _placeholder_load_local_gefs_track_paths(country: str) -> list[str]:
     """
-    TODO-infra: replace with DataSource.GEFS_TRACK once a fetcher exists. Until then, should read
-    local GEFS ATCF track member file paths for `country` (see extract_track.py's
-    _GEFS_TRACK_PATH_PATTERN for the expected naming convention). Returns an empty list until
-    implemented, which correctly halts the pipeline at the Step 3 guard above.
+    TODO-infra: replace with DataSource.GEFS_TRACK once a fetcher exists. Local-testing stand-in
+    only: same approach as _placeholder_load_local_gefs_wind_paths, applied to the ATCF track
+    fixture directory.
     """
-    return []
+    return _most_recent_cycle_files(_LOCAL_GEFS_TRACK_ROOT)
+
+
+def _most_recent_cycle_files(root: Path) -> list[str]:
+    """
+    Picks the most recent `gefs.<YYYYMMDD>/<HH>` cycle directory under `root` (zero-padded, so a
+    plain string sort on (date, hour) is chronological) and returns every file beneath it.
+
+    Guards against a real footgun with locally-accumulated test fixtures: extract_wind_speed and
+    extract_track both assume every path they're given belongs to the same forecast cycle (they
+    derive one `forecast_cycle_datetime` from the first file parsed, and key rasters/fixes only by
+    (member, lead_hour) - not by cycle). Two different cycles' files sitting side by side under the
+    same root would silently collide (e.g. both cycles happening to have an `f000` for the same
+    member) rather than error, so only one cycle's files are ever returned. Mirrors floods'
+    `--local-data-date` default of "most recent available date".
+    """
+    if not root.is_dir():
+        return []
+
+    cycle_dirs = sorted(
+        (
+            hour_dir
+            for date_dir in root.glob("gefs.*")
+            if date_dir.is_dir()
+            for hour_dir in date_dir.iterdir()
+            if hour_dir.is_dir()
+        ),
+        key=lambda hour_dir: (hour_dir.parent.name, hour_dir.name),
+    )
+    if not cycle_dirs:
+        return []
+
+    most_recent_cycle_dir = cycle_dirs[-1]
+    logging.info(f"Using local GEFS test fixtures from {most_recent_cycle_dir}")
+    return [str(path) for path in most_recent_cycle_dir.rglob("*") if path.is_file()]
 
 
 def _placeholder_issued_datetime() -> str:

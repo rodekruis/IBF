@@ -12,6 +12,7 @@ from rasterio.transform import from_bounds
 from rasterio.warp import reproject
 from rasterio.windows import from_bounds as window_from_bounds
 from rasterstats import zonal_stats
+from shapely.ops import unary_union
 
 logger = logging.getLogger(__name__)
 
@@ -114,11 +115,13 @@ def clip_raster_to_admin_areas(
         )
         return raster
 
-    combined_geom = admin_areas.admin_areas[place_codes[0]].to_geometry()
-    for pcode in place_codes[1:]:
-        area = admin_areas.admin_areas.get(pcode)
-        if area:
-            combined_geom = combined_geom.union(area.to_geometry())
+    # unary_union: much faster than a sequential .union() loop for large place_codes lists
+    shapely_geometries = [
+        admin_areas.admin_areas[pcode].to_geometry()
+        for pcode in place_codes
+        if pcode in admin_areas.admin_areas
+    ]
+    combined_geom = unary_union(shapely_geometries)
 
     minx, miny, maxx, maxy = combined_geom.bounds
     window = window_from_bounds(minx, miny, maxx, maxy, raster.transform)
