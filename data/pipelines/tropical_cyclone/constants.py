@@ -100,12 +100,12 @@ WMO_HARPER_10MIN_TO_1MIN_FACTOR: dict[ExposureClass, float] = {
 # systems) is a separate, deferred product-scope decision, not a fix for the offshore-track case.
 MIN_SEVERITY_MS = 33.0
 
-# NOAA GEFS ensemble member naming (31-member ensemble: 1 control + 30 perturbed).
+# NOAA GEFS ensemble member naming (21-member ensemble: 1 control + 20 perturbed).
 # Wind (pgrb2sp25 GRIB2) and track (tctrack ATCF) products use different, but 1:1-mapped, member
 # codes for the same underlying ensemble member (gec00<->ac00, gep01<->ap01, ...).
-GEFS_ENSEMBLE_COUNT = 31
-GEFS_WIND_MEMBER_IDS: list[str] = ["gec00", *[f"gep{i:02d}" for i in range(1, 31)]]
-GEFS_TRACK_MEMBER_IDS: list[str] = ["ac00", *[f"ap{i:02d}" for i in range(1, 31)]]
+GEFS_ENSEMBLE_COUNT = 21
+GEFS_WIND_MEMBER_IDS: list[str] = ["gec00", *[f"gep{i:02d}" for i in range(1, 21)]]
+GEFS_TRACK_MEMBER_IDS: list[str] = ["ac00", *[f"ap{i:02d}" for i in range(1, 21)]]
 
 # ATCF "radius of specified wind" (RAD) threshold, in knots. Each (member, lead hour) is repeated
 # once per RAD present (34/50/64 kt) with identical VMAX/MSLP each time - filtering to one RAD
