@@ -99,7 +99,7 @@ export class SeedController {
   @Post('/mock')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Generate mock events for a country.',
+    summary: 'Generate mock events for a single country.',
     description:
       'Creates mock forecast events, for testing without pipeline data. ' +
       'Not available in production.',
@@ -114,7 +114,7 @@ export class SeedController {
     type: String,
     example: 'MWI',
     description:
-      'ISO3 country code to generate mock events for. Supported: ETH, KEN, MWI, PHL, SSD, UGA, ZMB.',
+      'A single ISO3 country code to generate mock events for. Supported: ETH, KEN, MWI, PHL, SSD, UGA, ZMB.',
   })
   @ApiQuery({
     name: 'scenario',
