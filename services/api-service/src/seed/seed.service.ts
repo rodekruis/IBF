@@ -1,12 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
 import { EventsService } from '@api-service/src/events/events.service';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
-import {
-  buildMockForecast,
-  SUPPORTED_MOCK_COUNTRIES,
-} from '@api-service/src/seed/seed-data/mock-events.const';
+import { buildMockForecast } from '@api-service/src/seed/seed-data/mock-events.const';
 import { SeedInit } from '@api-service/src/seed/seed-init';
 
 @Injectable()
@@ -52,12 +49,6 @@ export class SeedService {
     this.logger.log(
       `Mock events - Country: ${countryCodeIso3} - Scenario: ${scenario} - Clear: ${String(clearEvents)}`,
     );
-
-    if (!SUPPORTED_MOCK_COUNTRIES.includes(countryCodeIso3)) {
-      throw new BadRequestException(
-        `Unsupported country '${countryCodeIso3}'. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
-      );
-    }
 
     if (clearEvents) {
       await this.eventsService.deleteEventsByCountry(countryCodeIso3);

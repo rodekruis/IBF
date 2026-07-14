@@ -14,6 +14,21 @@ print_header() {
     echo ""
 }
 
+if [[ -f "services/.env" ]]; then
+    ENV_FILE="services/.env"
+elif [[ -f "IBF/services/.env" ]]; then
+    ENV_FILE="IBF/services/.env"
+else
+    echo "Error: Cannot find services/.env. Run this script from the IBF repo root or from the directory containing IBF/."
+    exit 1
+fi
+
+RESET_SECRET=$(grep '^RESET_SECRET=' "${ENV_FILE}" | cut -d= -f2- || true)
+if [[ -z "${RESET_SECRET}" ]]; then
+    echo "Error: RESET_SECRET not found in ${ENV_FILE}"
+    exit 1
+fi
+
 print_header "Checking backend is running"
 
 if ! curl --silent --fail 'http://localhost:4000/api/health' > /dev/null; then
@@ -27,18 +42,16 @@ print_header "Resetting IBF instance"
 
 curl --silent --show-error --fail -X 'POST' \
   'http://localhost:4000/api/reset?countryCodes=MWI' \
-  -H 'accept: */*' \
   -H 'Content-Type: application/json' \
-  -d '{"secret":"fill_in_secret"}' \
+  -d "{\"secret\": \"${RESET_SECRET}\"}" \
   > /dev/null
 
 print_header "Creating mock events"
 
 curl --silent --show-error --fail -X 'POST' \
   'http://localhost:4000/api/mock?countryCodeIso3=MWI&scenario=events' \
-  -H 'accept: */*' \
   -H 'Content-Type: application/json' \
-  -d '{"secret":"fill_in_secret"}' \
+  -d "{\"secret\": \"${RESET_SECRET}\"}" \
   > /dev/null
 
 print_header "Done"

@@ -16,7 +16,7 @@ class EnsembleMemberType(StrEnum):
 class ForecastSource(StrEnum):
     GLOFAS = "glofas"
     ECMWF = "ECMWF"
-    GEFS = "gefs"
+    GEFS = "GEFS"
 
 
 class HazardType(StrEnum):
@@ -32,6 +32,9 @@ class LayerName(StrEnum):
     CLINICS = "clinics"
     FLOOD_DEPTH = "floodDepth"
     GLOFAS_STATIONS = "glofasStations"
+    WIND_SPEED = "windSpeed"
+
+    # --- tropical cyclone-specific layers ---
     WIND_SPEED = "windSpeed"
 
 

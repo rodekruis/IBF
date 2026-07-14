@@ -36,7 +36,7 @@ export const SEED_COUNTRIES: SeedCountry[] = [
     countryCodeIso2: 'PH',
     countryName: 'Philippines',
     deepestAdminLevel: 3,
-    hazardTypes: [HazardType.floods],
+    hazardTypes: [HazardType.floods, HazardType.tropicalCyclone],
   },
   {
     countryCodeIso3: 'ZMB',

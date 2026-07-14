@@ -1,11 +1,11 @@
 -- AlterEnum
-ALTER TYPE "ForecastSource" ADD VALUE 'gefs';
+ALTER TYPE "api-service"."ForecastSource" ADD VALUE 'GEFS';
 
 -- AlterEnum
-ALTER TYPE "HazardType" ADD VALUE 'tropicalCyclone';
+ALTER TYPE "api-service"."HazardType" ADD VALUE 'tropicalCyclone';
 
 -- AlterEnum
-ALTER TYPE "LayerName" ADD VALUE 'windSpeed';
+ALTER TYPE "api-service"."LayerName" ADD VALUE 'windSpeed';
 
 -- AlterEnum
-ALTER TYPE "SeverityKey" ADD VALUE 'windSpeed';
+ALTER TYPE "api-service"."SeverityKey" ADD VALUE 'windSpeed';

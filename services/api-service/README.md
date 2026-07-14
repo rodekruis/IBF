@@ -22,12 +22,21 @@ This service uses [Prisma](https://www.prisma.io/) with a PostgreSQL database.
 
 ### Seed the database
 
-You can seed the database by using the `api/reset` endpoint from the Swagger UI.
+You can seed the database by using the `POST api/reset` endpoint from the Swagger UI.
+
+### Mock event data
+
+The `POST /api/mock` endpoint generates fake forecast events so the portal can be tested without running real pipelines.
+
+- Currently only mock events for hazard-type `floods` are supported.
+- To add or edit mock `floods` data for a country for the `events` scenario, edit `src/seed/seed-data/mock-events.const.ts`. Each country has a builder function (e.g. `buildEthiopiaAlerts`) that returns alerts, forecasts, and exposure indicators.
+- To add a new country, add a builder and register it in the `MOCK_BUILDERS` map at the top of the file.
+- TODO: facilitate other hazard-types and other scenarios than just `events` and `no-events` (see `src/seed/enum/mock-scenario.enum`)
 
 ### API Sign-up/Log-in
 
-- If you have no users in your database yet, start with running one of the [reset/seed-scripts above](#seed-the-database).
-- If you have already created the above user earlier, make a request: `POST /users/login`'. Change the example-value where necessary, and execute.
+- If you have no users in your database yet, start with calling the `POST api/reset`.
+- If you have created the user, make a request: `POST /users/login`'. Change the example-value where necessary, and execute.
 - The api-service will respond with a (httpOnly-)Cookie containing the users's details and permissions, the cookie will be used automatically on subsequent requests.
 - This will give access to each API-endpoint for which a `Permission` is specified and a matching `Permission` is present in the users' token/cookie.
 

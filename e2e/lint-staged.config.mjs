@@ -4,5 +4,5 @@ import baseConfig from '../.lintstagedrc.js';
 export default {
   ...baseConfig,
   '*.ts': () => 'npm run typecheck', // Needs to run the whole project, not just the staged/changed files
-  '*.{ts,js,mjs}': 'eslint --fix',
+  '*.{ts,js,mjs}': 'node_modules/.bin/eslint --fix',
 };

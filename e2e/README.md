@@ -9,7 +9,7 @@ e2e/
 ├── playwright.config.ts     # Playwright configuration (baseURL, projects, ...)
 ├── env.ts                   # Centralized environment-variable access
 └── nrw/
-    ├── helpers/reset.ts     # Seeds api-service mock data via /instance/reset
+    ├── helpers/reset.ts     # Seeds api-service mock data via /reset
     ├── pages/NrwMapPage.ts  # Page object for the NRW map view
     └── tests/               # Test specs
 ```
@@ -40,7 +40,7 @@ The tests read configuration from `services/.env` (loaded via `env.ts`):
 
 - `EXTERNAL_API_SERVICE_URL` — base URL of the api-service (default
   `http://localhost:4000`), used to seed mock data.
-- `RESET_SECRET` — secret required by the `/api/instance/reset` endpoint.
+- `RESET_SECRET` — secret required by the `/api/reset` endpoint.
 - `BASE_URL` — frontend URL Playwright points at (default
   `http://localhost:5173`).
 

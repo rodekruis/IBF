@@ -7,7 +7,9 @@ datasource db {
   schemas  = ["api-service"]
 }
 
+// --------------------------------
 // ENUMS - START
+// --------------------------------
 
 enum HazardType {
   floods
@@ -35,7 +37,7 @@ enum EnsembleMemberType {
 enum ForecastSource {
   glofas
   ECMWF
-  gefs
+  GEFS
 
   @@schema("api-service")
 }
@@ -78,9 +80,14 @@ enum LayerType {
   @@schema("api-service")
 }
 
+// --------------------------------
 // ENUMS - END
+// --------------------------------
 
+
+// --------------------------------
 // MODELS - START
+// --------------------------------
 
 model User {
   @@schema("api-service")
@@ -321,4 +328,7 @@ model AlertConfig {
   @@index([countryCodeIso3, hazardType])
 }
 
+
+// --------------------------------
 // MODELS - END
+// --------------------------------
