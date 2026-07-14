@@ -23,6 +23,7 @@ import { IS_PRODUCTION } from '@api-service/src/config';
 import { env } from '@api-service/src/env';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import { SeedService } from '@api-service/src/seed/seed.service';
+import { SUPPORTED_MOCK_COUNTRIES } from '@api-service/src/seed/seed-data/mock-events.const';
 
 class SecretDto {
   @ApiProperty({ example: 'fill_in_secret' })
@@ -150,6 +151,12 @@ export class SeedController {
     }
     if (body.secret !== env.RESET_SECRET) {
       throw new ForbiddenException('Not allowed');
+    }
+
+    if (!SUPPORTED_MOCK_COUNTRIES.includes(countryCodeIso3)) {
+      throw new BadRequestException(
+        `Unsupported country '${countryCodeIso3}'. Supported (single country only): ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
+      );
     }
 
     const validScenarios = Object.values(MockScenario) as string[];
