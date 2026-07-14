@@ -105,7 +105,7 @@ def _resolve_conversion_factor(country_config: CountryConfig) -> float:
 # (f000..f240, native 3h step).
 _GEFS_WIND_PATH_PATTERN = re.compile(
     r"gefs\.(?P<date>\d{8})/(?P<cycle_hour>\d{2})/atmos/pgrb2sp25/"
-    r"ge[cp]\d{2}\.t\d{2}z\.pgrb2s\.0p25\.f(?P<lead_hour>\d{3})(?:\.idx)?$"
+    r"ge[cp]\d{2}\.t\d{2}z\.pgrb2s\.0p25\.f(?P<lead_hour>\d{3})$"
 )
 
 
