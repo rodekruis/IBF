@@ -16,6 +16,7 @@ from pipelines.infra.utils.raster import BoundingBox
 from pipelines.tropical_cyclone.constants import (
     AveragingPeriod,
     CountryConfig,
+    GEFS_NATIVE_LEAD_TIME_STEP_HOURS,
     WMO_HARPER_10MIN_TO_1MIN_FACTOR,
 )
 
@@ -33,10 +34,17 @@ def extract_wind_speed(
     gefs_wind_member_paths: list[str],
     bounds: BoundingBox,
     country_config: CountryConfig,
+    temporal_extent: dict[str, list],
 ) -> list[TimeIntervalWindSpeed]:
     """
     Read GEFS 10 m U/V wind (one GRIB2 file per member per lead time) into a sustained wind-speed
-    raster per ensemble member per native 3h lead-time step, sliced to `bounds`.
+    raster per ensemble member, sliced to `bounds`, bucketed per `temporal_extent`'s
+    "lead-time-spectrum" (e.g. {"lead-time-spectrum": ["0-hour", "3-hour", ..., "168-hour"]} - see
+    AlertConfig). GEFS's own native cadence (GEFS_NATIVE_LEAD_TIME_STEP_HOURS, currently 3h) is
+    fixed regardless of what the spectrum configures: when the configured interval is a coarser
+    multiple of it, multiple native-step rasters are combined per bucket via a per-cell,
+    nodata-aware max (see `_aggregate_bucket_rasters`) - the same precautionary-envelope approach
+    already used across ensemble members elsewhere in this hazard's logic.
 
     Applies the resolved averaging-period conversion factor: 1.0 if the country's sustained-wind
     convention is already TEN_MINUTE (e.g. PHL/PAGASA - no correction needed), otherwise
@@ -44,7 +52,11 @@ def extract_wind_speed(
     native wind into the country's own ONE_MINUTE convention (e.g. KNA/DMA/ATG/NHC).
     """
     conversion_factor = _resolve_conversion_factor(country_config)
-    rasters_by_lead_hour: dict[int, list[RasterData]] = {}
+    lead_hour_spectrum = _parse_lead_hour_spectrum(temporal_extent)
+    configured_interval_hours = _resolve_configured_interval_hours(lead_hour_spectrum)
+    max_lead_hour = lead_hour_spectrum[-1]
+
+    rasters_by_member_and_lead_hour: dict[tuple[str, int], RasterData] = {}
     forecast_cycle_datetime: datetime | None = None
 
     for path in gefs_wind_member_paths:
@@ -65,6 +77,11 @@ def extract_wind_speed(
             )
             continue
 
+        if parsed.lead_hour > max_lead_hour:
+            # GEFS provides lead hours beyond what the configured temporal extent needs (e.g. out
+            # to f240); not an error, just outside the requested window.
+            continue
+
         if forecast_cycle_datetime is None:
             forecast_cycle_datetime = parsed.cycle_datetime
 
@@ -73,22 +90,34 @@ def extract_wind_speed(
         )
         wind_speed_raster = _read_wind_speed_raster(path, bounds)
         wind_speed_raster.array = wind_speed_raster.array * conversion_factor
-        rasters_by_lead_hour.setdefault(parsed.lead_hour, []).append(wind_speed_raster)
+        rasters_by_member_and_lead_hour[(parsed.member, parsed.lead_hour)] = (
+            wind_speed_raster
+        )
 
     if forecast_cycle_datetime is None:
         return []
 
-    return [
-        TimeIntervalWindSpeed(
-            time_interval_start=time_interval_start,
-            time_interval_end=time_interval_end,
-            ensemble_wind_speed_rasters=rasters_by_lead_hour[lead_hour],
+    time_interval_wind_speeds: list[TimeIntervalWindSpeed] = []
+    for bucket_start_hour in lead_hour_spectrum:
+        bucket_rasters = _aggregate_bucket_rasters(
+            rasters_by_member_and_lead_hour,
+            bucket_start_hour,
+            configured_interval_hours,
         )
-        for lead_hour in sorted(rasters_by_lead_hour)
-        for time_interval_start, time_interval_end in [
-            _lead_hour_to_time_interval(forecast_cycle_datetime, lead_hour)
-        ]
-    ]
+        if not bucket_rasters:
+            continue
+        time_interval_start, time_interval_end = _lead_hour_to_time_interval(
+            forecast_cycle_datetime, bucket_start_hour, configured_interval_hours
+        )
+        time_interval_wind_speeds.append(
+            TimeIntervalWindSpeed(
+                time_interval_start=time_interval_start,
+                time_interval_end=time_interval_end,
+                ensemble_wind_speed_rasters=bucket_rasters,
+            )
+        )
+
+    return time_interval_wind_speeds
 
 
 def _resolve_conversion_factor(country_config: CountryConfig) -> float:
@@ -105,13 +134,14 @@ def _resolve_conversion_factor(country_config: CountryConfig) -> float:
 # (f000..f240, native 3h step).
 _GEFS_WIND_PATH_PATTERN = re.compile(
     r"gefs\.(?P<date>\d{8})/(?P<cycle_hour>\d{2})/atmos/pgrb2sp25/"
-    r"ge[cp]\d{2}\.t\d{2}z\.pgrb2s\.0p25\.f(?P<lead_hour>\d{3})$"
+    r"(?P<member>ge[cp]\d{2})\.t\d{2}z\.pgrb2s\.0p25\.f(?P<lead_hour>\d{3})$"
 )
 
 
 @dataclass
 class _ParsedGefsWindPath:
     cycle_datetime: datetime
+    member: str
     lead_hour: int
 
 
@@ -123,15 +153,96 @@ def _parse_gefs_wind_path(path: str) -> _ParsedGefsWindPath | None:
         match.group("date") + match.group("cycle_hour"), "%Y%m%d%H"
     )
     return _ParsedGefsWindPath(
-        cycle_datetime=cycle_datetime, lead_hour=int(match.group("lead_hour"))
+        cycle_datetime=cycle_datetime,
+        member=match.group("member"),
+        lead_hour=int(match.group("lead_hour")),
+    )
+
+
+def _parse_lead_hour_spectrum(temporal_extent: dict[str, list]) -> list[int]:
+    """Parse a tropical-cyclone temporal extent into a sorted list of lead hours.
+
+    Expects {"lead-time-spectrum": ["0-hour", "3-hour", ..., "168-hour"]} (mirrors flood's
+    day-based spectrum, see flood/extract_forecast.py's `_parse_lead_time_range`) and returns
+    [0, 3, ..., 168] for that example.
+    """
+    spectrum = temporal_extent.get("lead-time-spectrum")
+    if not spectrum:
+        raise ValueError(
+            f"Temporal extent missing 'lead-time-spectrum': {temporal_extent}"
+        )
+    return sorted(int(entry.split("-")[0]) for entry in spectrum)
+
+
+def _resolve_configured_interval_hours(lead_hour_spectrum: list[int]) -> int:
+    """
+    The output bucket width, derived from the spectrum's own spacing rather than assumed - so a
+    future change to the alert config (e.g. 3-hour -> 6-hour steps) is picked up automatically
+    without a code change here. Falls back to GEFS's native cadence for a single-point spectrum,
+    where no spacing can be derived.
+    """
+    if len(lead_hour_spectrum) < 2:
+        return GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+    return lead_hour_spectrum[1] - lead_hour_spectrum[0]
+
+
+def _aggregate_bucket_rasters(
+    rasters_by_member_and_lead_hour: dict[tuple[str, int], RasterData],
+    bucket_start_hour: int,
+    interval_hours: int,
+) -> list[RasterData]:
+    """
+    Per ensemble member, collect every native-step raster falling inside
+    [bucket_start_hour, bucket_start_hour + interval_hours) and combine them into one raster for
+    this bucket. A no-op (single native raster passed through as-is) whenever interval_hours equals
+    GEFS_NATIVE_LEAD_TIME_STEP_HOURS - the common case today. Members missing all native rasters for
+    this bucket are skipped (matches the existing missing-file tolerance elsewhere in this module).
+    """
+    members = sorted({member for member, _ in rasters_by_member_and_lead_hour})
+    bucket_rasters: list[RasterData] = []
+    for member in members:
+        native_rasters = [
+            rasters_by_member_and_lead_hour[(member, native_lead_hour)]
+            for native_lead_hour in range(
+                bucket_start_hour,
+                bucket_start_hour + interval_hours,
+                GEFS_NATIVE_LEAD_TIME_STEP_HOURS,
+            )
+            if (member, native_lead_hour) in rasters_by_member_and_lead_hour
+        ]
+        if not native_rasters:
+            continue
+        bucket_rasters.append(_envelope_max(native_rasters))
+    return bucket_rasters
+
+
+def _envelope_max(rasters: list[RasterData]) -> RasterData:
+    """Per-cell max across same-grid rasters, nodata-aware (a cell stays nodata only if it is
+    nodata in every input) - same precautionary-envelope approach as compute_wind_extent.py's
+    per-member footprint, applied here across a single member's native lead-time steps instead of
+    across members."""
+    if len(rasters) == 1:
+        return rasters[0]
+    reference = rasters[0]
+    stacked = np.stack([raster.array for raster in rasters])
+    envelope = (
+        np.ma.masked_equal(stacked, reference.nodata)
+        .max(axis=0)
+        .filled(reference.nodata)
+    )
+    return RasterData(
+        array=envelope.astype(np.float32),
+        transform=reference.transform,
+        crs=reference.crs,
+        nodata=reference.nodata,
     )
 
 
 def _lead_hour_to_time_interval(
-    forecast_cycle_datetime: datetime, lead_hour: int
+    forecast_cycle_datetime: datetime, lead_hour: int, interval_hours: int
 ) -> tuple[str, str]:
     interval_start = forecast_cycle_datetime + timedelta(hours=lead_hour)
-    interval_end = interval_start + timedelta(hours=3)
+    interval_end = interval_start + timedelta(hours=interval_hours)
     return (
         interval_start.strftime("%Y-%m-%dT%H:%M:%SZ"),
         interval_end.strftime("%Y-%m-%dT%H:%M:%SZ"),

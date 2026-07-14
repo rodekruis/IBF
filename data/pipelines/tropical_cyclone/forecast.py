@@ -6,15 +6,23 @@ real GEFS/ATCF data - `extract_wind_speed` (`tropical_cyclone/extract_forecast.p
 (`tropical_cyclone/extract_track.py`), `determine_alert` (`tropical_cyclone/determine_alerts.py`),
 `compute_alert_extent` (`tropical_cyclone/compute_wind_extent.py`), `determine_spatial_extent`
 (`tropical_cyclone/determine_exposure.py`), and `compute_population_exposed`
-(`infra.utils.exposure`). Two `_placeholder_*` functions remain, both intentionally: Step 4's
+(`infra.utils.exposure`). Two `_placeholder_*` functions remain, both intentionally: Step 3's
 local-file-path loaders are `# TODO-infra` stubs pending real `DataSource.GEFS_WIND`/
 `DataSource.GEFS_TRACK` fetchers, and `_placeholder_issued_datetime` (Step 11's event-name
 timestamp) stays a v1 per-run identifier pending a decision on persistent per-storm identity
 (IBTrACS/ATCF `CY`) - see that function's docstring.
 
+Step 1 now fetches `AlertConfig`s (spatial + temporal extents) from `DataSource.ALERT_CONFIGS_IBF_API`
+instead of synthesizing one locally - PR #307 seeded a real per-country config
+(`spatial_extent_name="National"`, one `"lead-time-spectrum"` temporal extent, currently 3-hour
+steps up to 168 hours). Step 5 loops over `alert_configs` x `config.temporal_extents` (each has
+exactly one entry for TC today) to match flood/drought's generic structure; `extract_wind_speed`
+derives its output bucket width from the temporal extent it's given rather than a hardcoded 3
+hours, aggregating GEFS's native cadence up if the configured interval is coarser.
+
 The hazard is fully registered: `HazardType.TROPICAL_CYCLONE`, `ForecastSource.GEFS`,
 `SeverityKey.WIND_SPEED`, `LayerName.WIND_SPEED` all resolve, and the CLI dispatches to this
-function for the `tropicalCyclone` hazard type. Still not runnable end to end until the Step 4
+function for the `tropicalCyclone` hazard type. Still not runnable end to end until the Step 3
 data-provider fetchers exist - everything downstream of real wind/track paths is real code now.
 """
 
@@ -70,9 +78,13 @@ def calculate_tropical_cyclone_forecasts(
     target_admin_areas = data_provider.get_data(
         DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
     )
-    if not target_admin_areas:
+    alert_configs: list[AlertConfig] = data_provider.get_data(
+        DataSource.ALERT_CONFIGS_IBF_API, list
+    )
+    if not target_admin_areas or not alert_configs:
         data_submitter.add_error(
-            f"Missing input data: admin_areas={bool(target_admin_areas)}"
+            f"Missing input data: admin_areas={bool(target_admin_areas)}, "
+            f"alert_configs={bool(alert_configs)}"
         )
         return
 
@@ -84,26 +96,7 @@ def calculate_tropical_cyclone_forecasts(
         )
         return
 
-    ### Step 3 - Synthesize a whole-country alert config ###
-    # No seeded TC alert-configs exist in the API today;
-    # depending on DataSource.ALERT_CONFIGS_IBF_API here, like flood/drought do, would make every
-    # run fail permanently (the template's "if not alert_configs: add_error; return" guard).
-    # get_place_codes_for_alert_config's existing "empty place_codes -> all admin areas at target
-    # level" fallback is exactly the "national" extent this hazard needs, so a config is
-    # synthesized locally instead.
-    alert_config = AlertConfig(
-        spatial_extent_name="national",
-        spatial_extent_place_codes=[],
-        # Pass-through: GEFS lead times aren't bucketed by a lead-time-spectrum value like flood's
-        # config does; extract_wind_speed() (once implemented) uses the full GEFS forecast window
-        # directly. Kept as one entry for DTO-shape parity with flood/drought's alert configs.
-        temporal_extents=[{}],
-    )
-    spatial_extent_place_codes = get_place_codes_for_alert_config(
-        alert_config, target_admin_areas, target_admin_level
-    )
-
-    ### Step 4 - Load GEFS wind and track data ###
+    ### Step 3 - Load GEFS wind and track data ###
     # TODO-infra: move to data providers (DataSource.GEFS_WIND, DataSource.GEFS_TRACK) once real
     # fetchers exist. Until then, this
     # reads local GEFS GRIB2 (wind) and ATCF (track) member file paths directly. Two distinct
@@ -122,7 +115,7 @@ def calculate_tropical_cyclone_forecasts(
         )
         return
 
-    ### Step 5 - Country bounding box ###
+    ### Step 4 - Country bounding box ###
     # Computed from admin-area geometry, padded by MONITORING_BOX_BUFFER_KM so the box can
     # see the storm approaching over open ocean before landfall - a small country's own land extent
     # doesn't capture that, especially for a small island. The buffer is a placeholder pending domain-owner validation - see
@@ -131,112 +124,130 @@ def calculate_tropical_cyclone_forecasts(
         get_bounding_box(target_admin_areas), MONITORING_BOX_BUFFER_KM
     )
 
-    ### Step 6 - Extract wind speed per ensemble member, determine the alert gate ###
-    # extract_wind_speed resolves the per-country conversion factor internally (Axis 1: the
-    # country's averaging-period convention; Axis 2: WMO/Harper exposure-class gust factor when
-    # Axis 1 is ONE_MINUTE).
-    wind_speeds = extract_wind_speed(
-        gefs_wind_member_paths, country_bounds, country_config
-    )
-    time_interval_severities = determine_alert(
-        wind_speeds, spatial_extent_place_codes, target_admin_areas
-    )
-
-    # If no time bucket clears MIN_SEVERITY_MS, there is no alert for this country.
-    if not time_interval_severities:
-        logging.info(
-            f"No tropical-cyclone alert for '{country}': no bucket cleared "
-            f"MIN_SEVERITY_MS={MIN_SEVERITY_MS}"
+    ### Step 5 - Loop over alert configs (spatial extents) and their temporal extents ###
+    # TC has exactly one seeded config ("National") and one temporal extent (the lead-time
+    # spectrum) per country today - the loop is still required to keep this hazard's structure
+    # generic/consistent with flood and drought (see drought/forecast.py, flood/forecast.py), so
+    # shared infra logic never has to special-case tropical cyclone.
+    for alert_config in alert_configs:
+        spatial_extent_place_codes = get_place_codes_for_alert_config(
+            alert_config, target_admin_areas, target_admin_level
         )
-        return
 
-    ### Step 7 - Extract track fixes for the alert centroid ###
-    track_fixes = extract_track(gefs_track_member_paths, country_bounds)
-
-    ### Step 8 - Compute the alert extent and its spatial exposure ###
-    wind_extent = compute_alert_extent(time_interval_severities)
-    clipped_wind_extent = determine_spatial_extent(
-        wind_extent, spatial_extent_place_codes, target_admin_areas
-    )
-
-    if clipped_wind_extent is None:
-        data_submitter.add_error(
-            f"Could not compute wind extent for country '{country}'"
-        )
-        return
-
-    ### Step 9 - Lazily load the population raster ###
-    # Loaded only now, after confirming an alert-worthy footprint exists, to avoid the API call on
-    # every no-alert run (mirrors flood's lazy-load).
-    population_raster: RasterData = data_provider.get_data(
-        DataSource.POPULATION_IBF_API, RasterData
-    )
-
-    ### Step 10 - Compute and aggregate population exposure ###
-    population_exposed_raster = compute_population_exposed(
-        population_raster, clipped_wind_extent
-    )
-    if population_exposed_raster is None:
-        data_submitter.add_error(
-            f"Could not compute exposed population raster for country '{country}'"
-        )
-        return
-
-    population_exposed = aggregate_population_exposed(
-        population_exposed_raster, spatial_extent_place_codes, target_admin_areas
-    )
-
-    ### Step 11 - Create alert and submit severity/exposure payloads ###
-    # v1 identifier: per-country-per-run using the issued datetime. ATCF's CY (cyclone number) is
-    # available from track data and could support a persistent per-storm identity across pipeline
-    # runs later (so a re-run against an already-alerted storm updates the same event instead of
-    # creating a duplicate), but that needs a decision on what "the same storm across runs" means
-    # operationally that hasn't been made yet.
-    event_name = f"{country}_tropical-cyclone_{_placeholder_issued_datetime()}"
-
-    # Storm-center fix from the same bucket compute_alert_extent picked as peak-intensity (falls
-    # back to the admin-area centroid only if there are no track fixes at all - see docstring).
-    centroid = _derive_storm_centroid(
-        track_fixes, time_interval_severities, target_admin_areas
-    )
-
-    data_submitter.create_alert(event_name=event_name, centroid=centroid)
-
-    for severity in time_interval_severities:
-        for ensemble_wind_speed in severity.ensemble_wind_speeds:
-            data_submitter.add_severity_data(
-                event_name=event_name,
-                time_interval_start=severity.time_interval_start,
-                time_interval_end=severity.time_interval_end,
-                ensemble_member_type=EnsembleMemberType.RUN,
-                severity_key=SeverityKey.WIND_SPEED,
-                severity_value=ensemble_wind_speed,
+        for temporal_extent in alert_config.temporal_extents:
+            ### Step 6 - Extract wind speed per ensemble member, determine the alert gate ###
+            # extract_wind_speed resolves the per-country conversion factor internally (Axis 1: the
+            # country's averaging-period convention; Axis 2: WMO/Harper exposure-class gust factor
+            # when Axis 1 is ONE_MINUTE), and buckets its output per temporal_extent's
+            # "lead-time-spectrum" (aggregating GEFS's native cadence up to a coarser configured
+            # interval if needed - see extract_forecast.py).
+            wind_speeds = extract_wind_speed(
+                gefs_wind_member_paths, country_bounds, country_config, temporal_extent
             )
-        data_submitter.add_severity_data(
-            event_name=event_name,
-            time_interval_start=severity.time_interval_start,
-            time_interval_end=severity.time_interval_end,
-            ensemble_member_type=EnsembleMemberType.MEDIAN,
-            severity_key=SeverityKey.WIND_SPEED,
-            severity_value=severity.median_wind_speed,
-        )
+            time_interval_severities = determine_alert(
+                wind_speeds, spatial_extent_place_codes, target_admin_areas
+            )
 
-    data_submitter.add_admin_area_exposure(
-        event_name=event_name,
-        admin_level=target_admin_level,
-        layer=LayerName.POPULATION_EXPOSED,
-        values_by_place_code=population_exposed,
-    )
+            # If no time bucket clears MIN_SEVERITY_MS, there is no alert for this spatial/temporal
+            # extent.
+            if not time_interval_severities:
+                logging.info(
+                    f"No tropical-cyclone alert for '{country}' "
+                    f"({alert_config.spatial_extent_name}): no bucket cleared "
+                    f"MIN_SEVERITY_MS={MIN_SEVERITY_MS}"
+                )
+                continue
 
-    # No add_geo_feature_exposure for individual track points yet
-    # Track data is used above only for the derived centroid.
+            ### Step 7 - Extract track fixes for the alert centroid ###
+            track_fixes = extract_track(gefs_track_member_paths, country_bounds)
 
-    data_submitter.add_raster_exposure(
-        event_name=event_name,
-        layer=LayerName.WIND_SPEED,
-        value_greyscale=raster_to_base64_png(clipped_wind_extent),
-        extent=get_raster_extent(clipped_wind_extent),
-    )
+            ### Step 8 - Compute the alert extent and its spatial exposure ###
+            wind_extent = compute_alert_extent(time_interval_severities)
+            clipped_wind_extent = determine_spatial_extent(
+                wind_extent, spatial_extent_place_codes, target_admin_areas
+            )
+
+            if clipped_wind_extent is None:
+                data_submitter.add_error(
+                    f"Could not compute wind extent for country '{country}'"
+                )
+                continue
+
+            ### Step 9 - Lazily load the population raster ###
+            # Loaded only now, after confirming an alert-worthy footprint exists, to avoid the API
+            # call on every no-alert run (mirrors flood's lazy-load).
+            population_raster: RasterData = data_provider.get_data(
+                DataSource.POPULATION_IBF_API, RasterData
+            )
+
+            ### Step 10 - Compute and aggregate population exposure ###
+            population_exposed_raster = compute_population_exposed(
+                population_raster, clipped_wind_extent
+            )
+            if population_exposed_raster is None:
+                data_submitter.add_error(
+                    f"Could not compute exposed population raster for country '{country}'"
+                )
+                continue
+
+            population_exposed = aggregate_population_exposed(
+                population_exposed_raster,
+                spatial_extent_place_codes,
+                target_admin_areas,
+            )
+
+            ### Step 11 - Create alert and submit severity/exposure payloads ###
+            # v1 identifier: per-country-per-run using the issued datetime. ATCF's CY (cyclone
+            # number) is available from track data and could support a persistent per-storm
+            # identity across pipeline runs later (so a re-run against an already-alerted storm
+            # updates the same event instead of creating a duplicate), but that needs a decision on
+            # what "the same storm across runs" means operationally that hasn't been made yet.
+            event_name = f"{country}_tropical-cyclone_{_placeholder_issued_datetime()}"
+
+            # Storm-center fix from the same bucket compute_alert_extent picked as peak-intensity
+            # (falls back to the admin-area centroid only if there are no track fixes at all - see
+            # docstring).
+            centroid = _derive_storm_centroid(
+                track_fixes, time_interval_severities, target_admin_areas
+            )
+
+            data_submitter.create_alert(event_name=event_name, centroid=centroid)
+
+            for severity in time_interval_severities:
+                for ensemble_wind_speed in severity.ensemble_wind_speeds:
+                    data_submitter.add_severity_data(
+                        event_name=event_name,
+                        time_interval_start=severity.time_interval_start,
+                        time_interval_end=severity.time_interval_end,
+                        ensemble_member_type=EnsembleMemberType.RUN,
+                        severity_key=SeverityKey.WIND_SPEED,
+                        severity_value=ensemble_wind_speed,
+                    )
+                data_submitter.add_severity_data(
+                    event_name=event_name,
+                    time_interval_start=severity.time_interval_start,
+                    time_interval_end=severity.time_interval_end,
+                    ensemble_member_type=EnsembleMemberType.MEDIAN,
+                    severity_key=SeverityKey.WIND_SPEED,
+                    severity_value=severity.median_wind_speed,
+                )
+
+            data_submitter.add_admin_area_exposure(
+                event_name=event_name,
+                admin_level=target_admin_level,
+                layer=LayerName.POPULATION_EXPOSED,
+                values_by_place_code=population_exposed,
+            )
+
+            # No add_geo_feature_exposure for individual track points yet
+            # Track data is used above only for the derived centroid.
+
+            data_submitter.add_raster_exposure(
+                event_name=event_name,
+                layer=LayerName.WIND_SPEED,
+                value_greyscale=raster_to_base64_png(clipped_wind_extent),
+                extent=get_raster_extent(clipped_wind_extent),
+            )
 
 
 def _pad_bounding_box(bounds: BoundingBox, buffer_km: float) -> BoundingBox:
@@ -271,7 +282,7 @@ def _placeholder_load_local_gefs_wind_paths(country: str) -> list[str]:
     TODO-infra: replace with DataSource.GEFS_WIND once a fetcher exists. Until then, should read
     local GEFS GRIB2 wind member file paths for `country` (see extract_forecast.py's
     _GEFS_WIND_PATH_PATTERN for the expected naming convention). Returns an empty list until
-    implemented, which correctly halts the pipeline at the Step 4 guard above.
+    implemented, which correctly halts the pipeline at the Step 3 guard above.
     """
     return []
 
@@ -281,7 +292,7 @@ def _placeholder_load_local_gefs_track_paths(country: str) -> list[str]:
     TODO-infra: replace with DataSource.GEFS_TRACK once a fetcher exists. Until then, should read
     local GEFS ATCF track member file paths for `country` (see extract_track.py's
     _GEFS_TRACK_PATH_PATTERN for the expected naming convention). Returns an empty list until
-    implemented, which correctly halts the pipeline at the Step 4 guard above.
+    implemented, which correctly halts the pipeline at the Step 3 guard above.
     """
     return []
 

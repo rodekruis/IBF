@@ -18,6 +18,7 @@ hazard_type: tropicalCyclone
 # Until then, non-infra-only runs will fail config validation (no data source
 # is tagged with a source_target) - use --infra-only for infra integration testing.
 _data_sources: &data_sources
+  - source: alert_configs_ibf_api
   - source: admin_area_ibf_api
   - source: population_ibf_api
 

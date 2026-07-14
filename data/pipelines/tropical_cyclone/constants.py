@@ -100,14 +100,21 @@ WMO_HARPER_10MIN_TO_1MIN_FACTOR: dict[ExposureClass, float] = {
 # systems) is a separate, deferred product-scope decision, not a fix for the offshore-track case.
 MIN_SEVERITY_MS = 33.0
 
-# NOAA GEFS ensemble member naming (21-member ensemble: 1 control + 20 perturbed).
+# NOAA GEFS ensemble member naming (31-member ensemble: 1 control + 30 perturbed).
 # Wind (pgrb2sp25 GRIB2) and track (tctrack ATCF) products use different, but 1:1-mapped, member
 # codes for the same underlying ensemble member (gec00<->ac00, gep01<->ap01, ...).
-GEFS_ENSEMBLE_COUNT = 21
-GEFS_WIND_MEMBER_IDS: list[str] = ["gec00", *[f"gep{i:02d}" for i in range(1, 21)]]
-GEFS_TRACK_MEMBER_IDS: list[str] = ["ac00", *[f"ap{i:02d}" for i in range(1, 21)]]
+GEFS_ENSEMBLE_COUNT = 31
+GEFS_WIND_MEMBER_IDS: list[str] = ["gec00", *[f"gep{i:02d}" for i in range(1, 31)]]
+GEFS_TRACK_MEMBER_IDS: list[str] = ["ac00", *[f"ap{i:02d}" for i in range(1, 31)]]
 
 # ATCF "radius of specified wind" (RAD) threshold, in knots. Each (member, lead hour) is repeated
 # once per RAD present (34/50/64 kt) with identical VMAX/MSLP each time - filtering to one RAD
 # value keeps exactly one row per (member, lead hour).
 ATCF_WIND_RADII_THRESHOLD_KNOTS = 34
+
+# Native GEFS forecast cadence for the wind (pgrb2sp25) product - a fixed physical property of the
+# data source, independent of whatever lead-time bucketing the alert config's temporal extent
+# specifies (see AlertConfig's "lead-time-spectrum", e.g. 3-hour or 6-hour steps up to some max
+# lead time). extract_wind_speed() aggregates native-step rasters (per-cell max, per ensemble
+# member) into a bucket whenever the configured interval is a coarser multiple of this.
+GEFS_NATIVE_LEAD_TIME_STEP_HOURS = 3
