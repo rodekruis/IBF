@@ -462,7 +462,7 @@ export const SEED_DROUGHT_ALERT_CONFIGS: SeedAlertConfig[] = [
 const TROPICAL_CYCLONE_LEAD_TIME_STEP_HOURS = 3;
 const TROPICAL_CYCLONE_LEAD_TIME_MAX_HOURS = 168;
 
-export const TROPICAL_CYCLONE_LEAD_TIME_SPECTRUM = Array.from(
+const TROPICAL_CYCLONE_LEAD_TIME_SPECTRUM = Array.from(
   {
     length:
       TROPICAL_CYCLONE_LEAD_TIME_MAX_HOURS /
@@ -479,7 +479,7 @@ interface TropicalCycloneClassificationConfig {
   readonly triggerLeadTimeDuration: string | null;
 }
 
-export const TROPICAL_CYCLONE_CLASSIFICATION_BY_COUNTRY: Record<
+const TROPICAL_CYCLONE_CLASSIFICATION_BY_COUNTRY: Record<
   string,
   TropicalCycloneClassificationConfig
 > = {
