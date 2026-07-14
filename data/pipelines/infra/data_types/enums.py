@@ -16,11 +16,13 @@ class EnsembleMemberType(StrEnum):
 class ForecastSource(StrEnum):
     GLOFAS = "glofas"
     ECMWF = "ECMWF"
+    GEFS = "GEFS"
 
 
 class HazardType(StrEnum):
     FLOODS = "floods"
     DROUGHT = "drought"
+    TROPICAL_CYCLONE = "tropicalCyclone"
 
 
 class LayerName(StrEnum):
@@ -34,10 +36,14 @@ class LayerName(StrEnum):
     FLOOD_DEPTH = "floodDepth"
     GLOFAS_STATIONS = "glofasStations"
 
+    # --- tropical cyclone-specific layers ---
+    WIND_SPEED = "windSpeed"
+
 
 class SeverityKey(StrEnum):
     RETURN_PERIOD = "returnPeriod"
     PERCENTILE = "percentile"
+    WIND_SPEED = "windSpeed"
 
 
 class EPSG(StrEnum):

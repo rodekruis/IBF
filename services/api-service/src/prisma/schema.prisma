@@ -7,11 +7,14 @@ datasource db {
   schemas  = ["api-service"]
 }
 
+// --------------------------------
 // ENUMS - START
+// --------------------------------
 
 enum HazardType {
   floods
   drought
+  tropicalCyclone
 
   @@schema("api-service")
 }
@@ -34,6 +37,7 @@ enum EnsembleMemberType {
 enum ForecastSource {
   glofas
   ECMWF
+  GEFS
 
   @@schema("api-service")
 }
@@ -41,6 +45,7 @@ enum ForecastSource {
 enum SeverityKey {
   returnPeriod
   percentile
+  windSpeed
 
   @@schema("api-service")
 }
@@ -61,6 +66,7 @@ enum LayerName {
   clinics
   floodDepth
   glofasStations
+  windSpeed
 
   @@schema("api-service")
 }
@@ -74,9 +80,14 @@ enum LayerType {
   @@schema("api-service")
 }
 
+// --------------------------------
 // ENUMS - END
+// --------------------------------
 
+
+// --------------------------------
 // MODELS - START
+// --------------------------------
 
 model User {
   @@schema("api-service")
@@ -317,4 +328,7 @@ model AlertConfig {
   @@index([countryCodeIso3, hazardType])
 }
 
+
+// --------------------------------
 // MODELS - END
+// --------------------------------

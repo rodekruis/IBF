@@ -456,3 +456,57 @@ export const SEED_DROUGHT_ALERT_CONFIGS: SeedAlertConfig[] = [
   ...ZWE_DROUGHT_CONFIGS,
   ...LSO_DROUGHT_CONFIGS,
 ];
+
+// --- TROPICAL CYCLONE: in-code config ---
+
+const TROPICAL_CYCLONE_LEAD_TIME_STEP_HOURS = 3;
+const TROPICAL_CYCLONE_LEAD_TIME_MAX_HOURS = 168;
+
+export const TROPICAL_CYCLONE_LEAD_TIME_SPECTRUM = Array.from(
+  {
+    length:
+      TROPICAL_CYCLONE_LEAD_TIME_MAX_HOURS /
+        TROPICAL_CYCLONE_LEAD_TIME_STEP_HOURS +
+      1,
+  },
+  (_, i) => `${i * TROPICAL_CYCLONE_LEAD_TIME_STEP_HOURS}-hour`,
+);
+
+interface TropicalCycloneClassificationConfig {
+  readonly severityClassLevels: ClassLevel[];
+  readonly probabilityClassLevels: ClassLevel[];
+  readonly triggerAlertClass: AlertClass | null;
+  readonly triggerLeadTimeDuration: string | null;
+}
+
+export const TROPICAL_CYCLONE_CLASSIFICATION_BY_COUNTRY: Record<
+  string,
+  TropicalCycloneClassificationConfig
+> = {
+  PHL: {
+    severityClassLevels: [
+      { label: low, threshold: 119 },
+      { label: high, threshold: 154 },
+    ],
+    probabilityClassLevels: [{ label: singleThreshold, threshold: 0 }],
+    triggerAlertClass: AlertClass.high,
+    triggerLeadTimeDuration: 'P3D',
+  },
+};
+
+export const SEED_TROPICAL_CYCLONE_ALERT_CONFIGS: SeedAlertConfig[] =
+  Object.entries(TROPICAL_CYCLONE_CLASSIFICATION_BY_COUNTRY).map(
+    ([countryCodeIso3, config]) => ({
+      countryCodeIso3,
+      hazardType: HazardType.tropicalCyclone,
+      spatialExtentName: 'National',
+      spatialExtentPlaceCodes: [],
+      temporalExtents: [
+        { 'lead-time-spectrum': TROPICAL_CYCLONE_LEAD_TIME_SPECTRUM },
+      ],
+      severityClassLevels: config.severityClassLevels,
+      probabilityClassLevels: config.probabilityClassLevels,
+      triggerAlertClass: config.triggerAlertClass,
+      triggerLeadTimeDuration: config.triggerLeadTimeDuration,
+    }),
+  );

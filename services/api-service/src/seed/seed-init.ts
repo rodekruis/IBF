@@ -16,6 +16,7 @@ import {
   FLOOD_CLASSIFICATION_BY_COUNTRY,
   FLOOD_LEAD_TIME_SPECTRUM,
   SEED_DROUGHT_ALERT_CONFIGS,
+  SEED_TROPICAL_CYCLONE_ALERT_CONFIGS,
   SeedAlertConfig,
 } from '@api-service/src/seed/seed-data/seed-alert-configs.const';
 import {
@@ -260,7 +261,16 @@ export class SeedInit {
       )
     ).flat();
 
-    const allConfigs: SeedAlertConfig[] = [...floodConfigs, ...droughtConfigs];
+    // Tropical cyclone: one generic spatial extent per country, defined in code
+    const tropicalCycloneConfigs = SEED_TROPICAL_CYCLONE_ALERT_CONFIGS.filter(
+      (c) => countryCodes.includes(c.countryCodeIso3),
+    );
+
+    const allConfigs: SeedAlertConfig[] = [
+      ...floodConfigs,
+      ...droughtConfigs,
+      ...tropicalCycloneConfigs,
+    ];
 
     await this.alertConfigsService.createAlertConfigs(
       allConfigs.map(
