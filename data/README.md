@@ -96,7 +96,7 @@ $RUN --interactive --tty pipelines:development bash
 The integration tests submit forecasts to the api-service, which requires seed data. Reset the database first (same as CI):
 
 ```bash
-curl -X POST "http://localhost:4000/api/instance/reset?script=ethiopia-only&resetIdentifier=local" \
+curl -X POST "http://localhost:4000/api/reset?countryCodes=MWI&resetIdentifier=local" \
   -H "Content-Type: application/json" \
   -d '{"secret":"<RESET_SECRET from services/.env>"}'
 ```

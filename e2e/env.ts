@@ -12,7 +12,7 @@ export const env = {
   // External URL of the running api-service (used to seed mock data).
   API_SERVICE_URL:
     process.env.EXTERNAL_API_SERVICE_URL ?? 'http://localhost:4000',
-  // Secret required by the api-service `/instance/reset` endpoint.
+  // Secret required by the api-service `/reset` endpoint.
   RESET_SECRET: process.env.RESET_SECRET ?? '',
   // When set (e.g. in CI), Playwright fails if `test.only` is left in the code.
   CI: Boolean(process.env.CI),
