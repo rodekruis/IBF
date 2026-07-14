@@ -1,9 +1,16 @@
 import { Test } from '@nestjs/testing';
 import { Event } from '@prisma/client';
 
-import { EventsRepository } from '@api-service/src/events/events.repository';
+import {
+  EventsRepository,
+  ExposedAdminAreaRecord,
+} from '@api-service/src/events/events.repository';
 import { EventsService } from '@api-service/src/events/events.service';
-import { AlertClass, HazardType } from '@api-service/src/shared-enums';
+import {
+  AlertClass,
+  HazardType,
+  LayerName,
+} from '@api-service/src/shared-enums';
 
 function buildEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -94,6 +101,79 @@ describe('EventsService', () => {
       const result = await service.getEvents(new Date('2026-03-25T12:00:00Z'));
 
       expect(result[0].hazardType).toEqual(HazardType.floods);
+    });
+
+    it('should return exposedAdminAreas grouped by adminLevel with renamed fields', async () => {
+      const event = buildEvent({ id: 42 });
+      const exposedAreas: ExposedAdminAreaRecord[] = [
+        {
+          placeCode: 'KEN_01',
+          adminLevel: 1,
+          name: 'Region A',
+          exposure: [{ layerName: LayerName.populationExposed, exposed: 500 }],
+        },
+        {
+          placeCode: 'KEN_01_001',
+          adminLevel: 3,
+          name: 'District X',
+          exposure: [{ layerName: LayerName.populationExposed, exposed: 200 }],
+        },
+        {
+          placeCode: 'KEN_01_002',
+          adminLevel: 3,
+          name: 'District Y',
+          exposure: [{ layerName: LayerName.populationExposed, exposed: 300 }],
+        },
+      ];
+      repository.getEvents.mockResolvedValue([event]);
+      repository.getExposedAdminAreasForLatestAlerts.mockResolvedValue(
+        new Map([[42, exposedAreas]]),
+      );
+
+      const result = await service.getEvents(new Date('2026-03-25T12:00:00Z'));
+
+      expect(result[0].exposedAdminAreas).toEqual({
+        1: [
+          {
+            placeCode: 'KEN_01',
+            adminLevel: 1,
+            name: 'Region A',
+            exposure: [
+              {
+                layerName: LayerName.populationExposed,
+                total: null,
+                exposed: 500,
+              },
+            ],
+          },
+        ],
+        3: [
+          {
+            placeCode: 'KEN_01_001',
+            adminLevel: 3,
+            name: 'District X',
+            exposure: [
+              {
+                layerName: LayerName.populationExposed,
+                total: null,
+                exposed: 200,
+              },
+            ],
+          },
+          {
+            placeCode: 'KEN_01_002',
+            adminLevel: 3,
+            name: 'District Y',
+            exposure: [
+              {
+                layerName: LayerName.populationExposed,
+                total: null,
+                exposed: 300,
+              },
+            ],
+          },
+        ],
+      });
     });
   });
 });
