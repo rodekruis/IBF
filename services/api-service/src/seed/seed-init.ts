@@ -16,6 +16,7 @@ import {
   FLOOD_CLASSIFICATION_BY_COUNTRY,
   FLOOD_LEAD_TIME_SPECTRUM,
   SEED_DROUGHT_ALERT_CONFIGS,
+  SEED_TROPICAL_CYCLONE_ALERT_CONFIGS,
   SeedAlertConfig,
 } from '@api-service/src/seed/seed-data/seed-alert-configs.const';
 import {
@@ -239,28 +240,39 @@ export class SeedInit {
   }
 
   private async seedAlertConfigs(countries: SeedCountry[]): Promise<void> {
-    const countryCodes = countries.map((c) => c.countryCodeIso3);
-
-    // Drought: spatial extents are climate regions defined in code (seed-alert-configs.const.ts)
-    // TODO: move drought alert configs to an external source (seed-data repo or similar)
-    const droughtConfigs = SEED_DROUGHT_ALERT_CONFIGS.filter((c) =>
-      countryCodes.includes(c.countryCodeIso3),
-    );
-
-    const floodCountries = countries.filter((c) =>
-      c.hazardTypes.includes(HazardType.floods),
-    );
+    const countryCodesForHazard = (hazardType: HazardType): string[] =>
+      countries
+        .filter((c) => c.hazardTypes.includes(hazardType))
+        .map((c) => c.countryCodeIso3);
 
     // Floods: spatial extents are GloFAS stations, fetched from the seed-data repo
     const floodConfigs = (
       await Promise.all(
-        floodCountries.map((country) =>
-          this.loadFloodAlertConfigsFromSeedRepo(country),
-        ),
+        countries
+          .filter((c) => c.hazardTypes.includes(HazardType.floods))
+          .map((country) => this.loadFloodAlertConfigsFromSeedRepo(country)),
       )
     ).flat();
 
-    const allConfigs: SeedAlertConfig[] = [...floodConfigs, ...droughtConfigs];
+    // Drought: spatial extents are climate regions defined in code (seed-alert-configs.const.ts)
+    // TODO: move drought alert configs to an external source (seed-data repo or similar)
+    const droughtConfigs = SEED_DROUGHT_ALERT_CONFIGS.filter((c) =>
+      countryCodesForHazard(HazardType.drought).includes(c.countryCodeIso3),
+    );
+
+    // Tropical cyclone: one generic spatial extent per country, defined in code
+    const tropicalCycloneConfigs = SEED_TROPICAL_CYCLONE_ALERT_CONFIGS.filter(
+      (c) =>
+        countryCodesForHazard(HazardType.tropicalCyclone).includes(
+          c.countryCodeIso3,
+        ),
+    );
+
+    const allConfigs: SeedAlertConfig[] = [
+      ...floodConfigs,
+      ...droughtConfigs,
+      ...tropicalCycloneConfigs,
+    ];
 
     await this.alertConfigsService.createAlertConfigs(
       allConfigs.map(
