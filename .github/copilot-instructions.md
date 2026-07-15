@@ -206,7 +206,6 @@ uv run python python-knip.py                        # linting (ruff, deptry, vul
 Location: `portal/nrw-standalone/`
 
 - Wrapper around the IFRC Go NRW code (sparsely checked-out git submodule at `portal/nrw-standalone/src/go-web-app`)
-- Never edit inside the submodule — keep changes outside it, or offer submodule changes only as a suggestion for the `go-web-app` repo
 - Uses React 19, Vite, pnpm, Tailwind CSS
 
 ---
