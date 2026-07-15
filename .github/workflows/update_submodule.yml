@@ -54,14 +54,24 @@ jobs:
         working-directory: portal/nrw-standalone
         run: pnpm install --no-frozen-lockfile
 
+      - name: Get submodule commit info
+        if: steps.check.outputs.changed == 'true'
+        id: info
+        run: |
+          cd portal/nrw-standalone/src/go-web-app
+          SHA=$(git rev-parse --short HEAD)
+          SUBJECT=$(git log -1 --format='%s')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "subject=$SUBJECT" >> $GITHUB_OUTPUT
+
       - name: Create Pull Request
         if: steps.check.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.app-token.outputs.token }}
-          commit-message: 'chore: update go-web-app submodule'
-          branch: automated/update-go-web-app-submodule
-          title: 'chore: update go-web-app submodule'
+          commit-message: 'chore: update go-web-app submodule to ${{ steps.info.outputs.sha }}'
+          branch: automated/update-go-web-app-submodule-${{ steps.info.outputs.sha }}
+          title: 'chore: update go-web-app submodule — ${{ steps.info.outputs.subject }}'
           body: |
             Automated submodule update triggered by a merge to `ibf-main` in rodekruis/go-web-app.
 
