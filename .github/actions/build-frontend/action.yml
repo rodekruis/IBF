@@ -40,7 +40,7 @@ runs:
       run: |
         git submodule update --init --remote ${{ inputs.frontendPath }}/src/go-web-app
         cd ${{ inputs.frontendPath }}/src/go-web-app
-        git sparse-checkout set --no-cone '/app/src/utils/nrw/' '/app/src/components/NrwMap/'
+        git sparse-checkout set --no-cone '/app/src/utils/nrw/' '/app/src/components/Nrw/'
 
     - name: Install
       shell: bash
