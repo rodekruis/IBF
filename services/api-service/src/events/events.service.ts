@@ -71,8 +71,8 @@ export class EventsService {
 
   private mapExposedAdminAreas(
     exposedAdminAreas: ExposedAdminAreaRecord[],
-  ): ExposedAdminAreaDto[] {
-    return exposedAdminAreas.map((area) => ({
+  ): Record<string, ExposedAdminAreaDto[]> {
+    const dtos = exposedAdminAreas.map((area) => ({
       placeCode: area.placeCode,
       adminLevel: area.adminLevel,
       name: area.name,
@@ -82,6 +82,10 @@ export class EventsService {
         exposed: exp.exposed,
       })),
     }));
+    return Object.groupBy(dtos, (dto) => String(dto.adminLevel)) as Record<
+      string,
+      ExposedAdminAreaDto[]
+    >;
   }
 
   // NOTE: eventName and eventLabel currently have the same value. Both are kept for now because
