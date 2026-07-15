@@ -62,7 +62,7 @@ jobs:
           SHA=$(git rev-parse --short HEAD)
           SUBJECT=$(git log -1 --format='%s')
           echo "sha=$SHA" >> $GITHUB_OUTPUT
-          echo "subject=$SUBJECT" >> $GITHUB_OUTPUT
+          printf 'subject=%s\n' "$SUBJECT" >> "$GITHUB_OUTPUT"
 
       - name: Create Pull Request
         if: steps.check.outputs.changed == 'true'
