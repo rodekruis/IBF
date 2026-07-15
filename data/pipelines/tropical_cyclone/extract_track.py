@@ -59,6 +59,14 @@ def extract_track(
 
         if forecast_cycle_datetime is None:
             forecast_cycle_datetime = parsed.cycle_datetime
+        elif parsed.cycle_datetime != forecast_cycle_datetime:
+            log_warning(
+                logger,
+                LogTag.TROPICAL_CYCLONE_LOGIC,
+                f"GEFS track file from different forecast cycle ({parsed.cycle_datetime}) "
+                f"than expected ({forecast_cycle_datetime}), skipping: {path}",
+            )
+            continue
 
         log_info(
             logger, LogTag.TROPICAL_CYCLONE_LOGIC, f"Extracting track fixes from {path}"

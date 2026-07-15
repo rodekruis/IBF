@@ -13,7 +13,11 @@ from pipelines.tropical_cyclone.extract_forecast import (
 )
 from rasterio.transform import from_origin
 
-_NODATA = -9999.0
+# Real GRIB2/IEEE missing-value sentinel used by GEFS wind rasters (see
+# extract_forecast.py's _read_wind_speed_raster) - a huge positive number, not an arbitrary
+# small one, so these tests actually cover the risky case: if exclusion ever broke, this
+# value would dominate every max instead of a harmless small number.
+_NODATA = 3.4028234663852886e38
 
 
 def _make_raster(value: float, nodata: float = _NODATA) -> RasterData:
@@ -56,6 +60,14 @@ class TestResolveConfiguredIntervalHours:
         assert (
             _resolve_configured_interval_hours([0]) == GEFS_NATIVE_LEAD_TIME_STEP_HOURS
         )
+
+    def test_raises_on_irregular_spacing(self):
+        with pytest.raises(ValueError, match="constant spacing"):
+            _resolve_configured_interval_hours([0, 3, 6, 11, 14])
+
+    def test_raises_when_interval_is_not_a_multiple_of_native_step(self):
+        with pytest.raises(ValueError, match="multiple of GEFS's native"):
+            _resolve_configured_interval_hours([0, 5, 10, 15])
 
 
 class TestParseGefsWindPath:

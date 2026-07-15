@@ -84,6 +84,14 @@ def extract_wind_speed(
 
         if forecast_cycle_datetime is None:
             forecast_cycle_datetime = parsed.cycle_datetime
+        elif parsed.cycle_datetime != forecast_cycle_datetime:
+            log_warning(
+                logger,
+                LogTag.TROPICAL_CYCLONE_LOGIC,
+                f"GEFS wind file from different forecast cycle ({parsed.cycle_datetime}) "
+                f"than expected ({forecast_cycle_datetime}), skipping: {path}",
+            )
+            continue
 
         log_info(
             logger, LogTag.TROPICAL_CYCLONE_LOGIC, f"Extracting wind speed from {path}"
@@ -183,7 +191,19 @@ def _resolve_configured_interval_hours(lead_hour_spectrum: list[int]) -> int:
     """
     if len(lead_hour_spectrum) < 2:
         return GEFS_NATIVE_LEAD_TIME_STEP_HOURS
-    return lead_hour_spectrum[1] - lead_hour_spectrum[0]
+
+    deltas = {b - a for a, b in zip(lead_hour_spectrum, lead_hour_spectrum[1:])}
+    if len(deltas) > 1 or min(deltas) <= 0:
+        raise ValueError(
+            f"Lead-hour spectrum must be strictly increasing with constant spacing: {lead_hour_spectrum}"
+        )
+    interval_hours = deltas.pop()
+    if interval_hours % GEFS_NATIVE_LEAD_TIME_STEP_HOURS != 0:
+        raise ValueError(
+            f"Lead-hour spectrum interval must be a multiple of GEFS's native "
+            f"{GEFS_NATIVE_LEAD_TIME_STEP_HOURS}h step: {interval_hours}h"
+        )
+    return interval_hours
 
 
 def _aggregate_bucket_rasters(
