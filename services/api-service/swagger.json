@@ -10,6 +10,11 @@
     "params": []
   },
   {
+    "method": "get",
+    "path": "/api/reset/status",
+    "params": []
+  },
+  {
     "method": "post",
     "path": "/api/reset",
     "params": [

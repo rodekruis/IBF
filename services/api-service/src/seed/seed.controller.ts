@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   ForbiddenException,
+  Get,
   HttpCode,
   HttpStatus,
   ParseArrayPipe,
@@ -37,18 +38,40 @@ class SecretDto {
 export class SeedController {
   public constructor(private readonly seedService: SeedService) {}
 
+  @Get('/reset/status')
+  @ApiOperation({
+    summary: 'Check whether a database reset is currently in progress.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Current reset status.',
+  })
+  public getResetStatus(): { inProgress: boolean; error: string | null } {
+    if (IS_PRODUCTION) {
+      throw new ForbiddenException(
+        'Reset status is not available in production',
+      );
+    }
+    return this.seedService.getResetStatus();
+  }
+
   @Post('/reset')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
     summary: 'Reset database and seed initial (non-event) data.',
     description:
       'Drops all data and re-seeds initial static data (admin areas, countries, etc.). ' +
       'Call for one, multiple, or all countries. ' +
-      'Not available in production.',
+      'Not available in production. ' +
+      'Returns immediately; seeding continues in the background.',
   })
   @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Database reset to initial state.',
+    status: HttpStatus.ACCEPTED,
+    description: 'Database reset started.',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'A reset is already in progress.',
   })
   @ApiQuery({
     name: 'resetIdentifier',
@@ -70,7 +93,7 @@ export class SeedController {
     description:
       'ISO3 country codes to seed. Provide comma-separated (e.g. MWI,UGA). If omitted, all countries are seeded.',
   })
-  public async resetDb(
+  public resetDb(
     @Body() body: SecretDto,
     @Query(
       'countryCodes',
@@ -80,7 +103,7 @@ export class SeedController {
     @Query('skipStaticRasters', new ParseBoolPipe({ optional: true }))
     skipStaticRasters: boolean,
     @Query('resetIdentifier') resetIdentifier: string,
-  ): Promise<string> {
+  ): string {
     if (IS_PRODUCTION) {
       throw new ForbiddenException('Reset is not allowed in production');
     }
@@ -88,13 +111,13 @@ export class SeedController {
       throw new ForbiddenException('Not allowed');
     }
 
-    await this.seedService.reset({
+    this.seedService.startReset({
       resetIdentifier,
       countryCodes: countryCodes?.map((code) => code.trim()),
       skipStaticRasters: skipStaticRasters ?? false,
     });
 
-    return 'Database reset to initial state.';
+    return 'Database reset started. Seeding continues in the background.';
   }
 
   @Post('/mock')

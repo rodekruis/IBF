@@ -13,12 +13,12 @@ export function getServer(): TestAgent<request.Test> {
   return request.agent(getHostname());
 }
 
-export function resetDB(
+export async function resetDB(
   countryCodes: string[],
   resetIdentifier: string,
   skipStaticRasters = true,
 ): Promise<request.Response> {
-  return getServer()
+  const response = await getServer()
     .post('/reset')
     .query({
       countryCodes,
@@ -28,6 +28,35 @@ export function resetDB(
     .send({
       secret: env.RESET_SECRET,
     });
+
+  if (response.status !== HttpStatus.ACCEPTED) {
+    return response;
+  }
+
+  await waitForResetComplete();
+  return response;
+}
+
+async function waitForResetComplete(): Promise<void> {
+  const pollIntervalMs = 1000;
+  const maxWaitMs = 600_000;
+  const start = Date.now();
+
+  while (Date.now() - start < maxWaitMs) {
+    const statusResponse = await getServer().get('/reset/status');
+    if (
+      statusResponse.status === HttpStatus.OK &&
+      !statusResponse.body.inProgress
+    ) {
+      if (statusResponse.body.error) {
+        throw new Error(`Reset failed: ${statusResponse.body.error}`);
+      }
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+  }
+
+  throw new Error('Reset did not complete within the expected time');
 }
 
 export function loginApi(

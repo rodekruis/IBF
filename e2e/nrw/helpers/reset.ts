@@ -22,4 +22,33 @@ export async function resetDb(
       `Failed to reset api-service database (${String(response.status)}): ${body}`,
     );
   }
+
+  await waitForResetComplete();
+}
+
+async function waitForResetComplete(): Promise<void> {
+  const pollIntervalMs = 1000;
+  const maxWaitMs = 600_000;
+  const start = Date.now();
+
+  while (Date.now() - start < maxWaitMs) {
+    const statusResponse = await fetch(
+      `${env.API_SERVICE_URL}/api/reset/status`,
+    );
+    if (statusResponse.ok) {
+      const status = (await statusResponse.json()) as {
+        inProgress: boolean;
+        error: string | null;
+      };
+      if (!status.inProgress) {
+        if (status.error) {
+          throw new Error(`Reset failed: ${status.error}`);
+        }
+        return;
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+  }
+
+  throw new Error('Reset did not complete within the expected time');
 }

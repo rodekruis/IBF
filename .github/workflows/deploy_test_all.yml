@@ -20,7 +20,7 @@ jobs:
       pull-requests: write # Only required because a PR-related job is defined, it will never run via `workflow_call/dispatch`.
     secrets:
       AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL }}
-      APP_MAPTILER_API_KEY: ${{ secrets.APP_MAPTILER_API_KEY }}
+      APP_MAPBOX_ACCESS_TOKEN: ${{ secrets.APP_MAPBOX_ACCESS_TOKEN }}
       FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
 
   deploy_service:

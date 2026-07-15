@@ -84,7 +84,7 @@ Both workflows build the app with the shared [`build-frontend`](../../.github/ac
 
 - `APP_IBF_API_BACKEND` — environment variable, URL of the deployed `api-service`
 - `APP_SEED_DATA_REPO` — environment variable, base URL of the seed-data repository
-- `APP_MAPTILER_API_KEY` — environment secret
+- `APP_MAPBOX_ACCESS_TOKEN` — environment secret
 - `AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL` — environment secret, deployment token of the Azure Static Web App
 
 [`public/staticwebapp.config.json`](./public/staticwebapp.config.json) configures the Static Web App (SPA fallback to `index.html`, caching and security headers). Vite copies it to the root of the `dist/` build output.
