@@ -2,7 +2,7 @@
 
 This is the front end for NRW. It is being developed inside [our fork of the IFRC Go repo](https://github.com/rodekruis/go-web-app).
 
-This project is a wrapper of the core NRW files to allow standalone deployment and testing. All changes to core NRW files must be done in the `go-web-app` repo, and then brought here as part of the submodule checkout in `/src/go-web-app`. Do not make any changes inside the submodule.
+This project is a wrapper of the core NRW files to allow standalone deployment and testing. All changes to core NRW files must be done in the `go-web-app` repo, and then brought here as part of the submodule checkout in `/src/go-web-app`.
 
 ## Setup and running the app
 

@@ -6,7 +6,7 @@ IBF is a web app to visualize hazard forecasts. This repository contains:
 
 - `services/api-service/` — NestJS backend API (TypeScript, Prisma, PostgreSQL)
 - `data/` — Python code for both hazard forecast pipelines and data management scripts
-- `portal/nrw-standalone/` — React frontend wrapper around the IFRC Go NRW submodule (not edited from this repo — changes go to the `go-web-app` submodule repo)
+- `portal/nrw-standalone/` — React frontend wrapper around the IFRC Go NRW submodule
 
 ---
 
