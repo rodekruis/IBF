@@ -163,9 +163,7 @@ countries:
     data_sources: *data_sources  # Required; reference the anchor or override per country
 ```
 
-`hazard_type` must match a `HazardType` enum value exactly, including case. Enum values follow
-camelCase (e.g. `tropicalCyclone`), so for a multi-word hazard type, write it in the config YAML
-the same way — not lowercase, not hyphenated.
+`hazard_type` must match a `HazardType` enum value exactly, including case. Enum values for multi-word hazards follow camelCase (e.g. `tropicalCyclone`), so write them in the config YAML the same way — not all-lowercase, not hyphenated.
 
 ### Adding a new hazard type
 
