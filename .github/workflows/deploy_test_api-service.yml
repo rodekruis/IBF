@@ -44,6 +44,7 @@ jobs:
         uses: ./.github/actions/build-service
         with:
           servicePath: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          databaseUrl: ${{ secrets.DATABASE_URL }}
 
       - name: Deploy to Azure App Service
         id: deploy_to_aas

@@ -73,6 +73,11 @@ jobs:
         run: |
           npm run start:services:ci
 
+      - name: Run database migrations
+        working-directory: ${{ env.workingDirectory }}
+        run: |
+          docker compose exec api-service DATABASE_URL=postgres://ibf:ibf@ibf-db/ibf npm run prisma:migrate:deploy
+
       - name: Run integration tests (inside Docker-container, for Coverage-report)
         working-directory: ${{ env.workingDirectory }}
         run: |
