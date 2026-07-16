@@ -68,7 +68,7 @@ Shared enums are located in `services/api-service/src/shared-enums.ts`. If you a
 
 **DTOs**
 
-DTO changes needed by Python must be copied/reformatted by hand. All changes are placed in `data/pipelines/infra/data_types/dtos.py`. Changes needed by the front end must also be copied by hand, into `app/src/utils/nrw/` in the Go repo, in a separate PR. See the [frontend repo readme](https://github.com/rodekruis/go-web-app/blob/ibf-main/app/src/components/NrwMap/readme.md) for more details.
+DTO changes needed by Python must be copied/reformatted by hand. All changes are placed in `data/pipelines/infra/data_types/dtos.py`. Changes needed by the front end must also be copied by hand, into `app/src/utils/nrw/` in the Go repo, in a separate PR. See the [frontend repo readme](https://github.com/rodekruis/go-web-app/blob/ibf-main/app/src/components/Nrw/readme.md) for more details.
 
 **Propagate changes**
 

@@ -20,7 +20,7 @@
     "setup:pipelines": "docker build --tag=pipelines:development --target=development data/ && docker run --rm --init --network=host --volume=$PWD/data:/home/pipelines/app",
     "start:pipelines": "npm run setup:pipelines -- pipelines:development uv run pipeline",
     "install:services": "cd services/ && docker compose --file=docker-compose.yml build",
-    "setup:frontend": "git submodule update --init portal/nrw-standalone/src/go-web-app && (cd portal/nrw-standalone/src/go-web-app && git sparse-checkout set --no-cone '/app/src/utils/nrw/' '/app/src/components/NrwMap/') && (cd portal/nrw-standalone && ([ -f .env ] || cp sample.env .env) && pnpm install)",
+    "setup:frontend": "git submodule update --init portal/nrw-standalone/src/go-web-app && (cd portal/nrw-standalone/src/go-web-app && git sparse-checkout set --no-cone '/app/src/utils/nrw/' '/app/src/components/Nrw/') && (cd portal/nrw-standalone && ([ -f .env ] || cp sample.env .env) && pnpm install)",
     "start:frontend": "cd portal/nrw-standalone && pnpm build && pnpm exec vite preview --port 5173 --strictPort",
     "install:e2e": "cd e2e && npm run setup",
     "test:e2e": "cd e2e && npm test",
