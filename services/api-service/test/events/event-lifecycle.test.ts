@@ -92,13 +92,18 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       startAt: '2026-03-25T00:00:00.000Z',
       endAt: '2026-03-26T00:00:00.000Z',
       isOngoing: true,
-      exposedAdminAreas: [
-        {
-          placeCode: 'MW31001',
-          adminLevel: 3,
-          exposure: [{ layerName: 'populationExposed', exposed: 1000 }],
-        },
-      ],
+      exposedAdminAreas: {
+        '3': [
+          {
+            placeCode: 'MW31001',
+            name: 'MW31001',
+            adminLevel: 3,
+            exposure: [
+              { layerName: 'populationExposed', exposed: 1000, total: null },
+            ],
+          },
+        ],
+      },
     });
 
     // Step 2: Create an alert with higher severity → updates event
@@ -121,13 +126,18 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
       lastUpdatedAt: '2026-03-24T12:00:00.000Z',
       isOngoing: true,
-      exposedAdminAreas: [
-        {
-          placeCode: 'MW31001',
-          adminLevel: 3,
-          exposure: [{ layerName: 'populationExposed', exposed: 1000 }],
-        },
-      ],
+      exposedAdminAreas: {
+        '3': [
+          {
+            placeCode: 'MW31001',
+            name: 'MW31001',
+            adminLevel: 3,
+            exposure: [
+              { layerName: 'populationExposed', exposed: 1000, total: null },
+            ],
+          },
+        ],
+      },
     });
 
     // Step 3: Create two alerts → both events open

@@ -54,8 +54,12 @@ export class EventResponseDto {
   @ApiProperty()
   public readonly isOngoing: boolean;
 
-  @ApiProperty({ type: [ExposedAdminAreaDto] })
-  public readonly exposedAdminAreas: ExposedAdminAreaDto[];
+  @ApiProperty({
+    description:
+      'A mapping of admin level (as a string key) to the exposed admin areas for that level',
+    example: { '0': [], '1': [] },
+  })
+  public readonly exposedAdminAreas: Record<string, ExposedAdminAreaDto[]>;
 
   @ApiProperty({ type: [LayerDto] })
   public readonly availableLayers: LayerDto[];
