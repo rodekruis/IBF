@@ -119,7 +119,7 @@ jobs:
       - name: Run database migrations
         working-directory: ./services
         run: |
-          docker compose exec api-service DATABASE_URL=postgres://ibf:ibf@ibf-db/ibf npm run prisma:migrate:deploy
+          docker compose exec -e DATABASE_URL=postgres://ibf:ibf@ibf-db/ibf api-service npm run prisma:migrate:deploy
 
       - name: Set up the frontend (submodule + dependencies)
         run: |

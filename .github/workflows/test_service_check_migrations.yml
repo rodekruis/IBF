@@ -46,7 +46,7 @@ jobs:
       - name: Run database migrations
         working-directory: ${{ env.workingDirectory }}
         run: |
-          docker compose exec api-service DATABASE_URL=postgres://ibf:ibf@ibf-db/ibf npm run prisma:migrate:deploy
+          docker compose exec -e DATABASE_URL=postgres://ibf:ibf@ibf-db/ibf api-service npm run prisma:migrate:deploy
 
       - name: Check that no new migrations are necessary
         working-directory: ${{ env.workingDirectory }}
