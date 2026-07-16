@@ -15,7 +15,6 @@ on:
   workflow_call:
     secrets:
       AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL:
-        required: true
       APP_MAPBOX_ACCESS_TOKEN:
         required: true
       FONTAWESOME_NPM_AUTH_TOKEN:
