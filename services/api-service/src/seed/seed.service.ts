@@ -57,32 +57,33 @@ export class SeedService {
   }
 
   public async mockEvents({
-    countryCodeIso3,
+    countryCodes,
     scenario,
     clearEvents,
     issuedAt,
   }: {
-    countryCodeIso3: string;
+    countryCodes: string[];
     scenario: MockScenario;
     clearEvents: boolean;
     issuedAt: Date;
   }): Promise<void> {
     this.logger.log(
-      `Mock events - Country: ${countryCodeIso3} - Scenario: ${scenario} - Clear: ${String(clearEvents)}`,
+      `Mock events - Countries: ${countryCodes.join(', ')} - Scenario: ${scenario} - Clear: ${String(clearEvents)}`,
     );
 
-    if (clearEvents) {
-      await this.eventsService.deleteEventsByCountry(countryCodeIso3);
-    }
+    for (const countryCodeIso3 of countryCodes) {
+      if (clearEvents) {
+        await this.eventsService.deleteEventsByCountry(countryCodeIso3);
+      }
 
-    if (scenario === MockScenario.noEvents) {
-      await this.alertsService.createAlerts(
-        buildMockForecast(countryCodeIso3, issuedAt, []),
-      );
-      return;
+      if (scenario === MockScenario.noEvents) {
+        await this.alertsService.createAlerts(
+          buildMockForecast(countryCodeIso3, issuedAt, []),
+        );
+      } else {
+        const forecast = buildMockForecast(countryCodeIso3, issuedAt);
+        await this.alertsService.createAlerts(forecast);
+      }
     }
-
-    const forecast = buildMockForecast(countryCodeIso3, issuedAt);
-    await this.alertsService.createAlerts(forecast);
   }
 }

@@ -123,9 +123,10 @@ export class SeedController {
   @Post('/mock')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Generate mock events for a single country.',
+    summary: 'Generate mock events for one, multiple, or all countries.',
     description:
       'Creates mock forecast events, for testing without pipeline data. ' +
+      'Call for one, multiple, or all supported countries. ' +
       'Not available in production.',
   })
   @ApiResponse({
@@ -133,12 +134,13 @@ export class SeedController {
     description: 'Mock scenario applied.',
   })
   @ApiQuery({
-    name: 'countryCodeIso3',
-    required: true,
+    name: 'countryCodes',
+    required: false,
     type: String,
     example: 'MWI',
     description:
-      'A single ISO3 country code to generate mock events for. Supported: ETH, KEN, MWI, PHL, SSD, UGA, ZMB.',
+      'ISO3 country codes to mock. Provide comma-separated (e.g. MWI,KEN). ' +
+      `If omitted, all supported countries are mocked: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}.`,
   })
   @ApiQuery({
     name: 'scenario',
@@ -153,7 +155,7 @@ export class SeedController {
     enum: ['true', 'false'],
     schema: { default: 'false' },
     description:
-      'If true, clear existing events for the given country before creating new ones.',
+      'If true, clear existing events for the given countries before creating new ones.',
   })
   @ApiQuery({
     name: 'issuedAt',
@@ -163,7 +165,11 @@ export class SeedController {
   })
   public async mockEvents(
     @Body() body: SecretDto,
-    @Query('countryCodeIso3') countryCodeIso3: string,
+    @Query(
+      'countryCodes',
+      new ParseArrayPipe({ items: String, optional: true }),
+    )
+    countryCodes: string[] | undefined,
     @Query('scenario') scenario: string,
     @Query('clearEvents', new ParseBoolPipe({ optional: true }))
     clearEvents: boolean,
@@ -176,9 +182,16 @@ export class SeedController {
       throw new ForbiddenException('Not allowed');
     }
 
-    if (!SUPPORTED_MOCK_COUNTRIES.includes(countryCodeIso3)) {
+    const resolvedCountryCodes = countryCodes
+      ? countryCodes.map((code) => code.trim())
+      : SUPPORTED_MOCK_COUNTRIES;
+
+    const unsupported = resolvedCountryCodes.filter(
+      (code) => !SUPPORTED_MOCK_COUNTRIES.includes(code),
+    );
+    if (unsupported.length > 0) {
       throw new BadRequestException(
-        `Unsupported country '${countryCodeIso3}'. Supported (single country only): ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
+        `Unsupported countries: ${unsupported.join(', ')}. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
       );
     }
 
@@ -197,12 +210,12 @@ export class SeedController {
     }
 
     await this.seedService.mockEvents({
-      countryCodeIso3,
+      countryCodes: resolvedCountryCodes,
       scenario: scenario as MockScenario,
       clearEvents: clearEvents ?? false,
       issuedAt: issuedAtDate,
     });
 
-    return 'Mock scenario applied.';
+    return `Mock scenario applied for: ${resolvedCountryCodes.join(', ')}.`;
   }
 }
