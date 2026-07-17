@@ -13,7 +13,7 @@ const COUNTRY_CODE_ISO3 = 'MWI';
 const SECOND_COUNTRY_CODE_ISO3 = 'UGA';
 
 function mockEvents(params: {
-  countryCodes: string[];
+  countryCodes?: string[];
   scenario: string;
   clearEvents?: boolean;
   issuedAt?: string;
@@ -21,7 +21,9 @@ function mockEvents(params: {
   return getServer()
     .post('/mock')
     .query({
-      countryCodes: params.countryCodes.join(','),
+      ...(params.countryCodes && {
+        countryCodes: params.countryCodes.join(','),
+      }),
       scenario: params.scenario,
       ...(params.clearEvents !== undefined && {
         clearEvents: params.clearEvents,
@@ -227,6 +229,27 @@ describe('POST /mock', () => {
       });
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+    });
+
+    it('should mock all seeded countries when countryCodes is omitted', async () => {
+      const response = await mockEvents({
+        scenario: MockScenario.events,
+        clearEvents: true,
+      });
+
+      expect(response.status).toBe(HttpStatus.OK);
+
+      const mwiResponse = await readEvents(accessToken, COUNTRY_CODE_ISO3, {
+        active: true,
+      });
+      const ugaResponse = await readEvents(
+        accessToken,
+        SECOND_COUNTRY_CODE_ISO3,
+        { active: true },
+      );
+
+      expect(mwiResponse.body.length).toBeGreaterThan(0);
+      expect(ugaResponse.body.length).toBeGreaterThan(0);
     });
   });
 });

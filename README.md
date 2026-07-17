@@ -55,7 +55,7 @@ The following URLs are now available
 After the backend is running, seed it with base data and (optionally) mock events:
 
 1. **Reset** — `POST /api/reset?countryCodes=MWI` seeds admin areas, and other static data.
-2. **Mock** (optional) — `POST /api/mock?countryCodeIso3=MWI&scenario=events` creates test forecast events so the portal shows data.
+2. **Mock** (optional) — `POST /api/mock?countryCodes=MWI&scenario=events` creates test forecast events so the portal shows data.
 
 #### Frontend (`go-web-app` directory)
 

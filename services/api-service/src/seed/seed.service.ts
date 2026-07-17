@@ -1,9 +1,13 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
 
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
+import { CountriesService } from '@api-service/src/countries/countries.service';
 import { EventsService } from '@api-service/src/events/events.service';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
-import { buildMockForecast } from '@api-service/src/seed/seed-data/mock-events.const';
+import {
+  buildMockForecast,
+  SUPPORTED_MOCK_COUNTRIES,
+} from '@api-service/src/seed/seed-data/mock-events.const';
 import { SeedInit } from '@api-service/src/seed/seed-init';
 
 @Injectable()
@@ -15,6 +19,7 @@ export class SeedService {
   public constructor(
     private readonly seedInit: SeedInit,
     private readonly alertsService: AlertsService,
+    private readonly countriesService: CountriesService,
     private readonly eventsService: EventsService,
   ) {}
 
@@ -62,16 +67,19 @@ export class SeedService {
     clearEvents,
     issuedAt,
   }: {
-    countryCodes: string[];
+    countryCodes?: string[];
     scenario: MockScenario;
     clearEvents: boolean;
     issuedAt: Date;
   }): Promise<void> {
+    const resolvedCountryCodes =
+      countryCodes ?? (await this.getSeededMockCountryCodes());
+
     this.logger.log(
-      `Mock events - Countries: ${countryCodes.join(', ')} - Scenario: ${scenario} - Clear: ${String(clearEvents)}`,
+      `Mock events - Countries: ${resolvedCountryCodes.join(', ')} - Scenario: ${scenario} - Clear: ${String(clearEvents)}`,
     );
 
-    for (const countryCodeIso3 of countryCodes) {
+    for (const countryCodeIso3 of resolvedCountryCodes) {
       if (clearEvents) {
         await this.eventsService.deleteEventsByCountry(countryCodeIso3);
       }
@@ -85,5 +93,12 @@ export class SeedService {
         await this.alertsService.createAlerts(forecast);
       }
     }
+  }
+
+  private async getSeededMockCountryCodes(): Promise<string[]> {
+    const seededCountries = await this.countriesService.getCountries();
+    return seededCountries
+      .map((country) => country.countryCodeIso3)
+      .filter((code) => SUPPORTED_MOCK_COUNTRIES.includes(code));
   }
 }

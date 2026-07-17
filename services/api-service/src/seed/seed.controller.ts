@@ -140,7 +140,7 @@ export class SeedController {
     example: 'MWI',
     description:
       'ISO3 country codes to mock. Provide comma-separated (e.g. MWI,KEN). ' +
-      `If omitted, all supported countries are mocked: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}.`,
+      'If omitted, all seeded countries with mock support are mocked.',
   })
   @ApiQuery({
     name: 'scenario',
@@ -183,16 +183,18 @@ export class SeedController {
     }
 
     const resolvedCountryCodes = countryCodes
-      ? countryCodes.map((code) => code.trim())
-      : SUPPORTED_MOCK_COUNTRIES;
+      ? Array.from(new Set(countryCodes.map((code) => code.trim())))
+      : undefined;
 
-    const unsupported = resolvedCountryCodes.filter(
-      (code) => !SUPPORTED_MOCK_COUNTRIES.includes(code),
-    );
-    if (unsupported.length > 0) {
-      throw new BadRequestException(
-        `Unsupported countries: ${unsupported.join(', ')}. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
+    if (resolvedCountryCodes) {
+      const unsupported = resolvedCountryCodes.filter(
+        (code) => !SUPPORTED_MOCK_COUNTRIES.includes(code),
       );
+      if (unsupported.length > 0) {
+        throw new BadRequestException(
+          `Unsupported countries: ${unsupported.join(', ')}. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
+        );
+      }
     }
 
     const validScenarios = Object.values(MockScenario) as string[];
@@ -216,6 +218,6 @@ export class SeedController {
       issuedAt: issuedAtDate,
     });
 
-    return `Mock scenario applied for: ${resolvedCountryCodes.join(', ')}.`;
+    return `Mock scenario(s) applied`;
   }
 }
