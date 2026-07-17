@@ -1685,13 +1685,12 @@ export function buildMockForecast(
   if (alertsOverride !== undefined) {
     alerts = alertsOverride;
   } else {
-    const builder = MOCK_BUILDERS[countryCodeIso3];
-    if (!builder) {
+    if (!Object.hasOwn(MOCK_BUILDERS, countryCodeIso3)) {
       throw new Error(
         `No mock event configuration for country '${countryCodeIso3}'. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
       );
     }
-    alerts = builder(issuedAt);
+    alerts = MOCK_BUILDERS[countryCodeIso3](issuedAt);
   }
 
   return {
