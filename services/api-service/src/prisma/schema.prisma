@@ -103,7 +103,6 @@ model User {
   salt        String?
   lastLogin   DateTime?
   displayName String
-  role        String @default("guest")
 
   @@index([created])
   @@index([username])
