@@ -18,18 +18,19 @@ const baseUrl =
   '@' +
   process.env.POSTGRES_CONTAINER_NAME +
   ':' +
-  process.env.POSTGRES_PORT +
-  '/';
+  process.env.POSTGRES_PORT;
 
 const schemaName = 'api-service';
-export const DATABASE_URL =
-  `${baseUrl}${postgresDatabaseName}?schema=${schemaName}` +
+const composedUrl =
+  `${baseUrl}/${postgresDatabaseName}?schema=${schemaName}` +
   (IS_DEVELOPMENT ? '' : '&sslmode=verify-full');
+
+export const DATABASE_URL = process.env.DATABASE_URL ?? composedUrl;
 
 // This is needed for diffing the migrations with Prisma
 const shadowDbName = 'ibf-shadow-db';
 const encodedShadowDbName = encodeURIComponent(shadowDbName);
-const SHADOW_DATABASE_URL = `${baseUrl}${encodedShadowDbName}?schema=${schemaName}`;
+const SHADOW_DATABASE_URL = `${baseUrl}/${encodedShadowDbName}?schema=${schemaName}`;
 
 export default {
   schema: './schema.prisma',
