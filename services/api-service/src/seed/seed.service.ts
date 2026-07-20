@@ -1,9 +1,13 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
 
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
+import { CountriesService } from '@api-service/src/countries/countries.service';
 import { EventsService } from '@api-service/src/events/events.service';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
-import { buildMockForecast } from '@api-service/src/seed/seed-data/mock-events.const';
+import {
+  buildMockForecast,
+  SUPPORTED_MOCK_COUNTRIES,
+} from '@api-service/src/seed/seed-data/mock-events.helper';
 import { SeedInit } from '@api-service/src/seed/seed-init';
 
 @Injectable()
@@ -15,6 +19,7 @@ export class SeedService {
   public constructor(
     private readonly seedInit: SeedInit,
     private readonly alertsService: AlertsService,
+    private readonly countriesService: CountriesService,
     private readonly eventsService: EventsService,
   ) {}
 
@@ -57,32 +62,44 @@ export class SeedService {
   }
 
   public async mockEvents({
-    countryCodeIso3,
+    countryCodes,
     scenario,
     clearEvents,
     issuedAt,
   }: {
-    countryCodeIso3: string;
+    countryCodes?: string[];
     scenario: MockScenario;
     clearEvents: boolean;
     issuedAt: Date;
   }): Promise<void> {
+    // if no countryCodes provided, mock 'all', which means 'all currently seeded countries', as we can't mock events for countries that are not seeded yet
+    const resolvedCountryCodes =
+      countryCodes ?? (await this.getSeededCountryCodes());
+
     this.logger.log(
-      `Mock events - Country: ${countryCodeIso3} - Scenario: ${scenario} - Clear: ${String(clearEvents)}`,
+      `Mock events - Countries: ${resolvedCountryCodes.join(', ')} - Scenario: ${scenario} - Clear: ${String(clearEvents)}`,
     );
 
-    if (clearEvents) {
-      await this.eventsService.deleteEventsByCountry(countryCodeIso3);
-    }
+    for (const countryCodeIso3 of resolvedCountryCodes) {
+      if (clearEvents) {
+        await this.eventsService.deleteEventsByCountry(countryCodeIso3);
+      }
 
-    if (scenario === MockScenario.noEvents) {
-      await this.alertsService.createAlerts(
-        buildMockForecast(countryCodeIso3, issuedAt, []),
-      );
-      return;
+      if (scenario === MockScenario.noEvents) {
+        await this.alertsService.createAlerts(
+          buildMockForecast({ countryCodeIso3, issuedAt, alertsOverride: [] }),
+        );
+      } else {
+        const forecast = buildMockForecast({ countryCodeIso3, issuedAt });
+        await this.alertsService.createAlerts(forecast);
+      }
     }
+  }
 
-    const forecast = buildMockForecast(countryCodeIso3, issuedAt);
-    await this.alertsService.createAlerts(forecast);
+  private async getSeededCountryCodes(): Promise<string[]> {
+    const seededCountries = await this.countriesService.getCountries();
+    return seededCountries
+      .map((country) => country.countryCodeIso3)
+      .filter((code) => SUPPORTED_MOCK_COUNTRIES.includes(code));
   }
 }

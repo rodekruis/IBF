@@ -24,7 +24,7 @@ import { IS_PRODUCTION } from '@api-service/src/config';
 import { env } from '@api-service/src/env';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import { SeedService } from '@api-service/src/seed/seed.service';
-import { SUPPORTED_MOCK_COUNTRIES } from '@api-service/src/seed/seed-data/mock-events.const';
+import { SUPPORTED_MOCK_COUNTRIES } from '@api-service/src/seed/seed-data/mock-events.helper';
 
 class SecretDto {
   @ApiProperty({ example: 'fill_in_secret' })
@@ -123,9 +123,10 @@ export class SeedController {
   @Post('/mock')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Generate mock events for a single country.',
+    summary: 'Generate mock events for one, multiple, or all countries.',
     description:
       'Creates mock forecast events, for testing without pipeline data. ' +
+      'Call for one, multiple, or all supported countries. ' +
       'Not available in production.',
   })
   @ApiResponse({
@@ -133,12 +134,13 @@ export class SeedController {
     description: 'Mock scenario applied.',
   })
   @ApiQuery({
-    name: 'countryCodeIso3',
-    required: true,
+    name: 'countryCodes',
+    required: false,
     type: String,
     example: 'MWI',
     description:
-      'A single ISO3 country code to generate mock events for. Supported: ETH, KEN, MWI, PHL, SSD, UGA, ZMB.',
+      'ISO3 country codes to mock. Provide comma-separated (e.g. MWI,KEN). ' +
+      'If omitted, all seeded countries with mock support are mocked.',
   })
   @ApiQuery({
     name: 'scenario',
@@ -153,7 +155,7 @@ export class SeedController {
     enum: ['true', 'false'],
     schema: { default: 'false' },
     description:
-      'If true, clear existing events for the given country before creating new ones.',
+      'If true, clear existing events for the given countries before creating new ones.',
   })
   @ApiQuery({
     name: 'issuedAt',
@@ -163,7 +165,11 @@ export class SeedController {
   })
   public async mockEvents(
     @Body() body: SecretDto,
-    @Query('countryCodeIso3') countryCodeIso3: string,
+    @Query(
+      'countryCodes',
+      new ParseArrayPipe({ items: String, optional: true }),
+    )
+    countryCodes: string[] | undefined,
     @Query('scenario') scenario: string,
     @Query('clearEvents', new ParseBoolPipe({ optional: true }))
     clearEvents: boolean,
@@ -176,10 +182,19 @@ export class SeedController {
       throw new ForbiddenException('Not allowed');
     }
 
-    if (!SUPPORTED_MOCK_COUNTRIES.includes(countryCodeIso3)) {
-      throw new BadRequestException(
-        `Unsupported country '${countryCodeIso3}'. Supported (single country only): ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
+    const resolvedCountryCodes = countryCodes
+      ? Array.from(new Set(countryCodes.map((code) => code.trim())))
+      : undefined;
+
+    if (resolvedCountryCodes) {
+      const unsupported = resolvedCountryCodes.filter(
+        (code) => !SUPPORTED_MOCK_COUNTRIES.includes(code),
       );
+      if (unsupported.length > 0) {
+        throw new BadRequestException(
+          `Unsupported countries: ${unsupported.join(', ')}. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
+        );
+      }
     }
 
     const validScenarios = Object.values(MockScenario) as string[];
@@ -197,12 +212,12 @@ export class SeedController {
     }
 
     await this.seedService.mockEvents({
-      countryCodeIso3,
+      countryCodes: resolvedCountryCodes,
       scenario: scenario as MockScenario,
       clearEvents: clearEvents ?? false,
       issuedAt: issuedAtDate,
     });
 
-    return 'Mock scenario applied.';
+    return `Mock scenario(s) applied`;
   }
 }

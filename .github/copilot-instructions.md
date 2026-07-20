@@ -6,7 +6,7 @@ IBF is a web app to visualize hazard forecasts. This repository contains:
 
 - `services/api-service/` — NestJS backend API (TypeScript, Prisma, PostgreSQL)
 - `data/` — Python code for both hazard forecast pipelines and data management scripts
-- `portal/nrw-standalone/` — React frontend wrapper around the IFRC Go NRW submodule (not edited from this repo — changes go to the `go-web-app` submodule repo)
+- `portal/nrw-standalone/` — React frontend wrapper around the IFRC Go NRW submodule
 
 ---
 
@@ -137,6 +137,9 @@ export class AlertCreateDto {
 - ORM: Prisma with PostgreSQL
 - Always include `"api-service"` schema in raw SQL queries
 - Use Prisma migrations for schema changes; keep migrations minimal and focused
+- Migrations should assume a production database with existing data
+  - Consider the prisma schema in the main branch as the production schema
+  - Modify generated migration files with statements to transform existing data to the new schema
 
 ### Exception Handling
 
@@ -206,7 +209,6 @@ uv run python python-knip.py                        # linting (ruff, deptry, vul
 Location: `portal/nrw-standalone/`
 
 - Wrapper around the IFRC Go NRW code (sparsely checked-out git submodule at `portal/nrw-standalone/src/go-web-app`)
-- Never edit inside the submodule — keep changes outside it, or offer submodule changes only as a suggestion for the `go-web-app` repo
 - Uses React 19, Vite, pnpm, Tailwind CSS
 
 ---

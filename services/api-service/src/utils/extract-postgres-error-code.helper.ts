@@ -7,7 +7,6 @@ export function extractPostgresErrorCode(
   error: PrismaRawQueryError,
 ): string | undefined {
   const meta = error.meta as
-    | { driverAdapterError?: { cause?: { originalCode?: string } } }
-    | undefined;
+    { driverAdapterError?: { cause?: { originalCode?: string } } } | undefined;
   return meta?.driverAdapterError?.cause?.originalCode;
 }

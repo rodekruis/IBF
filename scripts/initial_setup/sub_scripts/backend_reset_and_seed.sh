@@ -70,7 +70,7 @@ echo "✅ Reset completed"
 print_header "Creating mock events"
 
 curl --silent --show-error --fail -X 'POST' \
-  'http://localhost:4000/api/mock?countryCodeIso3=MWI&scenario=events' \
+  'http://localhost:4000/api/mock?countryCodes=MWI&scenario=events' \
   -H 'Content-Type: application/json' \
   -d "{\"secret\": \"${RESET_SECRET}\"}" \
   > /dev/null

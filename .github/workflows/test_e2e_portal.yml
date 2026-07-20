@@ -116,14 +116,19 @@ jobs:
         run: |
           npm run start:services:ci:production
 
+      - name: Run database migrations
+        working-directory: ./services
+        run: |
+          docker compose exec api-service npm run prisma:migrate:deploy
+
       - name: Set up the frontend (submodule + dependencies)
         run: |
           npm run setup:frontend
 
       - name: Verify frontend submodule checkout
         run: |
-          test -f ${{ env.frontendPath }}/src/go-web-app/app/src/components/NrwMap/index.tsx \
-            || (echo "go-web-app submodule sparse-checkout is missing NrwMap; aborting." && exit 1)
+          test -f ${{ env.frontendPath }}/src/go-web-app/app/src/components/Nrw/index.tsx \
+            || (echo "go-web-app submodule sparse-checkout is missing Nrw; aborting." && exit 1)
 
       - name: Run the frontend
         run: |

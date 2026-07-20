@@ -275,19 +275,17 @@ export class SeedInit {
     ];
 
     await this.alertConfigsService.createAlertConfigs(
-      allConfigs.map(
-        (config): AlertConfigCreateDto => ({
-          countryCodeIso3: config.countryCodeIso3,
-          hazardType: config.hazardType as HazardType,
-          spatialExtentName: config.spatialExtentName,
-          spatialExtentPlaceCodes: config.spatialExtentPlaceCodes,
-          temporalExtents: config.temporalExtents,
-          severityClassLevels: config.severityClassLevels,
-          probabilityClassLevels: config.probabilityClassLevels,
-          triggerAlertClass: config.triggerAlertClass,
-          triggerLeadTimeDuration: config.triggerLeadTimeDuration,
-        }),
-      ),
+      allConfigs.map((config): AlertConfigCreateDto => ({
+        countryCodeIso3: config.countryCodeIso3,
+        hazardType: config.hazardType as HazardType,
+        spatialExtentName: config.spatialExtentName,
+        spatialExtentPlaceCodes: config.spatialExtentPlaceCodes,
+        temporalExtents: config.temporalExtents,
+        severityClassLevels: config.severityClassLevels,
+        probabilityClassLevels: config.probabilityClassLevels,
+        triggerAlertClass: config.triggerAlertClass,
+        triggerLeadTimeDuration: config.triggerLeadTimeDuration,
+      })),
     );
     this.logger.log(`Seeded ${allConfigs.length} alert configs`);
   }

@@ -8,6 +8,9 @@ inputs:
   servicePath:
     description: Location of the service code.
     required: true
+  databaseUrl:
+    description: Database connection string.
+    required: true
 
 outputs:
   build_version:
@@ -30,6 +33,13 @@ runs:
       working-directory: ${{ inputs.servicePath }}
       run: |
         npm ci
+
+    - name: Run database migrations
+      shell: bash
+      working-directory: ${{ inputs.servicePath }}
+      run: npm run prisma:migrate:deploy
+      env:
+        DATABASE_URL: ${{ inputs.databaseUrl }}
 
     - name: Generate Prisma
       shell: bash

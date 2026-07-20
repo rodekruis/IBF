@@ -99,7 +99,12 @@ jobs:
         working-directory: .
         run: npm run start:services:ci
 
-      - name: Reset database to UGA and PHL for tests
+      - name: Run database migrations
+        working-directory: ./services
+        run: |
+          docker compose exec api-service npm run prisma:migrate:deploy
+
+      - name: Reset database to UGA for tests
         run: |
           curl --fail --silent --show-error \
             --request POST \
