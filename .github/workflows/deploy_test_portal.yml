@@ -7,6 +7,8 @@ env:
 
 permissions:
   actions: read
+  deployments: write
+  id-token: write
   # Disabling this to avoid spamming the PR with "Your stage site is ready!" comments
   # https://github.com/Azure/static-web-apps/issues/1135#issuecomment-1750066331
   # pull-requests: write
@@ -14,7 +16,12 @@ permissions:
 on:
   workflow_call:
     secrets:
-      AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
       APP_MAPBOX_ACCESS_TOKEN:
         required: true
       FONTAWESOME_NPM_AUTH_TOKEN:
@@ -66,6 +73,29 @@ jobs:
         with:
           frontendPath: ${{ env.workingDirectory }}
 
+      - name: 'Azure Login: 510 - Anticipatory Action'
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get api key for Azure Static Web App
+        id: get-api-key
+        uses: azure/cli@v3
+        with:
+          azcliversion: latest
+          inlineScript: |
+            apiKey=$(az staticwebapp secrets list --name nrw-portal-test --query "properties.apiKey" -o tsv)
+            if [ -z "$apiKey" ]; then
+              echo "Failed to retrieve Azure Static Web App API key" >&2
+              exit 1
+            fi
+
+            # Mask token to prevent accidental log exposure.
+            echo "::add-mask::$apiKey"
+            echo "API_KEY=$apiKey" >> "$GITHUB_OUTPUT"
+
       # More information on Static Web App workflow configurations,
       # See: https://aka.ms/swaworkflowconfig
       - name: Deploy to Azure Static Web App
@@ -74,7 +104,7 @@ jobs:
         env:
           SKIP_DEPLOY_ON_MISSING_SECRETS: true
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL }}
+          azure_static_web_apps_api_token: ${{ steps.get-api-key.outputs.API_KEY }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
           config_file_location: '${{ env.workingDirectory }}/dist'
@@ -110,11 +140,34 @@ jobs:
     name: Close Pull Request Job
     environment: 'test'
     steps:
+      - name: 'Azure Login: 510 - Anticipatory Action'
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get api key for Azure Static Web App
+        id: get-api-key
+        uses: azure/cli@v3
+        with:
+          azcliversion: latest
+          inlineScript: |
+            apiKey=$(az staticwebapp secrets list --name nrw-portal-test --query "properties.apiKey" -o tsv)
+            if [ -z "$apiKey" ]; then
+              echo "Failed to retrieve Azure Static Web App API key" >&2
+              exit 1
+            fi
+
+            # Mask token to prevent accidental log exposure.
+            echo "::add-mask::$apiKey"
+            echo "API_KEY=$apiKey" >> "$GITHUB_OUTPUT"
+
       - name: 'Close Pull Request: Deploy to Azure Static Web App'
         uses: Azure/static-web-apps-deploy@v1
         env:
           SKIP_DEPLOY_ON_MISSING_SECRETS: true
         with:
           app_location: '${{ env.workingDirectory }}/dist'
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL }}
+          azure_static_web_apps_api_token: ${{ steps.get-api-key.outputs.API_KEY }}
           action: 'close'

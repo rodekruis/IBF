@@ -4,18 +4,27 @@
 name: 'Deploy [test] api-service'
 
 env:
-  AZURE_WEBAPP_NAME: 'IBF-test'
+  AZURE_WEBAPP_NAME: 'nrw-test'
   AZURE_WEBAPP_PACKAGE_PATH: services/api-service
 
 defaults:
   run:
     working-directory: services/api-service
 
-permissions:
-  actions: read
 
+permissions:
+  contents: read
+  deployments: write
+  id-token: write
 on:
   workflow_call:
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
   workflow_dispatch:
   push:
     branches:
@@ -43,12 +52,18 @@ jobs:
           servicePath: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
           databaseUrl: ${{ secrets.DATABASE_URL }}
 
+      - name: 'Azure Login: 510 - Anticipatory Action'
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Deploy to Azure App Service
         id: deploy_to_aas
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/artifact.zip'
           type: zip
           clean: true
