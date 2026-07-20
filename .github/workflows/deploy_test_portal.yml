@@ -97,7 +97,7 @@ jobs:
         env:
           SKIP_DEPLOY_ON_MISSING_SECRETS: true
         with:
-          azure_static_web_apps_api_token: ${{ steps.get-api-key.outputs.API_KEY }}
+          azure_static_web_apps_api_token: ${{ steps.get-api-key.outputs.apiKey }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
           config_file_location: '${{ env.workingDirectory }}/dist'
@@ -156,5 +156,5 @@ jobs:
           SKIP_DEPLOY_ON_MISSING_SECRETS: true
         with:
           app_location: '${{ env.workingDirectory }}/dist'
-          azure_static_web_apps_api_token: ${{ steps.get-api-key.outputs.API_KEY }}
+          azure_static_web_apps_api_token: ${{ steps.get-api-key.outputs.apiKey }}
           action: 'close'
