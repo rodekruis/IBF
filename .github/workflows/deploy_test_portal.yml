@@ -80,30 +80,14 @@ jobs:
         with:
           frontendPath: ${{ env.workingDirectory }}
 
-      - name: 'Azure Login: 510 - Anticipatory Action'
-        if: ${{ env.AZURE_CLIENT_ID != '' && env.AZURE_TENANT_ID != '' && env.AZURE_SUBSCRIPTION_ID != '' }}
-        uses: azure/login@v3
-        with:
-          client-id: ${{ env.AZURE_CLIENT_ID }}
-          tenant-id: ${{ env.AZURE_TENANT_ID }}
-          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Get api key for Azure Static Web App
+      - name: Get API key for Azure Static Web App
         id: get-api-key
-        if: ${{ env.AZURE_CLIENT_ID != '' && env.AZURE_TENANT_ID != '' && env.AZURE_SUBSCRIPTION_ID != '' }}
-        uses: azure/cli@v3
+        uses: ./.github/actions/get-swa-api-key
         with:
-          azcliversion: 2.88.0
-          inlineScript: |
-            apiKey=$(az staticwebapp secrets list --name nrw-portal-test --query "properties.apiKey" -o tsv)
-            if [ -z "$apiKey" ]; then
-              echo "Failed to retrieve Azure Static Web App API key" >&2
-              exit 1
-            fi
-
-            # Mask token to prevent accidental log exposure.
-            echo "::add-mask::$apiKey"
-            echo "API_KEY=$apiKey" >> "$GITHUB_OUTPUT"
+          azureClientId: ${{ env.AZURE_CLIENT_ID }}
+          azureTenantId: ${{ env.AZURE_TENANT_ID }}
+          azureSubscriptionId: ${{ env.AZURE_SUBSCRIPTION_ID }}
+          staticWebAppName: nrw-portal-test
 
       # More information on Static Web App workflow configurations,
       # See: https://aka.ms/swaworkflowconfig
@@ -153,30 +137,18 @@ jobs:
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
     steps:
-      - name: 'Azure Login: 510 - Anticipatory Action'
-        if: ${{ env.AZURE_CLIENT_ID != '' && env.AZURE_TENANT_ID != '' && env.AZURE_SUBSCRIPTION_ID != '' }}
-        uses: azure/login@v3
+      - uses: actions/checkout@v7
         with:
-          client-id: ${{ env.AZURE_CLIENT_ID }}
-          tenant-id: ${{ env.AZURE_TENANT_ID }}
-          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+          fetch-depth: 0
 
-      - name: Get api key for Azure Static Web App
+      - name: Get API key for Azure Static Web App
         id: get-api-key
-        if: ${{ env.AZURE_CLIENT_ID != '' && env.AZURE_TENANT_ID != '' && env.AZURE_SUBSCRIPTION_ID != '' }}
-        uses: azure/cli@v3
+        uses: ./.github/actions/get-swa-api-key
         with:
-          azcliversion: 2.88.0
-          inlineScript: |
-            apiKey=$(az staticwebapp secrets list --name nrw-portal-test --query "properties.apiKey" -o tsv)
-            if [ -z "$apiKey" ]; then
-              echo "Failed to retrieve Azure Static Web App API key" >&2
-              exit 1
-            fi
-
-            # Mask token to prevent accidental log exposure.
-            echo "::add-mask::$apiKey"
-            echo "API_KEY=$apiKey" >> "$GITHUB_OUTPUT"
+          azureClientId: ${{ env.AZURE_CLIENT_ID }}
+          azureTenantId: ${{ env.AZURE_TENANT_ID }}
+          azureSubscriptionId: ${{ env.AZURE_SUBSCRIPTION_ID }}
+          staticWebAppName: nrw-portal-test
 
       - name: 'Close Pull Request: Deploy to Azure Static Web App'
         uses: Azure/static-web-apps-deploy@v1
