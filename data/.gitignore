@@ -55,3 +55,6 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+
+# Temp location for tropical cyclone data. Can be removed after all data is being fetched from api and/or seed-repo instead.
+pipelines/tropical_cyclone/bronze/
