@@ -18,7 +18,7 @@
 
 - `pipelines/infra/` owns all infrastructure concerns: data loading/cleanup, configuration, submission, resource lifecycle
 - `pipelines/<hazard-type>/forecast.py` contains only hazard-specific logic (data science, alert determination, exposure calculation)
-- Never put infrastructure concerns in `forecast.py`
+- Try to stay away from changing `forecast.py` or other hazard-logic files, when working on generic/infra changes, unless the alternative is much worse.
 
 ## Testing
 
