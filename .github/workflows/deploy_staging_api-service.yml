@@ -25,6 +25,8 @@ on:
         required: true
       AZURE_SUBSCRIPTION_ID:
         required: true
+      DATABASE_URL:
+        required: true
   workflow_dispatch:
 
 jobs:
