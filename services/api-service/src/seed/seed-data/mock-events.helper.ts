@@ -1676,11 +1676,15 @@ function buildZambiaAlerts(issuedAt: Date): AlertCreateDto[] {
   ];
 }
 
-export function buildMockForecast(
-  countryCodeIso3: string,
-  issuedAt: Date,
-  alertsOverride?: AlertCreateDto[],
-): ForecastCreateDto {
+export function buildMockForecast({
+  countryCodeIso3,
+  issuedAt,
+  alertsOverride,
+}: {
+  countryCodeIso3: string;
+  issuedAt: Date;
+  alertsOverride?: AlertCreateDto[];
+}): ForecastCreateDto {
   let alerts: AlertCreateDto[];
   if (alertsOverride !== undefined) {
     alerts = alertsOverride;

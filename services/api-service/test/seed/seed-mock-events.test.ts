@@ -9,8 +9,8 @@ import {
   resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
-const COUNTRY_CODE_ISO3 = 'MWI';
-const SECOND_COUNTRY_CODE_ISO3 = 'UGA';
+const COUNTRY_1 = 'MWI';
+const COUNTRY_2 = 'UGA';
 
 function mockEvents(params: {
   countryCodes?: string[];
@@ -40,20 +40,20 @@ describe('POST /mock', () => {
 
   describe('single country', () => {
     beforeAll(async () => {
-      await resetDB([COUNTRY_CODE_ISO3], __filename);
+      await resetDB([COUNTRY_1], __filename);
       accessToken = await getAccessToken();
     });
 
     beforeEach(async () => {
       await mockEvents({
-        countryCodes: [COUNTRY_CODE_ISO3],
+        countryCodes: [COUNTRY_1],
         scenario: MockScenario.events,
         clearEvents: true,
       });
     });
 
     it('should create events for the country', async () => {
-      const response = await readEvents(accessToken, COUNTRY_CODE_ISO3, {
+      const response = await readEvents(accessToken, COUNTRY_1, {
         active: true,
       });
 
@@ -61,17 +61,17 @@ describe('POST /mock', () => {
       expect(response.body.length).toBeGreaterThan(0);
 
       for (const event of response.body) {
-        expect(event.countryCodeIso3).toBe(COUNTRY_CODE_ISO3);
+        expect(event.countryCodeIso3).toBe(COUNTRY_1);
       }
     });
 
     it('should close all events when scenario is no-events', async () => {
       await mockEvents({
-        countryCodes: [COUNTRY_CODE_ISO3],
+        countryCodes: [COUNTRY_1],
         scenario: MockScenario.noEvents,
       });
 
-      const response = await readEvents(accessToken, COUNTRY_CODE_ISO3, {
+      const response = await readEvents(accessToken, COUNTRY_1, {
         active: true,
       });
 
@@ -81,17 +81,17 @@ describe('POST /mock', () => {
 
     it('should remove existing events when clearEvents is true', async () => {
       await mockEvents({
-        countryCodes: [COUNTRY_CODE_ISO3],
+        countryCodes: [COUNTRY_1],
         scenario: MockScenario.events,
       });
 
       await mockEvents({
-        countryCodes: [COUNTRY_CODE_ISO3],
+        countryCodes: [COUNTRY_1],
         scenario: MockScenario.events,
         clearEvents: true,
       });
 
-      const response = await readEvents(accessToken, COUNTRY_CODE_ISO3, {
+      const response = await readEvents(accessToken, COUNTRY_1, {
         active: true,
       });
 
@@ -103,13 +103,13 @@ describe('POST /mock', () => {
       const pastDate = '2026-01-15T00:00:00.000Z';
 
       await mockEvents({
-        countryCodes: [COUNTRY_CODE_ISO3],
+        countryCodes: [COUNTRY_1],
         scenario: MockScenario.events,
         clearEvents: true,
         issuedAt: pastDate,
       });
 
-      const response = await readEvents(accessToken, COUNTRY_CODE_ISO3);
+      const response = await readEvents(accessToken, COUNTRY_1);
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.length).toBeGreaterThan(0);
@@ -129,7 +129,7 @@ describe('POST /mock', () => {
       const response = await getServer()
         .post('/mock')
         .query({
-          countryCodes: COUNTRY_CODE_ISO3,
+          countryCodes: COUNTRY_1,
           scenario: MockScenario.events,
         })
         .send({ secret: 'wrong' });
@@ -140,91 +140,79 @@ describe('POST /mock', () => {
 
   describe('multiple countries', () => {
     beforeAll(async () => {
-      await resetDB([COUNTRY_CODE_ISO3, SECOND_COUNTRY_CODE_ISO3], __filename);
+      await resetDB([COUNTRY_1, COUNTRY_2], __filename);
       accessToken = await getAccessToken();
     });
 
     it('should create events for multiple countries in one call', async () => {
       await mockEvents({
-        countryCodes: [COUNTRY_CODE_ISO3, SECOND_COUNTRY_CODE_ISO3],
+        countryCodes: [COUNTRY_1, COUNTRY_2],
         scenario: MockScenario.events,
         clearEvents: true,
       });
 
-      const mwiResponse = await readEvents(accessToken, COUNTRY_CODE_ISO3, {
+      const country1Response = await readEvents(accessToken, COUNTRY_1, {
         active: true,
       });
-      const ugaResponse = await readEvents(
-        accessToken,
-        SECOND_COUNTRY_CODE_ISO3,
-        {
-          active: true,
-        },
-      );
+      const country2Response = await readEvents(accessToken, COUNTRY_2, {
+        active: true,
+      });
 
-      expect(mwiResponse.status).toBe(HttpStatus.OK);
-      expect(mwiResponse.body.length).toBeGreaterThan(0);
-      expect(ugaResponse.status).toBe(HttpStatus.OK);
-      expect(ugaResponse.body.length).toBeGreaterThan(0);
+      expect(country1Response.status).toBe(HttpStatus.OK);
+      expect(country1Response.body.length).toBeGreaterThan(0);
+      expect(country2Response.status).toBe(HttpStatus.OK);
+      expect(country2Response.body.length).toBeGreaterThan(0);
     });
 
     it('should clear events for multiple countries in one call', async () => {
       await mockEvents({
-        countryCodes: [COUNTRY_CODE_ISO3, SECOND_COUNTRY_CODE_ISO3],
+        countryCodes: [COUNTRY_1, COUNTRY_2],
         scenario: MockScenario.events,
       });
 
       await mockEvents({
-        countryCodes: [COUNTRY_CODE_ISO3, SECOND_COUNTRY_CODE_ISO3],
+        countryCodes: [COUNTRY_1, COUNTRY_2],
         scenario: MockScenario.noEvents,
       });
 
-      const mwiResponse = await readEvents(accessToken, COUNTRY_CODE_ISO3, {
+      const country1Response = await readEvents(accessToken, COUNTRY_1, {
         active: true,
       });
-      const ugaResponse = await readEvents(
-        accessToken,
-        SECOND_COUNTRY_CODE_ISO3,
-        {
-          active: true,
-        },
-      );
+      const country2Response = await readEvents(accessToken, COUNTRY_2, {
+        active: true,
+      });
 
-      expect(mwiResponse.status).toBe(HttpStatus.OK);
-      expect(mwiResponse.body).toHaveLength(0);
-      expect(ugaResponse.status).toBe(HttpStatus.OK);
-      expect(ugaResponse.body).toHaveLength(0);
+      expect(country1Response.status).toBe(HttpStatus.OK);
+      expect(country1Response.body).toHaveLength(0);
+      expect(country2Response.status).toBe(HttpStatus.OK);
+      expect(country2Response.body).toHaveLength(0);
     });
 
     it('should not affect other countries', async () => {
-      // mock events for another country (UGA)
+      // mock events for country 2
       await mockEvents({
-        countryCodes: [SECOND_COUNTRY_CODE_ISO3],
+        countryCodes: [COUNTRY_2],
         scenario: MockScenario.events,
       });
 
-      // clear events for MWI, which should then not clear UGA
+      // clear events for country 1, which should not clear country 2
       await mockEvents({
-        countryCodes: [COUNTRY_CODE_ISO3],
+        countryCodes: [COUNTRY_1],
         scenario: MockScenario.events,
         clearEvents: true,
       });
 
-      const ugaResponse = await readEvents(
-        accessToken,
-        SECOND_COUNTRY_CODE_ISO3,
-        {
-          active: true,
-        },
-      );
+      const country2Response = await readEvents(accessToken, COUNTRY_2, {
+        active: true,
+      });
 
-      expect(ugaResponse.status).toBe(HttpStatus.OK);
-      expect(ugaResponse.body.length).toBeGreaterThan(0);
+      expect(country2Response.status).toBe(HttpStatus.OK);
+      expect(country2Response.body.length).toBeGreaterThan(0);
     });
 
     it('should return 400 if any country code is unsupported', async () => {
       const response = await mockEvents({
-        countryCodes: [COUNTRY_CODE_ISO3, 'XXX'],
+        countryCodes: [COUNTRY_1, 'XXX'],
         scenario: MockScenario.events,
       });
 
@@ -239,17 +227,15 @@ describe('POST /mock', () => {
 
       expect(response.status).toBe(HttpStatus.OK);
 
-      const mwiResponse = await readEvents(accessToken, COUNTRY_CODE_ISO3, {
+      const country1Response = await readEvents(accessToken, COUNTRY_1, {
         active: true,
       });
-      const ugaResponse = await readEvents(
-        accessToken,
-        SECOND_COUNTRY_CODE_ISO3,
-        { active: true },
-      );
+      const country2Response = await readEvents(accessToken, COUNTRY_2, {
+        active: true,
+      });
 
-      expect(mwiResponse.body.length).toBeGreaterThan(0);
-      expect(ugaResponse.body.length).toBeGreaterThan(0);
+      expect(country1Response.body.length).toBeGreaterThan(0);
+      expect(country2Response.body.length).toBeGreaterThan(0);
     });
   });
 });

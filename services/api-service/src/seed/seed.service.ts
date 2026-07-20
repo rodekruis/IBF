@@ -7,7 +7,7 @@ import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import {
   buildMockForecast,
   SUPPORTED_MOCK_COUNTRIES,
-} from '@api-service/src/seed/seed-data/mock-events.const';
+} from '@api-service/src/seed/seed-data/mock-events.helper';
 import { SeedInit } from '@api-service/src/seed/seed-init';
 
 @Injectable()
@@ -72,8 +72,9 @@ export class SeedService {
     clearEvents: boolean;
     issuedAt: Date;
   }): Promise<void> {
+    // if no countryCodes provided, mock 'all', which means 'all currently seeded countries', as we can't mock events for countries that are not seeded yet
     const resolvedCountryCodes =
-      countryCodes ?? (await this.getSeededMockCountryCodes());
+      countryCodes ?? (await this.getSeededCountryCodes());
 
     this.logger.log(
       `Mock events - Countries: ${resolvedCountryCodes.join(', ')} - Scenario: ${scenario} - Clear: ${String(clearEvents)}`,
@@ -86,16 +87,16 @@ export class SeedService {
 
       if (scenario === MockScenario.noEvents) {
         await this.alertsService.createAlerts(
-          buildMockForecast(countryCodeIso3, issuedAt, []),
+          buildMockForecast({ countryCodeIso3, issuedAt, alertsOverride: [] }),
         );
       } else {
-        const forecast = buildMockForecast(countryCodeIso3, issuedAt);
+        const forecast = buildMockForecast({ countryCodeIso3, issuedAt });
         await this.alertsService.createAlerts(forecast);
       }
     }
   }
 
-  private async getSeededMockCountryCodes(): Promise<string[]> {
+  private async getSeededCountryCodes(): Promise<string[]> {
     const seededCountries = await this.countriesService.getCountries();
     return seededCountries
       .map((country) => country.countryCodeIso3)
