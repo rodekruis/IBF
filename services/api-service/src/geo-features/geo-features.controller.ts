@@ -48,9 +48,9 @@ export class GeoFeaturesController {
     return this.geoFeaturesService.getGeoFeatures(query);
   }
 
+  @Post()
   @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
-  @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create one or more geo-features' })
   @ApiResponse({
@@ -73,9 +73,9 @@ export class GeoFeaturesController {
     await this.geoFeaturesService.createGeoFeatures(dtos);
   }
 
+  @Patch(':id')
   @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
-  @Patch(':id')
   @ApiOperation({ summary: 'Update a geo-feature' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -96,9 +96,9 @@ export class GeoFeaturesController {
     );
   }
 
+  @Delete(':id')
   @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
-  @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a geo-feature' })
   @ApiResponse({

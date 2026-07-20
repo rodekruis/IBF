@@ -48,8 +48,8 @@ export class AdminAreasController {
     return this.adminAreasService.getAdminAreas(query);
   }
 
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create one or more admin areas.',
@@ -73,8 +73,8 @@ export class AdminAreasController {
     await this.adminAreasService.createAdminAreas(dtos);
   }
 
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Patch(':placeCode')
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @ApiOperation({
     summary: 'Update an admin area',
   })
@@ -101,8 +101,8 @@ export class AdminAreasController {
     );
   }
 
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':placeCode')
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete an admin area',

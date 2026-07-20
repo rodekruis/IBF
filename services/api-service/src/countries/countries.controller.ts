@@ -26,8 +26,8 @@ import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-us
 export class CountriesController {
   public constructor(private readonly countriesService: CountriesService) {}
 
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get()
+  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @ApiOperation({ summary: 'Get all countries' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -38,8 +38,8 @@ export class CountriesController {
     return this.countriesService.getCountries();
   }
 
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get(':countryCodeIso3')
+  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @ApiOperation({ summary: 'Get country by ISO3 code' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -56,8 +56,8 @@ export class CountriesController {
     return this.countriesService.getCountryOrThrow(countryCodeIso3);
   }
 
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @ApiOperation({ summary: 'Create one or more countries' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -75,8 +75,8 @@ export class CountriesController {
     return this.countriesService.createCountries(dtos);
   }
 
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Patch(':countryCodeIso3')
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @ApiOperation({ summary: 'Update a country' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -97,8 +97,8 @@ export class CountriesController {
     );
   }
 
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':countryCodeIso3')
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a country' })
   @ApiResponse({
