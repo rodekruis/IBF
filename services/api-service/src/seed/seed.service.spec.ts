@@ -19,9 +19,15 @@ describe('SeedService', () => {
 
     const seedInit = { run: seedInitRunMock } as never;
     const alertsService = {} as never;
+    const countriesService = {} as never;
     const eventsService = {} as never;
 
-    service = new SeedService(seedInit, alertsService, eventsService);
+    service = new SeedService(
+      seedInit,
+      alertsService,
+      countriesService,
+      eventsService,
+    );
   });
 
   describe('startReset', () => {
