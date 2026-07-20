@@ -1,6 +1,7 @@
 import numpy as np
 from rasterio.transform import Affine
 
+from pipelines.constants import DEFAULT_CRS
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.infra.utils.exposure import (
     _crop_to_hazard_bounds,
@@ -19,12 +20,12 @@ class TestCropToHazardBounds:
         hazard_raster = RasterData(
             array=hazard_array,
             transform=hazard_transform,
-            crs="EPSG:4326",
+            crs=DEFAULT_CRS,
             nodata=-9999.0,
         )
 
-        cropped, cropped_transform = _crop_to_hazard_bounds(
-            pop_array, pop_transform, hazard_raster
+        cropped, _ = _crop_to_hazard_bounds(
+            pop_array, pop_transform, hazard_raster, DEFAULT_CRS
         )
 
         assert cropped.shape[0] <= pop_array.shape[0]
@@ -41,12 +42,12 @@ class TestCropToHazardBounds:
         hazard_raster = RasterData(
             array=hazard_array,
             transform=hazard_transform,
-            crs="EPSG:4326",
+            crs=DEFAULT_CRS,
             nodata=-9999.0,
         )
 
-        cropped, cropped_transform = _crop_to_hazard_bounds(
-            pop_array, pop_transform, hazard_raster
+        cropped, _ = _crop_to_hazard_bounds(
+            pop_array, pop_transform, hazard_raster, DEFAULT_CRS
         )
 
         assert cropped.shape == pop_array.shape
@@ -61,11 +62,13 @@ class TestCropToHazardBounds:
         hazard_raster = RasterData(
             array=hazard_array,
             transform=hazard_transform,
-            crs="EPSG:4326",
+            crs=DEFAULT_CRS,
             nodata=-9999.0,
         )
 
-        cropped, _ = _crop_to_hazard_bounds(pop_array, pop_transform, hazard_raster)
+        cropped, _ = _crop_to_hazard_bounds(
+            pop_array, pop_transform, hazard_raster, DEFAULT_CRS
+        )
 
         assert cropped.shape == pop_array.shape
 
@@ -77,7 +80,7 @@ class TestComputePopulationExposedWithCrop:
         population_raster = RasterData(
             array=pop_array,
             transform=pop_transform,
-            crs="EPSG:4326",
+            crs=DEFAULT_CRS,
             nodata=-9999.0,
         )
 
@@ -87,7 +90,7 @@ class TestComputePopulationExposedWithCrop:
         hazard_raster = RasterData(
             array=hazard_array,
             transform=hazard_transform,
-            crs="EPSG:4326",
+            crs=DEFAULT_CRS,
             nodata=-9999.0,
         )
 
@@ -108,7 +111,7 @@ class TestComputePopulationExposedWithCrop:
         population_raster = RasterData(
             array=pop_array,
             transform=pop_transform,
-            crs="EPSG:4326",
+            crs=DEFAULT_CRS,
             nodata=-9999.0,
         )
 
@@ -117,7 +120,7 @@ class TestComputePopulationExposedWithCrop:
         hazard_raster = RasterData(
             array=hazard_array,
             transform=hazard_transform,
-            crs="EPSG:4326",
+            crs=DEFAULT_CRS,
             nodata=-9999.0,
         )
 
@@ -132,7 +135,7 @@ class TestComputePopulationExposedWithCrop:
         population_raster = RasterData(
             array=pop_array,
             transform=pop_transform,
-            crs="EPSG:4326",
+            crs=DEFAULT_CRS,
             nodata=-9999.0,
         )
 
@@ -141,7 +144,7 @@ class TestComputePopulationExposedWithCrop:
         hazard_raster = RasterData(
             array=hazard_array,
             transform=hazard_transform,
-            crs="EPSG:4326",
+            crs=DEFAULT_CRS,
             nodata=-9999.0,
         )
 

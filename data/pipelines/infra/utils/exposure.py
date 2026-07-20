@@ -73,7 +73,7 @@ def compute_population_exposed(
     pop_crs = population_raster.crs
 
     cropped_pop_array, cropped_pop_transform = _crop_to_hazard_bounds(
-        pop_array, pop_transform, hazard_extent_raster
+        pop_array, pop_transform, hazard_extent_raster, pop_crs
     )
 
     hazard_array_resampled = np.zeros(cropped_pop_array.shape, dtype=np.float32)
@@ -104,12 +104,16 @@ def _crop_to_hazard_bounds(
     pop_array: np.ndarray,
     pop_transform: Affine,
     hazard_extent_raster: RasterData,
+    pop_crs: str,
 ) -> tuple[np.ndarray, Affine]:
     """
     Crop the population array to the bounding box of the hazard extent raster.
     Returns the cropped array and its new transform. Falls back to the full array
     if the window is invalid or empty.
     """
+    if hazard_extent_raster.crs != pop_crs:
+        return pop_array, pop_transform
+
     hazard_t = hazard_extent_raster.transform
     hazard_rows, hazard_cols = hazard_extent_raster.array.shape
     hazard_corners = [
