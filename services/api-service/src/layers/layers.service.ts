@@ -4,7 +4,7 @@ import { LayerCreateDto } from '@api-service/src/layers/dto/layer-create.dto';
 import { LayerReadDto } from '@api-service/src/layers/dto/layer-read.dto';
 import { LayerUpdateDto } from '@api-service/src/layers/dto/layer-update.dto';
 import { LayersRepository } from '@api-service/src/layers/layers.repository';
-import { LayerName } from '@api-service/src/shared-enums';
+import { HazardType, LayerName } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class LayersService {
@@ -12,6 +12,12 @@ export class LayersService {
 
   public async getLayers(): Promise<LayerReadDto[]> {
     return this.layersRepository.getLayers();
+  }
+
+  public async getLayersForHazardTypes(
+    hazardTypes: HazardType[],
+  ): Promise<LayerReadDto[]> {
+    return this.layersRepository.getLayersForHazardTypes(hazardTypes);
   }
 
   public async createLayer(dto: LayerCreateDto): Promise<LayerReadDto> {

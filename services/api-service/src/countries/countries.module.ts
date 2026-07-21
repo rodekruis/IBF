@@ -3,10 +3,11 @@ import { Module } from '@nestjs/common';
 import { CountriesController } from '@api-service/src/countries/countries.controller';
 import { CountriesRepository } from '@api-service/src/countries/countries.repository';
 import { CountriesService } from '@api-service/src/countries/countries.service';
+import { LayersModule } from '@api-service/src/layers/layers.module';
 import { PrismaModule } from '@api-service/src/prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, LayersModule],
   providers: [CountriesService, CountriesRepository],
   controllers: [CountriesController],
   exports: [CountriesService],
