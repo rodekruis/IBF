@@ -9,7 +9,6 @@ import {
   ParseArrayPipe,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -19,10 +18,8 @@ import { CountryReadDto } from '@api-service/src/countries/dto/country-read.dto'
 import { CountryResponseDto } from '@api-service/src/countries/dto/country-response.dto';
 import { CountryUpdateDto } from '@api-service/src/countries/dto/country-update.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
-import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 
 @ApiTags('countries')
-@UseGuards(AuthenticatedUserGuard)
 @Controller('countries')
 export class CountriesController {
   public constructor(private readonly countriesService: CountriesService) {}

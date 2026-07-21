@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
+import { Layer } from '@prisma/client';
 
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
-import { LayerDto } from '@api-service/src/events/dto/layer.dto';
 import {
   EventsRepository,
   ExposedAdminAreaRecord,
 } from '@api-service/src/events/events.repository';
-import { LayerName, LayerType } from '@api-service/src/shared-enums';
+import { EventLayerDto } from '@api-service/src/layers/dto/event-layer.dto';
+import { LayerType } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class EventsService {
@@ -43,7 +44,7 @@ export class EventsService {
     event: Event,
     viewTime: Date,
     exposedAdminAreas: ExposedAdminAreaRecord[],
-    rasters: { id: number; layer: { name: LayerName } }[],
+    rasters: { id: number; layer: Layer }[],
   ): EventResponseDto {
     return {
       eventId: event.id,
@@ -96,19 +97,20 @@ export class EventsService {
   }
 
   private mapAvailableLayers(
-    rasters: { id: number; layer: { name: LayerName } }[],
-  ): LayerDto[] {
-    // TODO: extend with non-raster layers (e.g. RedCrossBranches, Clinics) once available
+    rasters: { id: number; layer: Layer }[],
+  ): EventLayerDto[] {
+    // TODO: evaluate if non-raster layers will come in here. If not, this wrapper can go.
     return [...this.mapRasterLayers(rasters)];
   }
 
   private mapRasterLayers(
-    rasters: { id: number; layer: { name: LayerName } }[],
-  ): LayerDto[] {
+    rasters: { id: number; layer: Layer }[],
+  ): EventLayerDto[] {
     return rasters.map((raster) => ({
       resourceId: String(raster.id),
-      layerName: raster.layer.name,
-      layerType: LayerType.raster,
+      name: raster.layer.name,
+      type: LayerType.raster,
+      label: raster.layer.label,
     }));
   }
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Event, Prisma } from '@prisma/client';
+import { Event, Layer, Prisma } from '@prisma/client';
 
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import {
@@ -255,11 +255,8 @@ export class EventsRepository {
 
   public async getRasterIdsForLatestAlerts(
     eventIds: number[],
-  ): Promise<Map<number, { id: number; layer: { name: LayerName } }[]>> {
-    const result = new Map<
-      number,
-      { id: number; layer: { name: LayerName } }[]
-    >();
+  ): Promise<Map<number, { id: number; layer: Layer }[]>> {
+    const result = new Map<number, { id: number; layer: Layer }[]>();
     if (eventIds.length === 0) {
       return result;
     }
@@ -273,7 +270,7 @@ export class EventsRepository {
         exposureRasterData: {
           select: {
             id: true,
-            layer: { select: { name: true } },
+            layer: true,
           },
         },
       },
