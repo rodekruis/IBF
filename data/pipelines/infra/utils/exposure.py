@@ -8,7 +8,7 @@ from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.utils.nrw_logger import log_warning, LogTag
 from rasterio.enums import Resampling
 from rasterio.features import geometry_mask
-from rasterio.transform import from_bounds
+from rasterio.transform import Affine, from_bounds
 from rasterio.warp import reproject
 from rasterio.windows import from_bounds as window_from_bounds
 from rasterstats import zonal_stats
@@ -73,26 +73,73 @@ def compute_population_exposed(
     pop_transform = population_raster.transform
     pop_crs = population_raster.crs
 
-    hazard_array_resampled = np.zeros(pop_array.shape, dtype=np.float32)
+    cropped_pop_array, cropped_pop_transform = _crop_to_hazard_bounds(
+        pop_array, pop_transform, hazard_extent_raster, pop_crs
+    )
+
+    hazard_array_resampled = np.zeros(cropped_pop_array.shape, dtype=np.float32)
     reproject(
         source=hazard_extent_raster.array.astype(np.float32),
         destination=hazard_array_resampled,
         src_transform=hazard_extent_raster.transform,
         src_crs=hazard_extent_raster.crs,
-        dst_transform=pop_transform,
+        dst_transform=cropped_pop_transform,
         dst_crs=pop_crs,
         resampling=Resampling.nearest,
     )
 
     binary_hazard_extent = (hazard_array_resampled > 0).astype(np.uint8)
-    population_in_hazard_extent = np.where(binary_hazard_extent == 1, pop_array, 0.0)
+    population_in_hazard_extent = np.where(
+        binary_hazard_extent == 1, cropped_pop_array, 0.0
+    )
 
     return RasterData(
         array=population_in_hazard_extent.astype(np.float32),
-        transform=pop_transform,
+        transform=cropped_pop_transform,
         crs=pop_crs,
         nodata=population_raster.nodata,
     )
+
+
+def _crop_to_hazard_bounds(
+    pop_array: np.ndarray,
+    pop_transform: Affine,
+    hazard_extent_raster: RasterData,
+    pop_crs: str,
+) -> tuple[np.ndarray, Affine]:
+    """
+    Crop the population array to the bounding box of the hazard extent raster.
+    Returns the cropped array and its new transform. Falls back to the full array
+    if the window is invalid or empty.
+    """
+    if hazard_extent_raster.crs != pop_crs:
+        return pop_array, pop_transform
+
+    hazard_t = hazard_extent_raster.transform
+    hazard_rows, hazard_cols = hazard_extent_raster.array.shape
+    hazard_corners = [
+        hazard_t * (0, 0),
+        hazard_t * (hazard_cols, 0),
+        hazard_t * (0, hazard_rows),
+        hazard_t * (hazard_cols, hazard_rows),
+    ]
+    min_x = min(c[0] for c in hazard_corners)
+    max_x = max(c[0] for c in hazard_corners)
+    min_y = min(c[1] for c in hazard_corners)
+    max_y = max(c[1] for c in hazard_corners)
+
+    window = window_from_bounds(min_x, min_y, max_x, max_y, pop_transform)
+    row_start = max(int(np.floor(window.row_off)), 0)
+    col_start = max(int(np.floor(window.col_off)), 0)
+    row_end = min(int(np.ceil(window.row_off + window.height)), pop_array.shape[0])
+    col_end = min(int(np.ceil(window.col_off + window.width)), pop_array.shape[1])
+
+    if row_end <= row_start or col_end <= col_start:
+        return pop_array, pop_transform
+
+    cropped = pop_array[row_start:row_end, col_start:col_end]
+    cropped_transform = pop_transform * Affine.translation(col_start, row_start)
+    return cropped, cropped_transform
 
 
 def clip_raster_to_admin_areas(

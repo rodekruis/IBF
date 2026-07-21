@@ -3,8 +3,10 @@
 name: 'Deploy [test] All'
 
 permissions:
+  contents: read
   actions: read
   deployments: write
+  id-token: write
 
 on:
   workflow_call:
@@ -15,13 +17,23 @@ jobs:
     name: 'Build + Deploy: portal'
     uses: ./.github/workflows/deploy_test_portal.yml
     permissions:
+      contents: read # Copy of above
       actions: read # Copy of above
       deployments: write # Copy of above
+      id-token: write # Copy of above
       pull-requests: write # Only required because a PR-related job is defined, it will never run via `workflow_call/dispatch`.
     secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       APP_MAPBOX_ACCESS_TOKEN: ${{ secrets.APP_MAPBOX_ACCESS_TOKEN }}
       FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
 
   deploy_service:
     name: 'Build + Deploy: api-service'
     uses: ./.github/workflows/deploy_test_api-service.yml
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
