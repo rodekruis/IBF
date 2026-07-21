@@ -206,8 +206,6 @@ model AlertExposureGeoFeature {
   alertId      Int
   alert        Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   geoFeatureId String
-  layerId      Int
-  layer        Layer    @relation(fields: [layerId], references: [id])
   attributes   Json
 
   @@index([alertId])
@@ -263,7 +261,6 @@ model Country {
 
   adminAreas       AdminArea[]
   alertConfigs     AlertConfig[]
-  countryLayers    CountryLayer[]
   geoFeatures      GeoFeature[]
   staticRasterData StaticRasterData[]
 }
@@ -318,33 +315,16 @@ model Layer {
   id          Int       @id @default(autoincrement())
   created     DateTime  @default(now())
   updated     DateTime  @updatedAt
-  name        LayerName @unique
+  name        LayerName  @unique
   label       String
   type        LayerType
+  hazardType  HazardType?
   description String?
 
-  countryLayers            CountryLayer[]
   alertExposureAdminAreas  AlertExposureAdminArea[]
-  alertExposureGeoFeatures AlertExposureGeoFeature[]
   alertExposureRasterData  AlertExposureRasterData[]
   staticRasterData         StaticRasterData[]
   geoFeatures              GeoFeature[]
-}
-
-model CountryLayer {
-  @@schema("api-service")
-  @@map("country-layer")
-
-  id              Int       @id @default(autoincrement())
-  created         DateTime  @default(now())
-  updated         DateTime  @updatedAt
-  countryCodeIso3 String
-  country         Country   @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
-  layerId         Int
-  layer           Layer     @relation(fields: [layerId], references: [id])
-
-  @@unique([countryCodeIso3, layerId])
-  @@index([countryCodeIso3])
 }
 
 model AlertConfig {

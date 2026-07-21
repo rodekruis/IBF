@@ -3,6 +3,7 @@
 // See `Updating Shared Enums` in the README for details.
 
 export { EPSG } from './shared/enum/epsg.enum';
+export { LayerLabel } from './shared/enum/layer-label.enum';
 export {
   AlertClass,
   AlertClassificationLevel, // Not all enums are actually used as database column types, yet we still define them all in one place (postgres datamodel) for consistency

@@ -43,7 +43,7 @@ export class EventsService {
     event: Event,
     viewTime: Date,
     exposedAdminAreas: ExposedAdminAreaRecord[],
-    rasters: { id: number; layer: LayerName }[],
+    rasters: { id: number; layer: { name: LayerName } }[],
   ): EventResponseDto {
     return {
       eventId: event.id,
@@ -96,18 +96,18 @@ export class EventsService {
   }
 
   private mapAvailableLayers(
-    rasters: { id: number; layer: LayerName }[],
+    rasters: { id: number; layer: { name: LayerName } }[],
   ): LayerDto[] {
     // TODO: extend with non-raster layers (e.g. RedCrossBranches, Clinics) once available
     return [...this.mapRasterLayers(rasters)];
   }
 
   private mapRasterLayers(
-    rasters: { id: number; layer: LayerName }[],
+    rasters: { id: number; layer: { name: LayerName } }[],
   ): LayerDto[] {
     return rasters.map((raster) => ({
       resourceId: String(raster.id),
-      layerName: raster.layer,
+      layerName: raster.layer.name,
       layerType: LayerType.raster,
     }));
   }

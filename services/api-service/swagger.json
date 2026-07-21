@@ -181,6 +181,33 @@
   },
   {
     "method": "get",
+    "path": "/api/layers",
+    "params": [],
+    "returnType": "LayerReadDto[]"
+  },
+  {
+    "method": "post",
+    "path": "/api/layers",
+    "params": [],
+    "returnType": "LayerReadDto"
+  },
+  {
+    "method": "patch",
+    "path": "/api/layers/{layerName}",
+    "params": [
+      "layerName"
+    ],
+    "returnType": "LayerReadDto"
+  },
+  {
+    "method": "delete",
+    "path": "/api/layers/{layerName}",
+    "params": [
+      "layerName"
+    ]
+  },
+  {
+    "method": "get",
     "path": "/api/rasters/static/{countryCodeIso3}/{layer}",
     "params": [
       "countryCodeIso3",

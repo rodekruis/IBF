@@ -58,7 +58,10 @@ export class CountriesController {
 
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
-  @ApiOperation({ summary: 'Create one or more countries' })
+  @ApiOperation({
+    summary:
+      'Create one or more countries. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Countries created successfully',
@@ -77,7 +80,9 @@ export class CountriesController {
 
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Patch(':countryCodeIso3')
-  @ApiOperation({ summary: 'Update a country' })
+  @ApiOperation({
+    summary: 'Update a country. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Country updated successfully',
@@ -100,7 +105,9 @@ export class CountriesController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':countryCodeIso3')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a country' })
+  @ApiOperation({
+    summary: 'Delete a country. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Country deleted successfully',

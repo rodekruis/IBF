@@ -125,7 +125,7 @@ export class GeoFeaturesRepository {
             return Prisma.sql`(
               ${dto.countryCodeIso3},
               ${dto.featureType},
-              ${dto.layer}::"api-service"."LayerName",
+              (SELECT "id" FROM "api-service"."layer" WHERE "name" = ${dto.layer}::"api-service"."LayerName"),
               ${dto.referenceId},
               public.ST_SetSRID(public.ST_GeomFromGeoJSON(${geojson}), 4326),
               ${attrs}::jsonb,
@@ -134,9 +134,9 @@ export class GeoFeaturesRepository {
           });
           await tx.$executeRaw`
             INSERT INTO "api-service"."geo-feature"
-              ("countryCodeIso3", "featureType", "layer", "referenceId", "geometry", "attributes", "updated")
+              ("countryCodeIso3", "featureType", "layerId", "referenceId", "geometry", "attributes", "updated")
             VALUES ${Prisma.join(values)}
-            ON CONFLICT ("countryCodeIso3", "layer", "referenceId") DO NOTHING`;
+            ON CONFLICT ("countryCodeIso3", "layerId", "referenceId") DO NOTHING`;
         }
       });
     } catch (error) {
