@@ -49,6 +49,19 @@ export class LayersRepository {
     return rows.map((row) => this.toReadDto(row));
   }
 
+  public async getLayersForHazardTypes(
+    hazardTypes: HazardType[],
+  ): Promise<LayerReadDto[]> {
+    const rows = await this.prisma.layer.findMany({
+      where: {
+        OR: [{ hazardType: null }, { hazardType: { in: hazardTypes } }],
+      },
+      select: layerSelect,
+      orderBy: { name: 'asc' },
+    });
+    return rows.map((row) => this.toReadDto(row));
+  }
+
   public async createLayer(dto: LayerCreateDto): Promise<LayerReadDto> {
     const existing = await this.prisma.layer.findUnique({
       where: { name: dto.name },

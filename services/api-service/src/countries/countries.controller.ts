@@ -15,6 +15,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CountriesService } from '@api-service/src/countries/countries.service';
 import { CountryCreateDto } from '@api-service/src/countries/dto/country-create.dto';
+import { CountryReadDto } from '@api-service/src/countries/dto/country-read.dto';
 import { CountryResponseDto } from '@api-service/src/countries/dto/country-response.dto';
 import { CountryUpdateDto } from '@api-service/src/countries/dto/country-update.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
@@ -32,9 +33,9 @@ export class CountriesController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Countries returned successfully',
-    type: [CountryResponseDto],
+    type: [CountryReadDto],
   })
-  public async getCountries(): Promise<CountryResponseDto[]> {
+  public async getCountries(): Promise<CountryReadDto[]> {
     return this.countriesService.getCountries();
   }
 
@@ -44,7 +45,7 @@ export class CountriesController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Country returned successfully',
-    type: CountryResponseDto,
+    type: CountryReadDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -52,7 +53,7 @@ export class CountriesController {
   })
   public async getCountry(
     @Param('countryCodeIso3') countryCodeIso3: string,
-  ): Promise<CountryResponseDto> {
+  ): Promise<CountryReadDto> {
     return this.countriesService.getCountryOrThrow(countryCodeIso3);
   }
 
