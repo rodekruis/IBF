@@ -22,12 +22,10 @@ import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.de
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 
 @ApiTags('countries')
-@UseGuards(AuthenticatedUserGuard)
 @Controller('countries')
 export class CountriesController {
   public constructor(private readonly countriesService: CountriesService) {}
 
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get()
   @ApiOperation({ summary: 'Get all countries' })
   @ApiResponse({
@@ -39,6 +37,7 @@ export class CountriesController {
     return this.countriesService.getCountries();
   }
 
+  @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get(':countryCodeIso3')
   @ApiOperation({ summary: 'Get country by ISO3 code' })
@@ -57,6 +56,7 @@ export class CountriesController {
     return this.countriesService.getCountryOrThrow(countryCodeIso3);
   }
 
+  @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
   @ApiOperation({
@@ -79,6 +79,7 @@ export class CountriesController {
     return this.countriesService.createCountries(dtos);
   }
 
+  @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Patch(':countryCodeIso3')
   @ApiOperation({
@@ -103,6 +104,7 @@ export class CountriesController {
     );
   }
 
+  @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':countryCodeIso3')
   @HttpCode(HttpStatus.NO_CONTENT)
