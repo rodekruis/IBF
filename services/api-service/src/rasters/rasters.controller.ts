@@ -130,7 +130,10 @@ export class RastersController {
   @Put('static')
   @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
-  @ApiOperation({ summary: 'Upload or update a static raster (upsert)' })
+  @ApiOperation({
+    summary:
+      'Upload or update a static raster (upsert). Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Static raster upserted successfully',
@@ -146,7 +149,10 @@ export class RastersController {
   @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a static raster' })
+  @ApiOperation({
+    summary:
+      'Delete a static raster. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Static raster deleted successfully',
