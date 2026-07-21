@@ -38,6 +38,28 @@ This folder contains the tropical-cyclone-specific forecast logic used by the pi
 - **Alert config** (`alert_configs_ibf_api`): spatial extent (national) and temporal extent (a `"lead-time-spectrum"`, e.g. 3-hour steps up to 168 hours) fetched from the IBF API per country.
 - **GEFS wind** (GRIB2, `pgrb2sp25`) and **GEFS track** (ATCF `tctrack`) are not yet wired through `DataProvider`/`DataSource` - `# TODO-infra`. Until a real fetcher exists, `forecast.py` reads local files directly, picking the most recent `gefs.<date>/<hour>` cycle under `tropical_cyclone/bronze/gefs_wind/` and `.../bronze/gefs_track/`. That layout is a local-testing convention only (not committed, not fixed) - free to redesign once the real fetcher is built.
 
+## Running this locally
+
+`tropicalCyclone.yaml` has no `source_target`-tagged data source yet, so `config_reader.py`'s
+source-target gate rejects the config for any run that isn't `--infra-only` (which skips
+`forecast.py` entirely). To run the real hazard logic locally, relax that gate on your machine only
+
+- **do not commit**:
+
+```python
+# data/pipelines/infra/config_reader.py, in _parse_countries
+log_warning(...)   # was log_error
+# success = False   <- drop
+# continue          <- drop
+```
+
+Then `uv run pipeline --config pipelines/infra/configs/tropicalCyclone.yaml --country PHL --mock 1
+--output-mode local` (no `--infra-only`) will run for real. Note this doesn't mock anything else:
+GEFS wind/track still come from whichever `bronze/` cycle is most recent on disk regardless of
+`--mock`, and admin areas/population/alert configs still hit the real API - a running backend with
+PHL seeded is still required. Real fix: a real `DataSource.GEFS_WIND`/`GEFS_TRACK` fetcher (see the
+`# TODO-infra` in `tropicalCyclone.yaml`), which removes the need for this gate/workaround.
+
 ## `forecast.py` flow (read -> output)
 
 1. Load admin areas and alert configs through `DataProvider`. Stop early and record an error if either is missing.
