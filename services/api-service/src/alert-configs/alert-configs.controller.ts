@@ -30,8 +30,8 @@ export class AlertConfigsController {
     private readonly alertConfigsService: AlertConfigsService,
   ) {}
 
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get()
+  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @ApiOperation({
     summary: 'Get alert configs for country and hazard type',
   })
@@ -80,8 +80,8 @@ export class AlertConfigsController {
     return this.alertConfigsService.createAlertConfigs(dtos);
   }
 
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':id')
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete alert config by id' })
   @ApiResponse({

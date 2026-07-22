@@ -26,8 +26,8 @@ import { ValidationPipeOptions } from '@api-service/src/validation-options/valid
 export class AlertsController {
   public constructor(private readonly alertsService: AlertsService) {}
 
-  @AuthenticatedUser()
   @Get()
+  @AuthenticatedUser()
   @ApiOperation({
     summary:
       'Get alerts. This endpoint is not intended for use in pipelines or frontends, only for debugging.',
@@ -41,8 +41,8 @@ export class AlertsController {
     return this.alertsService.getAlerts();
   }
 
-  @AuthenticatedUser()
   @Get(':id')
+  @AuthenticatedUser()
   @ApiOperation({
     summary:
       'Get alert by id. This endpoint is not intended for use in pipelines or frontends, only for debugging.',
@@ -62,8 +62,8 @@ export class AlertsController {
     return this.alertsService.getAlertOrThrow(id);
   }
 
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':id')
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary:
@@ -83,8 +83,8 @@ export class AlertsController {
     await this.alertsService.deleteAlertOrThrow(id);
   }
 
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Post()
+  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @ApiOperation({ summary: 'Create forecast alerts' })
   @ApiBody({ type: ForecastCreateDto })
   @ApiResponse({

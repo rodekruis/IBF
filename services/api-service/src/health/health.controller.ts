@@ -20,8 +20,8 @@ export class HealthController {
     private prisma: PrismaService,
   ) {}
 
-  @ApiOperation({ summary: 'Get health of instance' })
   @Get('health')
+  @ApiOperation({ summary: 'Get health of instance' })
   @HealthCheck()
   public check(): Promise<HealthCheckResult> {
     return this.health.check([
@@ -29,8 +29,8 @@ export class HealthController {
     ]);
   }
 
-  @ApiOperation({ summary: 'Get version of instance' })
   @Get('version')
+  @ApiOperation({ summary: 'Get version of instance' })
   public version(): GetVersionDto {
     const version = APP_VERSION;
 
