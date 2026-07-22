@@ -24,6 +24,7 @@ import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.de
 export class CountriesController {
   public constructor(private readonly countriesService: CountriesService) {}
 
+  // This endpoint is FE-accessed and therefore no-auth for now
   @Get()
   @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @ApiOperation({ summary: 'Get all countries' })

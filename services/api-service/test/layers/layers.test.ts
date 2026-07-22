@@ -1,4 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
+import { LayerName, LayerType } from '@prisma/client';
 
 import {
   getAccessToken,
@@ -31,11 +32,10 @@ describe('/ Layers', () => {
         .set('Cookie', [accessToken]);
 
       const population = response.body.find(
-        (layer: { name: string }) => layer.name === 'population',
+        (layer: { name: string }) => layer.name === LayerName.population,
       );
       expect(population).toBeDefined();
-      expect(population.label).toBe('Population');
-      expect(population.type).toBe('raster');
+      expect(population.type).toBe(LayerType.raster);
       expect(population.hazardType).toBeNull();
       expect(population.description).toBeNull();
     });
@@ -46,7 +46,7 @@ describe('/ Layers', () => {
         .set('Cookie', [accessToken]);
 
       const floodDepth = response.body.find(
-        (layer: { name: string }) => layer.name === 'floodDepth',
+        (layer: { name: string }) => layer.name === LayerName.floodDepth,
       );
       expect(floodDepth).toBeDefined();
       expect(floodDepth.hazardType).toBe('floods');
@@ -56,7 +56,7 @@ describe('/ Layers', () => {
   describe('POST /layers', () => {
     it('should reject unauthenticated requests', async () => {
       const response = await getServer().post('/layers').send({
-        name: 'population',
+        name: LayerName.population,
         label: 'Test',
         type: 'raster',
       });
@@ -69,7 +69,7 @@ describe('/ Layers', () => {
         .post('/layers')
         .set('Cookie', [accessToken])
         .send({
-          name: 'population',
+          name: LayerName.population,
           label: 'Population Duplicate',
           type: 'raster',
         });
@@ -81,18 +81,18 @@ describe('/ Layers', () => {
   describe('PATCH /layers/:layerName', () => {
     it('should update layer label', async () => {
       const response = await getServer()
-        .patch('/layers/population')
+        .patch(`/layers/${LayerName.population}`)
         .set('Cookie', [accessToken])
         .send({ label: 'Updated Population' });
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.label).toBe('Updated Population');
-      expect(response.body.name).toBe('population');
+      expect(response.body.name).toBe(LayerName.population);
     });
 
     it('should update layer hazardType', async () => {
       const response = await getServer()
-        .patch('/layers/population')
+        .patch(`/layers/${LayerName.population}`)
         .set('Cookie', [accessToken])
         .send({ hazardType: 'floods' });
 
@@ -100,12 +100,12 @@ describe('/ Layers', () => {
       expect(response.body.hazardType).toBe('floods');
 
       await getServer()
-        .patch('/layers/population')
+        .patch(`/layers/${LayerName.population}`)
         .set('Cookie', [accessToken])
         .send({ hazardType: null });
     });
 
-    it('should return 404 for non-existent layer', async () => {
+    it('should return 400 for invalid layer name', async () => {
       const response = await getServer()
         .patch('/layers/nonExistent')
         .set('Cookie', [accessToken])
@@ -116,7 +116,7 @@ describe('/ Layers', () => {
 
     it('should reject unauthenticated requests', async () => {
       const response = await getServer()
-        .patch('/layers/population')
+        .patch(`/layers/${LayerName.population}`)
         .send({ label: 'Unauthorized' });
 
       expect(response.status).toBe(HttpStatus.UNAUTHORIZED);

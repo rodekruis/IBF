@@ -5,4 +5,5 @@ graph LR
   AlertsModule-->EventsModule
   CountriesModule-->LayersModule
   EventsModule-->AlertConfigsModule
+  GeoFeaturesModule-->LayersModule
 ```

@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { LayerType } from '@prisma/client';
 
 import {
@@ -56,17 +56,12 @@ export class CountriesService {
   public async getCountryOrThrow(
     countryCodeIso3: string,
   ): Promise<CountryReadDto> {
-    const countries = await this.getCountriesWithLayers();
-    const country = countries.find(
-      (c) => c.countryCodeIso3 === countryCodeIso3,
-    );
-    if (!country) {
-      throw new HttpException(
-        `Country with code ${countryCodeIso3} not found`,
-        HttpStatus.NOT_FOUND,
+    const country =
+      await this.countriesRepository.getCountryWithHazardTypesOrThrow(
+        countryCodeIso3,
       );
-    }
-    return country;
+    const allLayers = await this.layersService.getLayers();
+    return this.addAvailableLayersByCountry(country, allLayers);
   }
 
   public async createCountries(
