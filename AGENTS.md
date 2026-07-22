@@ -19,7 +19,6 @@ NRW is a web app to visualize hazard forecasts. This repository contains:
 - Follow existing code patterns — prioritize readability over cleverness
 - Always include Azure DevOps reference `AB#XXXXX` in PR body
 - Be conservative with adding comments to new generated code, but do not remove existing comments for no reason. They can be edited or removed if relevant.
-  Do NOT remove existing comments — when editing code that already has comments, preserve them
 - Avoid hardcoded values; prefer configuration. Avoid "magic" numbers or strings.
 - Organize functions using the "step-down" approach: high-level functions first, then implementation details. Place private/helper functions near the public functions they support.
 
