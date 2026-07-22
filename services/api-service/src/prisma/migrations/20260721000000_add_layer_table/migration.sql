@@ -18,12 +18,12 @@ CREATE UNIQUE INDEX "layer_name_key" ON "api-service"."layer"("name");
 -- SeedLayers (required for populating layerId on existing tables)
 INSERT INTO "api-service"."layer" ("updated", "name", "label", "type", "hazardType") VALUES
     (CURRENT_TIMESTAMP, 'population', 'Population', 'raster', NULL),
-    (CURRENT_TIMESTAMP, 'populationExposed', 'Population Exposed', 'shape', NULL),
-    (CURRENT_TIMESTAMP, 'redCrossBranches', 'Red Cross Branches', 'point', NULL),
+    (CURRENT_TIMESTAMP, 'populationExposed', 'Population exposed', 'shape', NULL),
+    (CURRENT_TIMESTAMP, 'redCrossBranches', 'Red Cross branches', 'point', NULL),
     (CURRENT_TIMESTAMP, 'clinics', 'Clinics', 'point', NULL),
-    (CURRENT_TIMESTAMP, 'floodDepth', 'Flood Depth', 'raster', 'floods'),
-    (CURRENT_TIMESTAMP, 'glofasStations', 'GloFAS Stations', 'point', 'floods'),
-    (CURRENT_TIMESTAMP, 'windSpeed', 'Wind Speed', 'raster', 'tropicalCyclone');
+    (CURRENT_TIMESTAMP, 'floodDepth', 'Flood depth', 'raster', 'floods'),
+    (CURRENT_TIMESTAMP, 'glofasStations', 'GloFAS stations', 'point', 'floods'),
+    (CURRENT_TIMESTAMP, 'windSpeed', 'Wind speed', 'raster', 'tropicalCyclone');
 
 -- MigrateExistingTables: add layerId column, populate from layer table, drop old column
 ALTER TABLE "api-service"."alert-exposure-admin-area" ADD COLUMN "layerId" INTEGER;

@@ -26,6 +26,7 @@ import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-us
 export class CountriesController {
   public constructor(private readonly countriesService: CountriesService) {}
 
+  // This endpoint is FE-accessed and therefore no-auth for now
   @Get()
   @ApiOperation({ summary: 'Get all countries' })
   @ApiResponse({

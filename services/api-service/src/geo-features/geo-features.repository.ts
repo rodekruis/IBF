@@ -143,9 +143,18 @@ export class GeoFeaturesRepository {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2010') {
           const pgCode = extractPostgresErrorCode(error);
+          // 23503 (FK violation): countryCodeIso3 is inserted directly, so an unknown country triggers this
           if (pgCode === '23503') {
             throw new BadRequestException(
               'One or more referenced countries do not exist',
+            );
+          }
+          // 23502 (NOT NULL violation): the layerId subquery returns NULL for unknown layer names,
+          // which violates the NOT NULL constraint on the layerId column
+          // TODO: improve this fragile logic
+          if (pgCode === '23502') {
+            throw new BadRequestException(
+              'One or more referenced layers do not exist',
             );
           }
           throw new BadRequestException(

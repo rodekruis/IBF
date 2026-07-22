@@ -54,11 +54,16 @@ export class AlertsRepository {
       forecastSources: alert.forecastSources,
       severity: alert.severity as unknown as SeverityReadDto[],
       exposure: {
-        adminAreas:
-          alert.exposureAdminArea as unknown as ExposureAdminAreaReadDto[],
+        adminAreas: alert.exposureAdminArea.map((row) => ({
+          ...row,
+          layer: row.layerId,
+        })) as unknown as ExposureAdminAreaReadDto[],
         geoFeatures:
           alert.exposureGeoFeature as unknown as ExposureGeoFeatureReadDto[],
-        rasters: alert.exposureRasterData as unknown as ExposureRasterReadDto[],
+        rasters: alert.exposureRasterData.map((row) => ({
+          ...row,
+          layer: row.layer.name,
+        })) as unknown as ExposureRasterReadDto[],
       },
     };
   }
@@ -115,6 +120,15 @@ export class AlertsRepository {
         select: { id: true, name: true },
       });
       const layerIdByName = new Map(layers.map((l) => [l.name, l.id]));
+
+      const missingLayers = [...layerNames].filter(
+        (name) => !layerIdByName.has(name),
+      );
+      if (missingLayers.length > 0) {
+        throw new NotFoundException(
+          `Unknown layer(s): ${missingLayers.join(', ')}`,
+        );
+      }
 
       for (const alertCreateDto of alertCreateDtos) {
         const eventId = eventIds.get(alertCreateDto.eventName) ?? null;

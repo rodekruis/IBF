@@ -107,7 +107,7 @@ describe('POST /reset', () => {
       expect(feature.type).toBe('Feature');
       expect(feature.geometry).toBeDefined();
       expect(feature.properties.countryCodeIso3).toBe(countryCodeIso3);
-      expect(feature.properties.layer).toBe(LayerName.glofasStations);
+      expect(feature.properties.layerId).toEqual(expect.any(Number));
     });
   });
 
