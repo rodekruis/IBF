@@ -6,13 +6,20 @@ env:
   workingDirectory: portal/nrw-standalone
 
 permissions:
+  contents: read
   actions: read
   deployments: write
+  id-token: write
 
 on:
   workflow_call:
     secrets:
-      AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
       APP_MAPBOX_ACCESS_TOKEN:
         required: true
       FONTAWESOME_NPM_AUTH_TOKEN:
@@ -25,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: 'staging'
     env:
-      APP_IBF_API_BACKEND: ${{ vars.APP_IBF_API_BACKEND }}
+      APP_IBF_API_BACKEND: ${{ vars.APP_NRW_API_BACKEND }}
       APP_SEED_DATA_REPO: ${{ vars.APP_SEED_DATA_REPO }}
       APP_MAPBOX_ACCESS_TOKEN: ${{ secrets.APP_MAPBOX_ACCESS_TOKEN }}
       FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
@@ -41,13 +48,22 @@ jobs:
         with:
           frontendPath: ${{ env.workingDirectory }}
 
+      - name: Get API key for Azure Static Web App
+        id: get-api-key
+        uses: ./.github/actions/get-swa-api-key
+        with:
+          azureClientId: ${{ secrets.AZURE_CLIENT_ID }}
+          azureTenantId: ${{ secrets.AZURE_TENANT_ID }}
+          azureSubscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          staticWebAppName: nrw-portal-staging
+
       # More information on Static Web App workflow configurations,
       # See: https://aka.ms/swaworkflowconfig
       - name: Deploy to Azure Static Web App
         id: deploy_to_aswa
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL }}
+          azure_static_web_apps_api_token: ${{ steps.get-api-key.outputs.apiKey }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: 'upload'
           config_file_location: '${{ env.workingDirectory }}/dist'
