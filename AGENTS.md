@@ -1,8 +1,8 @@
-# GitHub Copilot Instructions - National Risk Watch (NRW)
+# Agent Instructions - National Risk Watch (NRW)
 
 ## Repository Overview
 
-IBF is a web app to visualize hazard forecasts. This repository contains:
+NRW is a web app to visualize hazard forecasts. This repository contains:
 
 - `services/api-service/` — NestJS backend API (TypeScript, Prisma, PostgreSQL)
 - `data/` — Python code for both hazard forecast pipelines and data management scripts
@@ -17,8 +17,9 @@ IBF is a web app to visualize hazard forecasts. This repository contains:
 - Use type annotations everywhere
 - Do not include "Enum" suffix for enum names (e.g., `HazardType`, not `HazardTypeEnum`)
 - Follow existing code patterns — prioritize readability over cleverness
-- Always include Azure DevOps reference `AB#XXXXX` in commit body
-- Do NOT remove existing comments — when editing code that already has comments, preserve them
+- Always include Azure DevOps reference `AB#XXXXX` in PR body
+- Be conservative with adding comments to new generated code, but do not remove existing comments for no reason. They can be edited or removed if relevant.
+  Do NOT remove existing comments — when editing code that already has comments, preserve them
 - Avoid hardcoded values; prefer configuration. Avoid "magic" numbers or strings.
 - Organize functions using the "step-down" approach: high-level functions first, then implementation details. Place private/helper functions near the public functions they support.
 

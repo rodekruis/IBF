@@ -22,10 +22,18 @@
 
 ## Testing
 
+### Linting (run first — fail fast)
+
+```bash
+cd data
+uv run python python-knip.py                        # linting (ruff, deptry, vulture)
+```
+
+### Running tests
+
 ```bash
 cd data
 uv run pytest pipelines/test/unit/                  # unit tests
 uv run pytest pipelines/test/unit/ -k test_integrity # specific test
 uv run pytest pipelines/test/integration_infra/     # infra integration tests
-uv run python python-knip.py                        # linting (ruff, deptry, vulture)
 ```

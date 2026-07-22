@@ -106,13 +106,20 @@ export class AlertCreateDto {
 - **Integration tests** (`*.test.ts`): test real API interactions, placed in `/test` folder
 - Do not test private methods directly
 
+### Linting and type checking (run first — fail fast)
+
+```bash
+npm run typecheck                                                   # type checking
+npm run lint                                                        # linting
+```
+
+### Running tests
+
 ```bash
 docker exec api-service npm run test:unit:all                       # all unit tests
 docker exec api-service npm run test:unit:all alerts.service        # specific file
 docker exec api-service npm run test:integration:all                # all integration tests
 docker exec api-service npm run test:integration:all login.test     # specific file
-npm run typecheck                                                   # type checking
-npm run lint                                                        # linting
 ```
 
 ## Import Organization
