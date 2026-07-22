@@ -10,6 +10,7 @@ import { env } from '@api-service/src/env';
 import { GeoFeatureCreateDto } from '@api-service/src/geo-features/dto/geo-feature-create.dto';
 import { GeoFeatureType } from '@api-service/src/geo-features/enum/geo-feature-type.enum';
 import { GeoFeaturesService } from '@api-service/src/geo-features/geo-features.service';
+import { LayersService } from '@api-service/src/layers/layers.service';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import { RastersService } from '@api-service/src/rasters/rasters.service';
 import {
@@ -23,6 +24,7 @@ import {
   SEED_COUNTRIES,
   SeedCountry,
 } from '@api-service/src/seed/seed-data/seed-countries.const';
+import { SEED_LAYERS } from '@api-service/src/seed/seed-data/seed-layers.const';
 import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 import { HazardType, LayerName } from '@api-service/src/shared-enums';
 import { hashPassword } from '@api-service/src/utils/hash-password.helper';
@@ -75,6 +77,7 @@ export class SeedInit {
     private readonly adminAreasService: AdminAreasService,
     private readonly alertConfigsService: AlertConfigsService,
     private readonly geoFeaturesService: GeoFeaturesService,
+    private readonly layersService: LayersService,
     private readonly rastersService: RastersService,
   ) {}
 
@@ -93,6 +96,7 @@ export class SeedInit {
       : SEED_COUNTRIES;
 
     await this.seedCountries(countries);
+    await this.seedLayers();
     await this.seedAdminAreas(countries);
     await this.seedAlertConfigs(countries);
     await this.seedGeoFeatures(countries);
@@ -124,6 +128,18 @@ export class SeedInit {
         countryName,
       })),
     );
+  }
+
+  private async seedLayers(): Promise<void> {
+    for (const seedLayer of SEED_LAYERS) {
+      await this.layersService.createLayer({
+        name: seedLayer.name,
+        label: seedLayer.label,
+        type: seedLayer.type,
+        hazardType: seedLayer.hazardType ?? undefined,
+      });
+    }
+    this.logger.log(`Seeded ${SEED_LAYERS.length} layers`);
   }
 
   private async seedAdminAreas(countries: SeedCountry[]): Promise<void> {

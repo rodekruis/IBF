@@ -52,7 +52,8 @@ export class AdminAreasController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Create one or more admin areas.',
+    summary:
+      'Create one or more admin areas. Admin endpoint for managing configuration.',
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -76,7 +77,7 @@ export class AdminAreasController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Patch(':placeCode')
   @ApiOperation({
-    summary: 'Update an admin area',
+    summary: 'Update an admin area. Admin endpoint for managing configuration.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -105,7 +106,7 @@ export class AdminAreasController {
   @Delete(':placeCode')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Delete an admin area',
+    summary: 'Delete an admin area. Admin endpoint for managing configuration.',
   })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,

@@ -188,7 +188,8 @@ model AlertExposureAdminArea {
   alert      Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   placeCode  String
   adminLevel Int
-  layer      LayerName
+  layerId    Int
+  layer      Layer    @relation(fields: [layerId], references: [id])
   value      Float
 
   @@index([alertId])
@@ -205,7 +206,6 @@ model AlertExposureGeoFeature {
   alertId      Int
   alert        Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   geoFeatureId String
-  layer        LayerName
   attributes   Json
 
   @@index([alertId])
@@ -220,7 +220,8 @@ model AlertExposureRasterData {
   updated         DateTime @updatedAt
   alertId         Int
   alert           Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  layer           LayerName
+  layerId         Int
+  layer           Layer     @relation(fields: [layerId], references: [id])
   valueGreyscale  String
   valueColoured   String
   metadata        Json
@@ -237,12 +238,13 @@ model StaticRasterData {
   updated         DateTime @updatedAt
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
-  layer           LayerName
+  layerId         Int
+  layer           Layer     @relation(fields: [layerId], references: [id])
   valueData       String
   valueColoured   String
   metadata        Json
 
-  @@unique([countryCodeIso3, layer])
+  @@unique([countryCodeIso3, layerId])
   @@index([countryCodeIso3])
 }
 
@@ -296,13 +298,33 @@ model GeoFeature {
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
   featureType     String // Point, LineString, Polygon, MultiPolygon
-  layer           LayerName // e.g. "glofasStations"
+  layerId         Int // e.g. glofasStations layer
+  layer           Layer     @relation(fields: [layerId], references: [id])
   referenceId     String // external identifier, e.g. station code
   geometry        Unsupported("geometry(Geometry, 4326)")?
   attributes      Json   @default("{}")
 
-  @@unique([countryCodeIso3, layer, referenceId])
-  @@index([countryCodeIso3, layer])
+  @@unique([countryCodeIso3, layerId, referenceId])
+  @@index([countryCodeIso3, layerId])
+}
+
+model Layer {
+  @@schema("api-service")
+  @@map("layer")
+
+  id          Int       @id @default(autoincrement())
+  created     DateTime  @default(now())
+  updated     DateTime  @updatedAt
+  name        LayerName  @unique
+  label       String
+  type        LayerType
+  hazardType  HazardType?
+  description String?
+
+  alertExposureAdminAreas  AlertExposureAdminArea[]
+  alertExposureRasterData  AlertExposureRasterData[]
+  staticRasterData         StaticRasterData[]
+  geoFeatures              GeoFeature[]
 }
 
 model AlertConfig {

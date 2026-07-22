@@ -125,7 +125,7 @@ export class GeoFeaturesRepository {
             return Prisma.sql`(
               ${dto.countryCodeIso3},
               ${dto.featureType},
-              ${dto.layer}::"api-service"."LayerName",
+              (SELECT "id" FROM "api-service"."layer" WHERE "name" = ${dto.layer}::"api-service"."LayerName"),
               ${dto.referenceId},
               public.ST_SetSRID(public.ST_GeomFromGeoJSON(${geojson}), 4326),
               ${attrs}::jsonb,
@@ -134,18 +134,27 @@ export class GeoFeaturesRepository {
           });
           await tx.$executeRaw`
             INSERT INTO "api-service"."geo-feature"
-              ("countryCodeIso3", "featureType", "layer", "referenceId", "geometry", "attributes", "updated")
+              ("countryCodeIso3", "featureType", "layerId", "referenceId", "geometry", "attributes", "updated")
             VALUES ${Prisma.join(values)}
-            ON CONFLICT ("countryCodeIso3", "layer", "referenceId") DO NOTHING`;
+            ON CONFLICT ("countryCodeIso3", "layerId", "referenceId") DO NOTHING`;
         }
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2010') {
           const pgCode = extractPostgresErrorCode(error);
+          // 23503 (FK violation): countryCodeIso3 is inserted directly, so an unknown country triggers this
           if (pgCode === '23503') {
             throw new BadRequestException(
               'One or more referenced countries do not exist',
+            );
+          }
+          // 23502 (NOT NULL violation): the layerId subquery returns NULL for unknown layer names,
+          // which violates the NOT NULL constraint on the layerId column
+          // TODO: improve this fragile logic
+          if (pgCode === '23502') {
+            throw new BadRequestException(
+              'One or more referenced layers do not exist',
             );
           }
           throw new BadRequestException(

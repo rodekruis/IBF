@@ -122,7 +122,7 @@
     "method": "get",
     "path": "/api/countries",
     "params": [],
-    "returnType": "CountryResponseDto[]"
+    "returnType": "CountryReadDto[]"
   },
   {
     "method": "post",
@@ -136,7 +136,7 @@
     "params": [
       "countryCodeIso3"
     ],
-    "returnType": "CountryResponseDto"
+    "returnType": "CountryReadDto"
   },
   {
     "method": "patch",
@@ -151,6 +151,33 @@
     "path": "/api/countries/{countryCodeIso3}",
     "params": [
       "countryCodeIso3"
+    ]
+  },
+  {
+    "method": "get",
+    "path": "/api/layers",
+    "params": [],
+    "returnType": "LayerReadDto[]"
+  },
+  {
+    "method": "post",
+    "path": "/api/layers",
+    "params": [],
+    "returnType": "LayerReadDto"
+  },
+  {
+    "method": "patch",
+    "path": "/api/layers/{layerName}",
+    "params": [
+      "layerName"
+    ],
+    "returnType": "LayerReadDto"
+  },
+  {
+    "method": "delete",
+    "path": "/api/layers/{layerName}",
+    "params": [
+      "layerName"
     ]
   },
   {

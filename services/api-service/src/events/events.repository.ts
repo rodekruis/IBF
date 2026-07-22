@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Event, Prisma } from '@prisma/client';
+import { Event, Layer, Prisma } from '@prisma/client';
 
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import {
@@ -170,11 +170,11 @@ export class EventsRepository {
       select: {
         eventId: true,
         exposureAdminArea: {
-          where: { layer: LayerName.populationExposed },
+          where: { layer: { name: LayerName.populationExposed } },
           select: {
             placeCode: true,
             adminLevel: true,
-            layer: true,
+            layer: { select: { name: true } },
             value: true,
           },
         },
@@ -203,7 +203,7 @@ export class EventsRepository {
           name: nameByPlaceCode.get(row.placeCode) ?? row.placeCode,
           exposure: [
             {
-              layerName: row.layer,
+              layerName: row.layer.name,
               exposed: row.value,
             },
           ],
@@ -255,8 +255,8 @@ export class EventsRepository {
 
   public async getRasterIdsForLatestAlerts(
     eventIds: number[],
-  ): Promise<Map<number, { id: number; layer: LayerName }[]>> {
-    const result = new Map<number, { id: number; layer: LayerName }[]>();
+  ): Promise<Map<number, { id: number; layer: Layer }[]>> {
+    const result = new Map<number, { id: number; layer: Layer }[]>();
     if (eventIds.length === 0) {
       return result;
     }

@@ -35,7 +35,8 @@ export class GeoFeaturesController {
     summary:
       'Get geo-features; all pg_featureserv query parameters are supported (not shown in Swagger UI, so calling via Swagger is limited)',
     description:
-      "Example current use: GET /geo-features?filter=countryCodeIso3='ETH' AND layer='glofasStations'",
+      "Example: GET /geo-features?filter=countryCodeIso3='ETH' AND layer='glofasStations'. " +
+      'The layer filter is resolved from layer name to layerId automatically.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -52,7 +53,10 @@ export class GeoFeaturesController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Create one or more geo-features' })
+  @ApiOperation({
+    summary:
+      'Create one or more geo-features. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Geo-features created successfully',
@@ -76,7 +80,9 @@ export class GeoFeaturesController {
   @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a geo-feature' })
+  @ApiOperation({
+    summary: 'Update a geo-feature. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Geo-feature updated successfully',
@@ -100,7 +106,9 @@ export class GeoFeaturesController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a geo-feature' })
+  @ApiOperation({
+    summary: 'Delete a geo-feature. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Geo-feature deleted successfully',

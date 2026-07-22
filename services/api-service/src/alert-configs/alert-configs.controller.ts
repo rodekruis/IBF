@@ -66,7 +66,8 @@ export class AlertConfigsController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
   @ApiOperation({
-    summary: 'Create one or more alert configs',
+    summary:
+      'Create one or more alert configs. Admin endpoint for managing configuration.',
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -83,7 +84,10 @@ export class AlertConfigsController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete alert config by id' })
+  @ApiOperation({
+    summary:
+      'Delete alert config by id. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Alert config deleted successfully',

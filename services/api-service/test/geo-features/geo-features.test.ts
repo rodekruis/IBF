@@ -34,7 +34,6 @@ describe('/ Geo Features', () => {
       expect(feature.type).toBe('Feature');
       expect(feature.geometry).toBeDefined();
       expect(feature.properties.countryCodeIso3).toBe('MWI');
-      expect(feature.properties.layer).toBe(LayerName.glofasStations);
     });
   });
 

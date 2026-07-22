@@ -15,36 +15,37 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CountriesService } from '@api-service/src/countries/countries.service';
 import { CountryCreateDto } from '@api-service/src/countries/dto/country-create.dto';
+import { CountryReadDto } from '@api-service/src/countries/dto/country-read.dto';
 import { CountryResponseDto } from '@api-service/src/countries/dto/country-response.dto';
 import { CountryUpdateDto } from '@api-service/src/countries/dto/country-update.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 
 @ApiTags('countries')
-@UseGuards(AuthenticatedUserGuard)
 @Controller('countries')
 export class CountriesController {
   public constructor(private readonly countriesService: CountriesService) {}
 
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
+  // This endpoint is FE-accessed and therefore no-auth for now
   @Get()
   @ApiOperation({ summary: 'Get all countries' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Countries returned successfully',
-    type: [CountryResponseDto],
+    type: [CountryReadDto],
   })
-  public async getCountries(): Promise<CountryResponseDto[]> {
+  public async getCountries(): Promise<CountryReadDto[]> {
     return this.countriesService.getCountries();
   }
 
+  @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get(':countryCodeIso3')
   @ApiOperation({ summary: 'Get country by ISO3 code' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Country returned successfully',
-    type: CountryResponseDto,
+    type: CountryReadDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -52,13 +53,17 @@ export class CountriesController {
   })
   public async getCountry(
     @Param('countryCodeIso3') countryCodeIso3: string,
-  ): Promise<CountryResponseDto> {
+  ): Promise<CountryReadDto> {
     return this.countriesService.getCountryOrThrow(countryCodeIso3);
   }
 
+  @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
-  @ApiOperation({ summary: 'Create one or more countries' })
+  @ApiOperation({
+    summary:
+      'Create one or more countries. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Countries created successfully',
@@ -75,9 +80,12 @@ export class CountriesController {
     return this.countriesService.createCountries(dtos);
   }
 
+  @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Patch(':countryCodeIso3')
-  @ApiOperation({ summary: 'Update a country' })
+  @ApiOperation({
+    summary: 'Update a country. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Country updated successfully',
@@ -97,10 +105,13 @@ export class CountriesController {
     );
   }
 
+  @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':countryCodeIso3')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a country' })
+  @ApiOperation({
+    summary: 'Delete a country. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Country deleted successfully',

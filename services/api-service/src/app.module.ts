@@ -13,6 +13,7 @@ import { CountriesModule } from '@api-service/src/countries/countries.module';
 import { EventsModule } from '@api-service/src/events/events.module';
 import { GeoFeaturesModule } from '@api-service/src/geo-features/geo-features.module';
 import { HealthModule } from '@api-service/src/health/health.module';
+import { LayersModule } from '@api-service/src/layers/layers.module';
 import { RastersModule } from '@api-service/src/rasters/rasters.module';
 import { SeedModule } from '@api-service/src/seed/seed.module';
 
@@ -37,6 +38,7 @@ import { SeedModule } from '@api-service/src/seed/seed.module';
     CountriesModule,
     EventsModule,
     GeoFeaturesModule,
+    LayersModule,
     RastersModule,
   ],
   controllers: [AppController],
