@@ -10,7 +10,7 @@ real GEFS/ATCF data - `extract_wind_speed` (`tropical_cyclone/extract_forecast.p
 local-file-path loaders now read from a local test-fixture directory (`tropical_cyclone/bronze/`,
 most recent forecast cycle only) rather than a real data source - still `# TODO-infra` pending real
 `DataSource.GEFS_WIND`/`DataSource.GEFS_TRACK` fetchers - and `_placeholder_issued_datetime` (Step
-11's event-name timestamp) stays a v1 per-run identifier pending a decision on persistent per-storm
+10's event-name timestamp) stays a v1 per-run identifier pending a decision on persistent per-storm
 identity (IBTrACS/ATCF `CY`) - see that function's docstring.
 
 Step 1 now fetches `AlertConfig`s (spatial + temporal extents) from `DataSource.ALERT_CONFIGS_IBF_API`
@@ -35,7 +35,6 @@ import logging
 import math
 from datetime import datetime, timezone
 from pathlib import Path
-from statistics import fmean
 
 from shared.country_data import CountryCodeIso3
 
@@ -43,7 +42,6 @@ from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
-from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.enums import EnsembleMemberType, LayerName, SeverityKey
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.utils.exposure import (
@@ -63,13 +61,13 @@ from pipelines.tropical_cyclone.constants import (
     MIN_SEVERITY_MS,
     MONITORING_BOX_BUFFER_KM,
 )
-from pipelines.tropical_cyclone.determine_alerts import (
-    determine_alert,
-    TimeIntervalSeverity,
-)
+from pipelines.tropical_cyclone.determine_alerts import determine_alert
 from pipelines.tropical_cyclone.determine_exposure import determine_spatial_extent
 from pipelines.tropical_cyclone.extract_forecast import extract_wind_speed
-from pipelines.tropical_cyclone.extract_track import extract_track, TimeIntervalTrackFix
+from pipelines.tropical_cyclone.extract_track import (
+    derive_storm_centroid,
+    extract_track,
+)
 
 
 def calculate_tropical_cyclone_forecasts(
@@ -85,6 +83,9 @@ def calculate_tropical_cyclone_forecasts(
     alert_configs: list[AlertConfig] = data_provider.get_data(
         DataSource.ALERT_CONFIGS_IBF_API, list
     )
+    population_raster: RasterData = data_provider.get_data(
+        DataSource.POPULATION_IBF_API, RasterData
+    )
     if not target_admin_areas or not alert_configs:
         data_submitter.add_error(
             f"Missing input data: admin_areas={bool(target_admin_areas)}, "
@@ -93,6 +94,7 @@ def calculate_tropical_cyclone_forecasts(
         return
 
     ### Step 2 - Resolve the country's config (exposure class, sustained-wind convention) ###
+    # TODO-infra: consider moving COUNTRY_CONFIGS into the db/API instead of a code constant.
     country_config = COUNTRY_CONFIGS.get(CountryCodeIso3(country))
     if country_config is None:
         data_submitter.add_error(
@@ -124,6 +126,8 @@ def calculate_tropical_cyclone_forecasts(
     # see the storm approaching over open ocean before landfall - a small country's own land extent
     # doesn't capture that, especially for a small island. The buffer is a placeholder pending domain-owner validation - see
     # MONITORING_BOX_BUFFER_KM's docstring.
+    # TODO-infra: consider extending get_bounding_box with an optional buffer parameter instead
+    # of this separate function.
     country_bounds = _pad_bounding_box(
         get_bounding_box(target_admin_areas), MONITORING_BOX_BUFFER_KM
     )
@@ -177,14 +181,7 @@ def calculate_tropical_cyclone_forecasts(
                 )
                 continue
 
-            ### Step 9 - Lazily load the population raster ###
-            # Loaded only now, after confirming an alert-worthy footprint exists, to avoid the API
-            # call on every no-alert run (mirrors flood's lazy-load).
-            population_raster: RasterData = data_provider.get_data(
-                DataSource.POPULATION_IBF_API, RasterData
-            )
-
-            ### Step 10 - Compute and aggregate population exposure ###
+            ### Step 9 - Compute and aggregate population exposure ###
             population_exposed_raster = compute_population_exposed(
                 population_raster, clipped_wind_extent
             )
@@ -200,7 +197,7 @@ def calculate_tropical_cyclone_forecasts(
                 target_admin_areas,
             )
 
-            ### Step 11 - Create alert and submit severity/exposure payloads ###
+            ### Step 10 - Create alert and submit severity/exposure payloads ###
             # v1 identifier: per-country-per-run using the issued datetime. ATCF's CY (cyclone
             # number) is available from track data and could support a persistent per-storm
             # identity across pipeline runs later (so a re-run against an already-alerted storm
@@ -211,7 +208,7 @@ def calculate_tropical_cyclone_forecasts(
             # Storm-center fix from the same bucket compute_alert_extent picked as peak-intensity
             # (falls back to the admin-area centroid only if there are no track fixes at all - see
             # docstring).
-            centroid = _derive_storm_centroid(
+            centroid = derive_storm_centroid(
                 track_fixes, time_interval_severities, target_admin_areas
             )
 
@@ -350,55 +347,3 @@ def _placeholder_issued_datetime() -> str:
     off ATCF's CY cyclone number) replaces this per-run identifier - see the note above this
     function's one call site."""
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-
-
-def _derive_storm_centroid(
-    time_interval_track_fixes: list[TimeIntervalTrackFix],
-    time_interval_severities: list[TimeIntervalSeverity],
-    admin_areas: AdminAreasSet,
-) -> Centroid:
-    """
-    Mean lat/lon across ensemble members at the same bucket compute_alert_extent picks as
-    peak-intensity (highest MEDIAN wind speed) - the alert centroid should reflect where the storm
-    actually is at the moment being reported, not a flat average smeared across the whole forecast
-    window. Falls back to every bucket's fixes combined if track data has no fix at exactly that
-    time (track's native cadence can differ from whatever wind lead times were fetched), and to the
-    admin-area centroid only when there are no track fixes at all (e.g. no storm currently within
-    the country's monitoring box).
-    """
-    peak_bucket = max(
-        time_interval_severities, key=lambda severity: severity.median_wind_speed
-    )
-    peak_track_bucket = next(
-        (
-            bucket
-            for bucket in time_interval_track_fixes
-            if bucket.time_interval_start == peak_bucket.time_interval_start
-        ),
-        None,
-    )
-
-    fixes = (
-        peak_track_bucket.ensemble_track_fixes
-        if peak_track_bucket is not None and peak_track_bucket.ensemble_track_fixes
-        else [
-            fix
-            for bucket in time_interval_track_fixes
-            for fix in bucket.ensemble_track_fixes
-        ]
-    )
-    if fixes:
-        return Centroid(
-            latitude=fmean(fix.latitude for fix in fixes),
-            longitude=fmean(fix.longitude for fix in fixes),
-        )
-
-    geometries = [area.to_geometry() for area in admin_areas.admin_areas.values()]
-    if not geometries:
-        return Centroid(latitude=0.0, longitude=0.0)
-
-    geometry_centroids = [geometry.centroid for geometry in geometries]
-    return Centroid(
-        latitude=fmean(point.y for point in geometry_centroids),
-        longitude=fmean(point.x for point in geometry_centroids),
-    )

@@ -62,7 +62,7 @@ PHL seeded is still required. Real fix: a real `DataSource.GEFS_WIND`/`GEFS_TRAC
 
 ## `forecast.py` flow (read -> output)
 
-1. Load admin areas and alert configs through `DataProvider`. Stop early and record an error if either is missing.
+1. Load admin areas, alert configs, and the population raster through `DataProvider`. Stop early and record an error if admin areas or alert configs are missing.
 2. Resolve the country's config (exposure class, averaging-period convention) from `COUNTRY_CONFIGS`. Stop early if the country isn't configured.
 3. Load GEFS wind and track member file paths (local test fixtures today). Stop early if either is missing.
 4. Compute the country's monitoring bounding box: admin-area union padded by `MONITORING_BOX_BUFFER_KM`.
@@ -70,9 +70,8 @@ PHL seeded is still required. Real fix: a real `DataSource.GEFS_WIND`/`GEFS_TRAC
 6. `extract_wind_speed` + `determine_alert`. Skip to the next temporal extent if no bucket clears `MIN_SEVERITY_MS`.
 7. `extract_track`, used to derive the storm centroid at the peak-intensity bucket.
 8. `compute_alert_extent` + `determine_spatial_extent`.
-9. Lazily load the population raster, only once a qualifying alert exists.
-10. `compute_population_exposed` + `aggregate_population_exposed`.
-11. Submit via `DataSubmitter`: `create_alert`, `add_severity_data` (per-member `RUN` + `MEDIAN`), `add_admin_area_exposure`, `add_raster_exposure`.
+9. `compute_population_exposed` + `aggregate_population_exposed`.
+10. Submit via `DataSubmitter`: `create_alert`, `add_severity_data` (per-member `RUN` + `MEDIAN`), `add_admin_area_exposure`, `add_raster_exposure`.
 
 ## Output
 

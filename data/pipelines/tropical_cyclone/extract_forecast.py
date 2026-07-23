@@ -188,6 +188,12 @@ def _resolve_configured_interval_hours(lead_hour_spectrum: list[int]) -> int:
     future change to the alert config (e.g. 3-hour -> 6-hour steps) is picked up automatically
     without a code change here. Falls back to GEFS's native cadence for a single-point spectrum,
     where no spacing can be derived.
+
+    TODO-infra: PR #306 discussion (comment on this function) - consider validating a config's
+    lead-hour spacing against its data source's native cadence at the API layer too (AlertConfig
+    has no forecastSource link yet, ForecastSource has no cadence attached). Flood has no
+    equivalent check today, so that's the natural place to start. Keep this check here regardless
+    - it protects _aggregate_bucket_rasters below, and removing it fails silently, not loudly.
     """
     if len(lead_hour_spectrum) < 2:
         return GEFS_NATIVE_LEAD_TIME_STEP_HOURS

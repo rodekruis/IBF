@@ -5,10 +5,14 @@ import os
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from statistics import fmean
 
+from pipelines.infra.data_types.admin_area_types import AdminAreasSet
+from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.utils.nrw_logger import log_info, log_warning, LogTag
 from pipelines.infra.utils.raster import BoundingBox
 from pipelines.tropical_cyclone.constants import ATCF_WIND_RADII_THRESHOLD_KNOTS
+from pipelines.tropical_cyclone.determine_alerts import TimeIntervalSeverity
 
 logger = logging.getLogger(__name__)
 
@@ -165,3 +169,55 @@ def _parse_atcf_coordinate(raw: str, positive_suffix: str) -> float:
     """Parse an ATCF lat/lon field like '208N' or '1276E' (tenths of a degree + direction)."""
     value = float(raw[:-1]) / 10
     return value if raw[-1] == positive_suffix else -value
+
+
+def derive_storm_centroid(
+    time_interval_track_fixes: list[TimeIntervalTrackFix],
+    time_interval_severities: list[TimeIntervalSeverity],
+    admin_areas: AdminAreasSet,
+) -> Centroid:
+    """
+    Mean lat/lon across ensemble members at the same bucket compute_alert_extent picks as
+    peak-intensity (highest MEDIAN wind speed) - the alert centroid should reflect where the storm
+    actually is at the moment being reported, not a flat average smeared across the whole forecast
+    window. Falls back to every bucket's fixes combined if track data has no fix at exactly that
+    time (track's native cadence can differ from whatever wind lead times were fetched), and to the
+    admin-area centroid only when there are no track fixes at all (e.g. no storm currently within
+    the country's monitoring box).
+    """
+    peak_bucket = max(
+        time_interval_severities, key=lambda severity: severity.median_wind_speed
+    )
+    peak_track_bucket = next(
+        (
+            bucket
+            for bucket in time_interval_track_fixes
+            if bucket.time_interval_start == peak_bucket.time_interval_start
+        ),
+        None,
+    )
+
+    fixes = (
+        peak_track_bucket.ensemble_track_fixes
+        if peak_track_bucket is not None and peak_track_bucket.ensemble_track_fixes
+        else [
+            fix
+            for bucket in time_interval_track_fixes
+            for fix in bucket.ensemble_track_fixes
+        ]
+    )
+    if fixes:
+        return Centroid(
+            latitude=fmean(fix.latitude for fix in fixes),
+            longitude=fmean(fix.longitude for fix in fixes),
+        )
+
+    geometries = [area.to_geometry() for area in admin_areas.admin_areas.values()]
+    if not geometries:
+        return Centroid(latitude=0.0, longitude=0.0)
+
+    geometry_centroids = [geometry.centroid for geometry in geometries]
+    return Centroid(
+        latitude=fmean(point.y for point in geometry_centroids),
+        longitude=fmean(point.x for point in geometry_centroids),
+    )

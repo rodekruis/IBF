@@ -23,7 +23,7 @@ def aggregate_population_exposed(
     admin_areas: AdminAreasSet,
 ) -> dict[str, float]:
     """
-    Aggregate population exposed within the flood extent per place code.
+    Aggregate population exposed within the alert extent per place code.
     """
 
     population: dict[str, float] = {}
