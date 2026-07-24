@@ -1,3 +1,5 @@
+# ruff: noqa: I001
+# TODO-infra: ufmt and ruff disagree on this file's import order
 from __future__ import annotations
 
 import logging
@@ -12,6 +14,7 @@ from rasterio.transform import Affine, from_bounds
 from rasterio.warp import reproject
 from rasterio.windows import from_bounds as window_from_bounds
 from rasterstats import zonal_stats
+from shapely.ops import unary_union
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +25,7 @@ def aggregate_population_exposed(
     admin_areas: AdminAreasSet,
 ) -> dict[str, float]:
     """
-    Aggregate population exposed within the flood extent per place code.
+    Aggregate population exposed within the alert extent per place code.
     """
 
     population: dict[str, float] = {}
@@ -76,6 +79,7 @@ def compute_population_exposed(
         pop_array, pop_transform, hazard_extent_raster, pop_crs
     )
 
+    hazard_nodata = hazard_extent_raster.nodata
     hazard_array_resampled = np.zeros(cropped_pop_array.shape, dtype=np.float32)
     reproject(
         source=hazard_extent_raster.array.astype(np.float32),
@@ -84,10 +88,15 @@ def compute_population_exposed(
         src_crs=hazard_extent_raster.crs,
         dst_transform=cropped_pop_transform,
         dst_crs=pop_crs,
+        src_nodata=hazard_nodata,
+        dst_nodata=hazard_nodata,
         resampling=Resampling.nearest,
     )
 
-    binary_hazard_extent = (hazard_array_resampled > 0).astype(np.uint8)
+    # A pixel is exposed only if it's positive and not the raster's own nodata value.
+    binary_hazard_extent = (
+        (hazard_array_resampled > 0) & (hazard_array_resampled != hazard_nodata)
+    ).astype(np.uint8)
     population_in_hazard_extent = np.where(
         binary_hazard_extent == 1, cropped_pop_array, 0.0
     )
@@ -161,11 +170,13 @@ def clip_raster_to_admin_areas(
         )
         return raster
 
-    combined_geom = admin_areas.admin_areas[place_codes[0]].to_geometry()
-    for pcode in place_codes[1:]:
-        area = admin_areas.admin_areas.get(pcode)
-        if area:
-            combined_geom = combined_geom.union(area.to_geometry())
+    # unary_union: much faster than a sequential .union() loop for large place_codes lists
+    shapely_geometries = [
+        admin_areas.admin_areas[pcode].to_geometry()
+        for pcode in place_codes
+        if pcode in admin_areas.admin_areas
+    ]
+    combined_geom = unary_union(shapely_geometries)
 
     minx, miny, maxx, maxy = combined_geom.bounds
     window = window_from_bounds(minx, miny, maxx, maxy, raster.transform)

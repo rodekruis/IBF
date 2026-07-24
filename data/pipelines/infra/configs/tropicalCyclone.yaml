@@ -1,0 +1,28 @@
+hazard_type: tropicalCyclone
+
+# Pipeline Run Configs per country
+
+# Data sources without `source_target` are loaded for every run.
+# Entries with `source_target` are loaded only for that source target
+# Selected by --mock and skipped when --infra-only is set
+#
+# TODO-infra: GEFS wind data is read from local files in forecast.py for now
+# (see data/pipelines/tropical_cyclone/README.md), not through a DataSource fetcher.
+# Once a real fetcher exists, add here:
+#   - source: gefs_forecast_nomads  (or similar)
+#     source_target: live
+#   - source: gefs_seed_repo_alert
+#     source_target: mock_alert   # --mock 1, e.g. Typhoon Goni track
+#   - source: gefs_seed_repo_no_alert
+#     source_target: mock_no_alert  # --mock 0
+# Until then, non-infra-only runs will fail config validation (no data source
+# is tagged with a source_target) - use --infra-only for infra integration testing.
+_data_sources: &data_sources
+  - source: alert_configs_ibf_api
+  - source: admin_area_ibf_api
+  - source: population_ibf_api
+
+countries:
+  - iso_3_code: PHL
+    target_admin_level: 3
+    data_sources: *data_sources

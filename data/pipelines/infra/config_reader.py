@@ -62,7 +62,7 @@ class ConfigReader:
         # Assign and validate hazard_type
         hazard_type_raw = config_raw.get("hazard_type", "")
         try:
-            hazard_type = HazardType(hazard_type_raw.lower())
+            hazard_type = HazardType(hazard_type_raw)
         except ValueError:
             log_error(
                 logger,
