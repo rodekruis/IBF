@@ -27,6 +27,10 @@ function for the `tropicalCyclone` hazard type. Runnable end to end today by dir
 against local test-fixture data (see Step 3); not runnable via the `pipeline` CLI yet, since the
 hazard's config YAML has no data source tagged for a `source_target`, which the CLI's config
 validation requires outside of `--infra-only` (which bypasses this function entirely).
+
+TODO-infra-remove: delete this full status header block once GEFS wind/track are wired through
+real `DataSource.GEFS_WIND`/`DataSource.GEFS_TRACK` fetchers and the local-fixture placeholders in
+this file are removed.
 """
 
 from __future__ import annotations
@@ -87,13 +91,14 @@ def calculate_tropical_cyclone_forecasts(
     alert_configs: list[AlertConfig] = data_provider.get_data(
         DataSource.ALERT_CONFIGS_IBF_API, list
     )
-    population_raster: RasterData = data_provider.get_data(
+    population_raster: RasterData | None = data_provider.get_data(
         DataSource.POPULATION_IBF_API, RasterData
     )
-    if not target_admin_areas or not alert_configs:
+    if not target_admin_areas or not alert_configs or population_raster is None:
         data_submitter.add_error(
             f"Missing input data: admin_areas={bool(target_admin_areas)}, "
-            f"alert_configs={bool(alert_configs)}"
+            f"alert_configs={bool(alert_configs)}, "
+            f"population_raster={population_raster is not None}"
         )
         return
 

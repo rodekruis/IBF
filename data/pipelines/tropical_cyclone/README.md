@@ -40,6 +40,10 @@ This folder contains the tropical-cyclone-specific forecast logic used by the pi
 
 ## Running this locally
 
+TODO-infra-remove: remove this entire section once GEFS wind/track are wired through real
+`DataSource.GEFS_WIND`/`DataSource.GEFS_TRACK` fetchers and `tropicalCyclone.yaml` no longer needs
+the temporary source-target gate workaround.
+
 `tropicalCyclone.yaml` has no `source_target`-tagged data source yet, so `config_reader.py`'s
 source-target gate rejects the config for any run that isn't `--infra-only` (which skips
 `forecast.py` entirely). To run the real hazard logic locally, relax that gate on your machine only
