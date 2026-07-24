@@ -20,7 +20,7 @@ class TimeIntervalSeverity:
     ensemble_wind_speed_rasters: list[RasterData]
 
 
-def determine_alert(
+def determine_severities(
     wind_speeds: list[TimeIntervalWindSpeed],
     place_codes: list[str],
     admin_areas: AdminAreasSet,

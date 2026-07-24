@@ -17,17 +17,17 @@ This folder contains the tropical-cyclone-specific forecast logic used by the pi
 
 - `extract_track.py`
   - `extract_track`: reads GEFS ATCF track files (one file per member, all lead times as rows), filters fixes to the monitoring bounds, dedups repeated wind-radii rows.
-  - Used to derive the alert's storm-center centroid, not for the severity gate itself.
+  - `derive_storm_centroid`: picks the storm-center fix at the same bucket the peak-intensity alert was found in, used for the alert's centroid - not for the severity gate itself.
 
 - `determine_alerts.py`
-  - `determine_alert`: per time bucket per member, clips wind speed to the country's admin-area union and takes the land-clipped max (the `RUN` value); `MEDIAN` is the median of those.
+  - `determine_severities`: per time bucket per member, clips wind speed to the country's admin-area union and takes the land-clipped max (the `RUN` value); `MEDIAN` is the median of those.
   - Drops buckets whose `MEDIAN` doesn't clear `MIN_SEVERITY_MS`.
 
 - `compute_wind_extent.py`
   - `compute_alert_extent`: picks the peak-intensity bucket (highest `MEDIAN`), then builds a precautionary per-cell-max envelope across that bucket's ensemble members, masked below `MIN_SEVERITY_MS`.
 
 - `determine_exposure.py`
-  - `determine_spatial_extent`: clips the wind-extent raster to the alert's admin areas (thin wrapper over `infra.utils.exposure.clip_raster_to_admin_areas`).
+  - `clip_wind_extent_to_admin_areas`: clips the wind-extent raster to the alert's admin areas (thin wrapper over `infra.utils.exposure.clip_raster_to_admin_areas`).
 
 - `constants.py`
   - Per-country config (`COUNTRY_CONFIGS`): exposure class and sustained-wind averaging-period convention.
@@ -67,9 +67,9 @@ PHL seeded is still required. Real fix: a real `DataSource.GEFS_WIND`/`GEFS_TRAC
 3. Load GEFS wind and track member file paths (local test fixtures today). Stop early if either is missing.
 4. Compute the country's monitoring bounding box: admin-area union padded by `MONITORING_BOX_BUFFER_KM`.
 5. Loop over alert configs (spatial extents) and their temporal extents - matches flood/drought's generic structure, even though tropical cyclone has exactly one of each per country today.
-6. `extract_wind_speed` + `determine_alert`. Skip to the next temporal extent if no bucket clears `MIN_SEVERITY_MS`.
+6. `extract_wind_speed` + `determine_severities`. Skip to the next temporal extent if no bucket clears `MIN_SEVERITY_MS`.
 7. `extract_track`, used to derive the storm centroid at the peak-intensity bucket.
-8. `compute_alert_extent` + `determine_spatial_extent`.
+8. `compute_alert_extent` + `clip_wind_extent_to_admin_areas`.
 9. `compute_population_exposed` + `aggregate_population_exposed`.
 10. Submit via `DataSubmitter`: `create_alert`, `add_severity_data` (per-member `RUN` + `MEDIAN`), `add_admin_area_exposure`, `add_raster_exposure`.
 

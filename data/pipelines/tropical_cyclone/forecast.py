@@ -3,8 +3,8 @@ Orchestration for the tropical-cyclone hazard forecast.
 
 STATUS: all five hazard-logic modules are real, wired-in implementations, each verified against
 real GEFS/ATCF data - `extract_wind_speed` (`tropical_cyclone/extract_forecast.py`), `extract_track`
-(`tropical_cyclone/extract_track.py`), `determine_alert` (`tropical_cyclone/determine_alerts.py`),
-`compute_alert_extent` (`tropical_cyclone/compute_wind_extent.py`), `determine_spatial_extent`
+(`tropical_cyclone/extract_track.py`), `determine_severities` (`tropical_cyclone/determine_alerts.py`),
+`compute_alert_extent` (`tropical_cyclone/compute_wind_extent.py`), `clip_wind_extent_to_admin_areas`
 (`tropical_cyclone/determine_exposure.py`), and `compute_population_exposed`
 (`infra.utils.exposure`). Two `_placeholder_*` functions remain, both intentionally: Step 3's
 local-file-path loaders now read from a local test-fixture directory (`tropical_cyclone/bronze/`,
@@ -61,13 +61,17 @@ from pipelines.tropical_cyclone.constants import (
     MIN_SEVERITY_MS,
     MONITORING_BOX_BUFFER_KM,
 )
-from pipelines.tropical_cyclone.determine_alerts import determine_alert
-from pipelines.tropical_cyclone.determine_exposure import determine_spatial_extent
+from pipelines.tropical_cyclone.determine_alerts import determine_severities
+from pipelines.tropical_cyclone.determine_exposure import (
+    clip_wind_extent_to_admin_areas,
+)
 from pipelines.tropical_cyclone.extract_forecast import extract_wind_speed
 from pipelines.tropical_cyclone.extract_track import (
     derive_storm_centroid,
     extract_track,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_tropical_cyclone_forecasts(
@@ -152,14 +156,14 @@ def calculate_tropical_cyclone_forecasts(
             wind_speeds = extract_wind_speed(
                 gefs_wind_member_paths, country_bounds, country_config, temporal_extent
             )
-            time_interval_severities = determine_alert(
+            time_interval_severities = determine_severities(
                 wind_speeds, spatial_extent_place_codes, target_admin_areas
             )
 
             # If no time bucket clears MIN_SEVERITY_MS, there is no alert for this spatial/temporal
             # extent.
             if not time_interval_severities:
-                logging.info(
+                logger.info(
                     f"No tropical-cyclone alert for '{country}' "
                     f"({alert_config.spatial_extent_name}): no bucket cleared "
                     f"MIN_SEVERITY_MS={MIN_SEVERITY_MS}"
@@ -171,7 +175,7 @@ def calculate_tropical_cyclone_forecasts(
 
             ### Step 8 - Compute the alert extent and its spatial exposure ###
             wind_extent = compute_alert_extent(time_interval_severities)
-            clipped_wind_extent = determine_spatial_extent(
+            clipped_wind_extent = clip_wind_extent_to_admin_areas(
                 wind_extent, spatial_extent_place_codes, target_admin_areas
             )
 
@@ -338,7 +342,7 @@ def _most_recent_cycle_files(root: Path) -> list[str]:
         return []
 
     most_recent_cycle_dir = cycle_dirs[-1]
-    logging.info(f"Using local GEFS test fixtures from {most_recent_cycle_dir}")
+    logger.info(f"Using local GEFS test fixtures from {most_recent_cycle_dir}")
     return [str(path) for path in most_recent_cycle_dir.rglob("*") if path.is_file()]
 
 
