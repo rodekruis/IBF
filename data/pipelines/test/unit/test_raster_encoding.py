@@ -9,15 +9,19 @@ from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.infra.utils.raster import raster_to_base64_png
 
+_TC_STYLE_NODATA = 3.4028234663852886e38  # real GRIB missing-value sentinel
 
-def _make_raster(array: np.ndarray) -> RasterData:
+
+def _make_raster(
+    array: np.ndarray, nodata: float = POPULATION_NODATA_VALUE
+) -> RasterData:
     rows, cols = array.shape
     transform = from_bounds(36.0, 0.0, 38.0, 2.0, cols, rows)
     return RasterData(
         array=array,
         transform=transform,
         crs=DEFAULT_CRS,
-        nodata=POPULATION_NODATA_VALUE,
+        nodata=nodata,
     )
 
 
@@ -76,3 +80,19 @@ def test_negative_values_are_clipped_to_zero():
     pixels = np.array(img)
 
     assert pixels[0, 0] == 0
+
+
+def test_huge_positive_nodata_sentinel_is_excluded_not_treated_as_max():
+    array = np.array(
+        [[_TC_STYLE_NODATA, 45.0], [45.0, _TC_STYLE_NODATA]], dtype=np.float32
+    )
+    result = raster_to_base64_png(_make_raster(array, nodata=_TC_STYLE_NODATA))
+
+    raw = base64.b64decode(result)
+    img = Image.open(io.BytesIO(raw))
+    pixels = np.array(img)
+
+    assert pixels[0, 1] == 255  # real hazard reading -> brightest
+    assert pixels[1, 0] == 255
+    assert pixels[0, 0] == 0  # nodata sentinel -> not rendered as "max"
+    assert pixels[1, 1] == 0

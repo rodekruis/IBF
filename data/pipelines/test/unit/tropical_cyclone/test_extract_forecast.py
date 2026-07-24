@@ -10,6 +10,7 @@ from pipelines.tropical_cyclone.extract_forecast import (
     _parse_gefs_wind_path,
     _parse_lead_hour_spectrum,
     _resolve_configured_interval_hours,
+    _scale_excluding_nodata,
 )
 from rasterio.transform import from_origin
 
@@ -150,3 +151,29 @@ class TestAggregateBucketRasters:
         }
         result = _aggregate_bucket_rasters(rasters_by_member_and_lead_hour, 0, 6)
         assert result == []
+
+
+class TestScaleExcludingNodata:
+    def test_scales_a_real_value_by_the_conversion_factor(self):
+        array = np.array([[45.0]], dtype=np.float32)
+        result = _scale_excluding_nodata(array, _NODATA, 1.21)
+        np.testing.assert_allclose(result, [[54.45]], rtol=1e-5)
+
+    def test_nodata_cell_stays_exactly_nodata_not_inf(self):
+        array = np.array([[_NODATA]], dtype=np.float32)
+        result = _scale_excluding_nodata(array, _NODATA, 1.21)
+        assert result[0, 0] == _NODATA
+        assert not np.isinf(result).any()
+
+    def test_is_a_noop_at_factor_1_for_phl(self):
+        array = np.array([[45.0, _NODATA]], dtype=np.float32)
+        result = _scale_excluding_nodata(array, _NODATA, 1.0)
+        assert result[0, 0] == 45.0
+        assert result[0, 1] == _NODATA
+
+    def test_mixed_array_scales_only_non_nodata_cells(self):
+        array = np.array([45.0, _NODATA, 30.0], dtype=np.float32)
+        result = _scale_excluding_nodata(array, _NODATA, 1.05)
+        np.testing.assert_allclose(result[0], 47.25, rtol=1e-5)
+        assert result[1] == _NODATA
+        np.testing.assert_allclose(result[2], 31.5, rtol=1e-5)

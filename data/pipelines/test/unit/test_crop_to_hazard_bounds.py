@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from rasterio.transform import Affine
 
 from pipelines.constants import DEFAULT_CRS
@@ -152,3 +153,37 @@ class TestComputePopulationExposedWithCrop:
 
         assert result is not None
         np.testing.assert_allclose(result.array.sum(), pop_array.sum(), rtol=0.01)
+
+
+class TestComputePopulationExposedAcrossNodataConventions:
+    @pytest.mark.parametrize(
+        "hazard_nodata",
+        [-9999.0, 0.0, 3.4028234663852886e38],
+        ids=[
+            "negative-sentinel",
+            "flood-style-zero",
+            "tropical-cyclone-style-huge-positive",
+        ],
+    )
+    def test_nodata_sentinel_cells_are_excluded_regardless_of_convention(
+        self, hazard_nodata
+    ):
+        pop_array = np.ones((10, 10), dtype=np.float32) * 100.0
+        pop_transform = Affine(0.01, 0, 0.0, 0, -0.01, 0.1)
+        population_raster = RasterData(
+            array=pop_array, transform=pop_transform, crs=DEFAULT_CRS, nodata=-9999.0
+        )
+
+        hazard_array = np.full((10, 10), hazard_nodata, dtype=np.float32)
+        hazard_array[3:7, 3:7] = 45.0
+        hazard_raster = RasterData(
+            array=hazard_array,
+            transform=pop_transform,
+            crs=DEFAULT_CRS,
+            nodata=hazard_nodata,
+        )
+
+        result = compute_population_exposed(population_raster, hazard_raster)
+
+        assert result is not None
+        np.testing.assert_allclose(result.array.sum(), 100.0 * 16, rtol=0.01)

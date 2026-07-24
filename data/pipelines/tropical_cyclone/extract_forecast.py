@@ -4,21 +4,17 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from itertools import pairwise
 
 import numpy as np
 import xarray as xr
 from rasterio.transform import Affine
 
 from pipelines.infra.data_types.loaded_data_types import RasterData
-from pipelines.infra.utils.nrw_logger import log_info, log_warning, LogTag
+from pipelines.infra.utils import nrw_logger
 from pipelines.infra.utils.raster import BoundingBox
-from pipelines.tropical_cyclone.constants import (
-    AveragingPeriod,
-    CountryConfig,
-    GEFS_NATIVE_LEAD_TIME_STEP_HOURS,
-    WMO_HARPER_10MIN_TO_1MIN_FACTOR,
-)
+from pipelines.tropical_cyclone import constants
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +29,7 @@ class TimeIntervalWindSpeed:
 def extract_wind_speed(
     gefs_wind_member_paths: list[str],
     bounds: BoundingBox,
-    country_config: CountryConfig,
+    country_config: constants.CountryConfig,
     temporal_extent: dict[str, list],
 ) -> list[TimeIntervalWindSpeed]:
     """
@@ -61,18 +57,18 @@ def extract_wind_speed(
 
     for path in gefs_wind_member_paths:
         if not os.path.exists(path):
-            log_warning(
+            nrw_logger.log_warning(
                 logger,
-                LogTag.TROPICAL_CYCLONE_LOGIC,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
                 f"GEFS wind file not found, skipping: {path}",
             )
             continue
 
         parsed = _parse_gefs_wind_path(path)
         if parsed is None:
-            log_warning(
+            nrw_logger.log_warning(
                 logger,
-                LogTag.TROPICAL_CYCLONE_LOGIC,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
                 f"Unrecognized GEFS wind file path, skipping: {path}",
             )
             continue
@@ -85,19 +81,23 @@ def extract_wind_speed(
         if forecast_cycle_datetime is None:
             forecast_cycle_datetime = parsed.cycle_datetime
         elif parsed.cycle_datetime != forecast_cycle_datetime:
-            log_warning(
+            nrw_logger.log_warning(
                 logger,
-                LogTag.TROPICAL_CYCLONE_LOGIC,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
                 f"GEFS wind file from different forecast cycle ({parsed.cycle_datetime}) "
                 f"than expected ({forecast_cycle_datetime}), skipping: {path}",
             )
             continue
 
-        log_info(
-            logger, LogTag.TROPICAL_CYCLONE_LOGIC, f"Extracting wind speed from {path}"
+        nrw_logger.log_info(
+            logger,
+            nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
+            f"Extracting wind speed from {path}",
         )
         wind_speed_raster = _read_wind_speed_raster(path, bounds)
-        wind_speed_raster.array = wind_speed_raster.array * conversion_factor
+        wind_speed_raster.array = _scale_excluding_nodata(
+            wind_speed_raster.array, wind_speed_raster.nodata, conversion_factor
+        )
         rasters_by_member_and_lead_hour[(parsed.member, parsed.lead_hour)] = (
             wind_speed_raster
         )
@@ -128,10 +128,21 @@ def extract_wind_speed(
     return time_interval_wind_speeds
 
 
-def _resolve_conversion_factor(country_config: CountryConfig) -> float:
-    if country_config.sustained_wind_averaging_period == AveragingPeriod.TEN_MINUTE:
+def _resolve_conversion_factor(country_config: constants.CountryConfig) -> float:
+    if (
+        country_config.sustained_wind_averaging_period
+        == constants.AveragingPeriod.TEN_MINUTE
+    ):
         return 1.0
-    return WMO_HARPER_10MIN_TO_1MIN_FACTOR[country_config.exposure_class]
+    return constants.WMO_HARPER_10MIN_TO_1MIN_FACTOR[country_config.exposure_class]
+
+
+def _scale_excluding_nodata(
+    array: np.ndarray, nodata: float, conversion_factor: float
+) -> np.ndarray:
+    """Multiplies non-nodata cells by conversion_factor; nodata cells stay unchanged."""
+    scaled = np.ma.masked_equal(array, nodata) * np.float32(conversion_factor)
+    return scaled.filled(nodata).astype(np.float32)
 
 
 # Matches NOAA's NOMADS/AWS-S3 GEFS wind path layout, confirmed against real files in the
@@ -159,7 +170,7 @@ def _parse_gefs_wind_path(path: str) -> _ParsedGefsWindPath | None:
         return None
     cycle_datetime = datetime.strptime(
         match.group("date") + match.group("cycle_hour"), "%Y%m%d%H"
-    )
+    ).replace(tzinfo=timezone.utc)
     return _ParsedGefsWindPath(
         cycle_datetime=cycle_datetime,
         member=match.group("member"),
@@ -196,18 +207,18 @@ def _resolve_configured_interval_hours(lead_hour_spectrum: list[int]) -> int:
     - it protects _aggregate_bucket_rasters below, and removing it fails silently, not loudly.
     """
     if len(lead_hour_spectrum) < 2:
-        return GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+        return constants.GEFS_NATIVE_LEAD_TIME_STEP_HOURS
 
-    deltas = {b - a for a, b in zip(lead_hour_spectrum, lead_hour_spectrum[1:])}
+    deltas = {b - a for a, b in pairwise(lead_hour_spectrum)}
     if len(deltas) > 1 or min(deltas) <= 0:
         raise ValueError(
             f"Lead-hour spectrum must be strictly increasing with constant spacing: {lead_hour_spectrum}"
         )
     interval_hours = deltas.pop()
-    if interval_hours % GEFS_NATIVE_LEAD_TIME_STEP_HOURS != 0:
+    if interval_hours % constants.GEFS_NATIVE_LEAD_TIME_STEP_HOURS != 0:
         raise ValueError(
             f"Lead-hour spectrum interval must be a multiple of GEFS's native "
-            f"{GEFS_NATIVE_LEAD_TIME_STEP_HOURS}h step: {interval_hours}h"
+            f"{constants.GEFS_NATIVE_LEAD_TIME_STEP_HOURS}h step: {interval_hours}h"
         )
     return interval_hours
 
@@ -232,7 +243,7 @@ def _aggregate_bucket_rasters(
             for native_lead_hour in range(
                 bucket_start_hour,
                 bucket_start_hour + interval_hours,
-                GEFS_NATIVE_LEAD_TIME_STEP_HOURS,
+                constants.GEFS_NATIVE_LEAD_TIME_STEP_HOURS,
             )
             if (member, native_lead_hour) in rasters_by_member_and_lead_hour
         ]

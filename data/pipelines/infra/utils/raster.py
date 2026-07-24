@@ -1,3 +1,5 @@
+# ruff: noqa: I001
+# TODO-infra: ufmt and ruff disagree on this file's import order
 from __future__ import annotations
 
 import base64
@@ -97,7 +99,7 @@ def get_raster_extent(raster: RasterData) -> dict[str, float]:
 
 def raster_to_base64_png(raster: RasterData) -> str:
     array = raster.array.copy()
-    array = np.where(np.isnan(array), 0, array)
+    array = np.where(np.isnan(array) | (array == raster.nodata), 0, array)
     array = np.clip(array, 0, None)
 
     max_val = array.max()

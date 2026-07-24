@@ -1,3 +1,5 @@
+# ruff: noqa: I001
+# TODO-infra: ufmt and ruff disagree on this file's import order
 from __future__ import annotations
 
 import logging
@@ -77,6 +79,7 @@ def compute_population_exposed(
         pop_array, pop_transform, hazard_extent_raster, pop_crs
     )
 
+    hazard_nodata = hazard_extent_raster.nodata
     hazard_array_resampled = np.zeros(cropped_pop_array.shape, dtype=np.float32)
     reproject(
         source=hazard_extent_raster.array.astype(np.float32),
@@ -85,10 +88,15 @@ def compute_population_exposed(
         src_crs=hazard_extent_raster.crs,
         dst_transform=cropped_pop_transform,
         dst_crs=pop_crs,
+        src_nodata=hazard_nodata,
+        dst_nodata=hazard_nodata,
         resampling=Resampling.nearest,
     )
 
-    binary_hazard_extent = (hazard_array_resampled > 0).astype(np.uint8)
+    # A pixel is exposed only if it's positive and not the raster's own nodata value.
+    binary_hazard_extent = (
+        (hazard_array_resampled > 0) & (hazard_array_resampled != hazard_nodata)
+    ).astype(np.uint8)
     population_in_hazard_extent = np.where(
         binary_hazard_extent == 1, cropped_pop_array, 0.0
     )
