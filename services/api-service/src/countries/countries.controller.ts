@@ -26,7 +26,6 @@ export class CountriesController {
 
   // This endpoint is FE-accessed and therefore no-auth for now
   @Get()
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @ApiOperation({ summary: 'Get all countries' })
   @ApiResponse({
     status: HttpStatus.OK,
