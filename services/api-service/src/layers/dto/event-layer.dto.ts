@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-import { CountryLayerDto } from '@api-service/src/layers/dto/country-layer.dto';
+import { BaseLayerDto } from '@api-service/src/layers/dto/base-layer.dto';
 
-export class EventLayerDto extends CountryLayerDto {
+export class EventLayerDto extends BaseLayerDto {
   @ApiProperty({
     description: 'ID that can be used to fetch the actual map layer data',
   })

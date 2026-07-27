@@ -9,9 +9,10 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
@@ -19,7 +20,7 @@ import { LayerCreateDto } from '@api-service/src/layers/dto/layer-create.dto';
 import { LayerReadDto } from '@api-service/src/layers/dto/layer-read.dto';
 import { LayerUpdateDto } from '@api-service/src/layers/dto/layer-update.dto';
 import { LayersService } from '@api-service/src/layers/layers.service';
-import { LayerName } from '@api-service/src/shared-enums';
+import { HazardType, LayerName } from '@api-service/src/shared-enums';
 
 @ApiTags('layers')
 @Controller('layers')
@@ -36,15 +37,34 @@ export class LayersController {
     return value as LayerName;
   }
 
+  private parseHazardTypeOrThrow(value: string): HazardType {
+    const values = Object.values(HazardType) as string[];
+    if (!values.includes(value)) {
+      throw new BadRequestException(
+        `Invalid hazard type '${value}'. Allowed values: ${values.join(', ')}`,
+      );
+    }
+    return value as HazardType;
+  }
+
   @Get()
-  @UseGuards(AuthenticatedUserGuard)
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @ApiOperation({
-    summary: 'Get all layers. Admin endpoint for managing configuration.',
+    summary:
+      'Get layers, optionally filtered by hazard type. Returns layers with no hazard type (shared) plus those matching the filter.',
+  })
+  @ApiQuery({
+    name: 'hazardType',
+    enum: HazardType,
+    required: false,
   })
   @ApiResponse({ status: HttpStatus.OK, type: [LayerReadDto] })
-  public async getLayers(): Promise<LayerReadDto[]> {
-    return this.layersService.getLayers();
+  public async getLayers(
+    @Query('hazardType') hazardType?: string,
+  ): Promise<LayerReadDto[]> {
+    const parsed = hazardType
+      ? this.parseHazardTypeOrThrow(hazardType)
+      : undefined;
+    return this.layersService.getAvailableLayers(parsed);
   }
 
   @Post()

@@ -8,7 +8,11 @@ import { LayerCreateDto } from '@api-service/src/layers/dto/layer-create.dto';
 import { LayerReadDto } from '@api-service/src/layers/dto/layer-read.dto';
 import { LayerUpdateDto } from '@api-service/src/layers/dto/layer-update.dto';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
-import { HazardType, LayerName } from '@api-service/src/shared-enums';
+import {
+  HazardType,
+  LayerName,
+  LayerType,
+} from '@api-service/src/shared-enums';
 
 const layerSelect = {
   id: true,
@@ -49,13 +53,16 @@ export class LayersRepository {
     return rows.map((row) => this.toReadDto(row));
   }
 
-  public async getLayersForHazardTypes(
-    hazardTypes: HazardType[],
+  public async getAvailableLayers(
+    hazardType?: HazardType,
   ): Promise<LayerReadDto[]> {
+    const hazardFilter = hazardType
+      ? { OR: [{ hazardType: null }, { hazardType }] }
+      : { hazardType: null };
+
+    // Don't include shape layers (e.g. populationExposed) for now, as these are handled differently in the FE
     const rows = await this.prisma.layer.findMany({
-      where: {
-        OR: [{ hazardType: null }, { hazardType: { in: hazardTypes } }],
-      },
+      where: { ...hazardFilter, type: { not: LayerType.shape } },
       select: layerSelect,
       orderBy: { name: 'asc' },
     });

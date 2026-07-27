@@ -31,6 +31,11 @@ ALTER TABLE "api-service"."alert-exposure-raster-data" RENAME COLUMN "layer" TO 
 ALTER TABLE "api-service"."static-raster-data" RENAME COLUMN "layer" TO "layerName";
 ALTER TABLE "api-service"."geo-feature" RENAME COLUMN "layer" TO "layerName";
 
+-- RenameIndexes: update index names to reflect column rename
+ALTER INDEX "api-service"."geo-feature_countryCodeIso3_layer_idx" RENAME TO "geo-feature_countryCodeIso3_layerName_idx";
+ALTER INDEX "api-service"."geo-feature_countryCodeIso3_layer_referenceId_key" RENAME TO "geo-feature_countryCodeIso3_layerName_referenceId_key";
+ALTER INDEX "api-service"."static-raster-data_countryCodeIso3_layer_key" RENAME TO "static-raster-data_countryCodeIso3_layerName_key";
+
 -- DropColumn: alert-exposure-geo-features no longer has a layer column
 ALTER TABLE "api-service"."alert-exposure-geo-features" DROP COLUMN "layer";
 

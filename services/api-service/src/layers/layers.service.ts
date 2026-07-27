@@ -14,10 +14,10 @@ export class LayersService {
     return this.layersRepository.getLayers();
   }
 
-  public async getLayersForHazardTypes(
-    hazardTypes: HazardType[],
+  public async getAvailableLayers(
+    hazardType?: HazardType,
   ): Promise<LayerReadDto[]> {
-    return this.layersRepository.getLayersForHazardTypes(hazardTypes);
+    return this.layersRepository.getAvailableLayers(hazardType);
   }
 
   public async createLayer(dto: LayerCreateDto): Promise<LayerReadDto> {
