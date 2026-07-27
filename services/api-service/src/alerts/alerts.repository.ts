@@ -11,7 +11,6 @@ import { SeverityReadDto } from '@api-service/src/alerts/dto/severity-read.dto';
 import { ForecastMetadata } from '@api-service/src/events/alert-to-event.service';
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
-import { LayerName } from '@api-service/src/shared-enums';
 import {
   colorizeGrayscalePng,
   FLOOD_DEPTH_CONFIG,
@@ -27,7 +26,7 @@ const alertInclude = {
       id: true,
       created: true,
       updated: true,
-      layer: { select: { name: true } },
+      layerName: true,
       metadata: true,
     },
   },
@@ -56,14 +55,11 @@ export class AlertsRepository {
       exposure: {
         adminAreas: alert.exposureAdminArea.map((row) => ({
           ...row,
-          layer: row.layerId,
+          layer: row.layerName,
         })) as unknown as ExposureAdminAreaReadDto[],
         geoFeatures:
           alert.exposureGeoFeature as unknown as ExposureGeoFeatureReadDto[],
-        rasters: alert.exposureRasterData.map((row) => ({
-          ...row,
-          layer: row.layer.name,
-        })) as unknown as ExposureRasterReadDto[],
+        rasters: alert.exposureRasterData as unknown as ExposureRasterReadDto[],
       },
     };
   }
@@ -106,30 +102,6 @@ export class AlertsRepository {
     return this.prisma.$transaction(async (tx) => {
       const created: AlertReadDto[] = [];
 
-      const layerNames = new Set<LayerName>();
-      for (const dto of alertCreateDtos) {
-        for (const entry of dto.exposure.adminAreas) {
-          layerNames.add(entry.layer);
-        }
-        for (const entry of dto.exposure.rasters ?? []) {
-          layerNames.add(entry.layer);
-        }
-      }
-      const layers = await tx.layer.findMany({
-        where: { name: { in: [...layerNames] } },
-        select: { id: true, name: true },
-      });
-      const layerIdByName = new Map(layers.map((l) => [l.name, l.id]));
-
-      const missingLayers = [...layerNames].filter(
-        (name) => !layerIdByName.has(name),
-      );
-      if (missingLayers.length > 0) {
-        throw new NotFoundException(
-          `Unknown layer(s): ${missingLayers.join(', ')}`,
-        );
-      }
-
       for (const alertCreateDto of alertCreateDtos) {
         const eventId = eventIds.get(alertCreateDto.eventName) ?? null;
         const record = await tx.alert.create({
@@ -153,7 +125,7 @@ export class AlertsRepository {
               create: alertCreateDto.exposure.adminAreas.map((entry) => ({
                 placeCode: entry.placeCode,
                 adminLevel: entry.adminLevel,
-                layerId: layerIdByName.get(entry.layer)!,
+                layerName: entry.layer,
                 value: entry.value,
               })),
             },
@@ -170,7 +142,7 @@ export class AlertsRepository {
             },
             exposureRasterData: {
               create: (alertCreateDto.exposure.rasters ?? []).map((entry) => ({
-                layerId: layerIdByName.get(entry.layer)!,
+                layerName: entry.layer,
                 valueGreyscale: entry.valueGreyscale,
                 valueColoured: colorizeGrayscalePng(
                   entry.valueGreyscale,

@@ -170,11 +170,11 @@ export class EventsRepository {
       select: {
         eventId: true,
         exposureAdminArea: {
-          where: { layer: { name: LayerName.populationExposed } },
+          where: { layerName: LayerName.populationExposed },
           select: {
             placeCode: true,
             adminLevel: true,
-            layer: { select: { name: true } },
+            layerName: true,
             value: true,
           },
         },
@@ -203,7 +203,7 @@ export class EventsRepository {
           name: nameByPlaceCode.get(row.placeCode) ?? row.placeCode,
           exposure: [
             {
-              layerName: row.layer.name,
+              layerName: row.layerName,
               exposed: row.value,
             },
           ],

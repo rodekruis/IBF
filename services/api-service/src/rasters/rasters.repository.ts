@@ -12,24 +12,13 @@ import { LayerName } from '@api-service/src/shared-enums';
 export class RastersRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  private async getLayerIdOrThrow(layerName: LayerName): Promise<number> {
-    const layer = await this.prisma.layer.findUnique({
-      where: { name: layerName },
-      select: { id: true },
-    });
-    if (!layer) {
-      throw new NotFoundException(`Layer '${layerName}' not found`);
-    }
-    return layer.id;
-  }
-
   public async getAlertRasterOrThrow(
     id: number,
   ): Promise<AlertRasterResponseDto> {
     const raster = await this.prisma.alertExposureRasterData.findUnique({
       where: { id },
       select: {
-        layer: { select: { name: true } },
+        layerName: true,
         metadata: true,
       },
     });
@@ -39,7 +28,7 @@ export class RastersRepository {
     }
 
     return {
-      layer: raster.layer.name,
+      layer: raster.layerName,
       metadata: raster.metadata as unknown as RasterMetadataDto,
     };
   }
@@ -63,14 +52,13 @@ export class RastersRepository {
     countryCodeIso3: string,
     layerName: LayerName,
   ): Promise<StaticRasterResponseDto> {
-    const layerId = await this.getLayerIdOrThrow(layerName);
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {
-        countryCodeIso3_layerId: { countryCodeIso3, layerId },
+        countryCodeIso3_layerName: { countryCodeIso3, layerName },
       },
       select: {
         id: true,
-        layer: { select: { name: true } },
+        layerName: true,
         metadata: true,
       },
     });
@@ -83,7 +71,7 @@ export class RastersRepository {
 
     return {
       id: raster.id,
-      layer: raster.layer.name,
+      layer: raster.layerName,
       metadata: raster.metadata as unknown as RasterMetadataDto,
     };
   }
@@ -115,10 +103,9 @@ export class RastersRepository {
     layerName: LayerName,
     field: 'valueColoured' | 'valueData',
   ): Promise<Buffer> {
-    const layerId = await this.getLayerIdOrThrow(layerName);
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {
-        countryCodeIso3_layerId: { countryCodeIso3, layerId },
+        countryCodeIso3_layerName: { countryCodeIso3, layerName },
       },
       select: {
         [field]: true,
@@ -137,12 +124,11 @@ export class RastersRepository {
   public async upsertStaticRaster(
     dto: StaticRasterUploadDto,
   ): Promise<StaticRasterResponseDto> {
-    const layerId = await this.getLayerIdOrThrow(dto.layer);
     const raster = await this.prisma.staticRasterData.upsert({
       where: {
-        countryCodeIso3_layerId: {
+        countryCodeIso3_layerName: {
           countryCodeIso3: dto.countryCodeIso3,
-          layerId,
+          layerName: dto.layer,
         },
       },
       update: {
@@ -152,21 +138,21 @@ export class RastersRepository {
       },
       create: {
         countryCodeIso3: dto.countryCodeIso3,
-        layerId,
+        layerName: dto.layer,
         valueData: dto.valueData,
         valueColoured: dto.valueColoured,
         metadata: dto.metadata as unknown as Prisma.InputJsonValue,
       },
       select: {
         id: true,
-        layer: { select: { name: true } },
+        layerName: true,
         metadata: true,
       },
     });
 
     return {
       id: raster.id,
-      layer: raster.layer.name,
+      layer: raster.layerName,
       metadata: raster.metadata as unknown as RasterMetadataDto,
     };
   }
@@ -175,10 +161,9 @@ export class RastersRepository {
     countryCodeIso3: string,
     layerName: LayerName,
   ): Promise<void> {
-    const layerId = await this.getLayerIdOrThrow(layerName);
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {
-        countryCodeIso3_layerId: { countryCodeIso3, layerId },
+        countryCodeIso3_layerName: { countryCodeIso3, layerName },
       },
       select: { id: true },
     });

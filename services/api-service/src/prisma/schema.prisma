@@ -188,8 +188,8 @@ model AlertExposureAdminArea {
   alert      Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
   placeCode  String
   adminLevel Int
-  layerId    Int
-  layer      Layer    @relation(fields: [layerId], references: [id])
+  layerName  LayerName
+  layer      Layer    @relation(fields: [layerName], references: [name])
   value      Float
 
   @@index([alertId])
@@ -220,8 +220,8 @@ model AlertExposureRasterData {
   updated         DateTime @updatedAt
   alertId         Int
   alert           Alert    @relation(fields: [alertId], references: [id], onDelete: Cascade)
-  layerId         Int
-  layer           Layer     @relation(fields: [layerId], references: [id])
+  layerName       LayerName
+  layer           Layer     @relation(fields: [layerName], references: [name])
   valueGreyscale  String
   valueColoured   String
   metadata        Json
@@ -238,13 +238,13 @@ model StaticRasterData {
   updated         DateTime @updatedAt
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
-  layerId         Int
-  layer           Layer     @relation(fields: [layerId], references: [id])
+  layerName       LayerName
+  layer           Layer     @relation(fields: [layerName], references: [name])
   valueData       String
   valueColoured   String
   metadata        Json
 
-  @@unique([countryCodeIso3, layerId])
+  @@unique([countryCodeIso3, layerName])
   @@index([countryCodeIso3])
 }
 
@@ -298,14 +298,14 @@ model GeoFeature {
   countryCodeIso3 String
   country         Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
   featureType     String // Point, LineString, Polygon, MultiPolygon
-  layerId         Int // e.g. glofasStations layer
-  layer           Layer     @relation(fields: [layerId], references: [id])
+  layerName       LayerName // e.g. glofasStations
+  layer           Layer     @relation(fields: [layerName], references: [name])
   referenceId     String // external identifier, e.g. station code
   geometry        Unsupported("geometry(Geometry, 4326)")?
   attributes      Json   @default("{}")
 
-  @@unique([countryCodeIso3, layerId, referenceId])
-  @@index([countryCodeIso3, layerId])
+  @@unique([countryCodeIso3, layerName, referenceId])
+  @@index([countryCodeIso3, layerName])
 }
 
 model Layer {

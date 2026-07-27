@@ -49,7 +49,7 @@ class ApiClient:
         try:
             body = response.json()
             errors = body.get("errors", [body.get("message", str(body))])
-        except Exception:
+        except (ValueError, KeyError):
             errors = [f"API returned {response.status_code}: {response.text}"]
 
         for err in errors:
@@ -111,7 +111,9 @@ class ApiClient:
 
     def get_geo_features(self, country_code_iso_3: str, layer: str) -> list[dict]:
         url = f"{self._base_url}{GEO_FEATURES_PATH}"
-        cql_filter = f"countryCodeIso3='{country_code_iso_3}' AND layer='{layer}'"
+        cql_filter = (
+            f"countryCodeIso3='{country_code_iso_3}' AND \"layerName\"='{layer}'"
+        )
         params = {"filter": cql_filter}
         log_info(logger, LogTag.INFRA, f"Download '{url}?{urlencode(params)}'")
         response = self._session.get(url, params=params, timeout=30)

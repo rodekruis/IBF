@@ -21,7 +21,7 @@ describe('/ Geo Features', () => {
       const response = await getServer()
         .get('/geo-features')
         .query({
-          filter: `countryCodeIso3='MWI' AND layer='${LayerName.glofasStations}'`,
+          filter: `countryCodeIso3='MWI' AND "layerName"='${LayerName.glofasStations}'`,
         })
         .set('Cookie', [accessToken]);
 
