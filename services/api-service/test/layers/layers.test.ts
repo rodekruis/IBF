@@ -16,14 +16,17 @@ describe('/ Layers', () => {
   });
 
   describe('GET /layers', () => {
-    it('should return all seeded layers', async () => {
+    it('should return shared layers (no hazardType filter)', async () => {
       const response = await getServer()
         .get('/layers')
         .set('Cookie', [accessToken]);
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBe(7);
+      expect(response.body.length).toBe(3);
+      response.body.forEach((layer: { hazardType: string | null }) => {
+        expect(layer.hazardType).toBeNull();
+      });
     });
 
     it('should return layers with expected properties', async () => {
@@ -40,9 +43,9 @@ describe('/ Layers', () => {
       expect(population.description).toBeNull();
     });
 
-    it('should return hazard-specific layers with hazardType set', async () => {
+    it('should return hazard-specific layers when hazardType is provided', async () => {
       const response = await getServer()
-        .get('/layers')
+        .get('/layers?hazardType=floods')
         .set('Cookie', [accessToken]);
 
       const floodDepth = response.body.find(
