@@ -6,18 +6,18 @@ This folder contains the tropical-cyclone-specific forecast logic used by the pi
 
 - `forecast.py`
   - Entry point for tropical-cyclone hazard logic via `calculate_tropical_cyclone_forecasts(...)`:
-  - Loads target admin areas and alert configs through `DataProvider`, resolves the country's exposure-class/averaging-period config, then loads GEFS wind and track data (currently local test fixtures - see "GEFS data" below, real fetcher still `# TODO-infra`).
+  - Loads target admin areas and alert configs through `DataProvider`, resolves the country's exposure-class/averaging-period/forecast-source config, then loads that source's (GEFS or ECMWF) wind and track data (currently local test fixtures - see "Forecast-source data" below, real fetcher still `# TODO-infra`).
   - Builds alerts, severity time series, admin-area exposure, and raster exposure through `DataSubmitter`.
 
 ## Accompanying scripts in this folder
 
 - `extract_forecast.py`
-  - `extract_wind_speed`: reads GEFS 10 m U/V wind GRIB2 (one file per member per lead time), converts to sustained wind speed, applies the country's averaging-period conversion factor.
-  - Buckets output per the alert config's temporal extent (its `"lead-time-spectrum"`), aggregating GEFS's native 3-hour cadence up via a per-cell max whenever the configured interval is coarser.
+  - `extract_wind_speed`: dispatches on the country's forecast source and reads 10 m U/V wind GRIB2 - GEFS (one file per member per lead time) or ECMWF (one file per ensemble step, member via the GRIB `number` key) - converts to sustained wind speed, applies the country's averaging-period conversion factor.
+  - Buckets output per the alert config's temporal extent (its `"lead-time-spectrum"`), aggregating the source's native cadence up via a per-cell max whenever the configured interval is coarser.
 
 - `extract_track.py`
-  - `extract_track`: reads GEFS ATCF track files (one file per member, all lead times as rows), filters fixes to the monitoring bounds, dedups repeated wind-radii rows.
-  - `derive_storm_centroid`: picks the storm-center fix at the same bucket the peak-intensity alert was found in, used for the alert's centroid - not for the severity gate itself.
+  - `extract_track`: dispatches on the country's forecast source and reads track fixes - GEFS ATCF (one file per member, all lead times as rows) or ECMWF BUFR (one file per run, members as subsets) - filtering fixes to the monitoring bounds.
+  - `derive_storm_centroid`: picks the storm-center fix at the same bucket the peak-intensity alert was found in, used for the alert's centroid - not for the severity gate itself. Source-agnostic: it only reads each fix's lat/lon.
 
 - `determine_alerts.py`
   - `determine_severities`: per time bucket per member, clips wind speed to the country's admin-area union and takes the land-clipped max (the `RUN` value); `MEDIAN` is the median of those.
@@ -30,13 +30,13 @@ This folder contains the tropical-cyclone-specific forecast logic used by the pi
   - `clip_wind_extent_to_admin_areas`: clips the wind-extent raster to the alert's admin areas (thin wrapper over `infra.utils.exposure.clip_raster_to_admin_areas`).
 
 - `constants.py`
-  - Per-country config (`COUNTRY_CONFIGS`): exposure class and sustained-wind averaging-period convention.
-  - WMO/Harper averaging-period conversion factors, `MIN_SEVERITY_MS`, GEFS ensemble member IDs, `GEFS_NATIVE_LEAD_TIME_STEP_HOURS`, `MONITORING_BOX_BUFFER_KM`.
+  - Per-country config (`COUNTRY_CONFIGS`): exposure class, sustained-wind averaging-period convention, and forecast source (GEFS or ECMWF).
+  - WMO/Harper averaging-period conversion factors, `MIN_SEVERITY_MS`, per-source ensemble/format constants (GEFS member IDs + `GEFS_NATIVE_LEAD_TIME_STEP_HOURS`; ECMWF streams, `ECMWF_NATIVE_LEAD_TIME_STEP_HOURS`, `ECMWF_TRACK_FIX_INTERVAL_HOURS`, unit conversions), `MONITORING_BOX_BUFFER_KM`.
 
-## GEFS data
+## Forecast-source data
 
 - **Alert config** (`alert_configs_ibf_api`): spatial extent (national) and temporal extent (a `"lead-time-spectrum"`, e.g. 3-hour steps up to 168 hours) fetched from the IBF API per country.
-- **GEFS wind** (GRIB2, `pgrb2sp25`) and **GEFS track** (ATCF `tctrack`) are not yet wired through `DataProvider`/`DataSource` - `# TODO-infra`. Until a real fetcher exists, `forecast.py` reads local files directly, picking the most recent `gefs.<date>/<hour>` cycle under `tropical_cyclone/bronze/gefs_wind/` and `.../bronze/gefs_track/`. That layout is a local-testing convention only (not committed, not fixed) - free to redesign once the real fetcher is built.
+- **Wind** (GRIB2) and **track** are not yet wired through `DataProvider`/`DataSource` - `# TODO-infra`. Until a real fetcher exists, `forecast.py` reads local files directly per the country's forecast source: GEFS from the most recent `gefs.<date>/<hour>` cycle under `tropical_cyclone/bronze/gefs_wind/` and `.../bronze/gefs_track/` (wind `pgrb2sp25` GRIB2, track ATCF `tctrack`); ECMWF from the most recent `<YYYYMMDD>/<HH>z` cycle under `.../bronze/ecmwf_wind/` and `.../bronze/ecmwf_track/` (wind `oper`/`enfo` GRIB2, track `tf` BUFR). Those layouts are a local-testing convention only (not committed, not fixed) - free to redesign once the real fetcher is built.
 
 ## Running this locally
 
