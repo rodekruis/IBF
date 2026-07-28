@@ -61,8 +61,13 @@ export class LayersRepository {
       : { hazardType: null };
 
     // Don't include shape layers (e.g. populationExposed) for now, as these are handled differently in the FE
+    // Don't include raster layers (e.g. floodDepth) as these are served per-event via GET /events
+    // TODO: probably serve all hazard-type-specific layers (e.g. glofasStations) via GET /events
     const rows = await this.prisma.layer.findMany({
-      where: { ...hazardFilter, type: { not: LayerType.shape } },
+      where: {
+        ...hazardFilter,
+        type: { notIn: [LayerType.shape, LayerType.raster] },
+      },
       select: layerSelect,
       orderBy: { name: 'asc' },
     });
