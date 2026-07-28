@@ -164,9 +164,9 @@ def _build_time_interval_wind_speeds(
     """
     Source-agnostic tail shared by every forecast source: bucket a populated
     {(member, lead_hour): raster} map into the configured lead-time spectrum. `native_step_hours`
-    is the loading source's own cadence, used both to validate the configured bucket width and to
-    walk the native steps inside each bucket (see _resolve_configured_interval_hours /
-    _aggregate_bucket_rasters).
+    is the loading source's own cadence, used to validate the configured bucket width against it
+    (see _resolve_configured_interval_hours); the per-bucket aggregation itself is cadence-agnostic
+    (see _aggregate_bucket_rasters).
     """
     configured_interval_hours = _resolve_configured_interval_hours(
         lead_hour_spectrum, native_step_hours
@@ -178,7 +178,6 @@ def _build_time_interval_wind_speeds(
             rasters_by_member_and_lead_hour,
             bucket_start_hour,
             configured_interval_hours,
-            native_step_hours,
         )
         if not bucket_rasters:
             continue
@@ -197,12 +196,16 @@ def _build_time_interval_wind_speeds(
 
 
 def _resolve_conversion_factor(country_config: constants.CountryConfig) -> float:
-    if (
-        country_config.sustained_wind_averaging_period
-        == constants.AveragingPeriod.TEN_MINUTE
-    ):
+    period = country_config.sustained_wind_averaging_period
+    if period == constants.AveragingPeriod.TEN_MINUTE:
         return 1.0
-    return constants.WMO_HARPER_10MIN_TO_1MIN_FACTOR[country_config.exposure_class]
+    if period == constants.AveragingPeriod.ONE_MINUTE:
+        return constants.WMO_HARPER_10MIN_TO_1MIN_FACTOR[country_config.exposure_class]
+    raise NotImplementedError(
+        f"No 10-minute-to-{period} sustained-wind conversion factor is defined; only "
+        f"ONE_MINUTE and TEN_MINUTE conventions are supported. A THREE_MINUTE convention "
+        f"(e.g. IMD / North Indian Ocean) would need its own WMO/Harper factor table."
+    )
 
 
 def _scale_excluding_nodata(
@@ -298,32 +301,22 @@ def _aggregate_bucket_rasters(
     rasters_by_member_and_lead_hour: dict[tuple[str, int], RasterData],
     bucket_start_hour: int,
     interval_hours: int,
-    native_step_hours: int,
 ) -> list[RasterData]:
     """
-    Per ensemble member, collect every native-step raster falling inside
-    [bucket_start_hour, bucket_start_hour + interval_hours) and combine them into one raster for
-    this bucket. A no-op (single native raster passed through as-is) whenever interval_hours equals
-    the loading source's `native_step_hours` - the common case today. Members missing all native
-    rasters for this bucket are skipped (matches the existing missing-file tolerance elsewhere in
-    this module).
+    Per ensemble member, combine every native raster whose lead hour falls inside
+    [bucket_start_hour, bucket_start_hour + interval_hours) into one raster for this bucket, via a
+    per-cell nodata-aware max (see _envelope_max). Rasters are collected by window membership rather
+    than by stepping a fixed native cadence, so this stays correct where a source's cadence changes
+    mid-forecast - e.g. ECMWF ENS wind is 3-hourly to 144h then 6-hourly. A no-op (single raster
+    passed through) when only one native step falls in the bucket, the common case today. Members
+    with no raster in the window are skipped (matches the missing-file tolerance elsewhere here).
     """
-    members = sorted({member for member, _ in rasters_by_member_and_lead_hour})
-    bucket_rasters: list[RasterData] = []
-    for member in members:
-        native_rasters = [
-            rasters_by_member_and_lead_hour[(member, native_lead_hour)]
-            for native_lead_hour in range(
-                bucket_start_hour,
-                bucket_start_hour + interval_hours,
-                native_step_hours,
-            )
-            if (member, native_lead_hour) in rasters_by_member_and_lead_hour
-        ]
-        if not native_rasters:
-            continue
-        bucket_rasters.append(_envelope_max(native_rasters))
-    return bucket_rasters
+    bucket_end_hour = bucket_start_hour + interval_hours
+    rasters_by_member: dict[str, list[RasterData]] = {}
+    for (member, lead_hour), raster in rasters_by_member_and_lead_hour.items():
+        if bucket_start_hour <= lead_hour < bucket_end_hour:
+            rasters_by_member.setdefault(member, []).append(raster)
+    return [_envelope_max(rasters) for _, rasters in sorted(rasters_by_member.items())]
 
 
 def _envelope_max(rasters: list[RasterData]) -> RasterData:

@@ -207,15 +207,19 @@ def _parse_steps(raw: str) -> list[int]:
     return [int(part) for part in raw.split(",") if part.strip()]
 
 
-def _full_window_steps() -> list[int]:
-    """Lead-time steps spanning the full 7-day forecast window at ECMWF's native cadence: 3-hourly
-    (ECMWF_NATIVE_LEAD_TIME_STEP_HOURS) out to 144h, then 6-hourly to 168h - ECMWF ENS 0p25 has no
-    3-hourly steps past 144h."""
+def _full_window_steps(cycle: datetime) -> list[int]:
+    """Lead-time steps spanning the forecast window at ECMWF's native cadence: 3-hourly
+    (ECMWF_NATIVE_LEAD_TIME_STEP_HOURS) out to 144h, then 6-hourly. Per ECMWF docs the ENS wind
+    horizon is 360h at 00/12 UTC but only 144h at 06/18 UTC, so the window caps at 168h for 00/12
+    and at 144h (no 6-hourly tail) for 06/18."""
     native_step = constants.ECMWF_NATIVE_LEAD_TIME_STEP_HOURS
-    three_hourly = list(range(0, _ECMWF_THREE_HOURLY_MAX_HOURS + 1, native_step))
-    six_hourly = list(
-        range(_ECMWF_THREE_HOURLY_MAX_HOURS + 6, _FULL_WINDOW_MAX_HOURS + 1, 6)
+    max_hours = (
+        _FULL_WINDOW_MAX_HOURS
+        if cycle.hour in (0, 12)
+        else _ECMWF_THREE_HOURLY_MAX_HOURS
     )
+    three_hourly = list(range(0, _ECMWF_THREE_HOURLY_MAX_HOURS + 1, native_step))
+    six_hourly = list(range(_ECMWF_THREE_HOURLY_MAX_HOURS + 6, max_hours + 1, 6))
     return three_hourly + six_hourly
 
 
@@ -247,8 +251,9 @@ def main() -> None:
     step_group.add_argument(
         "--full-window",
         action="store_true",
-        help="Fetch the full 7-day forecast window (0..144h by 3h, then 150..168h by 6h) instead "
-        "of --steps. Large at high member counts - pair with a small --members.",
+        help="Fetch the full forecast window at ECMWF's native cadence instead of --steps: "
+        "0..144h by 3h then 150..168h by 6h for 00/12 UTC cycles, capped at 144h for 06/18 UTC. "
+        "Large at high member counts - pair with a small --members.",
     )
     parser.add_argument(
         "--cycle",
@@ -266,10 +271,10 @@ def main() -> None:
         )
 
     member_numbers = set(range(1, args.members + 1))
-    steps = _full_window_steps() if args.full_window else args.steps
     session = requests.Session()
 
     cycle = _resolve_cycle(session, args.cycle)
+    steps = _full_window_steps(cycle) if args.full_window else args.steps
     logger.info(
         f"Fetching ECMWF test data for {TEST_COUNTRY} - cycle {cycle:%Y-%m-%d %H}:00 UTC, "
         f"wind steps {steps}, enfo members 1..{args.members}"

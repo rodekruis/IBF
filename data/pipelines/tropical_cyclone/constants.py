@@ -156,9 +156,11 @@ ECMWF_PERTURBED_MEMBER_NUMBERS: list[int] = list(range(1, ECMWF_PERTURBED_MEMBER
 ECMWF_TRACK_CONTROL_MEMBER_NUMBER = 51
 ECMWF_ENSEMBLE_COUNT = ECMWF_PERTURBED_MEMBER_COUNT + 1  # 50 perturbed + 1 control
 
-# Native ECMWF IFS ensemble wind cadence (the 0.25-degree wind steps we read). Same role as
+# Finest native ECMWF IFS ensemble wind cadence (the 0.25-degree wind steps we read). Same role as
 # GEFS_NATIVE_LEAD_TIME_STEP_HOURS - extract_wind_speed() aggregates these native steps up whenever
 # the alert config's temporal extent is coarser.
+# NB: ECMWF ENS is only 3-hourly out to 144h, then switches to 6-hourly (00/12 UTC run to 360h;
+# 06/18 UTC run stops at 144h) - so this value is the *finest* cadence, not a uniform one.
 ECMWF_NATIVE_LEAD_TIME_STEP_HOURS = 3
 
 # ECMWF BUFR cyclone-track fixes are reported on a 6-hourly `timePeriod` cadence (6, 12, 18, ...),

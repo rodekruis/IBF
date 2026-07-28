@@ -2,8 +2,15 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from pipelines.infra.data_types.enums import ForecastSource
 from pipelines.infra.data_types.loaded_data_types import RasterData
-from pipelines.tropical_cyclone.constants import GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+from pipelines.tropical_cyclone.constants import (
+    AveragingPeriod,
+    CountryConfig,
+    ExposureClass,
+    GEFS_NATIVE_LEAD_TIME_STEP_HOURS,
+    WMO_HARPER_10MIN_TO_1MIN_FACTOR,
+)
 from pipelines.tropical_cyclone.extract_forecast import (
     _aggregate_bucket_rasters,
     _envelope_max,
@@ -11,6 +18,7 @@ from pipelines.tropical_cyclone.extract_forecast import (
     _parse_gefs_wind_path,
     _parse_lead_hour_spectrum,
     _resolve_configured_interval_hours,
+    _resolve_conversion_factor,
     _scale_excluding_nodata,
 )
 from rasterio.transform import from_origin
@@ -49,6 +57,32 @@ class TestParseLeadHourSpectrum:
     def test_raises_when_spectrum_empty(self):
         with pytest.raises(ValueError, match="missing 'lead-time-spectrum'"):
             _parse_lead_hour_spectrum({"lead-time-spectrum": []})
+
+
+class TestResolveConversionFactor:
+    @staticmethod
+    def _config(
+        period: AveragingPeriod, exposure: ExposureClass = ExposureClass.AT_SEA
+    ) -> CountryConfig:
+        return CountryConfig(
+            exposure_class=exposure,
+            sustained_wind_averaging_period=period,
+            forecast_source=ForecastSource.GEFS,
+        )
+
+    def test_ten_minute_is_a_noop(self):
+        assert _resolve_conversion_factor(self._config(AveragingPeriod.TEN_MINUTE)) == 1.0
+
+    def test_one_minute_uses_the_exposure_gust_factor(self):
+        config = self._config(AveragingPeriod.ONE_MINUTE, ExposureClass.IN_LAND)
+        assert (
+            _resolve_conversion_factor(config)
+            == WMO_HARPER_10MIN_TO_1MIN_FACTOR[ExposureClass.IN_LAND]
+        )
+
+    def test_raises_for_unsupported_three_minute_convention(self):
+        with pytest.raises(NotImplementedError, match="THREE_MINUTE"):
+            _resolve_conversion_factor(self._config(AveragingPeriod.THREE_MINUTE))
 
 
 class TestResolveConfiguredIntervalHours:
@@ -173,9 +207,7 @@ class TestAggregateBucketRasters:
             ("gec00", 0): _make_raster(10.0),
             ("gep01", 0): _make_raster(12.0),
         }
-        result = _aggregate_bucket_rasters(
-            rasters_by_member_and_lead_hour, 0, 3, GEFS_NATIVE_LEAD_TIME_STEP_HOURS
-        )
+        result = _aggregate_bucket_rasters(rasters_by_member_and_lead_hour, 0, 3)
         assert sorted(raster.array[0, 0] for raster in result) == [10.0, 12.0]
 
     def test_aggregates_two_native_steps_into_a_coarser_bucket(self):
@@ -183,9 +215,7 @@ class TestAggregateBucketRasters:
             ("gec00", 0): _make_raster(10.0),
             ("gec00", 3): _make_raster(30.0),
         }
-        result = _aggregate_bucket_rasters(
-            rasters_by_member_and_lead_hour, 0, 6, GEFS_NATIVE_LEAD_TIME_STEP_HOURS
-        )
+        result = _aggregate_bucket_rasters(rasters_by_member_and_lead_hour, 0, 6)
         assert len(result) == 1
         assert result[0].array[0, 0] == 30.0
 
@@ -195,19 +225,27 @@ class TestAggregateBucketRasters:
             ("gec00", 3): _make_raster(30.0),
             ("gep01", 0): _make_raster(5.0),
         }
-        result = _aggregate_bucket_rasters(
-            rasters_by_member_and_lead_hour, 0, 6, GEFS_NATIVE_LEAD_TIME_STEP_HOURS
-        )
+        result = _aggregate_bucket_rasters(rasters_by_member_and_lead_hour, 0, 6)
         assert sorted(raster.array[0, 0] for raster in result) == [5.0, 30.0]
 
     def test_member_entirely_absent_from_the_bucket_window_is_excluded(self):
         rasters_by_member_and_lead_hour = {
             ("gec00", 6): _make_raster(10.0),
         }
-        result = _aggregate_bucket_rasters(
-            rasters_by_member_and_lead_hour, 0, 6, GEFS_NATIVE_LEAD_TIME_STEP_HOURS
-        )
+        result = _aggregate_bucket_rasters(rasters_by_member_and_lead_hour, 0, 6)
         assert result == []
+
+    def test_combines_mixed_cadence_steps_in_one_window(self):
+        # Window membership, not a fixed native step: a 3-hourly-region sample (144h) and the next
+        # 6-hourly-region sample (150h) in the same bucket both contribute - the behaviour that
+        # keeps aggregation correct across ECMWF's 3h->6h cadence change past 144h.
+        rasters_by_member_and_lead_hour = {
+            ("m", 144): _make_raster(10.0),
+            ("m", 150): _make_raster(40.0),
+        }
+        result = _aggregate_bucket_rasters(rasters_by_member_and_lead_hour, 144, 12)
+        assert len(result) == 1
+        assert result[0].array[0, 0] == 40.0
 
 
 class TestScaleExcludingNodata:
