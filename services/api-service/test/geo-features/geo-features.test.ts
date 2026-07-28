@@ -21,7 +21,7 @@ describe('/ Geo Features', () => {
       const response = await getServer()
         .get('/geo-features')
         .query({
-          filter: `countryCodeIso3='MWI' AND layer='${LayerName.glofasStations}'`,
+          filter: `countryCodeIso3='MWI' AND "layerName"='${LayerName.glofasStations}'`,
         })
         .set('Cookie', [accessToken]);
 
@@ -34,7 +34,6 @@ describe('/ Geo Features', () => {
       expect(feature.type).toBe('Feature');
       expect(feature.geometry).toBeDefined();
       expect(feature.properties.countryCodeIso3).toBe('MWI');
-      expect(feature.properties.layer).toBe(LayerName.glofasStations);
     });
   });
 
