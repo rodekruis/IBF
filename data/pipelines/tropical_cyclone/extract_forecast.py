@@ -11,6 +11,7 @@ import numpy as np
 import xarray as xr
 from rasterio.transform import Affine
 
+from pipelines.infra.data_types.enums import ForecastSource
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.infra.utils import nrw_logger
 from pipelines.infra.utils.raster import BoundingBox
@@ -27,31 +28,80 @@ class TimeIntervalWindSpeed:
 
 
 def extract_wind_speed(
-    gefs_wind_member_paths: list[str],
+    wind_member_paths: list[str],
     bounds: BoundingBox,
     country_config: constants.CountryConfig,
     temporal_extent: dict[str, list],
 ) -> list[TimeIntervalWindSpeed]:
     """
-    Read GEFS 10 m U/V wind (one GRIB2 file per member per lead time) into a sustained wind-speed
-    raster per ensemble member, sliced to `bounds`, bucketed per `temporal_extent`'s
-    "lead-time-spectrum" (e.g. {"lead-time-spectrum": ["0-hour", "3-hour", ..., "168-hour"]} - see
-    AlertConfig). GEFS's own native cadence (GEFS_NATIVE_LEAD_TIME_STEP_HOURS, currently 3h) is
-    fixed regardless of what the spectrum configures: when the configured interval is a coarser
-    multiple of it, multiple native-step rasters are combined per bucket via a per-cell,
-    nodata-aware max (see `_aggregate_bucket_rasters`) - the same precautionary-envelope approach
-    already used across ensemble members elsewhere in this hazard's logic.
+    Read a country's forecast-source 10 m wind into a sustained wind-speed raster per ensemble
+    member, sliced to `bounds`, bucketed per `temporal_extent`'s "lead-time-spectrum" (e.g.
+    {"lead-time-spectrum": ["0-hour", "3-hour", ..., "168-hour"]} - see AlertConfig).
+
+    Dispatches on country_config.forecast_source to the source-specific loader, because GEFS and
+    ECMWF package their ensemble wind completely differently (one GRIB2 file per member per lead
+    time for GEFS vs one file holding the whole ensemble step, members addressed by GRIB `number`,
+    for ECMWF - see _load_gefs_wind_rasters / _load_ecmwf_wind_rasters). Everything downstream of a
+    populated {(member, lead_hour): raster} map is source-agnostic (see
+    _build_time_interval_wind_speeds). Each source's native cadence is fixed
+    regardless of what the spectrum configures: when the configured interval is a coarser multiple
+    of it, multiple native-step rasters are combined per bucket via a per-cell, nodata-aware max
+    (see `_aggregate_bucket_rasters`) - the same precautionary-envelope approach already used
+    across ensemble members elsewhere in this hazard's logic.
 
     Applies the resolved averaging-period conversion factor: 1.0 if the country's sustained-wind
-    convention is already TEN_MINUTE (e.g. PHL/PAGASA - no correction needed), otherwise
-    WMO_HARPER_10MIN_TO_1MIN_FACTOR[exposure_class] to convert GEFS's assumed 10-minute-equivalent
-    native wind into the country's own ONE_MINUTE convention (e.g. KNA/DMA/ATG/NHC).
+    convention is already TEN_MINUTE, otherwise WMO_HARPER_10MIN_TO_1MIN_FACTOR[exposure_class]
+    to convert the source's assumed 10-minute-equivalent native wind into the country's own
+    ONE_MINUTE convention.
     """
     conversion_factor = _resolve_conversion_factor(country_config)
     lead_hour_spectrum = _parse_lead_hour_spectrum(temporal_extent)
-    configured_interval_hours = _resolve_configured_interval_hours(lead_hour_spectrum)
     max_lead_hour = lead_hour_spectrum[-1]
 
+    if country_config.forecast_source == ForecastSource.GEFS:
+        native_step_hours = constants.GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+        rasters_by_member_and_lead_hour, forecast_cycle_datetime = (
+            _load_gefs_wind_rasters(
+                wind_member_paths, bounds, conversion_factor, max_lead_hour
+            )
+        )
+    elif country_config.forecast_source == ForecastSource.ECMWF:
+        native_step_hours = constants.ECMWF_NATIVE_LEAD_TIME_STEP_HOURS
+        rasters_by_member_and_lead_hour, forecast_cycle_datetime = (
+            _load_ecmwf_wind_rasters(
+                wind_member_paths, bounds, conversion_factor, max_lead_hour
+            )
+        )
+    else:
+        raise ValueError(
+            f"Unsupported forecast source for wind extraction: "
+            f"{country_config.forecast_source}"
+        )
+
+    if forecast_cycle_datetime is None:
+        return []
+
+    return _build_time_interval_wind_speeds(
+        rasters_by_member_and_lead_hour,
+        forecast_cycle_datetime,
+        lead_hour_spectrum,
+        native_step_hours,
+    )
+
+
+def _load_gefs_wind_rasters(
+    gefs_wind_member_paths: list[str],
+    bounds: BoundingBox,
+    conversion_factor: float,
+    max_lead_hour: int,
+) -> tuple[dict[tuple[str, int], RasterData], datetime | None]:
+    """
+    Load GEFS 10 m U/V wind into a {(member, lead_hour): sustained-wind raster} map. GEFS ships one
+    GRIB2 file per member per lead time, so each path contributes exactly one (member, lead_hour)
+    raster - the member code is parsed straight from the filename (see _parse_gefs_wind_path).
+    Returns the map plus the single forecast cycle datetime shared by every file (None if nothing
+    loaded, which halts the pipeline at extract_wind_speed's guard).
+    """
     rasters_by_member_and_lead_hour: dict[tuple[str, int], RasterData] = {}
     forecast_cycle_datetime: datetime | None = None
 
@@ -102,8 +152,25 @@ def extract_wind_speed(
             wind_speed_raster
         )
 
-    if forecast_cycle_datetime is None:
-        return []
+    return rasters_by_member_and_lead_hour, forecast_cycle_datetime
+
+
+def _build_time_interval_wind_speeds(
+    rasters_by_member_and_lead_hour: dict[tuple[str, int], RasterData],
+    forecast_cycle_datetime: datetime,
+    lead_hour_spectrum: list[int],
+    native_step_hours: int,
+) -> list[TimeIntervalWindSpeed]:
+    """
+    Source-agnostic tail shared by every forecast source: bucket a populated
+    {(member, lead_hour): raster} map into the configured lead-time spectrum. `native_step_hours`
+    is the loading source's own cadence, used both to validate the configured bucket width and to
+    walk the native steps inside each bucket (see _resolve_configured_interval_hours /
+    _aggregate_bucket_rasters).
+    """
+    configured_interval_hours = _resolve_configured_interval_hours(
+        lead_hour_spectrum, native_step_hours
+    )
 
     time_interval_wind_speeds: list[TimeIntervalWindSpeed] = []
     for bucket_start_hour in lead_hour_spectrum:
@@ -111,6 +178,7 @@ def extract_wind_speed(
             rasters_by_member_and_lead_hour,
             bucket_start_hour,
             configured_interval_hours,
+            native_step_hours,
         )
         if not bucket_rasters:
             continue
@@ -193,12 +261,15 @@ def _parse_lead_hour_spectrum(temporal_extent: dict[str, list]) -> list[int]:
     return sorted(int(entry.split("-")[0]) for entry in spectrum)
 
 
-def _resolve_configured_interval_hours(lead_hour_spectrum: list[int]) -> int:
+def _resolve_configured_interval_hours(
+    lead_hour_spectrum: list[int],
+    native_step_hours: int,
+) -> int:
     """
     The output bucket width, derived from the spectrum's own spacing rather than assumed - so a
     future change to the alert config (e.g. 3-hour -> 6-hour steps) is picked up automatically
-    without a code change here. Falls back to GEFS's native cadence for a single-point spectrum,
-    where no spacing can be derived.
+    without a code change here. Falls back to the loading source's native cadence
+    (`native_step_hours`) for a single-point spectrum, where no spacing can be derived.
 
     TODO-infra: PR #306 discussion (comment on this function) - consider validating a config's
     lead-hour spacing against its data source's native cadence at the API layer too (AlertConfig
@@ -207,7 +278,7 @@ def _resolve_configured_interval_hours(lead_hour_spectrum: list[int]) -> int:
     - it protects _aggregate_bucket_rasters below, and removing it fails silently, not loudly.
     """
     if len(lead_hour_spectrum) < 2:
-        return constants.GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+        return native_step_hours
 
     deltas = {b - a for a, b in pairwise(lead_hour_spectrum)}
     if len(deltas) > 1 or min(deltas) <= 0:
@@ -215,10 +286,10 @@ def _resolve_configured_interval_hours(lead_hour_spectrum: list[int]) -> int:
             f"Lead-hour spectrum must be strictly increasing with constant spacing: {lead_hour_spectrum}"
         )
     interval_hours = deltas.pop()
-    if interval_hours % constants.GEFS_NATIVE_LEAD_TIME_STEP_HOURS != 0:
+    if interval_hours % native_step_hours != 0:
         raise ValueError(
-            f"Lead-hour spectrum interval must be a multiple of GEFS's native "
-            f"{constants.GEFS_NATIVE_LEAD_TIME_STEP_HOURS}h step: {interval_hours}h"
+            f"Lead-hour spectrum interval must be a multiple of the native "
+            f"{native_step_hours}h step: {interval_hours}h"
         )
     return interval_hours
 
@@ -227,13 +298,15 @@ def _aggregate_bucket_rasters(
     rasters_by_member_and_lead_hour: dict[tuple[str, int], RasterData],
     bucket_start_hour: int,
     interval_hours: int,
+    native_step_hours: int,
 ) -> list[RasterData]:
     """
     Per ensemble member, collect every native-step raster falling inside
     [bucket_start_hour, bucket_start_hour + interval_hours) and combine them into one raster for
     this bucket. A no-op (single native raster passed through as-is) whenever interval_hours equals
-    GEFS_NATIVE_LEAD_TIME_STEP_HOURS - the common case today. Members missing all native rasters for
-    this bucket are skipped (matches the existing missing-file tolerance elsewhere in this module).
+    the loading source's `native_step_hours` - the common case today. Members missing all native
+    rasters for this bucket are skipped (matches the existing missing-file tolerance elsewhere in
+    this module).
     """
     members = sorted({member for member, _ in rasters_by_member_and_lead_hour})
     bucket_rasters: list[RasterData] = []
@@ -243,7 +316,7 @@ def _aggregate_bucket_rasters(
             for native_lead_hour in range(
                 bucket_start_hour,
                 bucket_start_hour + interval_hours,
-                constants.GEFS_NATIVE_LEAD_TIME_STEP_HOURS,
+                native_step_hours,
             )
             if (member, native_lead_hour) in rasters_by_member_and_lead_hour
         ]
@@ -286,14 +359,34 @@ def _lead_hour_to_time_interval(
     )
 
 
-def _read_wind_speed_raster(path: str, bounds: BoundingBox) -> RasterData:
+def _slice_to_bounds(dataset: xr.Dataset, bounds: BoundingBox) -> xr.Dataset:
     """
-    GEFS/GFS grids use a 0-360 longitude convention; every other bound/geometry in this pipeline
-    uses -180/180, so bounds are converted only at this boundary. Doesn't handle a bounds box that
-    straddles the antimeridian - not needed for PHL/KNA/DMA/ATG.
+    Slice a wind dataset to `bounds` (a -180/180 min_lon/min_lat/max_lon/max_lat box). cfgrib
+    presents longitude in whichever convention the source encodes - 0-360 for some (e.g. NOAA GEFS)
+    or -180..180 for others (e.g. ECMWF IFS, verified against a real 0p25 file) - so the slice is
+    matched to the dataset's own convention rather than assuming 0-360 (which silently returned an
+    empty selection for a western-hemisphere bounds on a -180/180 dataset). `_build_wind_speed_raster`
+    still emits a -180/180 transform either way. Assumes latitude descending and a bounds box that
+    does not cross the antimeridian/prime meridian (true for PHL/KNA/DMA/ATG).
     """
     min_lon, min_lat, max_lon, max_lat = bounds
+    dataset_uses_0_360 = float(dataset["longitude"].max()) > 180
+    west, east = (
+        (min_lon % 360, max_lon % 360) if dataset_uses_0_360 else (min_lon, max_lon)
+    )
+    return dataset.sel(
+        latitude=slice(max_lat, min_lat),
+        longitude=slice(west, east),
+    )
 
+
+def _read_wind_speed_raster(path: str, bounds: BoundingBox) -> RasterData:
+    """
+    Read a single GEFS 10 m U/V wind GRIB2 file (one ensemble member) into a sustained wind-speed
+    raster. GEFS ships each member in its own file, so there is no ensemble dimension to unpack
+    here (contrast _read_ecmwf_wind_speed_rasters). The slice/grid/transform handling is shared
+    with ECMWF via _slice_to_bounds and _build_wind_speed_raster.
+    """
     with xr.open_dataset(
         path,
         engine="cfgrib",
@@ -301,16 +394,31 @@ def _read_wind_speed_raster(path: str, bounds: BoundingBox) -> RasterData:
             "filter_by_keys": {"typeOfLevel": "heightAboveGround", "level": 10}
         },
     ) as dataset:
-        sliced = dataset.sel(
-            latitude=slice(max_lat, min_lat),
-            longitude=slice(min_lon % 360, max_lon % 360),
-        )
+        sliced = _slice_to_bounds(dataset, bounds)
         nodata = float(sliced["u10"].attrs["GRIB_missingValue"])
         u_wind = sliced["u10"].to_numpy().astype(np.float32)
         v_wind = sliced["v10"].to_numpy().astype(np.float32)
         latitudes = sliced["latitude"].to_numpy()
         longitudes = sliced["longitude"].to_numpy()
 
+    return _build_wind_speed_raster(u_wind, v_wind, nodata, latitudes, longitudes)
+
+
+def _build_wind_speed_raster(
+    u_wind: np.ndarray,
+    v_wind: np.ndarray,
+    nodata: float,
+    latitudes: np.ndarray,
+    longitudes: np.ndarray,
+) -> RasterData:
+    """
+    Combine 10 m U/V components into one sustained wind-speed raster (magnitude sqrt(u^2 + v^2),
+    nodata-preserving) with a north-up affine transform. Shared by the GEFS and ECMWF wind readers.
+    The input longitudes may be 0-360 (some sources) or -180..180 (others, e.g. ECMWF - see
+    _slice_to_bounds); either way the emitted transform is normalised to -180/180 (the `west - 360`
+    step only fires for a 0-360 source). Assumes latitudes descending, longitudes ascending, and a
+    bounds box that does not straddle the antimeridian.
+    """
     missing_mask = (
         (u_wind == nodata)
         | (v_wind == nodata)
@@ -333,3 +441,152 @@ def _read_wind_speed_raster(path: str, bounds: BoundingBox) -> RasterData:
         crs="EPSG:4326",
         nodata=nodata,
     )
+
+
+# Matches ECMWF's open-data IFS wind path layout (confirmed against real downloaded files), e.g.
+#   <YYYYMMDD>/<HH>z/ifs/0p25/<stream>/<YYYYMMDD><HH>0000-<step>h-<stream>-<type>.grib2
+# <stream> is `oper` (single control forecast, <type> `fc`) or `enfo` (all 50 perturbed members in
+# one file, <type> `ef`, member selected via the GRIB `number` key); <step> is the lead hour (not
+# zero-padded, e.g. 6, 144, 360).
+_ECMWF_WIND_PATH_PATTERN = re.compile(
+    r"(?P<date>\d{8})/(?P<cycle_hour>\d{2})z/ifs/0p25/(?P<stream>oper|enfo)/"
+    r"\d{8}\d{2}0000-(?P<lead_hour>\d+)h-(?P=stream)-(?:fc|ef)\.grib2$"
+)
+
+
+@dataclass
+class _ParsedEcmwfWindPath:
+    cycle_datetime: datetime
+    stream: str
+    lead_hour: int
+
+
+def _parse_ecmwf_wind_path(path: str) -> _ParsedEcmwfWindPath | None:
+    match = _ECMWF_WIND_PATH_PATTERN.search(path.replace("\\", "/"))
+    if match is None:
+        return None
+    cycle_datetime = datetime.strptime(
+        match.group("date") + match.group("cycle_hour"), "%Y%m%d%H"
+    ).replace(tzinfo=timezone.utc)
+    return _ParsedEcmwfWindPath(
+        cycle_datetime=cycle_datetime,
+        stream=match.group("stream"),
+        lead_hour=int(match.group("lead_hour")),
+    )
+
+
+def _load_ecmwf_wind_rasters(
+    ecmwf_wind_member_paths: list[str],
+    bounds: BoundingBox,
+    conversion_factor: float,
+    max_lead_hour: int,
+) -> tuple[dict[tuple[str, int], RasterData], datetime | None]:
+    """
+    Load ECMWF IFS 10 m wind into a {(member, lead_hour): sustained-wind raster} map. Unlike GEFS's
+    one-file-per-member layout, ECMWF packs a whole ensemble step into one file: an `enfo` file
+    holds all 50 perturbed members (addressed by the GRIB `number` key), while the single control
+    member lives in a separate `oper` file. So each path can contribute up to 50 members for one
+    lead hour (see _read_ecmwf_wind_speed_rasters). Members are keyed by a stream-scoped id
+    ("control" for oper, the zero-padded perturbed number for enfo) so envelope aggregation stays
+    per-member. Returns the map plus the single shared forecast cycle datetime (None if nothing
+    loaded).
+    """
+    rasters_by_member_and_lead_hour: dict[tuple[str, int], RasterData] = {}
+    forecast_cycle_datetime: datetime | None = None
+
+    for path in ecmwf_wind_member_paths:
+        if not os.path.exists(path):
+            nrw_logger.log_warning(
+                logger,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
+                f"ECMWF wind file not found, skipping: {path}",
+            )
+            continue
+
+        parsed = _parse_ecmwf_wind_path(path)
+        if parsed is None:
+            nrw_logger.log_warning(
+                logger,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
+                f"Unrecognized ECMWF wind file path, skipping: {path}",
+            )
+            continue
+
+        if parsed.lead_hour > max_lead_hour:
+            # ECMWF provides lead hours beyond what the configured temporal extent needs (out to
+            # 360h); not an error, just outside the requested window.
+            continue
+
+        if forecast_cycle_datetime is None:
+            forecast_cycle_datetime = parsed.cycle_datetime
+        elif parsed.cycle_datetime != forecast_cycle_datetime:
+            nrw_logger.log_warning(
+                logger,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
+                f"ECMWF wind file from different forecast cycle ({parsed.cycle_datetime}) "
+                f"than expected ({forecast_cycle_datetime}), skipping: {path}",
+            )
+            continue
+
+        nrw_logger.log_info(
+            logger,
+            nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
+            f"Extracting wind speed from {path}",
+        )
+        member_rasters = _read_ecmwf_wind_speed_rasters(path, bounds, parsed.stream)
+        for member, wind_speed_raster in member_rasters.items():
+            wind_speed_raster.array = _scale_excluding_nodata(
+                wind_speed_raster.array, wind_speed_raster.nodata, conversion_factor
+            )
+            rasters_by_member_and_lead_hour[(member, parsed.lead_hour)] = (
+                wind_speed_raster
+            )
+
+    return rasters_by_member_and_lead_hour, forecast_cycle_datetime
+
+
+def _read_ecmwf_wind_speed_rasters(
+    path: str, bounds: BoundingBox, stream: str
+) -> dict[str, RasterData]:
+    """
+    Read one ECMWF IFS wind GRIB2 file into a {member_id: sustained-wind raster} map. An `enfo`
+    file carries a `number` dimension (perturbed members 1..50, each yielding one raster); an
+    `oper` file is a single control field with no ensemble dimension (one "control" raster). Both
+    decode 10 m U/V as u10/v10 on a 0.25-degree grid (cfgrib presents ECMWF's longitude in
+    -180..180; see _slice_to_bounds), so the raster build is shared (see _build_wind_speed_raster).
+
+    """
+    member_rasters: dict[str, RasterData] = {}
+
+    with xr.open_dataset(
+        path,
+        engine="cfgrib",
+        backend_kwargs={
+            "filter_by_keys": {"typeOfLevel": "heightAboveGround", "level": 10}
+        },
+    ) as dataset:
+        sliced = _slice_to_bounds(dataset, bounds)
+        nodata = float(sliced["u10"].attrs["GRIB_missingValue"])
+        latitudes = sliced["latitude"].to_numpy()
+        longitudes = sliced["longitude"].to_numpy()
+
+        if stream == constants.ECMWF_STREAM_PERTURBED:
+            for member_number in np.atleast_1d(sliced["number"].to_numpy()):
+                member = sliced.sel(number=member_number)
+                member_rasters[f"{int(member_number):02d}"] = _build_wind_speed_raster(
+                    member["u10"].to_numpy().astype(np.float32),
+                    member["v10"].to_numpy().astype(np.float32),
+                    nodata,
+                    latitudes,
+                    longitudes,
+                )
+        else:
+            member_rasters["control"] = _build_wind_speed_raster(
+                sliced["u10"].to_numpy().astype(np.float32),
+                sliced["v10"].to_numpy().astype(np.float32),
+                nodata,
+                latitudes,
+                longitudes,
+            )
+
+    return member_rasters

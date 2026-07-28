@@ -46,7 +46,12 @@ from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
-from pipelines.infra.data_types.enums import EnsembleMemberType, LayerName, SeverityKey
+from pipelines.infra.data_types.enums import (
+    EnsembleMemberType,
+    ForecastSource,
+    LayerName,
+    SeverityKey,
+)
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.utils.exposure import (
     aggregate_population_exposed,
@@ -111,22 +116,38 @@ def calculate_tropical_cyclone_forecasts(
         )
         return
 
-    ### Step 3 - Load GEFS wind and track data ###
-    # TODO-infra: move to data providers (DataSource.GEFS_WIND, DataSource.GEFS_TRACK) once real
-    # fetchers exist. Until then, this
-    # reads local GEFS GRIB2 (wind) and ATCF (track) member file paths directly. Two distinct
-    # products (different NOMADS subtrees, different formats) — two loads, two guards.
-    gefs_wind_member_paths = _placeholder_load_local_gefs_wind_paths(country)
-    if not gefs_wind_member_paths:
+    ### Step 3 - Load this country's forecast-source wind and track data ###
+    # TODO-infra: move to data providers (DataSource.GEFS_WIND/GEFS_TRACK and the ECMWF
+    # equivalents) once real fetchers exist. Until then, this reads local wind + track member file
+    # paths directly, picking the loaders for the country's configured forecast source. Two
+    # distinct products (different subtrees, different formats) - two loads, two guards.
+    # NOTE (extract-layer TODO, not this file): the loaded paths are handed to extract_wind_speed
+    # and extract_track below. Both are now source-aware and dispatch on
+    # country_config.forecast_source - extract_wind_speed parses GEFS's per-member GRIB2 or ECMWF's
+    # number-keyed ensemble GRIB2, and extract_track parses GEFS's ATCF or ECMWF's BUFR (see
+    # extract_forecast.py / extract_track.py).
+    if country_config.forecast_source == ForecastSource.GEFS:
+        wind_member_paths = _placeholder_load_local_gefs_wind_paths(country)
+        track_member_paths = _placeholder_load_local_gefs_track_paths(country)
+    elif country_config.forecast_source == ForecastSource.ECMWF:
+        wind_member_paths = _placeholder_load_local_ecmwf_wind_paths(country)
+        track_member_paths = _placeholder_load_local_ecmwf_track_paths(country)
+    else:
         data_submitter.add_error(
-            f"Missing input data: gefs_wind_member_paths for country '{country}'"
+            f"Unsupported tropical-cyclone forecast source "
+            f"'{country_config.forecast_source}' for country '{country}'"
         )
         return
 
-    gefs_track_member_paths = _placeholder_load_local_gefs_track_paths(country)
-    if not gefs_track_member_paths:
+    if not wind_member_paths:
         data_submitter.add_error(
-            f"Missing input data: gefs_track_member_paths for country '{country}'"
+            f"Missing input data: wind_member_paths for country '{country}'"
+        )
+        return
+
+    if not track_member_paths:
+        data_submitter.add_error(
+            f"Missing input data: track_member_paths for country '{country}'"
         )
         return
 
@@ -159,7 +180,7 @@ def calculate_tropical_cyclone_forecasts(
             # "lead-time-spectrum" (aggregating GEFS's native cadence up to a coarser configured
             # interval if needed - see extract_forecast.py).
             wind_speeds = extract_wind_speed(
-                gefs_wind_member_paths, country_bounds, country_config, temporal_extent
+                wind_member_paths, country_bounds, country_config, temporal_extent
             )
             time_interval_severities = determine_severities(
                 wind_speeds, spatial_extent_place_codes, target_admin_areas
@@ -176,7 +197,9 @@ def calculate_tropical_cyclone_forecasts(
                 continue
 
             ### Step 7 - Extract track fixes for the alert centroid ###
-            track_fixes = extract_track(gefs_track_member_paths, country_bounds)
+            track_fixes = extract_track(
+                track_member_paths, country_bounds, country_config.forecast_source
+            )
 
             ### Step 8 - Compute the alert extent and its spatial exposure ###
             wind_extent = compute_alert_extent(time_interval_severities)
@@ -294,6 +317,8 @@ def _pad_bounding_box(bounds: BoundingBox, buffer_km: float) -> BoundingBox:
 # that fetcher - nothing here is meant to constrain that design.
 _LOCAL_GEFS_WIND_ROOT = Path(__file__).parent / "bronze" / "gefs_wind"
 _LOCAL_GEFS_TRACK_ROOT = Path(__file__).parent / "bronze" / "gefs_track"
+_LOCAL_ECMWF_WIND_ROOT = Path(__file__).parent / "bronze" / "ecmwf_wind"
+_LOCAL_ECMWF_TRACK_ROOT = Path(__file__).parent / "bronze" / "ecmwf_track"
 
 
 def _placeholder_load_local_gefs_wind_paths(country: str) -> list[str]:
@@ -305,7 +330,7 @@ def _placeholder_load_local_gefs_wind_paths(country: str) -> list[str]:
     extract_wind_speed differ per country). Returns an empty list (halting the pipeline at the
     Step 3 guard above) if no local fixture data exists.
     """
-    return _most_recent_cycle_files(_LOCAL_GEFS_WIND_ROOT)
+    return _most_recent_cycle_files(_LOCAL_GEFS_WIND_ROOT, date_dir_glob="gefs.*")
 
 
 def _placeholder_load_local_gefs_track_paths(country: str) -> list[str]:
@@ -314,13 +339,36 @@ def _placeholder_load_local_gefs_track_paths(country: str) -> list[str]:
     only: same approach as _placeholder_load_local_gefs_wind_paths, applied to the ATCF track
     fixture directory.
     """
-    return _most_recent_cycle_files(_LOCAL_GEFS_TRACK_ROOT)
+    return _most_recent_cycle_files(_LOCAL_GEFS_TRACK_ROOT, date_dir_glob="gefs.*")
 
 
-def _most_recent_cycle_files(root: Path) -> list[str]:
+def _placeholder_load_local_ecmwf_wind_paths(country: str) -> list[str]:
     """
-    Picks the most recent `gefs.<YYYYMMDD>/<HH>` cycle directory under `root` (zero-padded, so a
-    plain string sort on (date, hour) is chronological) and returns every file beneath it.
+    TODO-infra: replace with DataSource.ECMWF_WIND once a fetcher exists. Local-testing stand-in
+    only: ECMWF counterpart to _placeholder_load_local_gefs_wind_paths, reading the most recent
+    `<YYYYMMDD>/<HH>z/...` cycle under the ECMWF GRIB2 wind fixture directory. The extractor still
+    needs ECMWF-aware GRIB2 parsing (member via the GRIB `number` key) before this runs end to end
+    - see extract_forecast.py.
+    """
+    return _most_recent_cycle_files(_LOCAL_ECMWF_WIND_ROOT, date_dir_glob="[0-9]*")
+
+
+def _placeholder_load_local_ecmwf_track_paths(country: str) -> list[str]:
+    """
+    TODO-infra: replace with DataSource.ECMWF_TRACK once a fetcher exists. Local-testing stand-in
+    only: ECMWF counterpart to _placeholder_load_local_gefs_track_paths. ECMWF tracks are BUFR
+    (one file per run, all members/features inside), not ATCF, so extract_track needs BUFR-aware
+    parsing before this runs end to end - see extract_track.py.
+    """
+    return _most_recent_cycle_files(_LOCAL_ECMWF_TRACK_ROOT, date_dir_glob="[0-9]*")
+
+
+def _most_recent_cycle_files(root: Path, date_dir_glob: str) -> list[str]:
+    """
+    Picks the most recent `<date_dir>/<hour>` cycle directory under `root` (date and hour dirs
+    zero-padded, so a plain string sort on (date, hour) is chronological) and returns every file
+    beneath it. `date_dir_glob` selects the source's date-directory naming (e.g. `gefs.*` for
+    GEFS, `[0-9]*` for ECMWF's bare `YYYYMMDD`).
 
     Guards against a real footgun with locally-accumulated test fixtures: extract_wind_speed and
     extract_track both assume every path they're given belongs to the same forecast cycle (they
@@ -336,7 +384,7 @@ def _most_recent_cycle_files(root: Path) -> list[str]:
     cycle_dirs = sorted(
         (
             hour_dir
-            for date_dir in root.glob("gefs.*")
+            for date_dir in root.glob(date_dir_glob)
             if date_dir.is_dir()
             for hour_dir in date_dir.iterdir()
             if hour_dir.is_dir()
@@ -347,7 +395,7 @@ def _most_recent_cycle_files(root: Path) -> list[str]:
         return []
 
     most_recent_cycle_dir = cycle_dirs[-1]
-    logger.info(f"Using local GEFS test fixtures from {most_recent_cycle_dir}")
+    logger.info(f"Using local test fixtures from {most_recent_cycle_dir}")
     return [str(path) for path in most_recent_cycle_dir.rglob("*") if path.is_file()]
 
 
