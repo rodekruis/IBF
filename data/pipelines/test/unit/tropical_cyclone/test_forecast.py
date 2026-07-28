@@ -11,19 +11,19 @@ def _touch(path: Path) -> None:
 
 
 def test_returns_empty_list_when_root_does_not_exist(tmp_path):
-    assert _most_recent_cycle_files(tmp_path / "missing") == []
+    assert _most_recent_cycle_files(tmp_path / "missing", date_dir_glob="gefs.*") == []
 
 
 def test_returns_empty_list_when_no_cycle_directories_exist(tmp_path):
     (tmp_path / "not_a_cycle_dir").mkdir()
-    assert _most_recent_cycle_files(tmp_path) == []
+    assert _most_recent_cycle_files(tmp_path, date_dir_glob="gefs.*") == []
 
 
 def test_picks_the_most_recent_date(tmp_path):
     _touch(tmp_path / "gefs.20260710" / "00" / "old.grib2")
     _touch(tmp_path / "gefs.20260714" / "06" / "new.grib2")
 
-    result = _most_recent_cycle_files(tmp_path)
+    result = _most_recent_cycle_files(tmp_path, date_dir_glob="gefs.*")
 
     assert len(result) == 1
     assert result[0].endswith("new.grib2")
@@ -33,7 +33,7 @@ def test_picks_the_most_recent_hour_within_the_same_date(tmp_path):
     _touch(tmp_path / "gefs.20260714" / "00" / "early.grib2")
     _touch(tmp_path / "gefs.20260714" / "18" / "late.grib2")
 
-    result = _most_recent_cycle_files(tmp_path)
+    result = _most_recent_cycle_files(tmp_path, date_dir_glob="gefs.*")
 
     assert len(result) == 1
     assert result[0].endswith("late.grib2")
@@ -43,6 +43,18 @@ def test_returns_every_file_under_the_chosen_cycle(tmp_path):
     _touch(tmp_path / "gefs.20260714" / "06" / "a.grib2")
     _touch(tmp_path / "gefs.20260714" / "06" / "subdir" / "b.grib2")
 
-    result = _most_recent_cycle_files(tmp_path)
+    result = _most_recent_cycle_files(tmp_path, date_dir_glob="gefs.*")
 
     assert len(result) == 2
+
+
+def test_picks_the_most_recent_cycle_for_ecmwf_bare_date_layout(tmp_path):
+    # ECMWF's local layout is `<YYYYMMDD>/<HH>z/...` (bare date dir, no `gefs.` prefix), selected
+    # via the `[0-9]*` glob rather than `gefs.*`.
+    _touch(tmp_path / "20260710" / "00z" / "ifs" / "old.grib2")
+    _touch(tmp_path / "20260714" / "06z" / "ifs" / "new.grib2")
+
+    result = _most_recent_cycle_files(tmp_path, date_dir_glob="[0-9]*")
+
+    assert len(result) == 1
+    assert result[0].endswith("new.grib2")

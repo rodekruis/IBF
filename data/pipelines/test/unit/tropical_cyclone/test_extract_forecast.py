@@ -7,6 +7,7 @@ from pipelines.tropical_cyclone.constants import GEFS_NATIVE_LEAD_TIME_STEP_HOUR
 from pipelines.tropical_cyclone.extract_forecast import (
     _aggregate_bucket_rasters,
     _envelope_max,
+    _parse_ecmwf_wind_path,
     _parse_gefs_wind_path,
     _parse_lead_hour_spectrum,
     _resolve_configured_interval_hours,
@@ -52,23 +53,40 @@ class TestParseLeadHourSpectrum:
 
 class TestResolveConfiguredIntervalHours:
     def test_derives_native_three_hour_step(self):
-        assert _resolve_configured_interval_hours([0, 3, 6, 9]) == 3
+        assert (
+            _resolve_configured_interval_hours(
+                [0, 3, 6, 9], GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+            )
+            == 3
+        )
 
     def test_derives_coarser_six_hour_step(self):
-        assert _resolve_configured_interval_hours([0, 6, 12]) == 6
+        assert (
+            _resolve_configured_interval_hours(
+                [0, 6, 12], GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+            )
+            == 6
+        )
 
     def test_falls_back_to_native_step_for_single_point_spectrum(self):
         assert (
-            _resolve_configured_interval_hours([0]) == GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+            _resolve_configured_interval_hours(
+                [0], GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+            )
+            == GEFS_NATIVE_LEAD_TIME_STEP_HOURS
         )
 
     def test_raises_on_irregular_spacing(self):
         with pytest.raises(ValueError, match="constant spacing"):
-            _resolve_configured_interval_hours([0, 3, 6, 11, 14])
+            _resolve_configured_interval_hours(
+                [0, 3, 6, 11, 14], GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+            )
 
     def test_raises_when_interval_is_not_a_multiple_of_native_step(self):
-        with pytest.raises(ValueError, match="multiple of GEFS's native"):
-            _resolve_configured_interval_hours([0, 5, 10, 15])
+        with pytest.raises(ValueError, match="multiple of the native"):
+            _resolve_configured_interval_hours(
+                [0, 5, 10, 15], GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+            )
 
 
 class TestParseGefsWindPath:
@@ -100,6 +118,37 @@ class TestParseGefsWindPath:
         assert _parse_gefs_wind_path("not/a/real/path.grib2") is None
 
 
+class TestParseEcmwfWindPath:
+    def test_parses_enfo_perturbed_stream_and_lead_hour(self):
+        parsed = _parse_ecmwf_wind_path(
+            "20260710/00z/ifs/0p25/enfo/20260710000000-6h-enfo-ef.grib2"
+        )
+        assert parsed is not None
+        assert parsed.stream == "enfo"
+        assert parsed.lead_hour == 6
+        assert parsed.cycle_datetime.strftime("%Y%m%d%H") == "2026071000"
+
+    def test_parses_oper_control_stream(self):
+        parsed = _parse_ecmwf_wind_path(
+            "20260710/12z/ifs/0p25/oper/20260710120000-360h-oper-fc.grib2"
+        )
+        assert parsed is not None
+        assert parsed.stream == "oper"
+        assert parsed.lead_hour == 360
+
+    def test_rejects_mismatched_stream_and_type(self):
+        # `enfo` subtree must carry the `ef` type; an `fc` file there is not a valid enfo product.
+        assert (
+            _parse_ecmwf_wind_path(
+                "20260710/00z/ifs/0p25/enfo/20260710000000-6h-oper-fc.grib2"
+            )
+            is None
+        )
+
+    def test_rejects_unrecognized_path(self):
+        assert _parse_ecmwf_wind_path("not/a/real/path.grib2") is None
+
+
 class TestEnvelopeMax:
     def test_single_raster_is_passed_through_unchanged(self):
         raster = _make_raster(10.0)
@@ -124,7 +173,9 @@ class TestAggregateBucketRasters:
             ("gec00", 0): _make_raster(10.0),
             ("gep01", 0): _make_raster(12.0),
         }
-        result = _aggregate_bucket_rasters(rasters_by_member_and_lead_hour, 0, 3)
+        result = _aggregate_bucket_rasters(
+            rasters_by_member_and_lead_hour, 0, 3, GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+        )
         assert sorted(raster.array[0, 0] for raster in result) == [10.0, 12.0]
 
     def test_aggregates_two_native_steps_into_a_coarser_bucket(self):
@@ -132,7 +183,9 @@ class TestAggregateBucketRasters:
             ("gec00", 0): _make_raster(10.0),
             ("gec00", 3): _make_raster(30.0),
         }
-        result = _aggregate_bucket_rasters(rasters_by_member_and_lead_hour, 0, 6)
+        result = _aggregate_bucket_rasters(
+            rasters_by_member_and_lead_hour, 0, 6, GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+        )
         assert len(result) == 1
         assert result[0].array[0, 0] == 30.0
 
@@ -142,14 +195,18 @@ class TestAggregateBucketRasters:
             ("gec00", 3): _make_raster(30.0),
             ("gep01", 0): _make_raster(5.0),
         }
-        result = _aggregate_bucket_rasters(rasters_by_member_and_lead_hour, 0, 6)
+        result = _aggregate_bucket_rasters(
+            rasters_by_member_and_lead_hour, 0, 6, GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+        )
         assert sorted(raster.array[0, 0] for raster in result) == [5.0, 30.0]
 
     def test_member_entirely_absent_from_the_bucket_window_is_excluded(self):
         rasters_by_member_and_lead_hour = {
             ("gec00", 6): _make_raster(10.0),
         }
-        result = _aggregate_bucket_rasters(rasters_by_member_and_lead_hour, 0, 6)
+        result = _aggregate_bucket_rasters(
+            rasters_by_member_and_lead_hour, 0, 6, GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+        )
         assert result == []
 
 

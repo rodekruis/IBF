@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from __future__ import annotations
-
 from pathlib import Path
 
+import pytest
+from pipelines.infra.data_types.enums import ForecastSource
 from pipelines.tropical_cyclone.extract_track import (
+    _ecmwf_message_fixes,
     _parse_atcf_coordinate,
+    _parse_ecmwf_track_path,
     _parse_gefs_track_path,
     _read_track_fixes,
     extract_track,
@@ -117,6 +119,7 @@ class TestExtractTrack:
         result = extract_track(
             [str(track_path)],
             bounds=(120.0, 20.0, 130.0, 25.0),
+            forecast_source=ForecastSource.GEFS,
         )
 
         assert len(result) == 1
@@ -127,3 +130,82 @@ class TestExtractTrack:
         assert result[0].ensemble_track_fixes[0].longitude == 127.6
         assert result[0].ensemble_track_fixes[0].max_sustained_wind_knots == 50.0
         assert result[0].ensemble_track_fixes[0].min_sea_level_pressure_mb == 980.0
+
+
+class TestParseEcmwfTrackPath:
+    def test_parses_enfo_run(self):
+        parsed = _parse_ecmwf_track_path(
+            "20260710/00z/ifs/0p25/enfo/20260710000000-360h-enfo-tf.bufr"
+        )
+        assert parsed is not None
+        assert parsed.cycle_datetime.strftime("%Y%m%d%H") == "2026071000"
+
+    def test_parses_oper_run(self):
+        parsed = _parse_ecmwf_track_path(
+            "20260710/06z/ifs/0p25/oper/20260710060000-144h-oper-tf.bufr"
+        )
+        assert parsed is not None
+        assert parsed.cycle_datetime.strftime("%Y%m%d%H") == "2026071006"
+
+    def test_rejects_mismatched_stream(self):
+        assert (
+            _parse_ecmwf_track_path(
+                "20260710/00z/ifs/0p25/enfo/20260710000000-360h-oper-tf.bufr"
+            )
+            is None
+        )
+
+    def test_rejects_unrecognized_path(self):
+        assert _parse_ecmwf_track_path("not/a/real/path.bufr") is None
+
+
+class TestEcmwfMessageFixes:
+    # significance 1 = storm centre, 3 = location of max wind; they interleave in the same
+    # latitude/longitude sequence (two entries per fix), while timePeriod has one entry per fix.
+    _BOUNDS = (100.0, 0.0, 150.0, 30.0)
+
+    def test_pairs_centre_fixes_with_time_periods(self):
+        fixes = _ecmwf_message_fixes(
+            significances=[1, 3, 1, 3],
+            latitudes=[20.8, 20.9, 21.0, 21.1],
+            longitudes=[127.6, 127.7, 127.8, 127.9],
+            winds_ms=[30.0, 35.0, 31.0, 36.0],
+            pressures_pa=[98000.0, 97000.0, 97500.0, 96500.0],
+            time_periods=[6, 12],
+            bounds=self._BOUNDS,
+        )
+
+        assert [lead_hour for lead_hour, _ in fixes] == [6, 12]
+        first = fixes[0][1]
+        assert first.latitude == 20.8
+        assert first.longitude == 127.6
+        assert first.max_sustained_wind_knots == pytest.approx(30.0 * 1.943844)
+        assert first.min_sea_level_pressure_mb == pytest.approx(980.0)
+
+    def test_filters_centre_fixes_outside_bounds(self):
+        fixes = _ecmwf_message_fixes(
+            significances=[1, 1],
+            latitudes=[10.0, 40.0],
+            longitudes=[120.0, 120.0],
+            winds_ms=[30.0, 30.0],
+            pressures_pa=[98000.0, 98000.0],
+            time_periods=[6, 12],
+            bounds=self._BOUNDS,
+        )
+
+        assert len(fixes) == 1
+        assert fixes[0][1].latitude == 10.0
+
+    def test_missing_wind_or_pressure_defaults_to_zero(self):
+        fixes = _ecmwf_message_fixes(
+            significances=[1],
+            latitudes=[10.0],
+            longitudes=[120.0],
+            winds_ms=[1e11],
+            pressures_pa=[1e11],
+            time_periods=[6],
+            bounds=self._BOUNDS,
+        )
+
+        assert fixes[0][1].max_sustained_wind_knots == 0.0
+        assert fixes[0][1].min_sea_level_pressure_mb == 0.0
