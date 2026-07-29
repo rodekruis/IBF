@@ -1,5 +1,3 @@
-# ruff: noqa: I001
-# TODO-infra: ufmt and ruff disagree on this file's import order
 from __future__ import annotations
 
 import logging

@@ -1,16 +1,14 @@
-# ruff: noqa: I001
-# TODO-infra: ufmt and ruff disagree on this file's import order
 from __future__ import annotations
 
 from pathlib import Path
 
 import pytest
-from pipelines.infra.data_types.enums import ForecastSource
 from pipelines.infra.data_types.admin_area_types import (
     AdminArea,
     AdminAreaProperties,
     AdminAreasSet,
 )
+from pipelines.infra.data_types.enums import ForecastSource
 from pipelines.tropical_cyclone.determine_alerts import TimeIntervalWindSpeedSeverity
 from pipelines.tropical_cyclone.extract_track import (
     _ecmwf_message_fixes,
@@ -215,6 +213,8 @@ class TestEcmwfMessageFixes:
 
         assert fixes[0][1].max_sustained_wind_knots == 0.0
         assert fixes[0][1].min_sea_level_pressure_mb == 0.0
+
+
 def _make_severity(
     median_wind_speed: float, time_interval_start: str
 ) -> TimeIntervalWindSpeedSeverity:

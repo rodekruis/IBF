@@ -91,7 +91,7 @@ def geotiff_to_array(tif_data: bytes):
     Metadata is also returned.
     """
     # Open the GeoTIFF from binary data
-    with MemoryFile(tif_data) as memfile:  # noqa: SIM117
+    with MemoryFile(tif_data) as memfile:
         with memfile.open() as src:
             if src.count != 1:
                 raise ValueError(
@@ -186,7 +186,7 @@ def geotiff_to_rgba_data_array(tif_data: bytes):
       - Values are clamped between 0 and about 4.29 million (max encoding value)
       - All decimal values are rounded to 3 decimal precision.
     """
-    with MemoryFile(tif_data) as memfile:  # noqa: SIM117
+    with MemoryFile(tif_data) as memfile:
         with memfile.open() as src:
             if src.count != 1:
                 raise ValueError(
