@@ -47,13 +47,26 @@ class CountryConfig:
 
 
 # Exposure class, averaging-period convention, and forecast source.
-# forecast_source is GEFS for every country today (status quo) - switch specific countries to
-# ForecastSource.ECMWF once the ECMWF fetcher exists in infra.
+#
+# forecast_source selects which source's wind and track products a country is forecast from. Both
+# GEFS and ECMWF are implemented in the hazard logic - extract_forecast.py and extract_track.py
+# each dispatch on this value - so switching a country over is a config change, not a code change.
+# Every country is on GEFS today.
+#
+# Neither source has a real data-provider fetcher yet (DataSource carries only a
+# TODO_ECMWF_FORECAST placeholder), so Step 3 reads local fixtures from bronze/<source>_wind and
+# bronze/<source>_track instead. Whichever source a country is set to therefore needs those
+# fixtures on disk, or its local run stops at the Step 3 guard. ECMWF fixtures can be downloaded
+# with data_management/seed_data_management/fetch_ecmwf_tropical_cyclone_test_data.py; GEFS has no
+# equivalent script yet and is fetched by hand.
+# TODO(data-scientist): add a real fetcher for ECMWF wind + track (and GEFS's, TODO-infra items
+# 1-2 in tropical_cyclone/README.md) so this stops depending on hand-managed fixture trees.
 COUNTRY_CONFIGS: dict[CountryCodeIso3, CountryConfig] = {
     CountryCodeIso3.PHL: CountryConfig(
         exposure_class=ExposureClass.IN_LAND,  # TODO(data-scientist): confirm,
         sustained_wind_averaging_period=AveragingPeriod.TEN_MINUTE,  # PAGASA convention
-        forecast_source=ForecastSource.ECMWF,
+        # TODO(data-scientist): PHL should be ECMWF; on GEFS for now for testing.
+        forecast_source=ForecastSource.GEFS,
     ),
     CountryCodeIso3.KNA: CountryConfig(
         exposure_class=ExposureClass.AT_SEA,  # small island, per domain owner
@@ -87,10 +100,10 @@ MONITORING_BOX_BUFFER_KM = 1000.0
 # WMO/Harper (2010) exposure-dependent gust factor converting a 10-minute mean wind speed to a
 # 1-minute sustained estimate. Only applied for countries whose convention is ONE_MINUTE — a
 # TEN_MINUTE-convention country (e.g. PHL) needs no correction on this axis.
-# Assumes GEFS's native 10 m wind approximates a 10-minute-equivalent mean (the common NWP
-# convention) — TODO(data-scientist): this GEFS-specific assumption hasn't been confirmed against
-# NOAA documentation; if wrong, every ONE_MINUTE-convention country's converted wind speed is off
-# by a knowable but currently-unapplied correction.
+# Assumes the source's native 10 m wind approximates a 10-minute-equivalent mean, so the same
+# conversion applies to every forecast source. ECMWF states it works in 10-minute winds (ECMWF
+# Newsletter 164) — TODO(data-scientist): unconfirmed for GEFS; if wrong, every
+# ONE_MINUTE-convention country's converted wind speed is off by a knowable correction.
 # Source: Harper, Kepert & Ginger, "Guidelines for Converting Between Various Wind Averaging
 # Periods in Tropical Cyclone Conditions", WMO/TD-No. 1555 (2010).
 WMO_HARPER_10MIN_TO_1MIN_FACTOR: dict[ExposureClass, float] = {
@@ -101,8 +114,8 @@ WMO_HARPER_10MIN_TO_1MIN_FACTOR: dict[ExposureClass, float] = {
 }
 
 # Minimum sustained wind speed (m/s) to raise an alert. Single flat constant across all countries
-# this only works because extract_wind_speed() converts
-# GEFS's wind speed into each country's own averaging-period convention first: ~33 m/s is both
+# this only works because extract_wind_speed() converts the source's
+# wind speed into each country's own averaging-period convention first: ~33 m/s is both
 # Saffir-Simpson Category 1 (1-minute convention, e.g. KNA/DMA/ATG) and PAGASA's Typhoon threshold
 # (10-minute convention, PHL) independently.
 # This gate is wind-driven, not track-driven: extract_wind_speed() reads GRIB wind data directly
@@ -110,6 +123,9 @@ WMO_HARPER_10MIN_TO_1MIN_FACTOR: dict[ExposureClass, float] = {
 # reaches hurricane force over land already trips this gate correctly - no track-based special case
 # needed. Whether to lower this to 0 (alert on any monitored storm, including sub-hurricane-force
 # systems) is a separate, deferred product-scope decision, not a fix for the offshore-track case.
+# Note the gate is not equally sensitive across sources: ECMWF documents that it underestimates
+# maximum wind for intense cyclones (ECMWF Newsletter 164), so the same storm is likelier to clear
+# this threshold on GEFS than on ECMWF.
 MIN_SEVERITY_MS = 33.0
 
 # --- NOAA GEFS ensemble -----------------------------------------------------------------------
@@ -149,7 +165,9 @@ ECMWF_STREAM_PERTURBED = "enfo"
 
 # 50 perturbed members, shared 1..50 numbering across the wind (GRIB2) and track (BUFR) products.
 ECMWF_PERTURBED_MEMBER_COUNT = 50
-ECMWF_PERTURBED_MEMBER_NUMBERS: list[int] = list(range(1, ECMWF_PERTURBED_MEMBER_COUNT + 1))
+ECMWF_PERTURBED_MEMBER_NUMBERS: list[int] = list(
+    range(1, ECMWF_PERTURBED_MEMBER_COUNT + 1)
+)
 
 # Where the ensemble control lives differs by product:
 #  - wind: a separate `oper` file (type `fc`), fully outside the perturbed `enfo` file (type `ef`)

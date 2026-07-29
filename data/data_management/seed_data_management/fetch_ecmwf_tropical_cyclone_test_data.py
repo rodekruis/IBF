@@ -2,10 +2,12 @@
 `bronze/` fixture directory, for locally testing the ECMWF branch of the TC pipeline
 (`extract_forecast.py` / `extract_track.py`).
 
-Uses the Philippines as the test country and reads its config from
-`pipelines.tropical_cyclone.constants.COUNTRY_CONFIGS` - the country must be configured for
-`ForecastSource.ECMWF` (PHL is). The ECMWF stream names and native wind cadence used to build the
-download are taken from the same `constants` module.
+The ECMWF stream names and native wind cadence used to build the download are taken from
+`pipelines.tropical_cyclone.constants`. What it downloads does not depend on any country: ECMWF
+open-data files are global, and the pipeline slices them to a country's bounds at read time. The
+script only warns if no country is currently configured for `ForecastSource.ECMWF` (none is by
+default - see COUNTRY_CONFIGS), since the fixtures it writes are then downloaded but unused until
+a country is switched over.
 
 What it writes (matching the layouts `forecast.py`'s ECMWF placeholder loaders and the
 `extract_*` parsers expect):
@@ -41,15 +43,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import requests
-from shared.country_data import CountryCodeIso3
-
 from pipelines.infra.data_types.enums import ForecastSource
 from pipelines.tropical_cyclone import constants
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
-
-TEST_COUNTRY = CountryCodeIso3.PHL
 
 # ECMWF open-data forecast root (mirrored on AWS/Azure/GCS); only ~4 days of history are kept.
 ECMWF_OPEN_DATA_ROOT = "https://data.ecmwf.int/forecasts"
@@ -112,9 +110,7 @@ def _resolve_cycle(session: requests.Session, override: str | None) -> datetime:
         return datetime.strptime(override, "%Y%m%d%H").replace(tzinfo=timezone.utc)
 
     now = datetime.now(timezone.utc)
-    candidate = now.replace(
-        hour=(now.hour // 6) * 6, minute=0, second=0, microsecond=0
-    )
+    candidate = now.replace(hour=(now.hour // 6) * 6, minute=0, second=0, microsecond=0)
     for _ in range(_MAX_CYCLE_LOOKBACK):
         index_url = _open_data_url(
             candidate, 0, constants.ECMWF_STREAM_PERTURBED, "ef", "index"
@@ -157,7 +153,8 @@ def _download_wind_file(
     member_numbers: set[int],
 ) -> bool:
     """Fetch only the needed 10 m wind messages of one per-step GRIB2 file via byte-range requests,
-    concatenating them into a valid GRIB2 in the bronze tree. Returns whether a file was written."""
+    concatenating them into a valid GRIB2 in the bronze tree. Returns whether a file was written.
+    """
     product_type = WIND_TYPE_BY_STREAM[stream]
     grib_url = _open_data_url(cycle, step, stream, product_type, "grib2")
     index_url = _open_data_url(cycle, step, stream, product_type, "index")
@@ -263,11 +260,17 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    country_config = constants.COUNTRY_CONFIGS[TEST_COUNTRY]
-    if country_config.forecast_source is not ForecastSource.ECMWF:
-        raise SystemExit(
-            f"{TEST_COUNTRY} is configured for {country_config.forecast_source}, not ECMWF - "
-            f"nothing to fetch (see COUNTRY_CONFIGS in tropical_cyclone/constants.py)."
+    # Warn rather than exit: what gets downloaded is country-independent (ECMWF open-data files
+    # are global), so the fetch is still valid - the fixtures just sit unused until some country
+    # is pointed at ECMWF.
+    if not any(
+        config.forecast_source is ForecastSource.ECMWF
+        for config in constants.COUNTRY_CONFIGS.values()
+    ):
+        logger.warning(
+            "No country is currently configured for ECMWF (see COUNTRY_CONFIGS in "
+            "tropical_cyclone/constants.py) - fetching anyway, but nothing will read these "
+            "fixtures until one is switched over."
         )
 
     member_numbers = set(range(1, args.members + 1))
@@ -276,13 +279,16 @@ def main() -> None:
     cycle = _resolve_cycle(session, args.cycle)
     steps = _full_window_steps(cycle) if args.full_window else args.steps
     logger.info(
-        f"Fetching ECMWF test data for {TEST_COUNTRY} - cycle {cycle:%Y-%m-%d %H}:00 UTC, "
+        f"Fetching ECMWF test data - cycle {cycle:%Y-%m-%d %H}:00 UTC, "
         f"wind steps {steps}, enfo members 1..{args.members}"
     )
 
     wind_files = 0
     for step in steps:
-        for stream in (constants.ECMWF_STREAM_CONTROL, constants.ECMWF_STREAM_PERTURBED):
+        for stream in (
+            constants.ECMWF_STREAM_CONTROL,
+            constants.ECMWF_STREAM_PERTURBED,
+        ):
             if _download_wind_file(session, cycle, step, stream, member_numbers):
                 wind_files += 1
 

@@ -32,17 +32,19 @@ This folder contains the tropical-cyclone-specific forecast logic used by the pi
 - `constants.py`
   - Per-country config (`COUNTRY_CONFIGS`): exposure class, sustained-wind averaging-period convention, and forecast source (GEFS or ECMWF).
   - WMO/Harper averaging-period conversion factors, `MIN_SEVERITY_MS`, per-source ensemble/format constants (GEFS member IDs + native lead-time constants for wind `GEFS_NATIVE_LEAD_TIME_STEP_HOURS` 3h and track `GEFS_TRACK_NATIVE_LEAD_TIME_STEP_HOURS` 6h; ECMWF streams, `ECMWF_NATIVE_LEAD_TIME_STEP_HOURS`, `ECMWF_TRACK_FIX_INTERVAL_HOURS`, unit conversions), `MONITORING_BOX_BUFFER_KM`.
-  
+
 ## Forecast-source data
 
 - **Alert config** (`alert_configs_ibf_api`): spatial extent (national) and temporal extent (a `"lead-time-spectrum"`, e.g. 3-hour steps up to 168 hours) fetched from the IBF API per country.
 - **Wind** (GRIB2) and **track** are not yet wired through `DataProvider`/`DataSource` - `# TODO-infra`. Until a real fetcher exists, `forecast.py` reads local files directly per the country's forecast source: GEFS from the most recent `gefs.<date>/<hour>` cycle under `tropical_cyclone/bronze/gefs_wind/` and `.../bronze/gefs_track/` (wind `pgrb2sp25` GRIB2, track ATCF `tctrack`); ECMWF from the most recent `<YYYYMMDD>/<HH>z` cycle under `.../bronze/ecmwf_wind/` and `.../bronze/ecmwf_track/` (wind `oper`/`enfo` GRIB2, track `tf` BUFR). Those layouts are a local-testing convention only (not committed, not fixed) - free to redesign once the real fetcher is built.
+- Every country is on **GEFS** today (`COUNTRY_CONFIGS` in `constants.py`). Whichever source a country is set to needs its `bronze/` fixtures on disk, or the run stops at the "Load wind and track data" guard.
+- ECMWF fixtures can be downloaded with `uv run python data_management/seed_data_management/fetch_ecmwf_tropical_cyclone_test_data.py` (from `data/`; `--help` for options). GEFS fixtures have no equivalent script yet and are fetched by hand.
 
 ## Running this locally
 
-TODO-infra-remove: remove this entire section once GEFS wind/track are wired through real
-`DataSource.GEFS_WIND`/`DataSource.GEFS_TRACK` fetchers and `tropicalCyclone.yaml` no longer needs
-the temporary source-target gate workaround.
+TODO-infra-remove: remove this entire section once wind/track are wired through real data-source
+fetchers (GEFS and ECMWF) and `tropicalCyclone.yaml` no longer needs the temporary source-target
+gate workaround.
 
 `tropicalCyclone.yaml` has no `source_target`-tagged data source yet, so `config_reader.py`'s
 source-target gate rejects the config for any run that isn't `--infra-only` (which skips
@@ -59,16 +61,17 @@ log_warning(...)   # was log_error
 
 Then `uv run pipeline --config pipelines/infra/configs/tropicalCyclone.yaml --country PHL --mock 1
 --output-mode local` (no `--infra-only`) will run for real. Note this doesn't mock anything else:
-GEFS wind/track still come from whichever `bronze/` cycle is most recent on disk regardless of
-`--mock`, and admin areas/population/alert configs still hit the real API - a running backend with
-PHL seeded is still required. Real fix: a real `DataSource.GEFS_WIND`/`GEFS_TRACK` fetcher (see the
-`# TODO-infra` in `tropicalCyclone.yaml`), which removes the need for this gate/workaround.
+wind/track still come from whichever `bronze/` cycle is most recent on disk for the country's
+configured source, regardless of `--mock`, and admin areas/population/alert configs still hit the
+real API - a running backend with PHL seeded is still required. Real fix: real wind/track data-source
+fetchers (see the `# TODO-infra` in `tropicalCyclone.yaml`), which remove the need for this
+gate/workaround.
 
 ## `forecast.py` flow (read -> output)
 
 1. Load admin areas, alert configs, and the population raster through `DataProvider`. Stop early and record an error if admin areas or alert configs are missing.
-2. Resolve the country's config (exposure class, averaging-period convention) from `COUNTRY_CONFIGS`. Stop early if the country isn't configured.
-3. Load GEFS wind and track member file paths (local test fixtures today). Stop early if either is missing.
+2. Resolve the country's config (exposure class, averaging-period convention, forecast source) from `COUNTRY_CONFIGS`. Stop early if the country isn't configured.
+3. Load the configured source's wind and track member file paths (local test fixtures today). Stop early if either is missing.
 4. Compute the country's monitoring bounding box: admin-area union padded by `MONITORING_BOX_BUFFER_KM`.
 5. `extract_track` once for the run; if no fixes are in the monitoring box, stop early (no TC present for this country/run).
 6. Loop over alert configs (spatial extents) and their temporal extents - matches flood/drought's generic structure, even though tropical cyclone has exactly one of each per country today.
