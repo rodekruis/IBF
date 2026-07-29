@@ -48,11 +48,31 @@ describe('/ Layers', () => {
         .get('/layers?hazardType=floods')
         .set('Cookie', [accessToken]);
 
-      const floodDepth = response.body.find(
-        (layer: { name: string }) => layer.name === LayerName.floodDepth,
+      const glofasStations = response.body.find(
+        (layer: { name: string }) => layer.name === LayerName.glofasStations,
       );
-      expect(floodDepth).toBeDefined();
-      expect(floodDepth.hazardType).toBe('floods');
+      expect(glofasStations).toBeDefined();
+      expect(glofasStations.hazardType).toBe('floods');
+    });
+
+    it('should exclude shape and hazard-specific raster layers', async () => {
+      const response = await getServer()
+        .get('/layers?hazardType=floods')
+        .set('Cookie', [accessToken]);
+
+      const layerNames = response.body.map(
+        (layer: { name: string }) => layer.name,
+      );
+      expect(layerNames).not.toContain(LayerName.populationExposed);
+      expect(layerNames).not.toContain(LayerName.floodDepth);
+    });
+
+    it('should reject invalid hazardType', async () => {
+      const response = await getServer()
+        .get('/layers?hazardType=invalid')
+        .set('Cookie', [accessToken]);
+
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
   });
 
