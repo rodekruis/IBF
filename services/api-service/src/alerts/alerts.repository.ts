@@ -17,7 +17,7 @@ import {
   reproject4326To3857,
 } from '@api-service/src/utils/raster-colorization.helper';
 
-const alertInclude: Prisma.AlertInclude = {
+const alertInclude = {
   severity: true,
   exposureAdminArea: true,
   exposureGeoFeature: true,
@@ -26,11 +26,11 @@ const alertInclude: Prisma.AlertInclude = {
       id: true,
       created: true,
       updated: true,
-      layer: true,
+      layerName: true,
       metadata: true,
     },
   },
-};
+} as const;
 
 type AlertWithRelations = Prisma.AlertGetPayload<{
   include: typeof alertInclude;
@@ -53,8 +53,12 @@ export class AlertsRepository {
       forecastSources: alert.forecastSources,
       severity: alert.severity as unknown as SeverityReadDto[],
       exposure: {
-        adminAreas: alert.exposureAdminArea as ExposureAdminAreaReadDto[],
-        geoFeatures: alert.exposureGeoFeature as ExposureGeoFeatureReadDto[],
+        adminAreas: alert.exposureAdminArea.map((row) => ({
+          ...row,
+          layer: row.layerName,
+        })) as unknown as ExposureAdminAreaReadDto[],
+        geoFeatures:
+          alert.exposureGeoFeature as unknown as ExposureGeoFeatureReadDto[],
         rasters: alert.exposureRasterData as unknown as ExposureRasterReadDto[],
       },
     };
@@ -121,7 +125,7 @@ export class AlertsRepository {
               create: alertCreateDto.exposure.adminAreas.map((entry) => ({
                 placeCode: entry.placeCode,
                 adminLevel: entry.adminLevel,
-                layer: entry.layer,
+                layerName: entry.layer,
                 value: entry.value,
               })),
             },
@@ -129,7 +133,6 @@ export class AlertsRepository {
               create: (alertCreateDto.exposure.geoFeatures ?? []).map(
                 (entry) => ({
                   geoFeatureId: entry.geoFeatureId,
-                  layer: entry.layer,
                   attributes: entry.attributes as Record<
                     string,
                     string | number | boolean
@@ -139,7 +142,7 @@ export class AlertsRepository {
             },
             exposureRasterData: {
               create: (alertCreateDto.exposure.rasters ?? []).map((entry) => ({
-                layer: entry.layer,
+                layerName: entry.layer,
                 valueGreyscale: entry.valueGreyscale,
                 valueColoured: colorizeGrayscalePng(
                   entry.valueGreyscale,

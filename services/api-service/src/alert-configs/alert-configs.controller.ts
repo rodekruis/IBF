@@ -30,8 +30,8 @@ export class AlertConfigsController {
     private readonly alertConfigsService: AlertConfigsService,
   ) {}
 
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get()
+  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @ApiOperation({
     summary: 'Get alert configs for country and hazard type',
   })
@@ -66,7 +66,8 @@ export class AlertConfigsController {
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
   @ApiOperation({
-    summary: 'Create one or more alert configs',
+    summary:
+      'Create one or more alert configs. Admin endpoint for managing configuration.',
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -80,10 +81,13 @@ export class AlertConfigsController {
     return this.alertConfigsService.createAlertConfigs(dtos);
   }
 
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':id')
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete alert config by id' })
+  @ApiOperation({
+    summary:
+      'Delete alert config by id. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Alert config deleted successfully',

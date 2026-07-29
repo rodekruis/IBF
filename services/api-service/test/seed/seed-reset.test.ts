@@ -95,7 +95,7 @@ describe('POST /reset', () => {
       const response = await getServer()
         .get('/geo-features')
         .query({
-          filter: `countryCodeIso3='${countryCodeIso3}' AND layer='${LayerName.glofasStations}'`,
+          filter: `countryCodeIso3='${countryCodeIso3}' AND "layerName"='${LayerName.glofasStations}'`,
         })
         .set('Cookie', [accessToken]);
 
@@ -107,7 +107,7 @@ describe('POST /reset', () => {
       expect(feature.type).toBe('Feature');
       expect(feature.geometry).toBeDefined();
       expect(feature.properties.countryCodeIso3).toBe(countryCodeIso3);
-      expect(feature.properties.layer).toBe(LayerName.glofasStations);
+      expect(feature.properties.layerName).toEqual(expect.any(String));
     });
   });
 

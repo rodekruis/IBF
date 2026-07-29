@@ -26,17 +26,18 @@ import { UserService } from '@api-service/src/user/user.service';
 export class UserController {
   public constructor(private readonly userService: UserService) {}
 
+  @Get('users')
   @AuthenticatedUser()
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Returns all users',
   })
-  @Get('users')
   public async getUsers() {
     return await this.userService.getUsers();
   }
 
+  @Post('users/login')
   @Throttle(THROTTLING_LIMIT_HIGH)
   @ApiOperation({ summary: '[EXTERNALLY USED] Log in existing user' })
   @ApiResponse({
@@ -47,7 +48,6 @@ export class UserController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Wrong username and/or password',
   })
-  @Post('users/login')
   public async login(
     @Body() loginUserDto: LoginUserDto,
     @Res() res,
@@ -97,9 +97,9 @@ export class UserController {
     }
   }
 
+  @Get('users/current')
   @AuthenticatedUser()
   @ApiOperation({ summary: 'Get current user' })
-  @Get('users/current')
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'User returned',

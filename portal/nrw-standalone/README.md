@@ -8,14 +8,8 @@ This project is a wrapper of the core NRW files to allow standalone deployment a
 
 Note: This project requires a running DB populated with admin area data. See [the main README](../../README.md) for the latest information on the setup.
 
-> [!TIP]
-> From the repository root, `npm run setup:frontend` performs the setup steps 1–4 below in one command. To build and serve the app you can either run `pnpm start` here (dev server with hot reload, step 5), or `npm run start:frontend` from the root (builds and serves a static preview — this is what the [e2e tests](../../e2e/README.md) use). Both serve on `http://localhost:5173`.
-
-1. Copy the `sample.env` file, rename it as `.env`, and set the required values.
-1. Run `git submodule update --init` to get the files in the submodule. This can be done from either the root or from `portal/nrw-standalone`. This will need to be rerun any time the submodule is updated.
-1. Set up the submodule for a sparse checkout. From `portal/nrw-standalone/src/go-web-app`, run this: `git sparse-checkout set --no-cone '/app/src/utils/nrw/' '/app/src/components/Nrw/'`
-1. From `portal/nrw-standalone`, run `pnpm install` to install all requirements.
-1. From the same dir, run `pnpm start` to build and start it.
+1. From the repository root, run `npm run setup:frontend`. This initialises the submodule (sparse checkout), creates `.env` from `sample.env` if needed, and installs dependencies.
+1. From `portal/nrw-standalone`, run `pnpm start` to build and start it. Alternatively, `npm run start:frontend` from the root builds and serves a static preview (this is what the [e2e tests](../../e2e/README.md) use). Both serve on `http://localhost:5173`.
 1. Use an existing link, or enter a valid ISO-A3 country code in the URL to use the app. For instance `http://localhost:5173/nrw?c=MWI`
 
 ## Updating your local repo after a submodule change
@@ -37,13 +31,13 @@ There are several steps when updating the NRW submodule code from Go. Generally 
 
 ## Adding directories to the submodule checkout
 
-This submodule was set up using sparse checkout. The exact command was this:
+This submodule uses a sparse checkout configured in the `setup:frontend` script in the root `package.json`. The current sparse-checkout patterns are set there.
 
-`git sparse-checkout set --no-cone '/app/src/utils/nrw/' '/app/src/components/Nrw/'`
-
-If you need to add more directories to the checkout, such as for `/a-new-dir/my-dir/` you'd run it again like this:
+If you need to add more directories to the checkout, such as for `/a-new-dir/my-dir/`, run this from `portal/nrw-standalone/src/go-web-app`:
 
 `git sparse-checkout add --no-cone '/a-new-dir/my-dir/'`
+
+Then update the `setup:frontend` script in the root `package.json` and the sparse-checkout step in `.github/actions/build-frontend/action.yml` to include the new path so other developers and CI get it automatically.
 
 Note: `cone` is the default setting and also checks out all files in the base-level directories of all parents of what you check out. `--no-cone` gives you just the directories you indicate.
 

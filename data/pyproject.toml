@@ -65,3 +65,7 @@ dev = [
 [tool.deptry]
 known_first_party = ["pipelines", "data_management", "shared"]
 per_rule_ignores = { DEP002 = ["cfgrib", "netCDF4", "scipy", "rasterstats", "shapely", "xarray"], DEP004 = ["pytest"] }
+
+[tool.ruff.lint]
+# Import sorting is already handled (differently) by ufmt
+ignore = ["I001"]

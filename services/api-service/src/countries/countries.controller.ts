@@ -9,7 +9,6 @@ import {
   ParseArrayPipe,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -18,15 +17,13 @@ import { CountryCreateDto } from '@api-service/src/countries/dto/country-create.
 import { CountryResponseDto } from '@api-service/src/countries/dto/country-response.dto';
 import { CountryUpdateDto } from '@api-service/src/countries/dto/country-update.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
-import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 
 @ApiTags('countries')
-@UseGuards(AuthenticatedUserGuard)
 @Controller('countries')
 export class CountriesController {
   public constructor(private readonly countriesService: CountriesService) {}
 
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
+  // This endpoint is FE-accessed and therefore no-auth for now
   @Get()
   @ApiOperation({ summary: 'Get all countries' })
   @ApiResponse({
@@ -38,8 +35,8 @@ export class CountriesController {
     return this.countriesService.getCountries();
   }
 
-  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @Get(':countryCodeIso3')
+  @AuthenticatedUser({ isGuarded: true, allowPipelineApiKey: true })
   @ApiOperation({ summary: 'Get country by ISO3 code' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -56,9 +53,12 @@ export class CountriesController {
     return this.countriesService.getCountryOrThrow(countryCodeIso3);
   }
 
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Post()
-  @ApiOperation({ summary: 'Create one or more countries' })
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
+  @ApiOperation({
+    summary:
+      'Create one or more countries. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Countries created successfully',
@@ -75,9 +75,11 @@ export class CountriesController {
     return this.countriesService.createCountries(dtos);
   }
 
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Patch(':countryCodeIso3')
-  @ApiOperation({ summary: 'Update a country' })
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
+  @ApiOperation({
+    summary: 'Update a country. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Country updated successfully',
@@ -97,10 +99,12 @@ export class CountriesController {
     );
   }
 
-  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @Delete(':countryCodeIso3')
+  @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a country' })
+  @ApiOperation({
+    summary: 'Delete a country. Admin endpoint for managing configuration.',
+  })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
     description: 'Country deleted successfully',

@@ -134,18 +134,19 @@ export class GeoFeaturesRepository {
           });
           await tx.$executeRaw`
             INSERT INTO "api-service"."geo-feature"
-              ("countryCodeIso3", "featureType", "layer", "referenceId", "geometry", "attributes", "updated")
+              ("countryCodeIso3", "featureType", "layerName", "referenceId", "geometry", "attributes", "updated")
             VALUES ${Prisma.join(values)}
-            ON CONFLICT ("countryCodeIso3", "layer", "referenceId") DO NOTHING`;
+            ON CONFLICT ("countryCodeIso3", "layerName", "referenceId") DO NOTHING`;
         }
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2010') {
           const pgCode = extractPostgresErrorCode(error);
+          // 23503 (FK violation): unknown country or layer name
           if (pgCode === '23503') {
             throw new BadRequestException(
-              'One or more referenced countries do not exist',
+              'One or more referenced countries or layers do not exist',
             );
           }
           throw new BadRequestException(
