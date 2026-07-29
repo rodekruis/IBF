@@ -56,17 +56,38 @@ export class LayersRepository {
   public async getAvailableLayers(
     hazardType?: HazardType,
   ): Promise<LayerReadDto[]> {
+    // Fetch generic layers (hazardType = null) and, if specified, the hazard-specific layers
     const hazardFilter = hazardType
       ? { OR: [{ hazardType: null }, { hazardType }] }
       : { hazardType: null };
 
-    // Don't include shape layers (e.g. populationExposed) for now, as these are handled differently in the FE
-    const rows = await this.prisma.layer.findMany({
-      where: { ...hazardFilter, type: { not: LayerType.shape } },
+    const allRows = await this.prisma.layer.findMany({
+      where: hazardFilter,
       select: layerSelect,
       orderBy: { name: 'asc' },
     });
-    return rows.map((row) => this.toReadDto(row));
+
+    return allRows
+      .filter((row) => this.isAvailableLayer(row))
+      .map((row) => this.toReadDto(row));
+  }
+
+  private isAvailableLayer(row: {
+    type: string;
+    hazardType: HazardType | null;
+  }): boolean {
+    // Exclude shape layers (e.g. populationExposed) as these are handled differently in the FE
+    if (row.type === LayerType.shape) {
+      return false;
+    }
+
+    // Exclude hazard-specific raster layers (e.g. floodDepth) as these are served per-event via GET /events
+    // TODO AB#42980: probably serve all hazard-type-specific layers (e.g. glofasStations) via GET /events
+    if (row.type === LayerType.raster && row.hazardType !== null) {
+      return false;
+    }
+
+    return true;
   }
 
   public async createLayer(dto: LayerCreateDto): Promise<LayerReadDto> {
