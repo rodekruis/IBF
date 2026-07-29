@@ -16,7 +16,7 @@ identity (IBTrACS/ATCF `CY`) - see that function's docstring.
 Step 1 now fetches `AlertConfig`s (spatial + temporal extents) from `DataSource.ALERT_CONFIGS_IBF_API`
 instead of synthesizing one locally - PR #307 seeded a real per-country config
 (`spatial_extent_name="National"`, one `"lead-time-spectrum"` temporal extent, currently 3-hour
-steps up to 168 hours). Step 5 loops over `alert_configs` x `config.temporal_extents` (each has
+steps up to 168 hours). Step 6 loops over `alert_configs` x `config.temporal_extents` (each has
 exactly one entry for TC today) to match flood/drought's generic structure; `extract_wind_speed`
 derives its output bucket width from the temporal extent it's given rather than a hardcoded 3
 hours, aggregating GEFS's native cadence up if the configured interval is coarser.
@@ -162,7 +162,19 @@ def calculate_tropical_cyclone_forecasts(
         get_bounding_box(target_admin_areas), MONITORING_BOX_BUFFER_KM
     )
 
-    ### Step 5 - Loop over alert configs (spatial extents) and their temporal extents ###
+    ### Step 5 - Gate on whether a cyclone is actually tracked nearby ###
+    # An empty result means the configured forecast source's own tracker has nothing identified
+    # near the country - no alert to raise.
+    track_fixes = extract_track(
+        track_member_paths, country_bounds, country_config.forecast_source
+    )
+    if not track_fixes:
+        logger.info(
+            f"No tropical-cyclone tracked within the monitoring box for '{country}'"
+        )
+        return
+
+    ### Step 6 - Loop over alert configs (spatial extents) and their temporal extents ###
     # TC has exactly one seeded config ("National") and one temporal extent (the lead-time
     # spectrum) per country today - the loop is still required to keep this hazard's structure
     # generic/consistent with flood and drought (see drought/forecast.py, flood/forecast.py), so
@@ -173,7 +185,7 @@ def calculate_tropical_cyclone_forecasts(
         )
 
         for temporal_extent in alert_config.temporal_extents:
-            ### Step 6 - Extract wind speed per ensemble member, determine the alert gate ###
+            ### Step 7 - Extract wind speed per ensemble member, determine the alert gate ###
             # extract_wind_speed resolves the per-country conversion factor internally (Axis 1: the
             # country's averaging-period convention; Axis 2: WMO/Harper exposure-class gust factor
             # when Axis 1 is ONE_MINUTE), and buckets its output per temporal_extent's
@@ -195,11 +207,6 @@ def calculate_tropical_cyclone_forecasts(
                     f"MIN_SEVERITY_MS={MIN_SEVERITY_MS}"
                 )
                 continue
-
-            ### Step 7 - Extract track fixes for the alert centroid ###
-            track_fixes = extract_track(
-                track_member_paths, country_bounds, country_config.forecast_source
-            )
 
             ### Step 8 - Compute the alert extent and its spatial exposure ###
             wind_extent = compute_alert_extent(time_interval_severities)
@@ -237,9 +244,7 @@ def calculate_tropical_cyclone_forecasts(
             # what "the same storm across runs" means operationally that hasn't been made yet.
             event_name = f"{country}_tropical-cyclone_{_placeholder_issued_datetime()}"
 
-            # Storm-center fix from the same bucket compute_alert_extent picked as peak-intensity
-            # (falls back to the admin-area centroid only if there are no track fixes at all - see
-            # docstring).
+            # Storm-center point at the peak-intensity wind bucket (see docstring).
             centroid = derive_storm_centroid(
                 track_fixes, time_interval_severities, target_admin_areas
             )

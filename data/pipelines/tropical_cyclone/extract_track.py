@@ -4,22 +4,22 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from statistics import fmean
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.enums import ForecastSource
-from pipelines.infra.utils.nrw_logger import log_info, log_warning, LogTag
+from pipelines.infra.utils import nrw_logger
 from pipelines.infra.utils.raster import BoundingBox
 from pipelines.tropical_cyclone.constants import (
     ATCF_WIND_RADII_THRESHOLD_KNOTS,
     ECMWF_MSLP_PA_TO_HPA,
     ECMWF_TRACK_FIX_INTERVAL_HOURS,
-    GEFS_NATIVE_LEAD_TIME_STEP_HOURS,
+    GEFS_TRACK_NATIVE_LEAD_TIME_STEP_HOURS,
     METERS_PER_SECOND_TO_KNOTS,
 )
-from pipelines.tropical_cyclone.determine_alerts import TimeIntervalSeverity
+from pipelines.tropical_cyclone.determine_alerts import TimeIntervalWindSpeedSeverity
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ def extract_track(
     member's fix for a lead hour is pooled.
     """
     if forecast_source == ForecastSource.GEFS:
-        fix_interval_hours = GEFS_NATIVE_LEAD_TIME_STEP_HOURS
+        fix_interval_hours = GEFS_TRACK_NATIVE_LEAD_TIME_STEP_HOURS
         fixes_by_lead_hour, forecast_cycle_datetime = _load_gefs_track_fixes(
             track_member_paths, bounds
         )
@@ -93,18 +93,18 @@ def _load_gefs_track_fixes(
 
     for path in gefs_track_member_paths:
         if not os.path.exists(path):
-            log_warning(
+            nrw_logger.log_warning(
                 logger,
-                LogTag.TROPICAL_CYCLONE_LOGIC,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
                 f"GEFS track file not found, skipping: {path}",
             )
             continue
 
         parsed = _parse_gefs_track_path(path)
         if parsed is None:
-            log_warning(
+            nrw_logger.log_warning(
                 logger,
-                LogTag.TROPICAL_CYCLONE_LOGIC,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
                 f"Unrecognized GEFS track file path, skipping: {path}",
             )
             continue
@@ -112,16 +112,18 @@ def _load_gefs_track_fixes(
         if forecast_cycle_datetime is None:
             forecast_cycle_datetime = parsed.cycle_datetime
         elif parsed.cycle_datetime != forecast_cycle_datetime:
-            log_warning(
+            nrw_logger.log_warning(
                 logger,
-                LogTag.TROPICAL_CYCLONE_LOGIC,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
                 f"GEFS track file from different forecast cycle ({parsed.cycle_datetime}) "
                 f"than expected ({forecast_cycle_datetime}), skipping: {path}",
             )
             continue
 
-        log_info(
-            logger, LogTag.TROPICAL_CYCLONE_LOGIC, f"Extracting track fixes from {path}"
+        nrw_logger.log_info(
+            logger,
+            nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
+            f"Extracting track fixes from {path}",
         )
         for lead_hour, fix in _read_track_fixes(path, bounds):
             fixes_by_lead_hour.setdefault(lead_hour, []).append(fix)
@@ -136,7 +138,7 @@ def _build_time_interval_track_fixes(
 ) -> list[TimeIntervalTrackFix]:
     """
     Source-agnostic tail: turn a {lead_hour: [TrackFix, ...]} map into lead-hour-sorted
-    TimeIntervalTrackFix buckets. `fix_interval_hours` is the source's own fix cadence (GEFS 3h,
+    TimeIntervalTrackFix buckets. `fix_interval_hours` is the source's own fix cadence (GEFS 6h,
     ECMWF 6h), used only to derive each fix's reported time-interval end.
     """
     return [
@@ -175,7 +177,7 @@ def _parse_gefs_track_path(path: str) -> _ParsedGefsTrackPath | None:
         return None
     cycle_datetime = datetime.strptime(
         match.group("date") + match.group("cycle_hour"), "%Y%m%d%H"
-    )
+    ).replace(tzinfo=timezone.utc)
     return _ParsedGefsTrackPath(cycle_datetime=cycle_datetime)
 
 
@@ -261,7 +263,7 @@ def _parse_ecmwf_track_path(path: str) -> _ParsedEcmwfTrackPath | None:
         return None
     cycle_datetime = datetime.strptime(
         match.group("date") + match.group("cycle_hour"), "%Y%m%d%H"
-    )
+    ).replace(tzinfo=timezone.utc)
     return _ParsedEcmwfTrackPath(cycle_datetime=cycle_datetime)
 
 
@@ -281,18 +283,18 @@ def _load_ecmwf_track_fixes(
 
     for path in ecmwf_track_paths:
         if not os.path.exists(path):
-            log_warning(
+            nrw_logger.log_warning(
                 logger,
-                LogTag.TROPICAL_CYCLONE_LOGIC,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
                 f"ECMWF track file not found, skipping: {path}",
             )
             continue
 
         parsed = _parse_ecmwf_track_path(path)
         if parsed is None:
-            log_warning(
+            nrw_logger.log_warning(
                 logger,
-                LogTag.TROPICAL_CYCLONE_LOGIC,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
                 f"Unrecognized ECMWF track file path, skipping: {path}",
             )
             continue
@@ -300,16 +302,18 @@ def _load_ecmwf_track_fixes(
         if forecast_cycle_datetime is None:
             forecast_cycle_datetime = parsed.cycle_datetime
         elif parsed.cycle_datetime != forecast_cycle_datetime:
-            log_warning(
+            nrw_logger.log_warning(
                 logger,
-                LogTag.TROPICAL_CYCLONE_LOGIC,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
                 f"ECMWF track file from different forecast cycle ({parsed.cycle_datetime}) "
                 f"than expected ({forecast_cycle_datetime}), skipping: {path}",
             )
             continue
 
-        log_info(
-            logger, LogTag.TROPICAL_CYCLONE_LOGIC, f"Extracting track fixes from {path}"
+        nrw_logger.log_info(
+            logger,
+            nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
+            f"Extracting track fixes from {path}",
         )
         for lead_hour, fix in _read_ecmwf_track_fixes(path, bounds):
             fixes_by_lead_hour.setdefault(lead_hour, []).append(fix)
@@ -460,45 +464,75 @@ def _ecmwf_optional(values: list[float], index: int) -> float:
 
 def derive_storm_centroid(
     time_interval_track_fixes: list[TimeIntervalTrackFix],
-    time_interval_severities: list[TimeIntervalSeverity],
+    time_interval_severities: list[TimeIntervalWindSpeedSeverity],
     admin_areas: AdminAreasSet,
 ) -> Centroid:
     """
-    Mean lat/lon across ensemble members at the same bucket compute_alert_extent picks as
-    peak-intensity (highest MEDIAN wind speed) - the alert centroid should reflect where the storm
-    actually is at the moment being reported, not a flat average smeared across the whole forecast
-    window. Falls back to every bucket's fixes combined if track data has no fix at exactly that
-    time (track's native cadence can differ from whatever wind lead times were fetched), and to the
-    admin-area centroid only when there are no track fixes at all (e.g. no storm currently within
-    the country's monitoring box).
+    Storm-center point at the peak-intensity wind bucket (highest MEDIAN wind speed). Track's own
+    ~6h native cadence rarely lines up exactly with wind's real 3h cadence, so when the peak
+    bucket's timestamp falls between two real track fixes, the ensemble-mean centroid is linearly
+    interpolated between them by elapsed-time fraction - two known real points blended at a known
+    elapsed-time fraction, not an invented one, on the assumption the storm's own motion is roughly
+    continuous between fixes six hours apart. Clamps to the nearest available bucket if the peak
+    time falls outside track's own observed window. Falls back to the admin-area centroid if there
+    are no track fixes at all.
     """
+    if not time_interval_track_fixes:
+        return _admin_area_centroid(admin_areas)
+
     peak_bucket = max(
         time_interval_severities, key=lambda severity: severity.median_wind_speed
     )
-    peak_track_bucket = next(
-        (
-            bucket
-            for bucket in time_interval_track_fixes
-            if bucket.time_interval_start == peak_bucket.time_interval_start
-        ),
-        None,
+    peak_time = _parse_time_interval_start(peak_bucket.time_interval_start)
+
+    sorted_buckets = sorted(
+        time_interval_track_fixes,
+        key=lambda bucket: _parse_time_interval_start(bucket.time_interval_start),
+    )
+    bucket_times = [
+        _parse_time_interval_start(bucket.time_interval_start)
+        for bucket in sorted_buckets
+    ]
+
+    if peak_time <= bucket_times[0]:
+        return _bucket_centroid(sorted_buckets[0])
+    if peak_time >= bucket_times[-1]:
+        return _bucket_centroid(sorted_buckets[-1])
+
+    later_index = next(
+        index for index, time in enumerate(bucket_times) if time >= peak_time
+    )
+    if bucket_times[later_index] == peak_time:
+        return _bucket_centroid(sorted_buckets[later_index])
+
+    earlier_centroid = _bucket_centroid(sorted_buckets[later_index - 1])
+    later_centroid = _bucket_centroid(sorted_buckets[later_index])
+    fraction = (peak_time - bucket_times[later_index - 1]) / (
+        bucket_times[later_index] - bucket_times[later_index - 1]
+    )
+    return Centroid(
+        latitude=earlier_centroid.latitude
+        + fraction * (later_centroid.latitude - earlier_centroid.latitude),
+        longitude=earlier_centroid.longitude
+        + fraction * (later_centroid.longitude - earlier_centroid.longitude),
     )
 
-    fixes = (
-        peak_track_bucket.ensemble_track_fixes
-        if peak_track_bucket is not None and peak_track_bucket.ensemble_track_fixes
-        else [
-            fix
-            for bucket in time_interval_track_fixes
-            for fix in bucket.ensemble_track_fixes
-        ]
-    )
-    if fixes:
-        return Centroid(
-            latitude=fmean(fix.latitude for fix in fixes),
-            longitude=fmean(fix.longitude for fix in fixes),
-        )
 
+def _parse_time_interval_start(time_interval_start: str) -> datetime:
+    return datetime.strptime(time_interval_start, "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=timezone.utc
+    )
+
+
+def _bucket_centroid(bucket: TimeIntervalTrackFix) -> Centroid:
+    fixes = bucket.ensemble_track_fixes
+    return Centroid(
+        latitude=fmean(fix.latitude for fix in fixes),
+        longitude=fmean(fix.longitude for fix in fixes),
+    )
+
+
+def _admin_area_centroid(admin_areas: AdminAreasSet) -> Centroid:
     geometries = [area.to_geometry() for area in admin_areas.admin_areas.values()]
     if not geometries:
         return Centroid(latitude=0.0, longitude=0.0)

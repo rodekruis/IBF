@@ -16,23 +16,23 @@ This folder contains the tropical-cyclone-specific forecast logic used by the pi
   - Buckets output per the alert config's temporal extent (its `"lead-time-spectrum"`), aggregating the source's native cadence up via a per-cell max whenever the configured interval is coarser.
 
 - `extract_track.py`
-  - `extract_track`: dispatches on the country's forecast source and reads track fixes - GEFS ATCF (one file per member, all lead times as rows) or ECMWF BUFR (one file per run, members as subsets) - filtering fixes to the monitoring bounds.
-  - `derive_storm_centroid`: picks the storm-center fix at the same bucket the peak-intensity alert was found in, used for the alert's centroid - not for the severity gate itself. Source-agnostic: it only reads each fix's lat/lon.
+  - `extract_track`: dispatches on the country's forecast source and reads track fixes - GEFS ATCF (one file per member, all lead times as rows, deduping repeated wind-radii rows) or ECMWF BUFR (one file per run, members as subsets) - filtering fixes to the monitoring bounds.
+  - `derive_storm_centroid`: storm-center point at the peak-intensity wind bucket - an exact match uses that bucket's ensemble-mean fix directly, otherwise linearly interpolates between the two real track fixes bracketing that time (track's 6h native cadence rarely lines up exactly with wind's 3h cadence), clamped to the nearest bucket if the peak time falls outside track's own window. Falls back to the admin-area centroid if there are no track fixes at all. Source-agnostic: it only reads each fix's lat/lon.
 
 - `determine_alerts.py`
   - `determine_severities`: per time bucket per member, clips wind speed to the country's admin-area union and takes the land-clipped max (the `RUN` value); `MEDIAN` is the median of those.
   - Drops buckets whose `MEDIAN` doesn't clear `MIN_SEVERITY_MS`.
 
 - `compute_wind_extent.py`
-  - `compute_alert_extent`: picks the peak-intensity bucket (highest `MEDIAN`), then builds a precautionary per-cell-max envelope across that bucket's ensemble members, masked below `MIN_SEVERITY_MS`.
+  - `compute_alert_extent`: precautionary per-cell-max envelope across every ensemble member in every qualifying time bucket (a union across the whole forecast window, not just the peak-intensity moment), masked below `MIN_SEVERITY_MS`.
 
 - `determine_exposure.py`
   - `clip_wind_extent_to_admin_areas`: clips the wind-extent raster to the alert's admin areas (thin wrapper over `infra.utils.exposure.clip_raster_to_admin_areas`).
 
 - `constants.py`
   - Per-country config (`COUNTRY_CONFIGS`): exposure class, sustained-wind averaging-period convention, and forecast source (GEFS or ECMWF).
-  - WMO/Harper averaging-period conversion factors, `MIN_SEVERITY_MS`, per-source ensemble/format constants (GEFS member IDs + `GEFS_NATIVE_LEAD_TIME_STEP_HOURS`; ECMWF streams, `ECMWF_NATIVE_LEAD_TIME_STEP_HOURS`, `ECMWF_TRACK_FIX_INTERVAL_HOURS`, unit conversions), `MONITORING_BOX_BUFFER_KM`.
-
+  - WMO/Harper averaging-period conversion factors, `MIN_SEVERITY_MS`, per-source ensemble/format constants (GEFS member IDs + native lead-time constants for wind `GEFS_NATIVE_LEAD_TIME_STEP_HOURS` 3h and track `GEFS_TRACK_NATIVE_LEAD_TIME_STEP_HOURS` 6h; ECMWF streams, `ECMWF_NATIVE_LEAD_TIME_STEP_HOURS`, `ECMWF_TRACK_FIX_INTERVAL_HOURS`, unit conversions), `MONITORING_BOX_BUFFER_KM`.
+  
 ## Forecast-source data
 
 - **Alert config** (`alert_configs_ibf_api`): spatial extent (national) and temporal extent (a `"lead-time-spectrum"`, e.g. 3-hour steps up to 168 hours) fetched from the IBF API per country.
@@ -70,9 +70,9 @@ PHL seeded is still required. Real fix: a real `DataSource.GEFS_WIND`/`GEFS_TRAC
 2. Resolve the country's config (exposure class, averaging-period convention) from `COUNTRY_CONFIGS`. Stop early if the country isn't configured.
 3. Load GEFS wind and track member file paths (local test fixtures today). Stop early if either is missing.
 4. Compute the country's monitoring bounding box: admin-area union padded by `MONITORING_BOX_BUFFER_KM`.
-5. Loop over alert configs (spatial extents) and their temporal extents - matches flood/drought's generic structure, even though tropical cyclone has exactly one of each per country today.
-6. `extract_wind_speed` + `determine_severities`. Skip to the next temporal extent if no bucket clears `MIN_SEVERITY_MS`.
-7. `extract_track`, used to derive the storm centroid at the peak-intensity bucket.
+5. `extract_track` once for the run; if no fixes are in the monitoring box, stop early (no TC present for this country/run).
+6. Loop over alert configs (spatial extents) and their temporal extents - matches flood/drought's generic structure, even though tropical cyclone has exactly one of each per country today.
+7. `extract_wind_speed` + `determine_severities`. Skip to the next temporal extent if no bucket clears `MIN_SEVERITY_MS`.
 8. `compute_alert_extent` + `clip_wind_extent_to_admin_areas`.
 9. `compute_population_exposed` + `aggregate_population_exposed`.
 10. Submit via `DataSubmitter`: `create_alert`, `add_severity_data` (per-member `RUN` + `MEDIAN`), `add_admin_area_exposure`, `add_raster_exposure`.

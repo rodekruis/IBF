@@ -131,7 +131,9 @@ ATCF_WIND_RADII_THRESHOLD_KNOTS = 34
 # lead time). extract_wind_speed() aggregates native-step rasters (per-cell max, per ensemble
 # member) into a bucket whenever the configured interval is a coarser multiple of this.
 GEFS_NATIVE_LEAD_TIME_STEP_HOURS = 3
-
+# Native GEFS ATCF tracker cadence, confirmed against real fixture data (TAU 000,006,012,... -
+# distinct from GEFS_NATIVE_LEAD_TIME_STEP_HOURS, wind's own native 3h step).
+GEFS_TRACK_NATIVE_LEAD_TIME_STEP_HOURS = 6
 
 # --- ECMWF IFS ensemble -----------------------------------------------------------------------
 # Same two products as GEFS - wind speed and track, per ensemble member, four daily cycles

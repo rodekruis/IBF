@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.tropical_cyclone.compute_wind_extent import compute_alert_extent
-from pipelines.tropical_cyclone.determine_alerts import TimeIntervalSeverity
+from pipelines.tropical_cyclone.determine_alerts import TimeIntervalWindSpeedSeverity
 from rasterio.transform import from_origin
 
 # Real GRIB2/IEEE missing-value sentinel used by GEFS wind rasters - see
@@ -22,8 +22,8 @@ def _make_raster(value: float) -> RasterData:
 
 def _make_severity(
     median_wind_speed: float, rasters: list[RasterData], time_interval_start: str = "t0"
-) -> TimeIntervalSeverity:
-    return TimeIntervalSeverity(
+) -> TimeIntervalWindSpeedSeverity:
+    return TimeIntervalWindSpeedSeverity(
         time_interval_start=time_interval_start,
         time_interval_end="t1",
         median_wind_speed=median_wind_speed,
@@ -33,13 +33,19 @@ def _make_severity(
 
 
 class TestComputeAlertExtent:
-    def test_picks_the_bucket_with_the_highest_median(self):
-        low = _make_severity(35.0, [_make_raster(40.0)], time_interval_start="low")
-        high = _make_severity(45.0, [_make_raster(50.0)], time_interval_start="high")
+    def test_unions_exposure_across_time_buckets_not_just_the_peak(self):
+        early_raster = _make_raster(_NODATA)
+        early_raster.array[0, 0] = 40.0
+        early = _make_severity(40.0, [early_raster], time_interval_start="early")
 
-        result = compute_alert_extent([low, high])
+        late_raster = _make_raster(_NODATA)
+        late_raster.array[0, 1] = 45.0
+        late = _make_severity(45.0, [late_raster], time_interval_start="late")
 
-        assert result.array[0, 0] == 50.0
+        result = compute_alert_extent([early, late])
+
+        assert result.array[0, 0] == 40.0
+        assert result.array[0, 1] == 45.0
 
     def test_envelope_is_a_per_cell_max_across_members(self):
         member_a = _make_raster(10.0)

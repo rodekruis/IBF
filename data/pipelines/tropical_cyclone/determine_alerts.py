@@ -12,7 +12,7 @@ from pipelines.tropical_cyclone.extract_forecast import TimeIntervalWindSpeed
 
 
 @dataclass
-class TimeIntervalSeverity:
+class TimeIntervalWindSpeedSeverity:
     time_interval_start: str
     time_interval_end: str
     median_wind_speed: float
@@ -24,7 +24,7 @@ def determine_severities(
     wind_speeds: list[TimeIntervalWindSpeed],
     place_codes: list[str],
     admin_areas: AdminAreasSet,
-) -> list[TimeIntervalSeverity]:
+) -> list[TimeIntervalWindSpeedSeverity]:
     """
     Per time bucket, per member: clip that member's wind-speed raster to the country's own
     admin-area union (the land mask), take its max, excluding nodata cells. Those scalars are the
@@ -34,7 +34,7 @@ def determine_severities(
     retains each member's own land-clipped raster (not just its scalar max), for
     compute_wind_extent.py's per-cell-max envelope.
     """
-    severities: list[TimeIntervalSeverity] = []
+    severities: list[TimeIntervalWindSpeedSeverity] = []
 
     for bucket in wind_speeds:
         clipped_rasters = [
@@ -50,7 +50,7 @@ def determine_severities(
             continue
 
         severities.append(
-            TimeIntervalSeverity(
+            TimeIntervalWindSpeedSeverity(
                 time_interval_start=bucket.time_interval_start,
                 time_interval_end=bucket.time_interval_end,
                 median_wind_speed=median_wind_speed,
