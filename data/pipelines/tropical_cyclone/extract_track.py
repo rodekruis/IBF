@@ -7,6 +7,10 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from statistics import fmean
 
+from shapely.geometry import Point
+from shapely.geometry.base import BaseGeometry
+from shapely.ops import unary_union
+
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.enums import ForecastSource
@@ -53,7 +57,7 @@ def extract_track(
     file per run, one message per storm, ensemble members as subsets) - see _load_gefs_track_fixes
     / _load_ecmwf_track_fixes. Everything downstream of a populated {lead_hour: [TrackFix, ...]} map
     is source-agnostic (see _build_time_interval_track_fixes). Per-member track identity is
-    intentionally not kept: the only consumer (derive_storm_centroid) averages fixes, so every
+    intentionally not kept: the only consumer (derive_alert_centroid) averages fixes, so every
     member's fix for a lead hour is pooled.
     """
     if forecast_source == ForecastSource.GEFS:
@@ -462,59 +466,77 @@ def _ecmwf_optional(values: list[float], index: int) -> float:
     return 0.0 if _ecmwf_value_missing(value) else float(value)
 
 
-def derive_storm_centroid(
+def derive_alert_centroid(
     time_interval_track_fixes: list[TimeIntervalTrackFix],
     time_interval_severities: list[TimeIntervalWindSpeedSeverity],
+    place_codes: list[str],
     admin_areas: AdminAreasSet,
-) -> Centroid:
+) -> Centroid | None:
     """
-    Storm-center point at the peak-intensity wind bucket (highest MEDIAN wind speed). Track's own
-    ~6h native cadence rarely lines up exactly with wind's real 3h cadence, so when the peak
-    bucket's timestamp falls between two real track fixes, the ensemble-mean centroid is linearly
-    interpolated between them by elapsed-time fraction - two known real points blended at a known
-    elapsed-time fraction, not an invented one, on the assumption the storm's own motion is roughly
-    continuous between fixes six hours apart. Clamps to the nearest available bucket if the peak
-    time falls outside track's own observed window. Falls back to the admin-area centroid if there
-    are no track fixes at all.
+    Storm-center point to report for the alert, or None when the peak-intensity wind bucket
+    (highest MEDIAN wind speed) starts outside the time window the storm is tracked over - that
+    wind cannot be attributed to the tracked storm, and no alert is raised. A peak time exactly on
+    either end of the tracked window counts as inside it. Otherwise the reported position is the
+    ensemble-mean position of the first track bucket, in time order, lying inside the admin areas,
+    or of the bucket coming closest to them when none lies inside.
     """
-    if not time_interval_track_fixes:
-        return _admin_area_centroid(admin_areas)
-
-    peak_bucket = max(
-        time_interval_severities, key=lambda severity: severity.median_wind_speed
-    )
-    peak_time = _parse_time_interval_start(peak_bucket.time_interval_start)
+    if not time_interval_track_fixes or not time_interval_severities:
+        return None
 
     sorted_buckets = sorted(
         time_interval_track_fixes,
         key=lambda bucket: _parse_time_interval_start(bucket.time_interval_start),
     )
-    bucket_times = [
-        _parse_time_interval_start(bucket.time_interval_start)
-        for bucket in sorted_buckets
-    ]
+    first_track_time = _parse_time_interval_start(sorted_buckets[0].time_interval_start)
+    last_track_time = _parse_time_interval_start(sorted_buckets[-1].time_interval_start)
 
-    if peak_time <= bucket_times[0]:
-        return _bucket_centroid(sorted_buckets[0])
-    if peak_time >= bucket_times[-1]:
-        return _bucket_centroid(sorted_buckets[-1])
-
-    later_index = next(
-        index for index, time in enumerate(bucket_times) if time >= peak_time
+    peak_bucket = max(
+        time_interval_severities, key=lambda severity: severity.median_wind_speed
     )
-    if bucket_times[later_index] == peak_time:
-        return _bucket_centroid(sorted_buckets[later_index])
+    peak_time = _parse_time_interval_start(peak_bucket.time_interval_start)
+    if peak_time < first_track_time or peak_time > last_track_time:
+        return None
 
-    earlier_centroid = _bucket_centroid(sorted_buckets[later_index - 1])
-    later_centroid = _bucket_centroid(sorted_buckets[later_index])
-    fraction = (peak_time - bucket_times[later_index - 1]) / (
-        bucket_times[later_index] - bucket_times[later_index - 1]
+    return _landfall_or_closest_approach_centroid(
+        sorted_buckets, place_codes, admin_areas
     )
-    return Centroid(
-        latitude=earlier_centroid.latitude
-        + fraction * (later_centroid.latitude - earlier_centroid.latitude),
-        longitude=earlier_centroid.longitude
-        + fraction * (later_centroid.longitude - earlier_centroid.longitude),
+
+
+def _landfall_or_closest_approach_centroid(
+    sorted_buckets: list[TimeIntervalTrackFix],
+    place_codes: list[str],
+    admin_areas: AdminAreasSet,
+) -> Centroid:
+    """
+    The ensemble-mean position of the first bucket, in time order, lying inside the admin-area
+    union, or of the bucket whose ensemble-mean position is closest to that union when none lies
+    inside it. Distances are in degrees and only rank buckets against each other.
+    """
+    admin_area_union = _admin_area_union(place_codes, admin_areas)
+    bucket_centroids = [_bucket_centroid(bucket) for bucket in sorted_buckets]
+
+    for centroid in bucket_centroids:
+        if admin_area_union.contains(Point(centroid.longitude, centroid.latitude)):
+            return centroid
+
+    return min(
+        bucket_centroids,
+        key=lambda centroid: admin_area_union.distance(
+            Point(centroid.longitude, centroid.latitude)
+        ),
+    )
+
+
+def _admin_area_union(
+    place_codes: list[str], admin_areas: AdminAreasSet
+) -> BaseGeometry:
+    """The single geometry covering the given admin areas."""
+    return unary_union(
+        [
+            admin_areas.admin_areas[place_code].to_geometry()
+            for place_code in place_codes
+            if place_code in admin_areas.admin_areas
+        ]
     )
 
 
@@ -529,16 +551,4 @@ def _bucket_centroid(bucket: TimeIntervalTrackFix) -> Centroid:
     return Centroid(
         latitude=fmean(fix.latitude for fix in fixes),
         longitude=fmean(fix.longitude for fix in fixes),
-    )
-
-
-def _admin_area_centroid(admin_areas: AdminAreasSet) -> Centroid:
-    geometries = [area.to_geometry() for area in admin_areas.admin_areas.values()]
-    if not geometries:
-        return Centroid(latitude=0.0, longitude=0.0)
-
-    geometry_centroids = [geometry.centroid for geometry in geometries]
-    return Centroid(
-        latitude=fmean(point.y for point in geometry_centroids),
-        longitude=fmean(point.x for point in geometry_centroids),
     )

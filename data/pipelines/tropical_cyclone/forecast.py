@@ -76,7 +76,7 @@ from pipelines.tropical_cyclone.determine_exposure import (
 )
 from pipelines.tropical_cyclone.extract_forecast import extract_wind_speed
 from pipelines.tropical_cyclone.extract_track import (
-    derive_storm_centroid,
+    derive_alert_centroid,
     extract_track,
 )
 
@@ -208,6 +208,22 @@ def calculate_tropical_cyclone_forecasts(
                 )
                 continue
 
+            # Storm-center point to report. None means the peak wind bucket falls outside the
+            # window the storm is tracked over, so that wind cannot be attributed to this storm.
+            centroid = derive_alert_centroid(
+                track_fixes,
+                time_interval_severities,
+                spatial_extent_place_codes,
+                target_admin_areas,
+            )
+            if centroid is None:
+                logger.info(
+                    f"No tropical-cyclone alert for '{country}' "
+                    f"({alert_config.spatial_extent_name}): the peak wind bucket falls outside "
+                    f"the tracked storm's own window"
+                )
+                continue
+
             ### Step 8 - Compute the alert extent and its spatial exposure ###
             wind_extent = compute_alert_extent(time_interval_severities)
             clipped_wind_extent = clip_wind_extent_to_admin_areas(
@@ -243,11 +259,6 @@ def calculate_tropical_cyclone_forecasts(
             # updates the same event instead of creating a duplicate), but that needs a decision on
             # what "the same storm across runs" means operationally that hasn't been made yet.
             event_name = f"{country}_tropical-cyclone_{_placeholder_issued_datetime()}"
-
-            # Storm-center point at the peak-intensity wind bucket (see docstring).
-            centroid = derive_storm_centroid(
-                track_fixes, time_interval_severities, target_admin_areas
-            )
 
             data_submitter.create_alert(event_name=event_name, centroid=centroid)
 

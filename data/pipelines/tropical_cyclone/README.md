@@ -17,10 +17,10 @@ This folder contains the tropical-cyclone-specific forecast logic used by the pi
 
 - `extract_track.py`
   - `extract_track`: dispatches on the country's forecast source and reads track fixes - GEFS ATCF (one file per member, all lead times as rows, deduping repeated wind-radii rows) or ECMWF BUFR (one file per run, members as subsets) - filtering fixes to the monitoring bounds.
-  - `derive_storm_centroid`: storm-center point at the peak-intensity wind bucket - an exact match uses that bucket's ensemble-mean fix directly, otherwise linearly interpolates between the two real track fixes bracketing that time (track's 6h native cadence rarely lines up exactly with wind's 3h cadence), clamped to the nearest bucket if the peak time falls outside track's own window. Falls back to the admin-area centroid if there are no track fixes at all. Source-agnostic: it only reads each fix's lat/lon.
+  - `derive_alert_centroid`: the storm-center point to report for the alert, or `None` when the peak-intensity wind bucket starts outside the window the storm is tracked over - that wind can't be attributed to the tracked storm, so no alert is raised. Otherwise the ensemble-mean position of the first track bucket, in time order, lying inside the admin areas, or of the bucket coming closest to them when the storm never reaches them. Source-agnostic: it only reads each fix's lat/lon.
 
 - `determine_alerts.py`
-  - `determine_severities`: per time bucket per member, clips wind speed to the country's admin-area union and takes the land-clipped max (the `RUN` value); `MEDIAN` is the median of those.
+  - `determine_severities`: per time bucket per member, clips wind speed to the country's admin-area union and takes the land-clipped max (the `RUN` value); `MEDIAN` is the median of those. Clips with `all_touched` so admin areas smaller than one 0.25° wind cell (small island groups) still register.
   - Drops buckets whose `MEDIAN` doesn't clear `MIN_SEVERITY_MS`.
 
 - `compute_wind_extent.py`

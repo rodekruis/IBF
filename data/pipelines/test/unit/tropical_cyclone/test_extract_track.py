@@ -16,7 +16,7 @@ from pipelines.tropical_cyclone.extract_track import (
     _parse_ecmwf_track_path,
     _parse_gefs_track_path,
     _read_track_fixes,
-    derive_storm_centroid,
+    derive_alert_centroid,
     extract_track,
     TimeIntervalTrackFix,
     TrackFix,
@@ -261,61 +261,150 @@ def _build_admin_areas() -> AdminAreasSet:
     )
 
 
-class TestDeriveStormCentroid:
-    def test_exact_time_match_uses_that_buckets_ensemble_mean(self):
+class TestDeriveAlertCentroid:
+    _PLACE_CODES = ["PC001"]
+
+    def test_returns_none_when_the_peak_wind_time_is_after_the_tracked_window(self):
         track_fixes = [
-            _make_track_bucket("2026-07-10T00:00:00Z", [(10.0, 100.0)]),
-            _make_track_bucket("2026-07-10T06:00:00Z", [(10.0, 100.0), (12.0, 102.0)]),
-            _make_track_bucket("2026-07-10T12:00:00Z", [(30.0, 130.0)]),
-        ]
-        severities = [_make_severity(45.0, "2026-07-10T06:00:00Z")]
-
-        centroid = derive_storm_centroid(track_fixes, severities, _build_admin_areas())
-
-        assert centroid.latitude == 11.0
-        assert centroid.longitude == 101.0
-
-    def test_interpolates_between_the_two_bracketing_buckets(self):
-        track_fixes = [
-            _make_track_bucket("2026-07-10T00:00:00Z", [(10.0, 100.0)]),
-            _make_track_bucket("2026-07-10T06:00:00Z", [(20.0, 110.0)]),
-        ]
-        # Peak at +3h, exactly halfway between the two real 6h-apart track fixes.
-        severities = [_make_severity(45.0, "2026-07-10T03:00:00Z")]
-
-        centroid = derive_storm_centroid(track_fixes, severities, _build_admin_areas())
-
-        assert centroid.latitude == 15.0
-        assert centroid.longitude == 105.0
-
-    def test_clamps_to_the_last_bucket_when_peak_is_after_the_observed_window(self):
-        track_fixes = [
-            _make_track_bucket("2026-07-10T00:00:00Z", [(10.0, 100.0)]),
-            _make_track_bucket("2026-07-10T06:00:00Z", [(20.0, 110.0)]),
+            _make_track_bucket("2026-07-10T00:00:00Z", [(1.0, 1.0)]),
+            _make_track_bucket("2026-07-10T06:00:00Z", [(1.5, 1.5)]),
         ]
         severities = [_make_severity(45.0, "2026-07-10T12:00:00Z")]
 
-        centroid = derive_storm_centroid(track_fixes, severities, _build_admin_areas())
+        centroid = derive_alert_centroid(
+            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
+        )
 
-        assert centroid.latitude == 20.0
-        assert centroid.longitude == 110.0
+        assert centroid is None
 
-    def test_clamps_to_the_first_bucket_when_peak_is_before_the_observed_window(self):
+    def test_returns_none_when_the_peak_wind_time_is_before_the_tracked_window(self):
         track_fixes = [
-            _make_track_bucket("2026-07-10T06:00:00Z", [(10.0, 100.0)]),
-            _make_track_bucket("2026-07-10T12:00:00Z", [(20.0, 110.0)]),
+            _make_track_bucket("2026-07-10T06:00:00Z", [(1.0, 1.0)]),
+            _make_track_bucket("2026-07-10T12:00:00Z", [(1.5, 1.5)]),
         ]
         severities = [_make_severity(45.0, "2026-07-10T00:00:00Z")]
 
-        centroid = derive_storm_centroid(track_fixes, severities, _build_admin_areas())
+        centroid = derive_alert_centroid(
+            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
+        )
 
-        assert centroid.latitude == 10.0
-        assert centroid.longitude == 100.0
+        assert centroid is None
 
-    def test_falls_back_to_admin_area_centroid_when_there_are_no_track_fixes(self):
+    def test_returns_none_when_there_are_no_track_fixes(self):
         severities = [_make_severity(45.0, "2026-07-10T00:00:00Z")]
 
-        centroid = derive_storm_centroid([], severities, _build_admin_areas())
+        centroid = derive_alert_centroid(
+            [], severities, self._PLACE_CODES, _build_admin_areas()
+        )
 
+        assert centroid is None
+
+    def test_a_peak_wind_time_on_the_tracked_window_edge_counts_as_inside_it(self):
+        track_fixes = [
+            _make_track_bucket("2026-07-10T00:00:00Z", [(1.0, 1.0)]),
+            _make_track_bucket("2026-07-10T06:00:00Z", [(1.5, 1.5)]),
+        ]
+
+        for peak_time in ("2026-07-10T00:00:00Z", "2026-07-10T06:00:00Z"):
+            centroid = derive_alert_centroid(
+                track_fixes,
+                [_make_severity(45.0, peak_time)],
+                self._PLACE_CODES,
+                _build_admin_areas(),
+            )
+
+            assert centroid is not None
+
+    def test_gates_on_the_highest_median_bucket_not_the_first_one(self):
+        track_fixes = [_make_track_bucket("2026-07-10T00:00:00Z", [(1.0, 1.0)])]
+        severities = [
+            _make_severity(10.0, "2026-07-10T00:00:00Z"),
+            _make_severity(45.0, "2026-07-10T12:00:00Z"),
+        ]
+
+        centroid = derive_alert_centroid(
+            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
+        )
+
+        assert centroid is None
+
+    def test_returns_the_first_bucket_that_lies_inside_the_admin_areas(self):
+        track_fixes = [
+            _make_track_bucket("2026-07-10T00:00:00Z", [(5.0, 5.0)]),
+            _make_track_bucket("2026-07-10T06:00:00Z", [(1.0, 1.0)]),
+            _make_track_bucket("2026-07-10T12:00:00Z", [(1.5, 1.5)]),
+        ]
+        severities = [_make_severity(45.0, "2026-07-10T12:00:00Z")]
+
+        centroid = derive_alert_centroid(
+            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
+        )
+
+        assert centroid is not None
+        assert centroid.latitude == 1.0
+        assert centroid.longitude == 1.0
+
+    def test_position_does_not_depend_on_which_bucket_holds_the_peak_wind(self):
+        track_fixes = [
+            _make_track_bucket("2026-07-10T00:00:00Z", [(5.0, 5.0)]),
+            _make_track_bucket("2026-07-10T06:00:00Z", [(1.0, 1.0)]),
+            _make_track_bucket("2026-07-10T12:00:00Z", [(1.5, 1.5)]),
+        ]
+
+        centroids = [
+            derive_alert_centroid(
+                track_fixes,
+                [_make_severity(45.0, peak_time)],
+                self._PLACE_CODES,
+                _build_admin_areas(),
+            )
+            for peak_time in ("2026-07-10T00:00:00Z", "2026-07-10T12:00:00Z")
+        ]
+
+        assert centroids[0] == centroids[1]
+
+    def test_returns_the_closest_bucket_when_none_lies_inside_the_admin_areas(self):
+        track_fixes = [
+            _make_track_bucket("2026-07-10T00:00:00Z", [(10.0, 10.0)]),
+            _make_track_bucket("2026-07-10T06:00:00Z", [(3.0, 1.0)]),
+            _make_track_bucket("2026-07-10T12:00:00Z", [(8.0, 8.0)]),
+        ]
+        severities = [_make_severity(45.0, "2026-07-10T06:00:00Z")]
+
+        centroid = derive_alert_centroid(
+            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
+        )
+
+        assert centroid is not None
+        assert centroid.latitude == 3.0
+        assert centroid.longitude == 1.0
+
+    def test_tests_a_buckets_ensemble_mean_rather_than_its_individual_fixes(self):
+        # Neither member fix is inside the admin areas; their mean is.
+        track_fixes = [
+            _make_track_bucket("2026-07-10T00:00:00Z", [(1.0, -3.0), (1.0, 5.0)])
+        ]
+        severities = [_make_severity(45.0, "2026-07-10T00:00:00Z")]
+
+        centroid = derive_alert_centroid(
+            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
+        )
+
+        assert centroid is not None
+        assert centroid.latitude == 1.0
+        assert centroid.longitude == 1.0
+
+    def test_orders_buckets_by_time_regardless_of_input_order(self):
+        track_fixes = [
+            _make_track_bucket("2026-07-10T12:00:00Z", [(1.5, 1.5)]),
+            _make_track_bucket("2026-07-10T00:00:00Z", [(1.0, 1.0)]),
+        ]
+        severities = [_make_severity(45.0, "2026-07-10T06:00:00Z")]
+
+        centroid = derive_alert_centroid(
+            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
+        )
+
+        assert centroid is not None
         assert centroid.latitude == 1.0
         assert centroid.longitude == 1.0
