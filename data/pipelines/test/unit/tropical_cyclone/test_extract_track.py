@@ -18,16 +18,26 @@ from pipelines.tropical_cyclone.extract_track import (
     _read_track_fixes,
     derive_alert_centroid,
     extract_track,
+    find_storm_pairs_sharing_place_codes,
+    select_place_codes_near_storm,
+    StormTrack,
     TimeIntervalTrackFix,
     TrackFix,
 )
 
 
 def _atcf_line(
-    lead_hour: int, lat: str, lon: str, vmax: float, mslp: float, rad: int = 34
+    lead_hour: int,
+    lat: str,
+    lon: str,
+    vmax: float,
+    mslp: float,
+    rad: int = 34,
+    basin: str = "WP",
+    storm_number: str = "01",
 ) -> str:
     return (
-        f"WP, 01, 2026071000, 03, AC00, {lead_hour:03d}, {lat}, {lon}, "
+        f"{basin}, {storm_number}, 2026071000, 03, AC00, {lead_hour:03d}, {lat}, {lon}, "
         f"{vmax}, {mslp}, XX, {rad}, NEQ, 0000, 0000, 0000, 0000"
     )
 
@@ -69,15 +79,67 @@ class TestReadTrackFixes:
         path = tmp_path / "track.txt"
         path.write_text(_atcf_line(6, "208N", "1276E", 65, 985))
 
-        [(lead_hour, fix)] = _read_track_fixes(
-            str(path), bounds=(100.0, 0.0, 150.0, 30.0)
+        [row] = _read_track_fixes(str(path), bounds=(100.0, 0.0, 150.0, 30.0))
+
+        assert row.lead_hour == 6
+        assert row.track_fix.latitude == 20.8
+        assert row.track_fix.longitude == 127.6
+        assert row.track_fix.max_sustained_wind_knots == 65.0
+        assert row.track_fix.min_sea_level_pressure_mb == 985.0
+
+    def test_retains_the_basin_and_storm_number_from_the_row(self, tmp_path):
+        path = tmp_path / "track.txt"
+        path.write_text(
+            _atcf_line(0, "100N", "1200E", 50, 990, basin="EP", storm_number="06")
         )
 
-        assert lead_hour == 6
-        assert fix.latitude == 20.8
-        assert fix.longitude == 127.6
-        assert fix.max_sustained_wind_knots == 65.0
-        assert fix.min_sea_level_pressure_mb == 985.0
+        [row] = _read_track_fixes(str(path), bounds=(100.0, 0.0, 150.0, 30.0))
+
+        assert row.basin == "EP"
+        assert row.storm_number == "06"
+
+    def test_keeps_the_storm_numbers_leading_zero(self, tmp_path):
+        path = tmp_path / "track.txt"
+        path.write_text(
+            _atcf_line(0, "100N", "1200E", 50, 990, storm_number="06"),
+        )
+
+        [row] = _read_track_fixes(str(path), bounds=(100.0, 0.0, 150.0, 30.0))
+
+        assert row.storm_number == "06"
+
+    def test_drops_a_row_for_an_atcf_invest(self, tmp_path):
+        path = tmp_path / "track.txt"
+        path.write_text(
+            _atcf_line(0, "100N", "1200E", 50, 990, storm_number="11")
+            + "\n"
+            + _atcf_line(0, "100N", "1200E", 50, 990, storm_number="98")
+        )
+
+        rows = _read_track_fixes(str(path), bounds=(100.0, 0.0, 150.0, 30.0))
+
+        assert [row.storm_number for row in rows] == ["11"]
+
+    def test_keeps_the_highest_storm_number_below_the_invest_range(self, tmp_path):
+        path = tmp_path / "track.txt"
+        path.write_text(
+            _atcf_line(0, "100N", "1200E", 50, 990, storm_number="89"),
+        )
+
+        rows = _read_track_fixes(str(path), bounds=(100.0, 0.0, 150.0, 30.0))
+
+        assert len(rows) == 1
+
+    def test_drops_every_storm_number_in_the_invest_range(self, tmp_path):
+        path = tmp_path / "track.txt"
+        path.write_text(
+            "\n".join(
+                _atcf_line(0, "100N", "1200E", 50, 990, storm_number=str(number))
+                for number in range(90, 100)
+            )
+        )
+
+        assert _read_track_fixes(str(path), bounds=(100.0, 0.0, 150.0, 30.0)) == []
 
     def test_filters_out_non_matching_rad(self, tmp_path):
         path = tmp_path / "track.txt"
@@ -99,41 +161,213 @@ class TestReadTrackFixes:
             + _atcf_line(0, "400N", "1200E", 50, 990)
         )
 
-        fixes = _read_track_fixes(str(path), bounds=(100.0, 0.0, 150.0, 30.0))
+        rows = _read_track_fixes(str(path), bounds=(100.0, 0.0, 150.0, 30.0))
 
-        assert len(fixes) == 1
-        assert fixes[0][1].latitude == 10.0
+        assert len(rows) == 1
+        assert rows[0].track_fix.latitude == 10.0
+
+
+def _write_track_file(
+    tmp_path: Path, lines: list[str], member: str = "ap01", cycle: str = "gefs.20260710"
+) -> Path:
+    track_path = (
+        tmp_path / cycle / "00" / "tctrack" / f"{member}.t00z.cyclone.trackatcfunix"
+    )
+    track_path.parent.mkdir(parents=True, exist_ok=True)
+    track_path.write_text("\n".join(lines) + "\n")
+    return track_path
 
 
 class TestExtractTrack:
     def test_filters_track_fixes_to_bounds(self, tmp_path: Path) -> None:
-        track_path = (
-            tmp_path
-            / "gefs.20260710"
-            / "00"
-            / "tctrack"
-            / "ap01.t00z.cyclone.trackatcfunix"
-        )
-        track_path.parent.mkdir(parents=True)
-        track_path.write_text(
-            "WP, 01, 2026071000, 03, GEFS, 003, 208N, 1276E, 50, 980, AAA, 34\n"
-            "WP, 01, 2026071000, 03, GEFS, 003, 350N, 1400E, 60, 970, AAA, 34\n"
+        track_path = _write_track_file(
+            tmp_path,
+            [
+                "WP, 01, 2026071000, 03, GEFS, 003, 208N, 1276E, 50, 980, AAA, 34",
+                "WP, 01, 2026071000, 03, GEFS, 003, 350N, 1400E, 60, 970, AAA, 34",
+            ],
         )
 
-        result = extract_track(
+        [storm] = extract_track(
             [str(track_path)],
             bounds=(120.0, 20.0, 130.0, 25.0),
             forecast_source=ForecastSource.GEFS,
         )
 
-        assert len(result) == 1
-        assert result[0].time_interval_start == "2026-07-10T03:00:00Z"
-        assert result[0].time_interval_end == "2026-07-10T09:00:00Z"
-        assert len(result[0].ensemble_track_fixes) == 1
-        assert result[0].ensemble_track_fixes[0].latitude == 20.8
-        assert result[0].ensemble_track_fixes[0].longitude == 127.6
-        assert result[0].ensemble_track_fixes[0].max_sustained_wind_knots == 50.0
-        assert result[0].ensemble_track_fixes[0].min_sea_level_pressure_mb == 980.0
+        [bucket] = storm.time_interval_track_fixes
+        assert bucket.time_interval_start == "2026-07-10T03:00:00Z"
+        assert bucket.time_interval_end == "2026-07-10T09:00:00Z"
+        assert len(bucket.ensemble_track_fixes) == 1
+        assert bucket.ensemble_track_fixes[0].latitude == 20.8
+        assert bucket.ensemble_track_fixes[0].longitude == 127.6
+        assert bucket.ensemble_track_fixes[0].max_sustained_wind_knots == 50.0
+        assert bucket.ensemble_track_fixes[0].min_sea_level_pressure_mb == 980.0
+
+    def test_groups_interleaved_rows_into_one_storm_track_per_storm(
+        self, tmp_path: Path
+    ) -> None:
+        # A real ATCF file interleaves every storm the tracker follows, rather than grouping them.
+        track_path = _write_track_file(
+            tmp_path,
+            [
+                _atcf_line(0, "200N", "1250E", 50, 980, basin="WP", storm_number="11"),
+                _atcf_line(0, "210N", "1260E", 40, 990, basin="WP", storm_number="12"),
+                _atcf_line(6, "205N", "1255E", 55, 975, basin="WP", storm_number="11"),
+                _atcf_line(6, "215N", "1265E", 45, 985, basin="WP", storm_number="12"),
+            ],
+        )
+
+        storms = extract_track(
+            [str(track_path)],
+            bounds=(120.0, 15.0, 130.0, 25.0),
+            forecast_source=ForecastSource.GEFS,
+        )
+
+        assert [storm.storm_number for storm in storms] == ["11", "12"]
+        assert all(len(storm.time_interval_track_fixes) == 2 for storm in storms)
+
+    def test_distinguishes_the_same_storm_number_in_different_basins(
+        self, tmp_path: Path
+    ) -> None:
+        track_path = _write_track_file(
+            tmp_path,
+            [
+                _atcf_line(0, "200N", "1250E", 50, 980, basin="WP", storm_number="09"),
+                _atcf_line(0, "210N", "1260E", 40, 990, basin="CP", storm_number="09"),
+            ],
+        )
+
+        storms = extract_track(
+            [str(track_path)],
+            bounds=(120.0, 15.0, 130.0, 25.0),
+            forecast_source=ForecastSource.GEFS,
+        )
+
+        assert [storm.basin for storm in storms] == ["CP", "WP"]
+
+    def test_pools_every_members_fix_for_one_storm(self, tmp_path: Path) -> None:
+        line = _atcf_line(0, "200N", "1250E", 50, 980, storm_number="11")
+        paths = [
+            str(_write_track_file(tmp_path, [line], member=member))
+            for member in ("ac00", "ap01", "ap02")
+        ]
+
+        [storm] = extract_track(
+            paths,
+            bounds=(120.0, 15.0, 130.0, 25.0),
+            forecast_source=ForecastSource.GEFS,
+        )
+
+        [bucket] = storm.time_interval_track_fixes
+        assert len(bucket.ensemble_track_fixes) == 3
+
+    def test_returns_storms_in_a_stable_order_regardless_of_row_order(
+        self, tmp_path: Path
+    ) -> None:
+        track_path = _write_track_file(
+            tmp_path,
+            [
+                _atcf_line(0, "200N", "1250E", 50, 980, basin="WP", storm_number="24"),
+                _atcf_line(0, "210N", "1260E", 40, 990, basin="EP", storm_number="06"),
+                _atcf_line(0, "205N", "1255E", 45, 985, basin="WP", storm_number="11"),
+            ],
+        )
+
+        storms = extract_track(
+            [str(track_path)],
+            bounds=(120.0, 15.0, 130.0, 25.0),
+            forecast_source=ForecastSource.GEFS,
+        )
+
+        assert [storm.storm_identifier for storm in storms] == [
+            "EP06_2026",
+            "WP11_2026",
+            "WP24_2026",
+        ]
+
+    def test_excludes_a_storm_whose_only_rows_are_an_invest(
+        self, tmp_path: Path
+    ) -> None:
+        track_path = _write_track_file(
+            tmp_path,
+            [
+                _atcf_line(0, "200N", "1250E", 50, 980, storm_number="11"),
+                _atcf_line(0, "200N", "1250E", 50, 980, storm_number="98"),
+            ],
+        )
+
+        storms = extract_track(
+            [str(track_path)],
+            bounds=(120.0, 15.0, 130.0, 25.0),
+            forecast_source=ForecastSource.GEFS,
+        )
+
+        assert [storm.storm_number for storm in storms] == ["11"]
+
+    def test_derives_the_season_year_from_the_forecast_cycle(
+        self, tmp_path: Path
+    ) -> None:
+        track_path = _write_track_file(
+            tmp_path,
+            ["WP, 24, 2025091812, 03, GEFS, 000, 200N, 1250E, 50, 980, AAA, 34"],
+            member="ac00",
+            cycle="gefs.20250918",
+        )
+
+        [storm] = extract_track(
+            [str(track_path)],
+            bounds=(120.0, 15.0, 130.0, 25.0),
+            forecast_source=ForecastSource.GEFS,
+        )
+
+        assert storm.season_year == 2025
+        assert storm.storm_identifier == "WP24_2025"
+
+    def test_returns_no_storms_when_every_fix_is_outside_the_bounds(
+        self, tmp_path: Path
+    ) -> None:
+        track_path = _write_track_file(
+            tmp_path, [_atcf_line(0, "600N", "1000W", 50, 980)]
+        )
+
+        assert (
+            extract_track(
+                [str(track_path)],
+                bounds=(120.0, 15.0, 130.0, 25.0),
+                forecast_source=ForecastSource.GEFS,
+            )
+            == []
+        )
+
+    def test_raises_for_the_ecmwf_forecast_source(self, tmp_path: Path) -> None:
+        with pytest.raises(NotImplementedError, match="GEFS"):
+            extract_track(
+                [],
+                bounds=(120.0, 15.0, 130.0, 25.0),
+                forecast_source=ForecastSource.ECMWF,
+            )
+
+
+class TestStormIdentifier:
+    def test_joins_the_basin_the_storm_number_and_the_season_year(self):
+        storm = StormTrack(
+            basin="WP",
+            storm_number="24",
+            season_year=2025,
+            time_interval_track_fixes=[],
+        )
+
+        assert storm.storm_identifier == "WP24_2025"
+
+    def test_keeps_the_storm_numbers_leading_zero_in_the_identifier(self):
+        storm = StormTrack(
+            basin="EP",
+            storm_number="06",
+            season_year=2026,
+            time_interval_track_fixes=[],
+        )
+
+        assert storm.storm_identifier == "EP06_2026"
 
 
 class TestParseEcmwfTrackPath:
@@ -408,3 +642,166 @@ class TestDeriveAlertCentroid:
         assert centroid is not None
         assert centroid.latitude == 1.0
         assert centroid.longitude == 1.0
+
+
+def _make_square_admin_area(pcode: str, min_lon: float, min_lat: float) -> AdminArea:
+    """A 1-degree square with its lower-left corner at (min_lon, min_lat)."""
+    return AdminArea(
+        properties=AdminAreaProperties(
+            pcode=pcode, name=pcode, admin_level=1, country_code="PC"
+        ),
+        geometry_type="Polygon",
+        coordinates=[
+            [
+                [min_lon, min_lat],
+                [min_lon, min_lat + 1.0],
+                [min_lon + 1.0, min_lat + 1.0],
+                [min_lon + 1.0, min_lat],
+                [min_lon, min_lat],
+            ]
+        ],
+    )
+
+
+def _build_spread_admin_areas() -> AdminAreasSet:
+    """Three 1-degree squares far enough apart that a small buffer reaches only one."""
+    return AdminAreasSet(
+        admin_areas={
+            "PC_WEST": _make_square_admin_area("PC_WEST", 0.0, 0.0),
+            "PC_MIDDLE": _make_square_admin_area("PC_MIDDLE", 10.0, 0.0),
+            "PC_EAST": _make_square_admin_area("PC_EAST", 20.0, 0.0),
+        }
+    )
+
+
+def _make_storm_track(
+    fixes: list[tuple[float, float]],
+    basin: str = "WP",
+    storm_number: str = "11",
+) -> StormTrack:
+    return StormTrack(
+        basin=basin,
+        storm_number=storm_number,
+        season_year=2026,
+        time_interval_track_fixes=[
+            _make_track_bucket(f"2026-07-10T{hour:02d}:00:00Z", [fix])
+            for hour, fix in enumerate(fixes)
+        ],
+    )
+
+
+class TestSelectPlaceCodesNearStorm:
+    _PLACE_CODES = ["PC_WEST", "PC_MIDDLE", "PC_EAST"]
+
+    def test_returns_only_the_admin_areas_the_padded_storm_box_reaches(self):
+        storm = _make_storm_track([(0.5, 0.5)])
+
+        selected = select_place_codes_near_storm(
+            storm, self._PLACE_CODES, _build_spread_admin_areas(), buffer_km=100.0
+        )
+
+        assert selected == ["PC_WEST"]
+
+    def test_returns_an_empty_list_when_no_admin_area_is_near_the_storm(self):
+        storm = _make_storm_track([(0.5, 50.0)])
+
+        selected = select_place_codes_near_storm(
+            storm, self._PLACE_CODES, _build_spread_admin_areas(), buffer_km=100.0
+        )
+
+        assert selected == []
+
+    def test_a_wider_buffer_reaches_more_admin_areas(self):
+        storm = _make_storm_track([(0.5, 0.5)])
+        admin_areas = _build_spread_admin_areas()
+
+        narrow = select_place_codes_near_storm(
+            storm, self._PLACE_CODES, admin_areas, buffer_km=100.0
+        )
+        wide = select_place_codes_near_storm(
+            storm, self._PLACE_CODES, admin_areas, buffer_km=1200.0
+        )
+
+        assert narrow == ["PC_WEST"]
+        assert wide == ["PC_WEST", "PC_MIDDLE"]
+
+    def test_uses_every_fix_in_the_track_not_just_the_first_one(self):
+        # The storm starts over PC_WEST and ends over PC_EAST; a box built from only the first
+        # fix would miss the east square entirely.
+        storm = _make_storm_track([(0.5, 0.5), (0.5, 10.5), (0.5, 20.5)])
+
+        selected = select_place_codes_near_storm(
+            storm, self._PLACE_CODES, _build_spread_admin_areas(), buffer_km=10.0
+        )
+
+        assert selected == ["PC_WEST", "PC_MIDDLE", "PC_EAST"]
+
+    def test_preserves_the_order_of_the_given_place_codes(self):
+        storm = _make_storm_track([(0.5, 0.5), (0.5, 20.5)])
+
+        selected = select_place_codes_near_storm(
+            storm,
+            ["PC_EAST", "PC_WEST"],
+            _build_spread_admin_areas(),
+            buffer_km=10.0,
+        )
+
+        assert selected == ["PC_EAST", "PC_WEST"]
+
+    def test_ignores_a_place_code_that_has_no_admin_area_geometry(self):
+        storm = _make_storm_track([(0.5, 0.5)])
+
+        selected = select_place_codes_near_storm(
+            storm,
+            ["PC_MISSING", "PC_WEST"],
+            _build_spread_admin_areas(),
+            buffer_km=100.0,
+        )
+
+        assert selected == ["PC_WEST"]
+
+
+class TestFindStormPairsSharingPlaceCodes:
+    def test_reports_a_pair_of_storms_that_share_an_admin_area(self):
+        storms = [
+            _make_storm_track([(0.5, 0.5)], storm_number="11"),
+            _make_storm_track([(0.5, 0.5)], storm_number="12"),
+        ]
+
+        pairs = find_storm_pairs_sharing_place_codes(
+            storms, [["PC_WEST", "PC_MIDDLE"], ["PC_MIDDLE"]]
+        )
+
+        assert pairs == [("WP11_2026", "WP12_2026")]
+
+    def test_reports_nothing_when_every_storm_has_its_own_admin_areas(self):
+        storms = [
+            _make_storm_track([(0.5, 0.5)], storm_number="11"),
+            _make_storm_track([(0.5, 0.5)], storm_number="12"),
+        ]
+
+        pairs = find_storm_pairs_sharing_place_codes(storms, [["PC_WEST"], ["PC_EAST"]])
+
+        assert pairs == []
+
+    def test_reports_each_pair_of_storms_only_once(self):
+        storms = [
+            _make_storm_track([(0.5, 0.5)], storm_number="11"),
+            _make_storm_track([(0.5, 0.5)], storm_number="12"),
+            _make_storm_track([(0.5, 0.5)], storm_number="13"),
+        ]
+
+        pairs = find_storm_pairs_sharing_place_codes(
+            storms, [["PC_WEST"], ["PC_WEST"], ["PC_WEST"]]
+        )
+
+        assert pairs == [
+            ("WP11_2026", "WP12_2026"),
+            ("WP11_2026", "WP13_2026"),
+            ("WP12_2026", "WP13_2026"),
+        ]
+
+    def test_reports_nothing_for_a_single_storm(self):
+        storms = [_make_storm_track([(0.5, 0.5)])]
+
+        assert find_storm_pairs_sharing_place_codes(storms, [["PC_WEST"]]) == []

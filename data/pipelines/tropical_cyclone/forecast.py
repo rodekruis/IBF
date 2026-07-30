@@ -6,12 +6,10 @@ real GEFS/ATCF data - `extract_wind_speed` (`tropical_cyclone/extract_forecast.p
 (`tropical_cyclone/extract_track.py`), `determine_severities` (`tropical_cyclone/determine_alerts.py`),
 `compute_alert_extent` (`tropical_cyclone/compute_wind_extent.py`), `clip_wind_extent_to_admin_areas`
 (`tropical_cyclone/determine_exposure.py`), and `compute_population_exposed`
-(`infra.utils.exposure`). Two `_placeholder_*` functions remain, both intentionally: Step 3's
-local-file-path loaders now read from a local test-fixture directory (`tropical_cyclone/bronze/`,
-most recent forecast cycle only) rather than a real data source - still `# TODO-infra` pending real
-`DataSource.GEFS_WIND`/`DataSource.GEFS_TRACK` fetchers - and `_placeholder_issued_datetime` (Step
-10's event-name timestamp) stays a v1 per-run identifier pending a decision on persistent per-storm
-identity (IBTrACS/ATCF `CY`) - see that function's docstring.
+(`infra.utils.exposure`). The remaining `_placeholder_*` functions are Step 3's local-file-path
+loaders, which read from a local test-fixture directory (`tropical_cyclone/bronze/`, most recent
+forecast cycle only) rather than a real data source - still `# TODO-infra` pending real
+`DataSource.GEFS_WIND`/`DataSource.GEFS_TRACK` fetchers.
 
 Step 1 now fetches `AlertConfig`s (spatial + temporal extents) from `DataSource.ALERT_CONFIGS_IBF_API`
 instead of synthesizing one locally - PR #307 seeded a real per-country config
@@ -20,6 +18,13 @@ steps up to 168 hours). Step 6 loops over `alert_configs` x `config.temporal_ext
 exactly one entry for TC today) to match flood/drought's generic structure; `extract_wind_speed`
 derives its output bucket width from the temporal extent it's given rather than a hardcoded 3
 hours, aggregating GEFS's native cadence up if the configured interval is coarser.
+
+Step 7b loops a third time, over every storm `extract_track` identified, so concurrent cyclones
+each raise their own alert. All storms share one wind extraction (GEFS ships one wind field per
+cycle, not one per storm), but each is measured only over the admin areas its own track comes near
+- see `select_place_codes_near_storm`. Event names are the storm's own identifier (basin + ATCF
+cyclone number + season, e.g. `WP11_2026`) and are stable across runs. GEFS only: `extract_track`
+raises `NotImplementedError` for ECMWF.
 
 The hazard is fully registered: `HazardType.TROPICAL_CYCLONE`, `ForecastSource.GEFS`,
 `SeverityKey.WIND_SPEED`, `LayerName.WIND_SPEED` all resolve, and the CLI dispatches to this
@@ -36,8 +41,6 @@ this file are removed.
 from __future__ import annotations
 
 import logging
-import math
-from datetime import datetime, timezone
 from pathlib import Path
 
 from shared.country_data import CountryCodeIso3
@@ -53,15 +56,16 @@ from pipelines.infra.data_types.enums import (
     SeverityKey,
 )
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
+from pipelines.infra.utils import nrw_logger
 from pipelines.infra.utils.exposure import (
     aggregate_population_exposed,
     compute_population_exposed,
     get_place_codes_for_alert_config,
 )
 from pipelines.infra.utils.raster import (
-    BoundingBox,
     get_bounding_box,
     get_raster_extent,
+    pad_bounding_box,
     raster_to_base64_png,
 )
 from pipelines.tropical_cyclone.compute_wind_extent import compute_alert_extent
@@ -78,6 +82,8 @@ from pipelines.tropical_cyclone.extract_forecast import extract_wind_speed
 from pipelines.tropical_cyclone.extract_track import (
     derive_alert_centroid,
     extract_track,
+    find_storm_pairs_sharing_place_codes,
+    select_place_codes_near_storm,
 )
 
 logger = logging.getLogger(__name__)
@@ -156,23 +162,26 @@ def calculate_tropical_cyclone_forecasts(
     # see the storm approaching over open ocean before landfall - a small country's own land extent
     # doesn't capture that, especially for a small island. The buffer is a placeholder pending domain-owner validation - see
     # MONITORING_BOX_BUFFER_KM's docstring.
-    # TODO-infra: consider extending get_bounding_box with an optional buffer parameter instead
-    # of this separate function.
-    country_bounds = _pad_bounding_box(
+    country_bounds = pad_bounding_box(
         get_bounding_box(target_admin_areas), MONITORING_BOX_BUFFER_KM
     )
 
     ### Step 5 - Gate on whether a cyclone is actually tracked nearby ###
     # An empty result means the configured forecast source's own tracker has nothing identified
-    # near the country - no alert to raise.
-    track_fixes = extract_track(
+    # near the country - no alert to raise. Each tracked storm becomes its own alert (Step 7b).
+    storm_tracks = extract_track(
         track_member_paths, country_bounds, country_config.forecast_source
     )
-    if not track_fixes:
+    if not storm_tracks:
         logger.info(
             f"No tropical-cyclone tracked within the monitoring box for '{country}'"
         )
         return
+
+    logger.info(
+        f"Tracking {len(storm_tracks)} tropical cyclone(s) near '{country}': "
+        f"{', '.join(storm.storm_identifier for storm in storm_tracks)}"
+    )
 
     ### Step 6 - Loop over alert configs (spatial extents) and their temporal extents ###
     # TC has exactly one seeded config ("National") and one temporal extent (the lead-time
@@ -184,6 +193,33 @@ def calculate_tropical_cyclone_forecasts(
             alert_config, target_admin_areas, target_admin_level
         )
 
+        # Scope each storm to the part of this spatial extent it actually threatens. Computed here
+        # rather than per temporal extent because it depends only on the storm's track and the
+        # spatial extent, neither of which varies with the temporal one.
+        place_codes_per_storm = [
+            select_place_codes_near_storm(
+                storm_track,
+                spatial_extent_place_codes,
+                target_admin_areas,
+                MONITORING_BOX_BUFFER_KM,
+            )
+            for storm_track in storm_tracks
+        ]
+
+        # Storms this close together share admin areas, so the same population is reported as
+        # exposed under both events and the two figures must not be summed. Expected for storms
+        # within roughly a monitoring box of each other - reported, not treated as an error.
+        for first_storm, second_storm in find_storm_pairs_sharing_place_codes(
+            storm_tracks, place_codes_per_storm
+        ):
+            nrw_logger.log_warning(
+                logger,
+                nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
+                f"Storms '{first_storm}' and '{second_storm}' were scoped to overlapping admin "
+                f"areas in '{alert_config.spatial_extent_name}'; their population-exposed figures "
+                f"cover some of the same people and cannot be added together",
+            )
+
         for temporal_extent in alert_config.temporal_extents:
             ### Step 7 - Extract wind speed per ensemble member, determine the alert gate ###
             # extract_wind_speed resolves the per-country conversion factor internally (Axis 1: the
@@ -194,136 +230,137 @@ def calculate_tropical_cyclone_forecasts(
             wind_speeds = extract_wind_speed(
                 wind_member_paths, country_bounds, country_config, temporal_extent
             )
-            time_interval_severities = determine_severities(
-                wind_speeds, spatial_extent_place_codes, target_admin_areas
-            )
 
-            # If no time bucket clears MIN_SEVERITY_MS, there is no alert for this spatial/temporal
-            # extent.
-            if not time_interval_severities:
-                logger.info(
-                    f"No tropical-cyclone alert for '{country}' "
-                    f"({alert_config.spatial_extent_name}): no bucket cleared "
-                    f"MIN_SEVERITY_MS={MIN_SEVERITY_MS}"
+            ### Step 7b - One alert per tracked storm ###
+            # Every storm reads the same wind rasters - GEFS ships one wind field per cycle, not
+            # one per storm - but each is measured only over the admin areas it threatens, so a
+            # distant storm cannot inherit a landfalling one's severity or exposure.
+            for storm_track, storm_place_codes in zip(
+                storm_tracks, place_codes_per_storm
+            ):
+                # Nothing this storm can be measured against. Checked before the severity work
+                # below because it is far cheaper, and skipped rather than reported as an error:
+                # a storm passing well clear of the country is a normal outcome, and a single
+                # add_error would drop every other storm's alert for this country too.
+                if not storm_place_codes:
+                    logger.info(
+                        f"No tropical-cyclone alert for '{country}' from storm "
+                        f"'{storm_track.storm_identifier}' "
+                        f"({alert_config.spatial_extent_name}): its track stays more than "
+                        f"{MONITORING_BOX_BUFFER_KM}km from every admin area"
+                    )
+                    continue
+
+                time_interval_severities = determine_severities(
+                    wind_speeds, storm_place_codes, target_admin_areas
                 )
-                continue
 
-            # Storm-center point to report. None means the peak wind bucket falls outside the
-            # window the storm is tracked over, so that wind cannot be attributed to this storm.
-            centroid = derive_alert_centroid(
-                track_fixes,
-                time_interval_severities,
-                spatial_extent_place_codes,
-                target_admin_areas,
-            )
-            if centroid is None:
-                logger.info(
-                    f"No tropical-cyclone alert for '{country}' "
-                    f"({alert_config.spatial_extent_name}): the peak wind bucket falls outside "
-                    f"the tracked storm's own window"
+                # If no time bucket clears MIN_SEVERITY_MS, this storm raises no alert for this
+                # spatial/temporal extent.
+                if not time_interval_severities:
+                    logger.info(
+                        f"No tropical-cyclone alert for '{country}' from storm "
+                        f"'{storm_track.storm_identifier}' "
+                        f"({alert_config.spatial_extent_name}): no bucket cleared "
+                        f"MIN_SEVERITY_MS={MIN_SEVERITY_MS}"
+                    )
+                    continue
+
+                # Storm-center point to report. None means the peak wind bucket falls outside the
+                # window this storm is tracked over, so that wind cannot be attributed to it.
+                centroid = derive_alert_centroid(
+                    storm_track.time_interval_track_fixes,
+                    time_interval_severities,
+                    storm_place_codes,
+                    target_admin_areas,
                 )
-                continue
+                if centroid is None:
+                    logger.info(
+                        f"No tropical-cyclone alert for '{country}' from storm "
+                        f"'{storm_track.storm_identifier}' "
+                        f"({alert_config.spatial_extent_name}): the peak wind bucket falls "
+                        f"outside that storm's own tracked window"
+                    )
+                    continue
 
-            ### Step 8 - Compute the alert extent and its spatial exposure ###
-            wind_extent = compute_alert_extent(time_interval_severities)
-            clipped_wind_extent = clip_wind_extent_to_admin_areas(
-                wind_extent, spatial_extent_place_codes, target_admin_areas
-            )
-
-            if clipped_wind_extent is None:
-                data_submitter.add_error(
-                    f"Could not compute wind extent for country '{country}'"
+                ### Step 8 - Compute the alert extent and its spatial exposure ###
+                wind_extent = compute_alert_extent(time_interval_severities)
+                clipped_wind_extent = clip_wind_extent_to_admin_areas(
+                    wind_extent, storm_place_codes, target_admin_areas
                 )
-                continue
 
-            ### Step 9 - Compute and aggregate population exposure ###
-            population_exposed_raster = compute_population_exposed(
-                population_raster, clipped_wind_extent
-            )
-            if population_exposed_raster is None:
-                data_submitter.add_error(
-                    f"Could not compute exposed population raster for country '{country}'"
+                if clipped_wind_extent is None:
+                    data_submitter.add_error(
+                        f"Could not compute wind extent for country '{country}', storm "
+                        f"'{storm_track.storm_identifier}'"
+                    )
+                    continue
+
+                ### Step 9 - Compute and aggregate population exposure ###
+                population_exposed_raster = compute_population_exposed(
+                    population_raster, clipped_wind_extent
                 )
-                continue
+                if population_exposed_raster is None:
+                    data_submitter.add_error(
+                        f"Could not compute exposed population raster for country '{country}', "
+                        f"storm '{storm_track.storm_identifier}'"
+                    )
+                    continue
 
-            population_exposed = aggregate_population_exposed(
-                population_exposed_raster,
-                spatial_extent_place_codes,
-                target_admin_areas,
-            )
+                population_exposed = aggregate_population_exposed(
+                    population_exposed_raster,
+                    storm_place_codes,
+                    target_admin_areas,
+                )
 
-            ### Step 10 - Create alert and submit severity/exposure payloads ###
-            # v1 identifier: per-country-per-run using the issued datetime. ATCF's CY (cyclone
-            # number) is available from track data and could support a persistent per-storm
-            # identity across pipeline runs later (so a re-run against an already-alerted storm
-            # updates the same event instead of creating a duplicate), but that needs a decision on
-            # what "the same storm across runs" means operationally that hasn't been made yet.
-            event_name = f"{country}_tropical-cyclone_{_placeholder_issued_datetime()}"
+                ### Step 10 - Create alert and submit severity/exposure payloads ###
+                # Keyed on the storm itself (basin + ATCF cyclone number + season), so the same
+                # storm keeps its event across pipeline runs instead of a new one per run.
+                # TODO(data-scientist): this name is per storm, not per spatial/temporal extent, so
+                # a country seeded with a second alert config or a second temporal extent would
+                # submit it twice and create_alert would reject the duplicate. TC has exactly one
+                # of each today. What a second temporal extent should even mean for a storm-keyed
+                # event is a real design question, deliberately left open rather than papered over
+                # with a uniquifying suffix.
+                event_name = storm_track.storm_identifier
 
-            data_submitter.create_alert(event_name=event_name, centroid=centroid)
+                data_submitter.create_alert(event_name=event_name, centroid=centroid)
 
-            for severity in time_interval_severities:
-                for ensemble_wind_speed in severity.ensemble_wind_speeds:
+                for severity in time_interval_severities:
+                    for ensemble_wind_speed in severity.ensemble_wind_speeds:
+                        data_submitter.add_severity_data(
+                            event_name=event_name,
+                            time_interval_start=severity.time_interval_start,
+                            time_interval_end=severity.time_interval_end,
+                            ensemble_member_type=EnsembleMemberType.RUN,
+                            severity_key=SeverityKey.WIND_SPEED,
+                            severity_value=ensemble_wind_speed,
+                        )
                     data_submitter.add_severity_data(
                         event_name=event_name,
                         time_interval_start=severity.time_interval_start,
                         time_interval_end=severity.time_interval_end,
-                        ensemble_member_type=EnsembleMemberType.RUN,
+                        ensemble_member_type=EnsembleMemberType.MEDIAN,
                         severity_key=SeverityKey.WIND_SPEED,
-                        severity_value=ensemble_wind_speed,
+                        severity_value=severity.median_wind_speed,
                     )
-                data_submitter.add_severity_data(
+
+                data_submitter.add_admin_area_exposure(
                     event_name=event_name,
-                    time_interval_start=severity.time_interval_start,
-                    time_interval_end=severity.time_interval_end,
-                    ensemble_member_type=EnsembleMemberType.MEDIAN,
-                    severity_key=SeverityKey.WIND_SPEED,
-                    severity_value=severity.median_wind_speed,
+                    admin_level=target_admin_level,
+                    layer=LayerName.POPULATION_EXPOSED,
+                    values_by_place_code=population_exposed,
                 )
 
-            data_submitter.add_admin_area_exposure(
-                event_name=event_name,
-                admin_level=target_admin_level,
-                layer=LayerName.POPULATION_EXPOSED,
-                values_by_place_code=population_exposed,
-            )
+                # No add_geo_feature_exposure for individual track points yet
+                # Track data is used above only for the derived centroid.
 
-            # No add_geo_feature_exposure for individual track points yet
-            # Track data is used above only for the derived centroid.
-
-            data_submitter.add_raster_exposure(
-                event_name=event_name,
-                layer=LayerName.WIND_SPEED,
-                value_greyscale=raster_to_base64_png(clipped_wind_extent),
-                extent=get_raster_extent(clipped_wind_extent),
-            )
-
-
-def _pad_bounding_box(bounds: BoundingBox, buffer_km: float) -> BoundingBox:
-    """
-    Pad a (min_lon, min_lat, max_lon, max_lat) bounding box by buffer_km on every side.
-    Degrees-per-km isn't constant: a degree of latitude is ~111.32 km everywhere, but a degree of
-    longitude shrinks toward the poles (~111.32 km * cos(latitude)). Uses the box's own mid-latitude
-    for that conversion - adequate for a monitoring-box buffer, not survey-grade.
-    """
-    min_lon, min_lat, max_lon, max_lat = bounds
-    km_per_degree_latitude = 111.32
-    mid_latitude = (min_lat + max_lat) / 2
-    km_per_degree_longitude = km_per_degree_latitude * math.cos(
-        math.radians(mid_latitude)
-    )
-
-    latitude_buffer_degrees = buffer_km / km_per_degree_latitude
-    longitude_buffer_degrees = (
-        buffer_km / km_per_degree_longitude if km_per_degree_longitude > 0 else 180.0
-    )
-
-    return (
-        min_lon - longitude_buffer_degrees,
-        min_lat - latitude_buffer_degrees,
-        max_lon + longitude_buffer_degrees,
-        max_lat + latitude_buffer_degrees,
-    )
+                data_submitter.add_raster_exposure(
+                    event_name=event_name,
+                    layer=LayerName.WIND_SPEED,
+                    value_greyscale=raster_to_base64_png(clipped_wind_extent),
+                    extent=get_raster_extent(clipped_wind_extent),
+                )
 
 
 # Local test-fixture roots, not a real data source - see the two functions below. Deliberately
@@ -413,10 +450,3 @@ def _most_recent_cycle_files(root: Path, date_dir_glob: str) -> list[str]:
     most_recent_cycle_dir = cycle_dirs[-1]
     logger.info(f"Using local test fixtures from {most_recent_cycle_dir}")
     return [str(path) for path in most_recent_cycle_dir.rglob("*") if path.is_file()]
-
-
-def _placeholder_issued_datetime() -> str:
-    """Placeholder for the event-name timestamp, used until a persistent per-storm identity (keyed
-    off ATCF's CY cyclone number) replaces this per-run identifier - see the note above this
-    function's one call site."""
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")

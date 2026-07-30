@@ -5,52 +5,66 @@ This folder contains the tropical-cyclone-specific forecast logic used by the pi
 ## Main script
 
 - `forecast.py`
-  - Entry point for tropical-cyclone hazard logic via `calculate_tropical_cyclone_forecasts(...)`:
-  - Loads target admin areas and alert configs through `DataProvider`, resolves the country's exposure-class/averaging-period/forecast-source config, then loads that source's (GEFS or ECMWF) wind and track data (currently local test fixtures - see "Forecast-source data" below, real fetcher still `# TODO-infra`).
-  - Builds alerts, severity time series, admin-area exposure, and raster exposure through `DataSubmitter`.
+  - Entry point via `calculate_tropical_cyclone_forecasts(...)`.
+  - Loads target admin areas and alert configs through `DataProvider`, resolves the country's
+    exposure-class/averaging-period/forecast-source config, then loads that source's wind and
+    track data (currently local test fixtures - see "Forecast-source data").
+  - Builds alerts, severity time series, admin-area exposure, and raster exposure through
+    `DataSubmitter` - one alert per tracked storm.
 
 ## Accompanying scripts in this folder
 
 - `extract_forecast.py`
-  - `extract_wind_speed`: dispatches on the country's forecast source and reads 10 m U/V wind GRIB2 - GEFS (one file per member per lead time) or ECMWF (one file per ensemble step, member via the GRIB `number` key) - converts to sustained wind speed, applies the country's averaging-period conversion factor.
-  - Buckets output per the alert config's temporal extent (its `"lead-time-spectrum"`), aggregating the source's native cadence up via a per-cell max whenever the configured interval is coarser.
+  - `extract_wind_speed`: reads 10 m U/V wind GRIB2 (GEFS or ECMWF), converts to sustained wind
+    speed, applies the country's averaging-period conversion factor.
+  - Buckets output per the alert config's temporal extent, aggregating up via a per-cell max when
+    the configured interval is coarser than the source's native cadence.
 
 - `extract_track.py`
-  - `extract_track`: dispatches on the country's forecast source and reads track fixes - GEFS ATCF (one file per member, all lead times as rows, deduping repeated wind-radii rows) or ECMWF BUFR (one file per run, members as subsets) - filtering fixes to the monitoring bounds.
-  - `derive_alert_centroid`: the storm-center point to report for the alert, or `None` when the peak-intensity wind bucket starts outside the window the storm is tracked over - that wind can't be attributed to the tracked storm, so no alert is raised. Otherwise the ensemble-mean position of the first track bucket, in time order, lying inside the admin areas, or of the bucket coming closest to them when the storm never reaches them. Source-agnostic: it only reads each fix's lat/lon.
+  - `extract_track`: reads GEFS ATCF track fixes and groups them into one `StormTrack` per storm
+    (`BASIN`+`CY`), filtered to the monitoring bounds. **GEFS only** - raises `NotImplementedError`
+    for ECMWF.
+  - ATCF invests (cyclone numbers 90-99) are dropped.
+  - `StormTrack.storm_identifier`: stable per-storm event name, e.g. `WP24_2025`.
+  - `derive_alert_centroid`: the storm-center point to report, or `None` if the peak-wind bucket
+    falls outside that storm's tracked window.
+  - `select_place_codes_near_storm`: the admin areas near one storm's own track, used to scope that
+    storm's alert.
+  - `find_storm_pairs_sharing_place_codes`: flags storm pairs scoped to overlapping admin areas.
 
 - `determine_alerts.py`
-  - `determine_severities`: per time bucket per member, clips wind speed to the country's admin-area union and takes the land-clipped max (the `RUN` value); `MEDIAN` is the median of those. Clips with `all_touched` so admin areas smaller than one 0.25° wind cell (small island groups) still register.
-  - Drops buckets whose `MEDIAN` doesn't clear `MIN_SEVERITY_MS`.
+  - `determine_severities`: per time bucket per member, land-clips wind speed and takes the max
+    (the `RUN` value); `MEDIAN` is the median of those. Drops buckets under `MIN_SEVERITY_MS`.
 
 - `compute_wind_extent.py`
-  - `compute_alert_extent`: precautionary per-cell-max envelope across every ensemble member in every qualifying time bucket (a union across the whole forecast window, not just the peak-intensity moment), masked below `MIN_SEVERITY_MS`.
+  - `compute_alert_extent`: precautionary per-cell-max envelope across every member and every
+    qualifying time bucket, masked below `MIN_SEVERITY_MS`.
 
 - `determine_exposure.py`
-  - `clip_wind_extent_to_admin_areas`: clips the wind-extent raster to the alert's admin areas (thin wrapper over `infra.utils.exposure.clip_raster_to_admin_areas`).
+  - `clip_wind_extent_to_admin_areas`: clips the wind-extent raster to the alert's admin areas.
 
 - `constants.py`
-  - Per-country config (`COUNTRY_CONFIGS`): exposure class, sustained-wind averaging-period convention, and forecast source (GEFS or ECMWF).
-  - WMO/Harper averaging-period conversion factors, `MIN_SEVERITY_MS`, per-source ensemble/format constants (GEFS member IDs + native lead-time constants for wind `GEFS_NATIVE_LEAD_TIME_STEP_HOURS` 3h and track `GEFS_TRACK_NATIVE_LEAD_TIME_STEP_HOURS` 6h; ECMWF streams, `ECMWF_NATIVE_LEAD_TIME_STEP_HOURS`, `ECMWF_TRACK_FIX_INTERVAL_HOURS`, unit conversions), `MONITORING_BOX_BUFFER_KM`.
+  - Per-country config (`COUNTRY_CONFIGS`): exposure class, averaging-period convention, forecast
+    source.
+  - WMO/Harper conversion factors, `MIN_SEVERITY_MS`, `MONITORING_BOX_BUFFER_KM`, per-source
+    ensemble/cadence constants.
 
 ## Forecast-source data
 
-- **Alert config** (`alert_configs_ibf_api`): spatial extent (national) and temporal extent (a `"lead-time-spectrum"`, e.g. 3-hour steps up to 168 hours) fetched from the IBF API per country.
-- **Wind** (GRIB2) and **track** are not yet wired through `DataProvider`/`DataSource` - `# TODO-infra`. Until a real fetcher exists, `forecast.py` reads local files directly per the country's forecast source: GEFS from the most recent `gefs.<date>/<hour>` cycle under `tropical_cyclone/bronze/gefs_wind/` and `.../bronze/gefs_track/` (wind `pgrb2sp25` GRIB2, track ATCF `tctrack`); ECMWF from the most recent `<YYYYMMDD>/<HH>z` cycle under `.../bronze/ecmwf_wind/` and `.../bronze/ecmwf_track/` (wind `oper`/`enfo` GRIB2, track `tf` BUFR). Those layouts are a local-testing convention only (not committed, not fixed) - free to redesign once the real fetcher is built.
-- Every country is on **GEFS** today (`COUNTRY_CONFIGS` in `constants.py`). Whichever source a country is set to needs its `bronze/` fixtures on disk, or the run stops at the "Load wind and track data" guard.
-- ECMWF fixtures can be downloaded with `uv run python data_management/seed_data_management/fetch_ecmwf_tropical_cyclone_test_data.py` (from `data/`; `--help` for options). GEFS fixtures have no equivalent script yet and are fetched by hand.
+- **Alert config**: spatial + temporal extent (`"lead-time-spectrum"`), fetched from the IBF API.
+- **Wind** (GRIB2) and **track** aren't wired through `DataProvider` yet (`# TODO-infra`).
+  `forecast.py` reads the most recent local cycle directly: GEFS from
+  `bronze/gefs_wind/`/`bronze/gefs_track/`, ECMWF from `bronze/ecmwf_wind/`/`bronze/ecmwf_track/`.
+  These layouts are a local-testing convention only, not a fixed contract.
+- Every country is on **GEFS** today. Whichever source a country uses needs its `bronze/` fixtures
+  on disk, or the run stops at the wind/track loading guard.
+- ECMWF fixtures: `uv run python data_management/seed_data_management/fetch_ecmwf_tropical_cyclone_test_data.py`
+  (from `data/`). GEFS fixtures are fetched by hand.
 
 ## Running this locally
 
-TODO-infra-remove: remove this entire section once wind/track are wired through real data-source
-fetchers (GEFS and ECMWF) and `tropicalCyclone.yaml` no longer needs the temporary source-target
-gate workaround.
-
-`tropicalCyclone.yaml` has no `source_target`-tagged data source yet, so `config_reader.py`'s
-source-target gate rejects the config for any run that isn't `--infra-only` (which skips
-`forecast.py` entirely). To run the real hazard logic locally, relax that gate on your machine only
-
-- **do not commit**:
+`tropicalCyclone.yaml` has no `source_target`-tagged data source yet, so a real (non-`--infra-only`)
+run needs a local-only gate relax in `config_reader.py` - **never commit it**:
 
 ```python
 # data/pipelines/infra/config_reader.py, in _parse_countries
@@ -59,29 +73,34 @@ log_warning(...)   # was log_error
 # continue          <- drop
 ```
 
-Then `uv run pipeline --config pipelines/infra/configs/tropicalCyclone.yaml --country PHL --mock 1
---output-mode local` (no `--infra-only`) will run for real. Note this doesn't mock anything else:
-wind/track still come from whichever `bronze/` cycle is most recent on disk for the country's
-configured source, regardless of `--mock`, and admin areas/population/alert configs still hit the
-real API - a running backend with PHL seeded is still required. Real fix: real wind/track data-source
-fetchers (see the `# TODO-infra` in `tropicalCyclone.yaml`), which remove the need for this
-gate/workaround.
+Then:
+
+```bash
+uv run pipeline --config pipelines/infra/configs/tropicalCyclone.yaml --country PHL --mock 1 --output-mode local
+```
+
+A running backend with PHL seeded is still required (admin areas/population/alert configs hit the
+real API); wind/track come from whichever `bronze/` cycle is most recent on disk, regardless of
+`--mock`.
 
 ## `forecast.py` flow (read -> output)
 
-1. Load admin areas, alert configs, and the population raster through `DataProvider`. Stop early and record an error if admin areas or alert configs are missing.
-2. Resolve the country's config (exposure class, averaging-period convention, forecast source) from `COUNTRY_CONFIGS`. Stop early if the country isn't configured.
-3. Load the configured source's wind and track member file paths (local test fixtures today). Stop early if either is missing.
-4. Compute the country's monitoring bounding box: admin-area union padded by `MONITORING_BOX_BUFFER_KM`.
-5. `extract_track` once for the run; if no fixes are in the monitoring box, stop early (no TC present for this country/run).
-6. Loop over alert configs (spatial extents) and their temporal extents - matches flood/drought's generic structure, even though tropical cyclone has exactly one of each per country today.
-7. `extract_wind_speed` + `determine_severities`. Skip to the next temporal extent if no bucket clears `MIN_SEVERITY_MS`.
-8. `compute_alert_extent` + `clip_wind_extent_to_admin_areas`.
-9. `compute_population_exposed` + `aggregate_population_exposed`.
-10. Submit via `DataSubmitter`: `create_alert`, `add_severity_data` (per-member `RUN` + `MEDIAN`), `add_admin_area_exposure`, `add_raster_exposure`.
+1. Load admin areas, alert configs, population raster through `DataProvider`.
+2. Resolve the country's config from `COUNTRY_CONFIGS`.
+3. Load the configured source's wind and track file paths.
+4. Compute the country's monitoring bounding box.
+5. `extract_track` once, giving one `StormTrack` per tracked storm; stop early if none are nearby.
+6. Loop over alert configs (spatial extents) x temporal extents. Per spatial extent, scope every
+   storm to its own admin areas and flag any pair that overlaps.
+7. `extract_wind_speed` once per temporal extent (shared across all storms).
+8. Per storm: `determine_severities` -> `derive_alert_centroid` -> `compute_alert_extent` +
+   `clip_wind_extent_to_admin_areas` -> `compute_population_exposed` + `aggregate_population_exposed`
+   -> submit via `DataSubmitter` under that storm's `storm_identifier`.
 
 ## Output
 
-- `forecast.py` fills `DataSubmitter`; `pipelines/infra/run_forecasts.py` finalizes and writes `forecast.json`.
-- Default local base path is `pipelines/output`, resulting in paths like `pipelines/output/tropicalCyclone/{ISO3}/{timestamp}/forecast.json`.
-- In this repository this appears under `data/pipelines/output/tropicalCyclone/...`.
+- `forecast.py` fills `DataSubmitter`; `pipelines/infra/run_forecasts.py` finalizes and writes
+  `forecast.json`.
+- Default local base path is `pipelines/output`, e.g.
+  `pipelines/output/tropicalCyclone/{ISO3}/{timestamp}/forecast.json`
+  (`data/pipelines/output/tropicalCyclone/...` in this repository).
