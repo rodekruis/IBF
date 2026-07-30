@@ -33,12 +33,18 @@ def determine_severities(
     median don't commute). Buckets whose MEDIAN doesn't clear MIN_SEVERITY_MS are dropped. Also
     retains each member's own land-clipped raster (not just its scalar max), for
     compute_wind_extent.py's per-cell-max envelope.
+
+    Clips with all_touched so admin areas smaller than one wind cell still register: at GEFS's
+    0.25 degree resolution a centre-only mask drops whole island groups (PHL's Batanes among
+    them), which silently removes them from the severity gate.
     """
     severities: list[TimeIntervalWindSpeedSeverity] = []
 
     for bucket in wind_speeds:
         clipped_rasters = [
-            clip_raster_to_admin_areas(place_codes, admin_areas, raster)
+            clip_raster_to_admin_areas(
+                place_codes, admin_areas, raster, all_touched=True
+            )
             for raster in bucket.ensemble_wind_speed_rasters
         ]
         land_masked_maxes = [

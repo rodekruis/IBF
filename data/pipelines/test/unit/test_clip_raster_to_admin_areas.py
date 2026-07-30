@@ -71,3 +71,36 @@ def test_returns_original_raster_when_no_place_codes_match():
     raster = _make_raster()
     clipped = clip_raster_to_admin_areas(["UNKNOWN"], _build_admin_areas(), raster)
     assert clipped is raster
+
+
+def _build_sub_cell_admin_areas() -> AdminAreasSet:
+    """One area far smaller than a raster cell, sitting away from every cell centre."""
+    return AdminAreasSet(
+        admin_areas={
+            "PC001": _make_admin_area(
+                "PC001",
+                [[[0.1, 1.6], [0.1, 1.9], [0.4, 1.9], [0.4, 1.6], [0.1, 1.6]]],
+            )
+        }
+    )
+
+
+def test_drops_areas_smaller_than_a_cell_by_default():
+    admin_areas = _build_sub_cell_admin_areas()
+    raster = _make_raster()
+
+    clipped = clip_raster_to_admin_areas(["PC001"], admin_areas, raster)
+
+    assert not (clipped.array != clipped.nodata).any()
+
+
+def test_all_touched_keeps_areas_smaller_than_a_cell():
+    admin_areas = _build_sub_cell_admin_areas()
+    raster = _make_raster()
+
+    clipped = clip_raster_to_admin_areas(
+        ["PC001"], admin_areas, raster, all_touched=True
+    )
+
+    assert (clipped.array != clipped.nodata).any()
+    assert clipped.array[clipped.array != clipped.nodata].max() == 1.0

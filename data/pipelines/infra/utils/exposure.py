@@ -153,8 +153,15 @@ def clip_raster_to_admin_areas(
     admin_areas: AdminAreasSet,
     raster: RasterData,
     label: str = "",
+    all_touched: bool = False,
 ) -> RasterData:
-    """Clip a raster to the union of admin area geometries for the given place codes."""
+    """Clip a raster to the union of admin area geometries for the given place codes.
+
+    By default a cell is kept only when its centre falls inside an admin area, which drops any
+    area smaller than one cell. Set all_touched to keep every cell the geometries touch, so
+    sub-cell areas (small islands) survive at the cost of including cells that are mostly
+    outside them.
+    """
     geometries, _ = get_admin_area_geometries(
         place_codes=place_codes,
         admin_areas=admin_areas,
@@ -199,6 +206,7 @@ def clip_raster_to_admin_areas(
         out_shape=cropped_array.shape,
         transform=cropped_transform,
         invert=True,
+        all_touched=all_touched,
     )
 
     nodata = raster.nodata
