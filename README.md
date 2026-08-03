@@ -85,6 +85,10 @@ The code for the pipelines lives in the `IBF` repository under `/data`. See the 
 
 This is under construction. There are currently some seeding scripts in `data/data_management/data_upload` for dev use. See the [data/ folder readme](/data/README.md) for more information.
 
+#### Azure infrastructure (internal)
+
+For information on Azure infrastructure, see this private repo: [NRW-infra](https://github.com/rodekruis/NRW-infra).
+
 ## Troubleshooting
 
 ### Prisma generate or migration issues
