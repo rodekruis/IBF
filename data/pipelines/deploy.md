@@ -12,7 +12,7 @@ One job is created per hazard per day. Each job downloads GloFAS global data, sp
 
 - **Azure Batch** account with a container-enabled pool.
 - Treat the Batch account as a **permanent resource** rather than deploying it on-the-fly, to avoid single points of failure. (See following section for more details on batch account set up).
-- Initial VM SKU: `Standard_D4s_v5` (16 GB)
+- Initial VM SKU: `Standard_D4s_v5` (16 GB). Only cosider `Standard_D4ds_v5` if we later decide we need local temp storage.
 - Pool autoscales from **0 to 2 nodes** to keep costs low when idle; the pool nodes represent the majority of cost. Set max to 2 nodes. Once the job queue is empty, the VM is deleted so no compute cost remains.
 - Task `maxWallClockTime`: **10 hours**. If a task exceeds this, Batch kills it and marks it failed. Evaluate this timeout once we have real-world run duration data.
 - Docker image is pulled from **Azure Container Registry (ACR)**.
@@ -42,7 +42,7 @@ Note: Klaas can set this up in the needed subscription (e.g. the AA subscription
 
 ## Storage
 
-- **Azure Blob Storage**: GloFAS global download (~30 GB), country split outputs, debug/dev data, and large result payloads.
+- **Azure Blob Storage**: GloFAS global downloads (~600 MB per file, ~30 GB total for a daily set of ~50 files), country split outputs, debug/dev data, and large result payloads. Only one GloFAS file is loaded at a time, so peak working storage is ~600 MB–1 GB. All downloaded GloFAS files are written to Blob Storage.
 
 ## Out of scope
 
@@ -93,18 +93,20 @@ az deployment group create \
 
 ## Data Pipeline Setup
 
+** Notes: this section and below relate only to the python data pipeline project setup **
+
 The Python pipeline container requires no code changes to run in Azure Batch. The following environment variables must be set as task environment variables (injected by the scheduling Azure Function from Key Vault):
 
-| Variable               | Cloud value                                                                 | Notes                                                                    |
-| ---------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `IBF_ENVIRONMENT`      | `"production"`                                                              | Switches to prod behavior                                                |
-| `IBF_API_URL`          | Internal API endpoint (e.g., `http://api-service.internal:4000`)            | Must be reachable from the Batch VNet                                    |
-| `IBF_PIPELINE_API_KEY` | Production API key                                                          | From Key Vault                                                           |
-| `GITHUB_DATA_BASE_URL` | `https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main` | Public; works as-is                                                      |
-| `GLOFAS_FTP_USER`      | ECMWF FTP username                                                          | From Key Vault                                                           |
-| `GLOFAS_FTP_PASSWORD`  | ECMWF FTP password                                                          | From Key Vault                                                           |
-| `GLOFAS_FTP_HOST`      | `aux.ecmwf.int`                                                             | Standard host                                                            |
-| `DATA_CACHE_DIR`       | `/mnt/batch/tasks/fsmounts/data-cache`                                      | Blob Storage mount; avoids OS disk pressure from ~30 GB GloFAS downloads |
+| Variable               | Cloud value                                                                 | Notes                                 |
+| ---------------------- | --------------------------------------------------------------------------- | ------------------------------------- |
+| `IBF_ENVIRONMENT`      |                                                                             |
+| `IBF_API_URL`          | API endpoint depending on env run on                                        | Must be reachable from the Batch VNet |
+| `IBF_PIPELINE_API_KEY` | Production API key                                                          | From Key Vault                        |
+| `GITHUB_DATA_BASE_URL` | `https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main` | For mock data for test runs           |
+| `GLOFAS_FTP_USER`      | ECMWF FTP username                                                          | From Key Vault                        |
+| `GLOFAS_FTP_PASSWORD`  | ECMWF FTP password                                                          | From Key Vault                        |
+| `GLOFAS_FTP_HOST`      | `aux.ecmwf.int`                                                             | Standard host                         |
+| `DATA_CACHE_DIR`       | `/mnt/batch/tasks/fsmounts/data-cache`                                      | Blob Storage mount                    |
 
 `SEED_DATA_REPO_ROOT` is not needed in production — it is only used for local dev/test seed data loading.
 
@@ -114,7 +116,7 @@ The Python pipeline container requires no code changes to run in Azure Batch. Th
 2. **Network connectivity** — The Batch pool's VNet/subnet must reach the API service (private endpoint or VNet peering) and `aux.ecmwf.int` (FTP outbound).
    - If the API uses a Private Endpoint, link the corresponding **Private DNS Zone** (e.g. `privatelink.azurewebsites.net`) to the Batch pool's VNet so DNS resolves correctly.
 3. **FTP passive mode firewall rules** — GloFAS FTP uses passive mode with a random high data port. The NSG on the Batch subnet needs outbound to `aux.ecmwf.int` on port 21 + passive range (typically 1024–65535).
-4. **Blob Storage mount** — Mount a Blob container at `DATA_CACHE_DIR` via the pool's `mountConfiguration`. Required because the VM SKU (`Standard_D4s_v5`) has no local temp disk and the ~30 GB GloFAS download would exceed the OS disk. Also persists downloads across retries.
+4. **Blob Storage mount** — Mount a Blob container at `DATA_CACHE_DIR` via the pool's `mountConfiguration`. The pipeline loads only one GloFAS file at a time, so peak working storage is ~600 MB–1 GB. Blob Storage is used as the working cache for downloads and country splits, and it persists data across retries.
 5. **Container entrypoint** — The Batch task command mirrors local invocation, e.g.: `uv run python -m pipelines.infra.run_forecasts --hazard floods`
 6. **Pipeline config files** — The YAML configs (`pipelines/infra/configs/*.yaml`) are baked into the Docker image. Adding a new country or changing data sources requires a new image build+push.
 
