@@ -108,6 +108,7 @@ Retention will be decided later, but here are is what we will start with. We nee
 - Confirm Azure Batch quota and VM family limits in target subscription for `Standard_E2as_v4`.
 - Measure actual peak memory during a full run to validate the `Standard_E2as_v4` choice.
 - Confirm ADX cluster SKU and streaming ingestion needs for live monitoring.
+- We need to set up data input for a test env for this so we can have predictable tests. This may be on the country level, or maybe we need to cache an alert generating globabl glofas file somewhere (such as in a new folder in blob storage).
 
 ### Handle after MVP or as need arises
 
