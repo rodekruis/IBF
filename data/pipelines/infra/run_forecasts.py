@@ -12,6 +12,7 @@ from shared.country_data import CountryCodeIso3
 
 from pipelines.drought.forecast import calculate_drought_forecasts
 from pipelines.flood.forecast import calculate_flood_forecasts
+from pipelines.tropical_cyclone.forecast import calculate_tropical_cyclone_forecasts
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
@@ -39,6 +40,7 @@ DEFAULT_OUTPUT_PATH = "pipelines/output"
 FORECAST_SOURCES: dict[str, list[ForecastSource]] = {
     "floods": [ForecastSource.GLOFAS],
     "drought": [ForecastSource.ECMWF],
+    "tropicalCyclone": [ForecastSource.GEFS],
 }
 
 HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
@@ -50,6 +52,7 @@ def _register_hazard_functions() -> None:
 
     HAZARD_FUNCTIONS["floods"] = calculate_flood_forecasts
     HAZARD_FUNCTIONS["drought"] = calculate_drought_forecasts
+    HAZARD_FUNCTIONS["tropicalCyclone"] = calculate_tropical_cyclone_forecasts
 
 
 def _run_country(

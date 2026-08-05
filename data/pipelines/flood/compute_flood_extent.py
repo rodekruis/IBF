@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from pipelines.flood.determine_alerts import TimeIntervalSeverity
+from pipelines.flood.determine_alerts import TimeIntervalReturnPeriodSeverity
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import RasterData
 
 
 def compute_flood_extent(
-    time_interval_severities: list[TimeIntervalSeverity],
+    time_interval_severities: list[TimeIntervalReturnPeriodSeverity],
     flood_extent_provider: FloodExtentProvider,
 ) -> RasterData:
     """
@@ -26,7 +26,7 @@ def compute_flood_extent(
 
 
 def _resolve_requested_return_period_value(
-    time_interval_severities: list[TimeIntervalSeverity],
+    time_interval_severities: list[TimeIntervalReturnPeriodSeverity],
 ) -> float | None:
     highest_return_period = max(
         time_interval_severities,

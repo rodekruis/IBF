@@ -685,6 +685,7 @@ source = { editable = "." }
 dependencies = [
     { name = "cfgrib" },
     { name = "click" },
+    { name = "eccodes" },
     { name = "netcdf4" },
     { name = "numpy" },
     { name = "pillow" },
@@ -713,6 +714,7 @@ dev = [
 requires-dist = [
     { name = "cfgrib" },
     { name = "click" },
+    { name = "eccodes" },
     { name = "netcdf4" },
     { name = "numpy" },
     { name = "pillow" },

@@ -9,9 +9,10 @@ import rasterio
 import rasterio.crs
 from PIL import Image
 from pipelines.infra.data_types.enums import EPSG
+from rasterio.enums import Resampling
 from rasterio.io import MemoryFile
 from rasterio.transform import array_bounds
-from rasterio.warp import calculate_default_transform, reproject, Resampling
+from rasterio.warp import calculate_default_transform, reproject
 
 Image.MAX_IMAGE_PIXELS = None
 
@@ -255,24 +256,42 @@ def geotiff_to_rgba_data_array(tif_data: bytes):
             return geo_data, rgba_array
 
 
-def rgba_png_to_float_array(png_in_bytes: bytes):
+# Number of image rows decoded per chunk in rgba_png_to_float_array.
+# Decoding a full raster at once needs several full-image-sized temporary
+# arrays for the bit-shift/OR math (10+ GB for a full-resolution country
+# population raster, ~230-250 million pixels) and reliably OOMs pipeline
+# hosts. Row-chunking bounds peak memory to roughly one chunk's worth of
+# temporaries, independent of overall image size.
+_RGBA_DECODE_CHUNK_ROWS = 1024
+
+
+def rgba_png_to_float_array(png_in_bytes: bytes) -> np.ndarray:
     """
     Inverse of geotiff_to_rgba_data_array's RGBA encoding.
     Opens a PNG whose pixel values encode an integer across the R, G, B, A channels.
     The formula is:
     (R * 16777216 + G * 65536 + B * 256 + A)/1000
     The function returns a 2D array of floats.
+
+    Decoding is done in row chunks rather than on the whole image at once, to
+    bound peak memory for full-resolution rasters (see _RGBA_DECODE_CHUNK_ROWS).
     """
     img = Image.open(io.BytesIO(png_in_bytes)).convert("RGBA")
-    rgba = np.array(img, dtype=np.uint64)
+    rgba = np.array(img, dtype=np.uint8)
 
-    r = rgba[:, :, 0]
-    g = rgba[:, :, 1]
-    b = rgba[:, :, 2]
-    a = rgba[:, :, 3]
+    height, width, _ = rgba.shape
+    values = np.empty((height, width), dtype=np.float64)
 
-    values = np.round(
-        ((r << 24) | (g << 16) | (b << 8) | a).astype(np.float64) / 1000, 3
-    )
+    for start_row in range(0, height, _RGBA_DECODE_CHUNK_ROWS):
+        end_row = min(start_row + _RGBA_DECODE_CHUNK_ROWS, height)
+        chunk = rgba[start_row:end_row].astype(np.uint32)
+
+        r = chunk[:, :, 0]
+        g = chunk[:, :, 1]
+        b = chunk[:, :, 2]
+        a = chunk[:, :, 3]
+
+        decoded = (r << 24) | (g << 16) | (b << 8) | a
+        values[start_row:end_row] = np.round(decoded.astype(np.float64) / 1000, 3)
 
     return values

@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import io
 import logging
+import math
 import os
 
 import numpy as np
@@ -37,6 +38,33 @@ def get_bounding_box(
         )
 
     return unary_union(geoms).bounds
+
+
+def pad_bounding_box(bounds: BoundingBox, buffer_km: float) -> BoundingBox:
+    """
+    Pad a (min_lon, min_lat, max_lon, max_lat) bounding box by buffer_km on every side.
+    Degrees-per-km isn't constant: a degree of latitude is ~111.32 km everywhere, but a degree of
+    longitude shrinks toward the poles (~111.32 km * cos(latitude)). Uses the box's own mid-latitude
+    for that conversion - adequate for a monitoring-box buffer, not survey-grade.
+    """
+    min_lon, min_lat, max_lon, max_lat = bounds
+    km_per_degree_latitude = 111.32
+    mid_latitude = (min_lat + max_lat) / 2
+    km_per_degree_longitude = km_per_degree_latitude * math.cos(
+        math.radians(mid_latitude)
+    )
+
+    latitude_buffer_degrees = buffer_km / km_per_degree_latitude
+    longitude_buffer_degrees = (
+        buffer_km / km_per_degree_longitude if km_per_degree_longitude > 0 else 180.0
+    )
+
+    return (
+        min_lon - longitude_buffer_degrees,
+        min_lat - latitude_buffer_degrees,
+        max_lon + longitude_buffer_degrees,
+        max_lat + latitude_buffer_degrees,
+    )
 
 
 def slice_netcdf_to_bounds(
@@ -97,7 +125,7 @@ def get_raster_extent(raster: RasterData) -> dict[str, float]:
 
 def raster_to_base64_png(raster: RasterData) -> str:
     array = raster.array.copy()
-    array = np.where(np.isnan(array), 0, array)
+    array = np.where(np.isnan(array) | (array == raster.nodata), 0, array)
     array = np.clip(array, 0, None)
 
     max_val = array.max()
