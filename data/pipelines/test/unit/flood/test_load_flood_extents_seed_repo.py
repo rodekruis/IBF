@@ -104,11 +104,10 @@ class TestLoadSeedRepoFloodExtents:
         with patch(
             "pipelines.infra.utils.data_provider_fetchers.download_json_source",
             return_value=None,
+        ), pytest.raises(
+            FileNotFoundError, match="Failed to download flood extents manifest"
         ):
-            with pytest.raises(
-                FileNotFoundError, match="Failed to download flood extents manifest"
-            ):
-                _load_seed_repo_flood_extents(config, container)
+            _load_seed_repo_flood_extents(config, container)
 
         assert container.error is not None
 
@@ -173,8 +172,7 @@ class TestFloodExtentProviderGetRaster:
         with patch(
             "pipelines.infra.data_types.flood_extent_provider.download_object",
             return_value=None,
+        ), pytest.raises(
+            FileNotFoundError, match="Failed to download flood extent PNG"
         ):
-            with pytest.raises(
-                FileNotFoundError, match="Failed to download flood extent PNG"
-            ):
-                provider.get_raster(10)
+            provider.get_raster(10)
