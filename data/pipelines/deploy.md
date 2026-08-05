@@ -24,7 +24,7 @@ One job is created per hazard per day. The job downloads shared data (i.e. for f
   - ACR integration: the pool is already attached to `nrwdockerregistry` and configured to prefetch `nrwdockerregistry.azurecr.io/pipelines:latest` so tasks start quickly
 - Integrate the pool into the NRW Azure VNETs so tasks can reach the NRW backend API and other Azure resources privately (exact connectivity — private endpoint, VNet peering, service endpoint, or public routing — depends on how the API is deployed). The pool subnet is `batch` in `nrw-vnet-test` (`NRW` resource group, `westeurope`), delegated to `Microsoft.Batch/batchAccounts` and secured by NSG `nrw-NSG-test`.
 - Provision the pool with a **user-assigned managed identity** (`nrw-batch-poc`) attached to every node; jobs use it to authenticate to Azure resources such as Storage and Key Vault. The pipeline itself only communicates with the NRW backend API, so no direct database access from the nodes is needed.
-- Use the **Ubuntu HPC** image (or another image that supports container workloads). The container configuration cannot be added to an existing pool; the pool must be created with container support enabled from the start.
+- Use the **Ubuntu HPC** image (or another image that supports container workloads). The container configuration cannot be added to an existing pool; the pool must be created with container support enabled from the start. Klaas is setting this up so ask him the image name.
 
 ### Azure Batch account setup (manual portal setup — current state)
 
@@ -76,9 +76,11 @@ $NodeDeallocationOption = taskcompletion;
 ## Job scheduling
 
 - **Daily schedule**: Azure Function Timer Trigger creates one Batch job per hazard per day. Two nodes each running one job was cheaper than one larger node running all jobs concurrently, so the plan is to run one job per node. This may be changed later.
+- **Task retries**: Retrying is handled inside the pipeline Python code (e.g. GloFAS FTP downloads and forecast-date resolution already retry with backoff). The Azure Function creating the Batch job should set `maxTaskRetryCount = 0`, so failures surface immediately and are not hidden by Batch-level retries.
+- **Job naming**: Jobs are named with a deterministic prefix plus the hazard and a timestamp including day, hour, and minute (e.g. `nrw-floods-20260805-1203`). Because the backend already deduplicates submitted forecasts, rerunning the same day is safe from a data standpoint, but the Batch job ID must still be unique within the account.
 - **Manual reruns**: Azure CLI or Azure Portal → Batch account → Jobs → Add.
   - No custom React page for MVP.
-  - Design the Azure Function payload for manual reruns with parameter overrides (e.g. `countries`, etc.).
+  - A rerun via the Azure Function with parameter overrides (e.g. `countries`) will be added later. For now, rerunning through the CLI/portal requires manually supplying all task environment variables, including secret values such as `IBF_PIPELINE_API_KEY`, `GLOFAS_FTP_USER`, and `GLOFAS_FTP_PASSWORD`, or using another method such as a script that reads them from Key Vault.
 - The Azure Function is a **Bicep-managed Function App** deployed from this repo (code will live under `data/deploy/`).
 - The Azure Function runs under a managed identity and can fetch secrets (e.g., GloFAS FTP credentials) from **Azure Key Vault**, injecting them as environment variables into task containers.
 - **Container task command** — The Batch task command mirrors local invocation, e.g.: `pipeline --config pipelines/infra/configs/floods.yaml`. The `pipeline` entry point is declared in `pyproject.toml`; the YAML config under `pipelines/infra/configs/` selects the hazard and countries. The Function will schedule one job per config/hazard.
@@ -128,11 +130,11 @@ Retention will be decided later, but here are is what we will start with. We nee
 ## Infrastructure as code
 
 - Use **Bicep** templates stored under `data/deploy/` in this repo.
-- Deploy with Azure CLI:
+- Deploy to the existing `nrw-batch-poc` resource group with Azure CLI:
 
 ```bash
 az deployment group create \
-  --resource-group rg-nrw-pipelines \
+  --resource-group nrw-batch-poc \
   --template-file data/deploy/main.bicep \
   --parameters data/deploy/parameters.dev.json
 ```
