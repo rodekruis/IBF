@@ -1,7 +1,7 @@
 # Pipeline cloud deployment plan
 
 > Work-in-progress plan for moving NRW Python pipeline jobs from local/scheduled runs to Azure Batch.
-> Last updated: 2026-08-05
+> Last updated: 2026-08-13
 
 ## Overview
 
@@ -24,7 +24,7 @@ One job is created per hazard per day. The job downloads shared data (i.e. for f
   - ACR integration: the pool is already attached to `nrwdockerregistry` and configured to prefetch `nrwdockerregistry.azurecr.io/pipelines:latest` so tasks start quickly
 - Integrate the pool into the NRW Azure VNETs so tasks can reach the NRW backend API and other Azure resources privately (exact connectivity — private endpoint, VNet peering, service endpoint, or public routing — depends on how the API is deployed). The pool subnet is `batch` in `nrw-vnet-test` (`NRW` resource group, `westeurope`), delegated to `Microsoft.Batch/batchAccounts` and secured by NSG `nrw-NSG-test`.
 - Provision the pool with a **user-assigned managed identity** (`nrw-batch-poc`) attached to every node; jobs use it to authenticate to Azure resources such as Storage and Key Vault. The pipeline itself only communicates with the NRW backend API, so no direct database access from the nodes is needed.
-- Use the **Ubuntu HPC** image (or another image that supports container workloads). The container configuration cannot be added to an existing pool; the pool must be created with container support enabled from the start. Klaas is setting this up so ask him the image name.
+- Use the **Ubuntu HPC 24.04** image (`publisher: microsoft-dsvm`, `offer: ubuntu-hpc`, `sku: 2404`, `version: latest`). The container configuration cannot be added to an existing pool; the pool must be created with container support enabled from the start.
 
 ### Azure Batch account setup (manual portal setup — current state)
 
@@ -38,6 +38,7 @@ The target subscription is the **AA subscription**. The following resources have
 | Storage account                | `nrwbatchpoc`                                                               | General-purpose V2; Blob container `nrw-data-cache` mounted as `DATA_CACHE_DIR`                                                                                       |
 | User-assigned managed identity | `nrw-batch-poc`                                                             | Assigned to pool nodes                                                                                                                                                |
 | VNet / subnet                  | `nrw-vnet-test` / `batch`                                                   | Subnet `batch` in `nrw-vnet-test` (`NRW` RG, `westeurope`) delegated to `Microsoft.Batch/batchAccounts`. NSG: `nrw-NSG-test`. (`nrw-vnet-prod` also exists in `NRW`.) |
+| Batch pool ID                  | `nrwbatchpoc`                                                               | Single pool in the Batch account                                                                                                                                      |
 | ACR                            | `nrwdockerregistry` (`NRW` RG, login server `nrwdockerregistry.azurecr.io`) | Reuse the ACR that hosts the featureserv image                                                                                                                        |
 
 Provisioning a Batch account through the Azure Portal has a few non-obvious requirements:
@@ -75,7 +76,8 @@ $NodeDeallocationOption = taskcompletion;
 
 ## Job scheduling
 
-- **Daily schedule**: Azure Function Timer Trigger creates one Batch job per hazard per day. Two nodes each running one job was cheaper than one larger node running all jobs concurrently, so the plan is to run one job per node. This may be changed later.
+- **Daily schedule**: A **Python** Azure Function (Timer Trigger, **Consumption plan**) fires daily at **12:00 UTC** and creates one Batch job per hazard. Two nodes each running one job was cheaper than one larger node running all jobs concurrently, so the plan is to run one job per node. This may be changed later.
+- **Hazard configs**: 3 planned for the prototype (drought, floods, cyclones). More will be added over time. Drought is currently a dummy pipeline — its real data source will be handled later.
 - **Task retries**: Retrying is handled inside the pipeline Python code (e.g. GloFAS FTP downloads and forecast-date resolution already retry with backoff). The Azure Function creating the Batch job should set `maxTaskRetryCount = 0`, so failures surface immediately and are not hidden by Batch-level retries.
 - **Job naming**: Jobs are named with a deterministic prefix plus the hazard and a timestamp including day, hour, and minute (e.g. `nrw-floods-20260805-1203`). Because the backend already deduplicates submitted forecasts, rerunning the same day is safe from a data standpoint, but the Batch job ID must still be unique within the account.
 - **Manual reruns**: Azure CLI or Azure Portal → Batch account → Jobs → Add.
@@ -91,11 +93,15 @@ $NodeDeallocationOption = taskcompletion;
 
 ### Blob storage retention
 
-Retention will be decided later, but here are is what we will start with. We need separate dirs for these, that the pipeline will write to in an appropritate folder.
+The pipeline already writes to subdirectories under `DATA_CACHE_DIR` as defined in `pipelines/infra/utils/storage_helpers.py`. Configure Azure Blob lifecycle management policies per prefix:
 
-- 30 Days: global glofas and NOAA data.
-- Indefinitely: Country-split glofas data. This is for development. Later this setting will need to change.
-- Indefinitely: Country-split glofas data that generates an alert (creates an event sent to the IBF backend) on the pipeline.
+| Blob prefix                                   | Content                                     | Retention                  |
+| --------------------------------------------- | ------------------------------------------- | -------------------------- |
+| `glofas/raw/{forecast_date}/`                 | Global GloFAS downloads                     | 30 days                    |
+| `glofas/country_split/{forecast_date}/`       | Country-split GloFAS data (for development) | Indefinite (revisit later) |
+| `glofas/country_split_alert/{forecast_date}/` | Country-split data that triggered alerts    | Indefinite                 |
+
+NOAA data is not yet integrated into the pipeline; retention rules for NOAA will be added when that data source is introduced.
 
 ## Out of scope for first prototype
 
@@ -107,15 +113,23 @@ Retention will be decided later, but here are is what we will start with. We nee
 - **CI/CD image builds**: Set up a GitHub Actions workflow to build and push the Docker image to ACR on merge to main (tag by commit SHA or date). Until then, the image is built and pushed locally.
 - Confirm Azure Batch quota and VM family limits in target subscription for `Standard_E2as_v4`.
 - Measure actual peak memory during a full run to validate the `Standard_E2as_v4` choice.
-- Confirm ADX cluster SKU and streaming ingestion needs for live monitoring.
-- We need to set up data input for a test env for this so we can have predictable tests. This may be on the country level, or maybe we need to cache an alert generating globabl glofas file somewhere (such as in a new folder in blob storage).
+- **ADX cluster**: Set up ADX for centralized logging (deferred from prototype due to ~$150/month minimum cost).
+- We need to set up data input for a test env for this so we can have predictable tests. This may be on the country level, or maybe we need to cache an alert generating global glofas file somewhere (such as in a new folder in blob storage).
 
 ### Handle after MVP or as need arises
 
 - **Data caching**: There are two types of data we could cache: PostGis DB data (admin areas, roads, buildings) and static data (population source image). Consider caching this later. It would need resources set up in azure, and code change in the pipelines. For now, it pulls from the backend directly.
 - **Logging**: Consider structured JSON logging (rather than tagged strings) if dashboards and alerts need richer filtering.
+- **Production VNet**: `nrw-vnet-prod` exists in the `NRW` resource group alongside `nrw-vnet-test`. Production deployment will use `nrw-vnet-prod`; for the prototype only `nrw-vnet-test` is used.
+- **Additional hazard pipelines**: Drought real data source, cyclones, and other hazards beyond the initial 3.
+- **NOAA data source**: Not yet integrated. Add retention policies and env vars when introduced.
+- **Additional environments**: Only `test` (`IBF_ENVIRONMENT=test`) is used for the prototype. Production and other environments will be configured after the prototype.
 
-## Logging
+## Logging (post-prototype)
+
+ADX is deferred until after the prototype due to its minimum cost (~$150/month). For the prototype, rely on Azure Batch's built-in stdout/stderr logs (viewable in Portal and Batch Explorer).
+
+Target state after prototype:
 
 - **Azure Data Explorer (ADX)** is the primary log store.
 - Azure Batch diagnostics are routed via Event Hub into ADX.
@@ -124,13 +138,13 @@ Retention will be decided later, but here are is what we will start with. We nee
 
 ## Failure visibility
 
-- **Email notifications**: Azure Monitor alert rule on Batch `TaskFailEvent`.
+- **Email notifications**: Azure Monitor alert rule on Batch `TaskFailEvent`. For the prototype, send to `ehill@redcross.nl`. After the prototype, switch to `ibf-devops@redcross.nl`.
 - **Azure Portal**: Batch account → Jobs → Tasks for status and logs.
 - **Azure Batch Explorer**: free Microsoft desktop app for richer run/task inspection.
 
 ## Infrastructure as code
 
-- Use **Bicep** templates stored under `data/deploy/` in this repo.
+- Use **Bicep** templates stored under `data/deploy/` in this repo. Bicep deploys the Function App, diagnostics, and alerts against the already-provisioned Batch account and pool — it does not recreate them.
 - Deploy to the existing `nrw-batch-poc` resource group with Azure CLI:
 
 ```bash
@@ -140,9 +154,26 @@ az deployment group create \
   --parameters data/deploy/parameters.dev.json
 ```
 
-### Check before deploy
+### Pool creation with blob mount (completed 2026-08-13)
 
-1. **Blob Storage mount** — Mount the `nrw-data-cache` container from storage account `nrwbatchpoc` at `DATA_CACHE_DIR` via the pool's `mountConfiguration`. The pipeline loads only one GloFAS file at a time, so peak working storage is ~600 MB–1 GB. Blob Storage is used as the working cache for downloads and country splits, and it persists data across retries.
+The pool `nrwbatchpoc` has been created with the blob mount configured. The pool definition is in [`data/deploy/pool.json`](../deploy/pool.json). This file is only used for this one-time setup. The `mountConfiguration` property can only be set at pool creation time, so if the pool ever needs to be recreated (e.g. to change the mount), follow these steps:
+
+```bash
+# 1. Delete the existing pool (safe when autoscaled to 0 nodes / no jobs running)
+az batch pool delete --pool-id nrwbatchpoc \
+  --account-name nrwbatchpoc \
+  --account-endpoint nrwbatchpoc.westeurope.batch.azure.com --yes
+
+# 2. Recreate the pool from the JSON definition (includes mount, autoscale, VNet, ACR, container config)
+az batch pool create --json-file data/deploy/pool.json \
+  --account-name nrwbatchpoc \
+  --account-endpoint nrwbatchpoc.westeurope.batch.azure.com
+
+# 3. Assign the managed identity via the management API (not supported in the data-plane JSON)
+az rest --method PATCH \
+  --url "https://management.azure.com/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Batch/batchAccounts/nrwbatchpoc/pools/nrwbatchpoc?api-version=2024-07-01" \
+  --body '{"identity":{"type":"UserAssigned","userAssignedIdentities":{"/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourcegroups/nrw-batch-poc/providers/Microsoft.ManagedIdentity/userAssignedIdentities/nrw-batch-poc":{}}}}'
+```
 
 ### Network requirements
 
@@ -175,11 +206,13 @@ The following environment variables must be set as task environment variables wh
 
 | Variable               | Value                                                                       | How to set                                                                                                                                                   |
 | ---------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `IBF_ENVIRONMENT`      | `development`, `test`, or `production`                                      | Must match one of the values accepted by `pipelines.infra.environment.load_environment_settings()`. Use `production` for the production Batch workload.      |
+| `IBF_ENVIRONMENT`      | `test` (prototype)                                                          | Must match one of the values accepted by `pipelines.infra.environment.load_environment_settings()`. Use `test` for the prototype; other environments after.  |
 | `IBF_API_URL`          | e.g. `https://<app-name>.azurewebsites.net`                                 | Set to the NRW backend API base URL for the target environment. The `ApiClient` appends `/api/...` paths, so do not include `/api` here.                     |
 | `IBF_PIPELINE_API_KEY` | (from Key Vault secret `ibf-pipeline-api-key`)                              | Injected by the Azure Function from Key Vault as a secure environment variable on the Batch task. Required by `ApiClient` for backend authentication.        |
 | `GITHUB_DATA_BASE_URL` | `https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main` | Hard-coded URL used for seed data (e.g. flood extents). Required by the floods config even for live runs because `flood_extents_seed_repo` is always loaded. |
 | `GLOFAS_FTP_HOST`      | `aux.ecmwf.int`                                                             | Hard-coded ECMWF GloFAS FTP host.                                                                                                                            |
+| `GLOFAS_FTP_USER`      | (from Key Vault secret `glofas-ftp-user`)                                   | Injected by the Azure Function from Key Vault as a secure environment variable on the Batch task.                                                            |
+| `GLOFAS_FTP_PASSWORD`  | (from Key Vault secret `glofas-ftp-password`)                               | Injected by the Azure Function from Key Vault as a secure environment variable on the Batch task.                                                            |
 | `DATA_CACHE_DIR`       | `/mnt/batch/tasks/fsmounts/nrw-data-cache`                                  | Must match the Blob Storage mount path configured on the Batch pool.                                                                                         |
 
 `SEED_DATA_REPO_ROOT` is not needed in production — it is only used for local dev/test seed data loading. `GITHUB_DATA_BASE_URL` (which points to the same seed data over HTTPS) is still required.
