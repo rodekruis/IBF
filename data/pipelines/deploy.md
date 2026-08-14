@@ -8,6 +8,109 @@
 Run the existing [data/Dockerfile](../../Dockerfile) based pipeline as container tasks on Azure Batch.
 One job is created per hazard per day. The job downloads shared data (i.e. for flood hazard job, GloFAS global data is downloaded and split by country), runs the forecast pipeline for each target country, and sends results to the NRW backend API.
 
+## Deployment steps and scripts
+
+All files live under `data/deploy/`.
+
+### One time setup
+
+| Group          | Job / script                                                     | Purpose                                                                                |
+| -------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| One time setup | `set-secrets.sh`                                                 | Store pipeline secrets in Key Vault                                                    |
+| One time setup | Create `nrw-batch-scheduler` UAMI + grant its roles (manual CLI) | Dedicated Function identity + `Key Vault Secrets User` and `Azure Batch Job Submitter` |
+| One time setup | `apply-lifecycle.sh` (`blob-lifecycle-policy.json`)              | Apply Blob Storage retention policy                                                    |
+| One time setup | `create-pool.sh` (`pool.json`)                                   | Create/recreate the Batch pool                                                         |
+
+These run once on first setup (and only again on rotation/policy changes).
+
+- **`set-secrets.sh`** — Runs `az keyvault secret set` for `ibf-pipeline-api-key`, `glofas-ftp-user`, and `glofas-ftp-password` on the `nrw-batch-poc` vault. Reads values from the operator's shell, never hard-codes them. Rerun on secret rotation.
+- **Create the scheduler identity and grant its roles (completed 2026-08-14)** — The Function App runs as a **dedicated, unrestricted** user-assigned managed identity `nrw-batch-scheduler`. The Batch pool identity `nrw-batch-poc` **cannot** be reused for the Function App: it is a restricted identity (`IdentityAssignmentRestrictions` limit it to `Microsoft.Batch/batchAccounts` providers), so binding it to a `Microsoft.Web/sites` resource fails with `FailedIdentityOperation`. Creating the identity needs only Contributor; the two role grants need a subscription **Owner** or **User Access Administrator** (Contributor lacks `Microsoft.Authorization/roleAssignments/write`). The identity needs `Key Vault Secrets User` on the vault (to resolve the Key Vault app-setting references) and `Azure Batch Job Submitter` on the Batch account (to create jobs over Entra ID; the account is AAD-only, shared-key auth is disabled). Run once (idempotent):
+
+  ```bash
+  # Contributor can create the identity:
+  az identity create --name nrw-batch-scheduler --resource-group nrw-batch-poc
+
+  IDENTITY_PRINCIPAL_ID=$(az identity show --name nrw-batch-scheduler --resource-group nrw-batch-poc --query principalId -o tsv)
+  KEY_VAULT_ID=$(az keyvault show --name nrw-batch-poc --resource-group nrw-batch-poc --query id -o tsv)
+  BATCH_ACCOUNT_ID=$(az batch account show --name nrwbatchpoc --resource-group nrw-batch-poc --query id -o tsv)
+
+  # These two grants require Owner / User Access Administrator:
+  az role assignment create \
+    --assignee-object-id "$IDENTITY_PRINCIPAL_ID" \
+    --assignee-principal-type ServicePrincipal \
+    --role "Key Vault Secrets User" \
+    --scope "$KEY_VAULT_ID"
+  az role assignment create \
+    --assignee-object-id "$IDENTITY_PRINCIPAL_ID" \
+    --assignee-principal-type ServicePrincipal \
+    --role "Azure Batch Job Submitter" \
+    --scope "$BATCH_ACCOUNT_ID"
+  ```
+
+  The `nrw-batch-scheduler` identity was created 2026-08-14 (principal ID `e79c919c-e2b5-4679-9b76-5a047b2cf756`, client ID `37aff145-24fe-40f4-9f35-89da732fd296`), and both role grants were applied 2026-08-14 (`Key Vault Secrets User` assignment `f9e3f5fc-518f-4fad-a53b-b58c2ce3252a`; `Azure Batch Job Submitter` assignment `e0fafe6f-c68e-43cd-b45a-30fe0d910d68`). The earlier `Azure Batch Job Submitter` grant on the pool identity `nrw-batch-poc` (`8d14f658-...`) is no longer used by the Function App and can be left in place or removed. With the values resolved, the two grants are:
+
+  ```bash
+  az role assignment create \
+    --assignee-object-id e79c919c-e2b5-4679-9b76-5a047b2cf756 \
+    --assignee-principal-type ServicePrincipal \
+    --role "Key Vault Secrets User" \
+    --scope "/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.KeyVault/vaults/nrw-batch-poc"
+  az role assignment create \
+    --assignee-object-id e79c919c-e2b5-4679-9b76-5a047b2cf756 \
+    --assignee-principal-type ServicePrincipal \
+    --role "Azure Batch Job Submitter" \
+    --scope "/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Batch/batchAccounts/nrwbatchpoc"
+  ```
+
+- **`blob-lifecycle-policy.json` + `apply-lifecycle.sh`** — Blob lifecycle rules matching the retention table in [Blob storage retention](#blob-storage-retention); the script applies them with `az storage account management-policy create`. Idempotent — rerun only when the retention rules change.
+- **`create-pool.sh` + `pool.json`** — Wraps the three `az` commands documented in [Pool creation with blob mount](#pool-creation-with-blob-mount-completed-2026-08-13) (delete pool, create from `pool.json`, PATCH managed identity). Run once at initial setup; rerun only if the pool must be recreated (e.g. to change the Blob `mountConfiguration`, which can only be set at pool creation time). Recreation is safe only when the pool is autoscaled to 0 nodes with no jobs running.
+
+### Deploy to Azure
+
+| Group           | Job / script                                      | Purpose                                              |
+| --------------- | ------------------------------------------------- | ---------------------------------------------------- |
+| Deploy to Azure | `build-and-push-image.sh`                         | Build & push the pipeline Docker image to ACR        |
+| Deploy to Azure | `deploy.sh` (`main.bicep`, `parameters.dev.json`) | Deploy the Function App + monitoring (Bicep)         |
+| Deploy to Azure | `publish-function.sh` (`function/`)               | Deploy the Azure Function code (daily job scheduler) |
+
+These are the steps that get run to deploy and redeploy as the code changes. Run in order.
+
+1. **`build-and-push-image.sh`** — Wraps `az acr login`, `docker build` (context `data/`, from `data/Dockerfile`), and `docker push` to `nrwdockerregistry.azurecr.io/pipelines:latest`. Rerun on every image change. Replaced by CI/CD later.
+2. **`main.bicep` + `parameters.dev.json` + `deploy.sh`** — Bicep deploys the Function App (Consumption plan, bound to the dedicated `nrw-batch-scheduler` user-assigned managed identity) and the `TaskFailEvent` Azure Monitor alert (action group emailing `ehill@redcross.nl`). The template creates **no** role assignments — the UAMI's RBAC is granted once during setup — so `deploy.sh` only needs Contributor on the resource group. `deploy.sh` wraps the `az deployment group create` command already shown below, then captures the `functionAppName` output for `publish-function.sh`. Bicep does **not** recreate the Batch account or pool. Rerun on every infra change. **Application Insights and Function/Batch diagnostic settings are intentionally skipped for the prototype** — they are deferred until a log sink (Log Analytics / ADX) is chosen (see [Logging (post-prototype)](#logging-post-prototype)).
+3. **`function/` (Python Timer Trigger) + `publish-function.sh`** — The daily scheduler; rerun on every scheduler code change:
+   - `function_app.py` — Timer trigger at 12:00 UTC; loops over hazard configs and creates one Batch job per hazard.
+   - `batch_client.py` — Helper that builds the container task (command, env vars, `maxTaskRetryCount = 0`) and submits it to the Batch account. Authenticates to the Batch data plane over Entra ID using the Function's dedicated user-assigned managed identity `nrw-batch-scheduler` (the account is AAD-only, shared-key auth is disabled). That identity is granted the **Azure Batch Job Submitter** role once during [one-time setup](#one-time-setup), so no account key is stored anywhere.
+   - `host.json`, `requirements.txt` — Standard Azure Functions Python project files.
+   - `publish-function.sh` — Publishes the function code to the deployed Function App.
+
+   The `function/` folder does not exist yet. Implementation notes for when it is built:
+
+   - **Project layout**: `function/function_app.py`, `function/batch_client.py`, `function/host.json`, `function/requirements.txt`. Use the Python v2 programming model (decorator-based `@app.timer_trigger`).
+   - **`requirements.txt`**: `azure-functions`, `azure-batch` (data-plane SDK), and `azure-identity` (for the managed-identity token).
+   - **Batch authentication**: build the client with `azure-identity` — `ManagedIdentityCredential(client_id=os.environ["AZURE_CLIENT_ID"])` in the Function App (the `AZURE_CLIENT_ID` app setting is set by `main.bicep` to the UAMI client ID), or `DefaultAzureCredential` locally — wrapped so `azure-batch` can use it (Entra token for resource `https://batch.core.windows.net/.default`). Do **not** use `SharedKeyCredentials`; the `nrwbatchpoc` account is AAD-only and account keys are disabled. The `Azure Batch Job Submitter` role is granted to the UAMI during one-time setup.
+   - **Config source**: read `BATCH_ACCOUNT_URL` and `BATCH_POOL_ID` from app settings. Read the per-hazard configs (config path, hazard name) from a small in-code list matching the YAML configs baked into the image (`pipelines/infra/configs/*.yaml`).
+   - **Per hazard**: create one Batch job (unique ID `nrw-<hazard>-<YYYYMMDD>-<HHMM>`), then add one container task whose command is `pipeline --config pipelines/infra/configs/<hazard>.yaml`, with `maxTaskRetryCount = 0` and the environment variables from [Pipeline environment variables](#pipeline-environment-variables). Secret values are supplied via Key Vault references already present as Function app settings, so the task env is populated from `os.environ` rather than a direct Key Vault call.
+   - **Container task settings**: the task must run inside the pipeline container, so set the task's `container_settings` to image `nrwdockerregistry.azurecr.io/pipelines:latest` (the pool already prefetches it and has ACR pull configured via the pool UAMI). No image credentials are set on the task — image pull uses the pool identity.
+   - **Job termination / autoscale**: set the job's `on_all_tasks_complete = 'terminatejob'` so the job ends once its single task finishes; the pool autoscale (`$NodeDeallocationOption = taskcompletion`) then scales nodes back to 0. Optionally set the task `constraints.max_wall_clock_time` to 10h to match the documented task timeout.
+   - **Timer schedule**: the trigger uses a 6-field NCRONTAB expression `0 0 12 * * *` (12:00 UTC). Azure Functions timers evaluate in UTC unless `WEBSITE_TIME_ZONE` is set, so no extra config is needed.
+   - **Tooling / prerequisites for `publish-function.sh`**: install **Azure Functions Core Tools v4** (`func`) and Python 3.11 (matching the app runtime), and be logged in with `az`. The script runs `func azure functionapp publish nrw-batch-scheduler --python` against the app name captured in `.function-app-name`.
+   - **Local testing**: use a `function/local.settings.json` (gitignored) mirroring the deployed app settings, and `DefaultAzureCredential` so `az login` supplies the token locally. Add `function/local.settings.json` to `.gitignore`.
+
+### Helper jobs
+
+| Group       | Job / script   | Purpose                                                   |
+| ----------- | -------------- | --------------------------------------------------------- |
+| Helper jobs | `rerun-job.sh` | Manually rerun a Batch job (reads secrets from Key Vault) |
+
+Run on demand, not part of the normal deploy flow.
+
+- **`rerun-job.sh`** — Reads the three secrets from Key Vault and submits a single Batch job for a chosen hazard/config, so manual reruns don't require pasting secret values by hand. Optional for MVP; a Function-based rerun with parameter overrides will replace it later.
+
+  Notes for when it is built:
+  - **Auth parity**: like the Function, it must authenticate to Batch over Entra ID (the account is AAD-only — no shared key). It runs as the operator's own `az login` identity, so **that operator needs `Azure Batch Job Submitter` on `nrwbatchpoc` and `Key Vault Secrets User` on `nrw-batch-poc`** (the scheduler UAMI's grants do not apply to a human running the CLI).
+  - **Secret handling**: read the secrets with `az keyvault secret show` and pass them as task environment variables; never echo them to stdout or commit them.
+  - **Reuse**: prefer sharing the job/task construction with `function/batch_client.py` (e.g. import it or mirror its container-task definition) so reruns stay identical to scheduled runs.
+
 ## Compute
 
 - **Azure Batch** account with a container-enabled pool.
@@ -156,7 +259,13 @@ az deployment group create \
 
 ### Pool creation with blob mount (completed 2026-08-13)
 
-The pool `nrwbatchpoc` has been created with the blob mount configured. The pool definition is in [`data/deploy/pool.json`](../deploy/pool.json). This file is only used for this one-time setup. The `mountConfiguration` property can only be set at pool creation time, so if the pool ever needs to be recreated (e.g. to change the mount), follow these steps:
+The pool `nrwbatchpoc` has been created with the blob mount configured. The pool definition is in [`data/deploy/pool.json`](../deploy/pool.json), and the creation steps are wrapped by [`data/deploy/create-pool.sh`](../deploy/create-pool.sh) (a one-time-setup script). The `mountConfiguration` property can only be set at pool creation time, so if the pool ever needs to be recreated (e.g. to change the mount), rerun the script:
+
+```bash
+./data/deploy/create-pool.sh
+```
+
+The script runs the three `az` commands below in order. Recreation is safe only when the pool is autoscaled to 0 nodes with no jobs running.
 
 ```bash
 # 1. Delete the existing pool (safe when autoscaled to 0 nodes / no jobs running)
@@ -219,7 +328,7 @@ The following environment variables must be set as task environment variables wh
 
 ## Key Vault secrets
 
-All secrets used by the pipeline and scheduling infrastructure are stored in a single Azure Key Vault instance. The scheduling Azure Function's managed identity has `Key Vault Secrets User` role on this vault, allowing it to read secrets and inject them as Batch task environment variables at job creation time.
+All secrets used by the pipeline and scheduling infrastructure are stored in a single Azure Key Vault instance. The scheduler Function App runs as the dedicated `nrw-batch-scheduler` user-assigned managed identity, which has the `Key Vault Secrets User` role on this vault, allowing the Function host to resolve the Key Vault references in its app settings and inject the secrets as Batch task environment variables at job creation time.
 
 ### Required secrets
 
@@ -232,7 +341,7 @@ All secrets used by the pipeline and scheduling infrastructure are stored in a s
 ### Key Vault configuration notes
 
 - Use the **RBAC permission model** (not access policies) for the vault so permissions are managed via Azure AD role assignments.
-- Grant `Key Vault Secrets User` to the Azure Function's managed identity and to the Batch pool's user-assigned managed identity (if tasks need to fetch secrets directly).
+- Grant `Key Vault Secrets User` to the dedicated `nrw-batch-scheduler` user-assigned managed identity used by the scheduler Function App, and to the `nrw-batch-poc` identity used by the Batch pool nodes.
 - Grant `Key Vault Secrets Officer` to the ops/admin group for secret rotation.
 - Enable **soft delete** and **purge protection** (defaults on new vaults) to prevent accidental permanent loss.
 - Secrets should follow kebab-case naming (e.g., `ibf-pipeline-api-key`).
