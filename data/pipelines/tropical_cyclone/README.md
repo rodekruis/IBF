@@ -1,4 +1,4 @@
-# Tropical Cyclone Pipeline Logic (WIP)
+# Tropical Cyclone Pipeline Logic
 
 This folder contains the tropical-cyclone-specific forecast logic used by the pipeline framework.
 
