@@ -115,6 +115,21 @@ function generateSwaggerSummaryJson(app: INestApplication<any>): void {
   writeFileSync('swagger.json', document);
 }
 
+function generateSwaggerJson(app: INestApplication<any>): void {
+  // The frontend needs an OpenAPI compatible Swagger export.
+  const options = new DocumentBuilder()
+    .setTitle(APP_TITLE)
+    .setVersion(APP_VERSION)
+    .build();
+  // Remove `/api` prefix, we'll define that once in frontend environment
+  // variable.
+  const openApiDocument = SwaggerModule.createDocument(app, options, {
+    ignoreGlobalPrefix: true,
+  });
+  const document = JSON.stringify(openApiDocument, null, 2);
+  writeFileSync('nrw.openapi-schema.json', document);
+}
+
 async function bootstrap(): Promise<void> {
   console.warn(`Bootstrapping ${APP_TITLE} - ${APP_VERSION}`);
 
@@ -194,6 +209,7 @@ async function bootstrap(): Promise<void> {
   if (IS_DEVELOPMENT) {
     generateModuleDependencyGraph(app);
     generateSwaggerSummaryJson(app);
+    generateSwaggerJson(app);
   }
 
   // Set up generic error handling:
