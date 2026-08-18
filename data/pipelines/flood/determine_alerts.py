@@ -9,13 +9,13 @@ import numpy as np
 from pipelines.flood.constants import MINIMUM_RETURN_PERIOD
 from pipelines.flood.extract_forecast import TimeIntervalDischarge
 from pipelines.infra.data_types.location_point import LocationPoint
-from pipelines.infra.utils.nrw_logger import log_warning, LogTag
+from pipelines.infra.utils import nrw_logger
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class TimeIntervalSeverity:
+class TimeIntervalReturnPeriodSeverity:
     time_interval_start: str
     time_interval_end: str
     median_return_period: float
@@ -26,7 +26,7 @@ class TimeIntervalSeverity:
 class AlertStation:
     station_code: str
     station: LocationPoint
-    time_interval_severities: list[TimeIntervalSeverity]
+    time_interval_severities: list[TimeIntervalReturnPeriodSeverity]
 
 
 class ReturnPeriodThresholdValue(TypedDict):
@@ -44,7 +44,7 @@ def determine_temporal_extent(
     time_interval_discharges: list[TimeIntervalDischarge],
     thresholds: list[ReturnPeriodThresholds],
     minimum_return_period: str = MINIMUM_RETURN_PERIOD,
-) -> list[TimeIntervalSeverity]:
+) -> list[TimeIntervalReturnPeriodSeverity]:
     """
     Compute lead time severities for one station by comparing the median
     ensemble discharge against return period thresholds.
@@ -56,7 +56,7 @@ def determine_temporal_extent(
     if station_thresholds is None:
         return []
 
-    time_interval_severities: list[TimeIntervalSeverity] = []
+    time_interval_severities: list[TimeIntervalReturnPeriodSeverity] = []
     for time_interval_discharge in time_interval_discharges:
         ensemble_array = np.asarray(
             time_interval_discharge.ensemble_discharges,
@@ -74,7 +74,7 @@ def determine_temporal_extent(
                 for d in time_interval_discharge.ensemble_discharges
             ]
             time_interval_severities.append(
-                TimeIntervalSeverity(
+                TimeIntervalReturnPeriodSeverity(
                     time_interval_start=time_interval_discharge.time_interval_start,
                     time_interval_end=time_interval_discharge.time_interval_end,
                     median_return_period=median_return_period,
@@ -139,17 +139,17 @@ def _prepare_station_threshold(
     """
     station_thresholds = _get_station_return_period_thresholds(thresholds, station_code)
     if station_thresholds is None:
-        log_warning(
+        nrw_logger.log_warning(
             logger,
-            LogTag.FLOOD_LOGIC,
+            nrw_logger.LogTag.FLOOD_LOGIC,
             f"No return period thresholds for station {station_code}, skipping",
         )
         return None
 
     if minimum_return_period not in station_thresholds:
-        log_warning(
+        nrw_logger.log_warning(
             logger,
-            LogTag.FLOOD_LOGIC,
+            nrw_logger.LogTag.FLOOD_LOGIC,
             f"Return period '{minimum_return_period}' not found for station {station_code}, skipping",
         )
         return None

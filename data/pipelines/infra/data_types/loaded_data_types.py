@@ -60,7 +60,7 @@ class RasterData:
     array: np.ndarray
     transform: Affine
     crs: str
-    nodata: float
+    nodata: float  # sentinel for missing cells; sign/magnitude varies by source
 
 
 @dataclass

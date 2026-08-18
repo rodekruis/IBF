@@ -15,6 +15,7 @@ classifiers = [
 dependencies = [
     "cfgrib",
     "click",
+    "eccodes",
     "netCDF4",
     "numpy",
     "pillow",

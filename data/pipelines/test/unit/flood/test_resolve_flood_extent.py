@@ -9,7 +9,7 @@ from pipelines.flood.compute_flood_extent import (
     _resolve_flood_extent,
     compute_flood_extent,
 )
-from pipelines.flood.determine_alerts import TimeIntervalSeverity
+from pipelines.flood.determine_alerts import TimeIntervalReturnPeriodSeverity
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from rasterio.transform import from_origin
@@ -33,9 +33,9 @@ def _make_provider(return_periods: list[int]) -> FloodExtentProvider:
 
 def _build_time_interval_severities(
     return_period: float,
-) -> list[TimeIntervalSeverity]:
+) -> list[TimeIntervalReturnPeriodSeverity]:
     return [
-        TimeIntervalSeverity(
+        TimeIntervalReturnPeriodSeverity(
             time_interval_start="2026-04-01",
             time_interval_end="2026-04-02",
             median_return_period=return_period,
