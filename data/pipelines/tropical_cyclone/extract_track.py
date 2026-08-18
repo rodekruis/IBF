@@ -5,11 +5,12 @@ import os
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from itertools import pairwise
 from statistics import fmean
 
-from shapely.geometry import box, Point
+from shapely.geometry import box, LineString, Point
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import unary_union
+from shapely.ops import nearest_points, unary_union
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.dtos import Centroid
@@ -580,8 +581,9 @@ def derive_alert_centroid(
     (highest MEDIAN wind speed) starts outside the time window the storm is tracked over - that
     wind cannot be attributed to the tracked storm, and no alert is raised. A peak time exactly on
     either end of the tracked window counts as inside it. Otherwise the reported position is the
-    ensemble-mean position of the first track bucket, in time order, lying inside the admin areas,
-    or of the bucket coming closest to them when none lies inside.
+    first point where the storm's pseudo-track (straight lines between the time-ordered
+    ensemble-mean bucket positions) enters the admin areas, or the point in the admin areas
+    closest to the pseudo-track when it never crosses them.
     """
     if not time_interval_track_fixes or not time_interval_severities:
         return None
@@ -611,23 +613,90 @@ def _landfall_or_closest_approach_centroid(
     admin_areas: AdminAreasSet,
 ) -> Centroid:
     """
-    The ensemble-mean position of the first bucket, in time order, lying inside the admin-area
-    union, or of the bucket whose ensemble-mean position is closest to that union when none lies
-    inside it. Distances are in degrees and only rank buckets against each other.
+    The first point, in time order, where the pseudo-track enters the admin-area union. The
+    pseudo-track is the straight-line interpolation between consecutive bucket centroids (each an
+    ensemble-mean position), so a storm whose 6-hourly fixes both sit outside the union still
+    reports the crossing point between them rather than the nearer fix. A storm already inside at
+    its first bucket reports that bucket's centroid. When the pseudo-track never enters the union,
+    falls back to the point in the union closest to the pseudo-track - a point on land, which the
+    map can always zoom to, rather than a storm position out at sea.
     """
     admin_area_union = _admin_area_union(place_codes, admin_areas)
     bucket_centroids = [_bucket_centroid(bucket) for bucket in sorted_buckets]
 
-    for centroid in bucket_centroids:
-        if admin_area_union.contains(Point(centroid.longitude, centroid.latitude)):
-            return centroid
+    first_centroid = bucket_centroids[0]
+    if admin_area_union.contains(Point(first_centroid.longitude, first_centroid.latitude)):
+        return first_centroid
 
-    return min(
-        bucket_centroids,
-        key=lambda centroid: admin_area_union.distance(
-            Point(centroid.longitude, centroid.latitude)
-        ),
+    for start, end in pairwise(bucket_centroids):
+        entry_point = _segment_entry_point(start, end, admin_area_union)
+        if entry_point is not None:
+            return entry_point
+
+    pseudo_track: Point | LineString = (
+        LineString(
+            [(centroid.longitude, centroid.latitude) for centroid in bucket_centroids]
+        )
+        if len(bucket_centroids) > 1
+        else Point(bucket_centroids[0].longitude, bucket_centroids[0].latitude)
     )
+    nearest_in_union, _ = nearest_points(admin_area_union, pseudo_track)
+    return Centroid(latitude=nearest_in_union.y, longitude=nearest_in_union.x)
+
+
+def _segment_entry_point(
+    start: Centroid, end: Centroid, admin_area_union: BaseGeometry
+) -> Centroid | None:
+    """
+    The first point where the straight segment from `start` to `end` enters the admin-area union,
+    or None when the segment never enters it. "First" is measured along the segment from `start`,
+    which stands in for time order since the pseudo-track's vertices are time-ordered. `start`
+    itself is assumed to lie outside the union (the caller checks bucket centroids first); a
+    segment starting inside would return `start` here.
+
+    The segment is clipped to the whole union (boundary included, so the crossing point is part of
+    the clip). A segment merely touching the boundary - e.g., ending exactly on a corner - clips to
+    a 0-dimensional Point and has not entered the admin areas, the same distinction `contains`
+    makes for the bucket centroids themselves. A genuine entry clips to a 1-dimensional LineString
+    (the part of the segment inside), whose point nearest the segment start is the crossing point.
+    """
+    segment = LineString(
+        [(start.longitude, start.latitude), (end.longitude, end.latitude)]
+    )
+    if segment.length == 0:
+        return None
+
+    clipped = segment.intersection(admin_area_union)
+    if clipped.is_empty:
+        return None
+
+    entry_candidates = [
+        point
+        for part in getattr(clipped, "geoms", [clipped])
+        if isinstance(part, LineString)
+        for point in _geometry_points(part)
+    ]
+    if not entry_candidates:
+        return None
+
+    entry_point = min(entry_candidates, key=lambda point: segment.project(point))
+    return Centroid(latitude=entry_point.y, longitude=entry_point.x)
+
+
+def _geometry_points(geometry: BaseGeometry) -> list[Point]:
+    """
+    Flatten any intersection result into the Points it is made of: itself when already a Point,
+    its vertices when a LineString, or the points of each part when a collection.
+    """
+    if isinstance(geometry, Point):
+        return [geometry]
+    if isinstance(geometry, LineString):
+        return [Point(coordinate) for coordinate in geometry.coords]
+    return [
+        point
+        for part in getattr(geometry, "geoms", [])
+        for point in _geometry_points(part)
+    ]
 
 
 def _admin_area_union(

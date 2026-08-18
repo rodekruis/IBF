@@ -563,6 +563,26 @@ class TestDeriveAlertCentroid:
         assert centroid is None
 
     def test_returns_the_first_bucket_that_lies_inside_the_admin_areas(self):
+        # The storm starts inside the admin area, so its first bucket is the entry point.
+        track_fixes = [
+            _make_track_bucket("2026-07-10T00:00:00Z", [(1.0, 1.0)]),
+            _make_track_bucket("2026-07-10T06:00:00Z", [(1.5, 1.5)]),
+            _make_track_bucket("2026-07-10T12:00:00Z", [(5.0, 5.0)]),
+        ]
+        severities = [_make_severity(45.0, "2026-07-10T12:00:00Z")]
+
+        centroid = derive_alert_centroid(
+            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
+        )
+
+        assert centroid is not None
+        assert centroid.latitude == 1.0
+        assert centroid.longitude == 1.0
+
+    def test_reports_the_pseudo_track_entry_when_the_first_bucket_lies_outside(self):
+        # The storm starts outside and its second bucket is inside: the entry point is where the
+        # segment between them crosses the square's edge (the corner (2, 2) here), not the inside
+        # bucket itself.
         track_fixes = [
             _make_track_bucket("2026-07-10T00:00:00Z", [(5.0, 5.0)]),
             _make_track_bucket("2026-07-10T06:00:00Z", [(1.0, 1.0)]),
@@ -575,43 +595,8 @@ class TestDeriveAlertCentroid:
         )
 
         assert centroid is not None
-        assert centroid.latitude == 1.0
-        assert centroid.longitude == 1.0
-
-    def test_position_does_not_depend_on_which_bucket_holds_the_peak_wind(self):
-        track_fixes = [
-            _make_track_bucket("2026-07-10T00:00:00Z", [(5.0, 5.0)]),
-            _make_track_bucket("2026-07-10T06:00:00Z", [(1.0, 1.0)]),
-            _make_track_bucket("2026-07-10T12:00:00Z", [(1.5, 1.5)]),
-        ]
-
-        centroids = [
-            derive_alert_centroid(
-                track_fixes,
-                [_make_severity(45.0, peak_time)],
-                self._PLACE_CODES,
-                _build_admin_areas(),
-            )
-            for peak_time in ("2026-07-10T00:00:00Z", "2026-07-10T12:00:00Z")
-        ]
-
-        assert centroids[0] == centroids[1]
-
-    def test_returns_the_closest_bucket_when_none_lies_inside_the_admin_areas(self):
-        track_fixes = [
-            _make_track_bucket("2026-07-10T00:00:00Z", [(10.0, 10.0)]),
-            _make_track_bucket("2026-07-10T06:00:00Z", [(3.0, 1.0)]),
-            _make_track_bucket("2026-07-10T12:00:00Z", [(8.0, 8.0)]),
-        ]
-        severities = [_make_severity(45.0, "2026-07-10T06:00:00Z")]
-
-        centroid = derive_alert_centroid(
-            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
-        )
-
-        assert centroid is not None
-        assert centroid.latitude == 3.0
-        assert centroid.longitude == 1.0
+        assert centroid.latitude == pytest.approx(2.0)
+        assert centroid.longitude == pytest.approx(2.0)
 
     def test_tests_a_buckets_ensemble_mean_rather_than_its_individual_fixes(self):
         # Neither member fix is inside the admin areas; their mean is.
@@ -642,6 +627,73 @@ class TestDeriveAlertCentroid:
         assert centroid is not None
         assert centroid.latitude == 1.0
         assert centroid.longitude == 1.0
+
+    def test_returns_the_pseudo_track_crossing_point_between_two_outside_buckets(self):
+        # Both centroids sit outside the admin area (the 0-2 degree square); the straight line
+        # between them crosses its left edge (longitude 0) at latitude 1.
+        track_fixes = [
+            _make_track_bucket("2026-07-10T00:00:00Z", [(1.0, -2.0)]),
+            _make_track_bucket("2026-07-10T06:00:00Z", [(1.0, 4.0)]),
+        ]
+        severities = [_make_severity(45.0, "2026-07-10T06:00:00Z")]
+
+        centroid = derive_alert_centroid(
+            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
+        )
+
+        assert centroid is not None
+        assert centroid.latitude == pytest.approx(1.0)
+        assert centroid.longitude == pytest.approx(0.0)
+
+    def test_reports_the_earliest_crossing_when_the_pseudo_track_enters_twice(self):
+        # The track enters the square through its bottom edge at (1.3, 0), leaves through the
+        # right edge at (2, 0.875), then re-enters through the right edge at (2, 1.75). The first
+        # entry in time order is (1.3, 0).
+        track_fixes = [
+            _make_track_bucket("2026-07-10T00:00:00Z", [(-1.0, 0.5)]),
+            _make_track_bucket("2026-07-10T06:00:00Z", [(1.5, 2.5)]),
+            _make_track_bucket("2026-07-10T12:00:00Z", [(2.5, 0.5)]),
+        ]
+        severities = [_make_severity(45.0, "2026-07-10T12:00:00Z")]
+
+        centroid = derive_alert_centroid(
+            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
+        )
+
+        assert centroid is not None
+        assert centroid.latitude == pytest.approx(0.0)
+        assert centroid.longitude == pytest.approx(1.3)
+
+    def test_skips_a_zero_length_segment_without_dropping_the_track(self):
+        # The storm is stationary between the first two buckets, then moves into the square.
+        track_fixes = [
+            _make_track_bucket("2026-07-10T00:00:00Z", [(1.0, -1.0)]),
+            _make_track_bucket("2026-07-10T06:00:00Z", [(1.0, -1.0)]),
+            _make_track_bucket("2026-07-10T12:00:00Z", [(1.0, 1.0)]),
+        ]
+        severities = [_make_severity(45.0, "2026-07-10T12:00:00Z")]
+
+        centroid = derive_alert_centroid(
+            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
+        )
+
+        assert centroid is not None
+        assert centroid.latitude == pytest.approx(1.0)
+        assert centroid.longitude == pytest.approx(0.0)
+
+    def test_a_single_bucket_outside_the_admin_areas_reports_the_nearest_union_point(self):
+        # With one bucket the pseudo-track is a single point at (5, 5); the closest point in the
+        # square is its corner (2, 2).
+        track_fixes = [_make_track_bucket("2026-07-10T00:00:00Z", [(5.0, 5.0)])]
+        severities = [_make_severity(45.0, "2026-07-10T00:00:00Z")]
+
+        centroid = derive_alert_centroid(
+            track_fixes, severities, self._PLACE_CODES, _build_admin_areas()
+        )
+
+        assert centroid is not None
+        assert centroid.latitude == pytest.approx(2.0)
+        assert centroid.longitude == pytest.approx(2.0)
 
 
 def _make_square_admin_area(pcode: str, min_lon: float, min_lat: float) -> AdminArea:
