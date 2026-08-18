@@ -485,8 +485,8 @@ const TROPICAL_CYCLONE_CLASSIFICATION_BY_COUNTRY: Record<
 > = {
   PHL: {
     severityClassLevels: [
-      { label: low, threshold: 119 },
-      { label: high, threshold: 154 },
+      { label: low, threshold: 33 },
+      { label: high, threshold: 43 },
     ],
     probabilityClassLevels: [{ label: singleThreshold, threshold: 0 }],
     triggerAlertClass: AlertClass.high,
