@@ -96,6 +96,10 @@ def load_data_container(
         case DataSource.TODO_ECMWF_FORECAST:
             return _load_ecmwf_forecast(data_config, container)
 
+        # --- Tropical cyclone sources ---
+        case DataSource.TODO_GEFS_FORECAST:
+            return _load_gefs_forecast(container)
+
         # --- Fallback ---
         case DataSource.TODO_DATA_SOURCE:
             container.error = "Data source not yet configured"
@@ -296,6 +300,16 @@ def _load_ecmwf_forecast(config: DataSourceConfig, container: LoadedDataSource):
     container.data = _load_dummy_data(config)
     if container.data is None:
         container.error = f"No dummy data found for source '{config.source}'"
+
+
+# =============================================================================
+# Tropical cyclone source loaders
+# =============================================================================
+
+
+def _load_gefs_forecast(container: LoadedDataSource):
+    # TODO: Set the type correctly once real data is loaded
+    container.data_type = DataType.UNSPECIFIED
 
 
 # =============================================================================

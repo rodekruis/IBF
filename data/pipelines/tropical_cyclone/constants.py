@@ -53,10 +53,11 @@ class CountryConfig:
 # each dispatch on this value - so switching a country over is a config change, not a code change.
 # Every country is on GEFS today.
 #
-# Neither source has a real data-provider fetcher yet (DataSource carries only a
-# TODO_ECMWF_FORECAST placeholder), so Step 3 reads local fixtures from bronze/<source>_wind and
-# bronze/<source>_track instead. Whichever source a country is set to therefore needs those
-# fixtures on disk, or its local run stops at the Step 3 guard. ECMWF fixtures can be downloaded
+# Neither source has a real data-provider fetcher yet (DataSource carries only TODO_ECMWF_FORECAST
+# and TODO_GEFS_FORECAST placeholders), so Step 3 reads local fixtures from
+# bronze/<source>_wind and bronze/<source>_track instead. Whichever source a country is set to
+# therefore needs those fixtures on disk, or its local run stops at the Step 3 guard. ECMWF
+# fixtures can be downloaded
 # with data_management/seed_data_management/fetch_ecmwf_tropical_cyclone_test_data.py; GEFS has no
 # equivalent script yet and is fetched by hand.
 # TODO(data-scientist): add a real fetcher for ECMWF wind + track (and GEFS's, TODO-infra items

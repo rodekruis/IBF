@@ -34,6 +34,7 @@ class DataSource(StrEnum):
     GLOFAS_DISCHARGE_SEED_REPO_ALERT = "glofas_discharge_seed_repo_alert"
     GLOFAS_DISCHARGE_SEED_REPO_NO_ALERT = "glofas_discharge_seed_repo_no_alert"
     TODO_ECMWF_FORECAST = "todo_ecmwf_forecast"
+    TODO_GEFS_FORECAST = "todo_gefs_forecast"
     TODO_DATA_SOURCE = "todo_data_source"
 
 

@@ -19,50 +19,7 @@ against three real historical storms, using the fixtures in the shared `bronze/`
   `data/pipelines/tropical_cyclone/bronze/gefs_track/` both exist with the cycle subfolders
   inside them (e.g. `gefs_wind/gefs.20250918/12/...`).
 
-## 2. One-time local code change (do not commit)
-
-`tropicalCyclone.yaml` has no `source_target`-tagged data source yet, so a real run needs one
-local-only change. Open `data/pipelines/infra/config_reader.py` and in `_parse_countries`,
-change:
-
-```python
-from pipelines.infra.utils.nrw_logger import log_error, LogTag
-```
-
-to:
-
-```python
-from pipelines.infra.utils.nrw_logger import log_error, log_warning, LogTag
-```
-
-Then find this block:
-
-```python
-                log_error(
-                    logger,
-                    LogTag.INFRA,
-                    f"No forecast data source configured for source target"
-                    f" '{self.source_target}' for country '{iso_3_code}'",
-                )
-                success = False
-                continue
-```
-
-and replace it with:
-
-```python
-                log_warning(
-                    logger,
-                    LogTag.INFRA,
-                    f"LOCAL-ONLY WORKAROUND, DO NOT COMMIT: No forecast data source configured"
-                    f" for source target '{self.source_target}' for country '{iso_3_code}'",
-                )
-```
-
-Do not commit this file with the change applied. Revert it (`git checkout data/pipelines/infra/config_reader.py`)
-once you're done testing.
-
-## 3. Selecting which storm cycle runs
+## 2. Selecting which storm cycle runs
 
 The pipeline always loads the most recently dated cycle folder found under `gefs_wind/` and
 `gefs_track/` (folders are named `gefs.<YYYYMMDD>`). To run a specific scenario, rename every
@@ -72,7 +29,7 @@ rename afterward to restore normal behavior.
 
 All commands below assume you're in `data/pipelines/tropical_cyclone/bronze/`.
 
-## 4. Running the pipeline
+## 3. Running the pipeline
 
 From the `data/` directory:
 
@@ -99,7 +56,7 @@ for cycle in gefs.20260710 gefs.20260711 gefs.20260724; do
 done
 ```
 
-**Run** (Section 4 command).
+**Run** (Section 3 command).
 
 **Expected result:**
 
@@ -132,7 +89,7 @@ for cycle in gefs.20250918 gefs.20260710 gefs.20260711 gefs.20260724; do
 done
 ```
 
-**Run** (Section 4 command).
+**Run** (Section 3 command).
 
 **Expected result:**
 
@@ -165,7 +122,7 @@ for cycle in gefs.20240929 gefs.20250918 gefs.20260710 gefs.20260711 gefs.202607
 done
 ```
 
-**Run** (Section 4 command).
+**Run** (Section 3 command).
 
 **Expected result:**
 
@@ -184,10 +141,9 @@ done
 
 ---
 
-## 5. Cleanup
+## 4. Cleanup
 
 1. Confirm `gefs_wind/` and `gefs_track/` each list `gefs.20210512`, `gefs.20240929`,
    `gefs.20250918`, `gefs.20260710`, `gefs.20260711`, `gefs.20260724` with no `_setaside_` prefix
    (run the relevant "Restore" block above for whichever scenario you last ran).
-2. Revert the local code change from Section 2: `git checkout data/pipelines/infra/config_reader.py`.
-3. Delete this document.
+2. Delete this document.

@@ -113,25 +113,14 @@ The sections below describe each piece in more technical detail.
 
 ## Running this locally
 
-`tropicalCyclone.yaml` has no `source_target`-tagged data source yet, so a real (non-`--infra-only`)
-run needs a local-only gate relax in `config_reader.py` - **never commit it**:
-
-```python
-# data/pipelines/infra/config_reader.py, in _parse_countries
-log_warning(...)   # was log_error
-# success = False   <- drop
-# continue          <- drop
-```
-
-Then:
-
 ```bash
 uv run pipeline --config pipelines/infra/configs/tropicalCyclone.yaml --country PHL --mock 1 --output-mode local
 ```
 
-A running backend with PHL seeded is still required (admin areas/population/alert configs hit the
-real API); wind/track come from whichever `bronze/` cycle is most recent on disk, regardless of
-`--mock`.
+`--mock 1` selects the `todo_gefs_forecast` placeholder source (`source_target: mock_alert`), so
+config validation passes with no local edits. A running backend with PHL seeded is still required
+(admin areas/population/alert configs hit the real API); wind/track come from whichever `bronze/`
+cycle is most recent on disk, regardless of `--mock`.
 
 ## `forecast.py` flow (read -> output)
 
