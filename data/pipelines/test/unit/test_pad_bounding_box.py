@@ -38,17 +38,13 @@ class TestPadBoundingBox:
         assert padded[0] == pytest.approx(9.0)
         assert padded[2] == pytest.approx(12.0)
 
-    def test_degenerates_into_an_unusable_longitude_span_at_the_pole(self):
-        # Documents real behaviour, not intended behaviour. The function guards with
-        # `km_per_degree_longitude > 0` and falls back to 180 degrees, but math.cos(radians(90))
-        # is 6.1e-17 rather than exactly 0, so that fallback is unreachable for every real
-        # latitude and the division explodes instead. Harmless for the countries this pipeline
-        # serves (all well inside the tropics) and left as-is rather than fixed here, but pinned
-        # so the dead branch isn't mistaken for working protection.
+    def test_falls_back_to_all_longitudes_at_the_pole(self):
+        # Near the poles a degree of longitude shrinks toward zero, so the km-to-degrees
+        # division would explode; pad_bounding_box clamps to all longitudes instead.
         padded = pad_bounding_box((0.0, 90.0, 1.0, 90.0), _ONE_DEGREE_LATITUDE_KM)
 
-        assert padded[0] < -1e15
-        assert padded[2] > 1e15
+        assert padded[0] == pytest.approx(-180.0)
+        assert padded[2] == pytest.approx(181.0)
 
     def test_leaves_the_box_unchanged_for_a_zero_buffer(self):
         bounds = (100.0, 5.0, 130.0, 20.0)
