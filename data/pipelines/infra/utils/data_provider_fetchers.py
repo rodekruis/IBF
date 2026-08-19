@@ -16,6 +16,9 @@ from pipelines.infra.data_types.data_config_types import (
 )
 from pipelines.infra.data_types.enums import LayerName
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
+from pipelines.infra.data_types.gefs_product_provider import (
+    download_gefs_product_from_seed_repo,
+)
 from pipelines.infra.data_types.glofas_discharge_provider import (
     download_glofas_discharge_from_ftp,
     download_glofas_discharge_from_seed_repo,
@@ -97,8 +100,14 @@ def load_data_container(
             return _load_ecmwf_forecast(data_config, container)
 
         # --- Tropical cyclone sources ---
-        case DataSource.TODO_GEFS_FORECAST:
-            return _load_gefs_forecast(container)
+        case DataSource.GEFS_WIND_SEED_REPO_ALERT:
+            return _load_gefs_product_seed_repo(container, "gefs-wind", "alert")
+        case DataSource.GEFS_WIND_SEED_REPO_NO_ALERT:
+            return _load_gefs_product_seed_repo(container, "gefs-wind", "no-alert")
+        case DataSource.GEFS_TRACK_SEED_REPO_ALERT:
+            return _load_gefs_product_seed_repo(container, "gefs-track", "alert")
+        case DataSource.GEFS_TRACK_SEED_REPO_NO_ALERT:
+            return _load_gefs_product_seed_repo(container, "gefs-track", "no-alert")
 
         # --- Fallback ---
         case DataSource.TODO_DATA_SOURCE:
@@ -307,9 +316,11 @@ def _load_ecmwf_forecast(config: DataSourceConfig, container: LoadedDataSource):
 # =============================================================================
 
 
-def _load_gefs_forecast(container: LoadedDataSource):
-    # TODO: Set the type correctly once real data is loaded
-    container.data_type = DataType.UNSPECIFIED
+def _load_gefs_product_seed_repo(
+    container: LoadedDataSource, product: str, variant: str
+) -> None:
+    container.data_type = DataType.PATH_LIST
+    container.data = download_gefs_product_from_seed_repo(product, variant)
 
 
 # =============================================================================

@@ -19,6 +19,9 @@ GLOFAS_MOCK_DATA_DIR = "glofas/country_mock_data"
 
 GLOFAS_FILE_SUFFIX = ".nc"
 
+# Tropical-cyclone GEFS fixtures downloaded from the seed repo
+TROPICAL_CYCLONE_MOCK_DATA_DIR = "tropical_cyclone/mock_data"
+
 
 def get_glofas_country_split_path(country: str, netcdf_path: str) -> str:
     """
@@ -72,6 +75,18 @@ def get_glofas_mock_data_dir(country: str) -> str:
     if not cache_base:
         raise ValueError("DATA_CACHE_DIR environment variable is required.")
     output_dir = os.path.join(cache_base, GLOFAS_MOCK_DATA_DIR, country)
+    os.makedirs(output_dir, exist_ok=True)
+    return output_dir
+
+
+def get_tropical_cyclone_mock_data_dir(product: str) -> str:
+    """
+    Get resolved cache path for a downloaded tropical-cyclone product
+    """
+    cache_base = os.environ.get("DATA_CACHE_DIR")
+    if not cache_base:
+        raise ValueError("DATA_CACHE_DIR environment variable is required.")
+    output_dir = os.path.join(cache_base, TROPICAL_CYCLONE_MOCK_DATA_DIR, product)
     os.makedirs(output_dir, exist_ok=True)
     return output_dir
 

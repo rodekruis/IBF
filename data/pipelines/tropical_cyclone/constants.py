@@ -53,15 +53,12 @@ class CountryConfig:
 # each dispatch on this value - so switching a country over is a config change, not a code change.
 # Every country is on GEFS today.
 #
-# Neither source has a real data-provider fetcher yet (DataSource carries only TODO_ECMWF_FORECAST
-# and TODO_GEFS_FORECAST placeholders), so Step 3 reads local fixtures from
-# bronze/<source>_wind and bronze/<source>_track instead. Whichever source a country is set to
-# therefore needs those fixtures on disk, or its local run stops at the Step 3 guard. ECMWF
-# fixtures can be downloaded
-# with data_management/seed_data_management/fetch_ecmwf_tropical_cyclone_test_data.py; GEFS has no
-# equivalent script yet and is fetched by hand.
-# TODO(data-scientist): add a real fetcher for ECMWF wind + track (and GEFS's, TODO-infra items
-# 1-2 in tropical_cyclone/README.md) so this stops depending on hand-managed fixture trees.
+# ECMWF has no fetcher yet (DataSource carries only the TODO_ECMWF_FORECAST placeholder), so Step 3
+# still reads local fixtures from bronze/ecmwf_wind and bronze/ecmwf_track; a country on ECMWF
+# therefore needs those on disk (download with fetch_ecmwf_tropical_cyclone_test_data.py) or its run
+# stops at the Step 3 guard.
+# TODO(data-scientist): add a real fetcher for ECMWF wind + track so this stops depending on
+# hand-managed fixture trees.
 COUNTRY_CONFIGS: dict[CountryCodeIso3, CountryConfig] = {
     CountryCodeIso3.PHL: CountryConfig(
         exposure_class=ExposureClass.IN_LAND,  # TODO(data-scientist): confirm,
@@ -142,7 +139,7 @@ GEFS_TRACK_MEMBER_IDS: list[str] = ["ac00", *[f"ap{i:02d}" for i in range(1, 31)
 # value keeps exactly one row per (member, lead hour).
 ATCF_WIND_RADII_THRESHOLD_KNOTS = 34
 
-# Native GEFS forecast cadence for the wind (pgrb2sp25) product - a fixed physical property of the
+# Native GEFS cadence for the wind (pgrb2sp25) product - a fixed physical property of the
 # data source, independent of whatever lead-time bucketing the alert config's temporal extent
 # specifies (see AlertConfig's "lead-time-spectrum", e.g. 3-hour or 6-hour steps up to some max
 # lead time). extract_wind_speed() aggregates native-step rasters (per-cell max, per ensemble
