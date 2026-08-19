@@ -46,8 +46,8 @@ export class AdminAreasController {
   @ApiQuery({
     name: 'limit',
     required: false,
-    type: Number,
-    schema: { type: 'integer', default: 10000 },
+    schema: { type: 'integer' },
+    example: 10000,
   })
   @ApiQuery({
     name: 'transform',
