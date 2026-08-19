@@ -95,7 +95,11 @@
   {
     "method": "get",
     "path": "/api/admin-areas",
-    "params": [],
+    "params": [
+      "transform",
+      "limit",
+      "filter"
+    ],
     "returnType": "GeoJsonFeatureCollectionDto"
   },
   {

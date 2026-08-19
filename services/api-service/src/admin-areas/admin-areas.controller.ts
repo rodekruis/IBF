@@ -12,7 +12,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import type { Feature, FeatureCollection } from 'geojson';
 
 import { AdminAreasService } from '@api-service/src/admin-areas/admin-areas.service';
@@ -29,13 +29,31 @@ import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-us
 export class AdminAreasController {
   public constructor(private readonly adminAreasService: AdminAreasService) {}
 
-  // TODO: Re-add @ApiQuery decorators once we have clarity on which pg_featureserv params to expose
   @Get()
   @ApiOperation({
     summary:
       'Get admin areas; all pg_featureserv query parameters are supported (not shown in Swagger UI, so calling via Swagger is limited)',
     description:
       "Example current use: GET /admin-areas?filter=countryCodeIso3='ETH' AND adminLevel=2",
+  })
+  @ApiQuery({
+    name: 'filter',
+    required: true,
+    type: String,
+    description:
+      'pg_featureserv filter expression, e.g. "countryCodeIso3=\'ETH\' AND adminLevel=0"',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    schema: { type: 'integer', default: 10000 },
+  })
+  @ApiQuery({
+    name: 'transform',
+    required: false,
+    type: String,
+    description: 'e.g. "simplify,0.05"',
   })
   @ApiResponse({
     status: HttpStatus.OK,
