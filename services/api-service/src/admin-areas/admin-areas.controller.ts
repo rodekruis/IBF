@@ -38,7 +38,7 @@ export class AdminAreasController {
   })
   @ApiQuery({
     name: 'filter',
-    required: true,
+    required: false,
     type: String,
     description:
       'pg_featureserv filter expression, e.g. "countryCodeIso3=\'ETH\' AND adminLevel=0"',
