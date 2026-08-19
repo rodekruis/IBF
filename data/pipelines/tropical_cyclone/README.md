@@ -126,11 +126,12 @@ The sections below describe each piece in more technical detail.
 uv run pipeline --config pipelines/infra/configs/tropicalCyclone.yaml --country PHL --mock 1 --output-mode local
 # eventName: WP20_2024
 # centroid: latitude: 20.635, longitude: 121.858
-# median severities: 38.67, 33.75, 37.33, 41.22, 41.32, 41.96, 37.15 m/s (7 buckets)
+# median severities: 38.67, 33.75, 37.33, 41.22, 41.32, 41.96, 37.15 m/s (7 buckets, all above MIN_SEVERITY_MS=33.0)
 # total population exposed: 60090
 
 # No-alert scenario: WP03/2021 gefs.20210512/18
 uv run pipeline --config pipelines/infra/configs/tropicalCyclone.yaml --country PHL --mock 0 --output-mode local
+# storm: WP03_2021 median severities: 19 buckets, ~11.15-12.66 m/s (peak 12.66) - all below MIN_SEVERITY_MS=33.0
 ```
 
 `--mock 1` selects the `gefs_wind_seed_repo_alert` / `gefs_track_seed_repo_alert` sources
