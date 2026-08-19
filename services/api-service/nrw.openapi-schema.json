@@ -295,7 +295,7 @@
             "name": "issuedAt",
             "required": false,
             "in": "query",
-            "description": "ISO8601 date for the forecast issuedAt (e.g. 2026-08-19T14:04:11.622Z). Defaults to now.",
+            "description": "ISO8601 date for the forecast issuedAt (e.g. 2026-08-19T14:37:32.907Z). Defaults to now.",
             "schema": {
               "type": "string"
             }
@@ -678,13 +678,12 @@
             "required": false,
             "in": "query",
             "schema": {
-              "type": "integer",
-              "default": 10000
+              "type": "integer"
             }
           },
           {
             "name": "filter",
-            "required": true,
+            "required": false,
             "in": "query",
             "description": "pg_featureserv filter expression, e.g. \"countryCodeIso3='ETH' AND adminLevel=0\"",
             "schema": {
