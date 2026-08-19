@@ -49,6 +49,9 @@ def aggregate_population_exposed(
         value = stat.get("sum")
         population[pcode] = round(value, 0) if value is not None else 0.0
 
+    # drop records if exposed population is zero, to avoid sending empty values to the API
+    population = {k: v for k, v in population.items() if v > 0}
+
     return population
 
 

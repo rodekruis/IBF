@@ -55,9 +55,12 @@ def pad_bounding_box(bounds: BoundingBox, buffer_km: float) -> BoundingBox:
     )
 
     latitude_buffer_degrees = buffer_km / km_per_degree_latitude
-    longitude_buffer_degrees = (
-        buffer_km / km_per_degree_longitude if km_per_degree_longitude > 0 else 180.0
-    )
+    if km_per_degree_longitude > 1e-6:
+        longitude_buffer_degrees = buffer_km / km_per_degree_longitude
+    else:
+        # Near the poles a degree of longitude shrinks toward zero, so the division above
+        # would explode; pad all longitudes instead.
+        longitude_buffer_degrees = 180.0
 
     return (
         min_lon - longitude_buffer_degrees,

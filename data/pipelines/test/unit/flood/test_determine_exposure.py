@@ -125,7 +125,7 @@ def test_compute_population_exposed_returns_zero_for_empty_extent():
         admin_areas=_build_admin_areas(),
     )
 
-    assert population == {"PC001": 0.0}
+    assert population == {}
 
 
 def test_clip_flood_extent_to_admin_areas_clips_to_geometry():
