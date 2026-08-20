@@ -1,7 +1,7 @@
 # Pipeline cloud deployment plan
 
 > Work-in-progress plan for moving NRW Python pipeline jobs from local/scheduled runs to Azure Batch.
-> Last updated: 2026-08-13
+> Last updated: 2026-08-20
 
 ## Overview
 
@@ -77,24 +77,29 @@ These are the steps that get run to deploy and redeploy as the code changes. Run
 
 1. **`build-and-push-image.sh`** — Wraps `az acr login`, `docker build` (context `data/`, from `data/Dockerfile`), and `docker push` to `nrwdockerregistry.azurecr.io/pipelines:latest`. Rerun on every image change. Replaced by CI/CD later.
 2. **`main.bicep` + `parameters.dev.json` + `deploy.sh`** — Bicep deploys the Function App (Consumption plan, bound to the dedicated `nrw-batch-scheduler` user-assigned managed identity) and the `TaskFailEvent` Azure Monitor alert (action group emailing `ehill@redcross.nl`). The template creates **no** role assignments — the UAMI's RBAC is granted once during setup — so `deploy.sh` only needs Contributor on the resource group. `deploy.sh` wraps the `az deployment group create` command already shown below, then captures the `functionAppName` output for `publish-function.sh`. Bicep does **not** recreate the Batch account or pool. Rerun on every infra change. **Application Insights and Function/Batch diagnostic settings are intentionally skipped for the prototype** — they are deferred until a log sink (Log Analytics / ADX) is chosen (see [Logging (post-prototype)](#logging-post-prototype)).
-3. **`function/` (Python Timer Trigger) + `publish-function.sh`** — The daily scheduler; rerun on every scheduler code change:
-   - `function_app.py` — Timer trigger at 12:00 UTC; loops over hazard configs and creates one Batch job per hazard.
-   - `batch_client.py` — Helper that builds the container task (command, env vars, `maxTaskRetryCount = 0`) and submits it to the Batch account. Authenticates to the Batch data plane over Entra ID using the Function's dedicated user-assigned managed identity `nrw-batch-scheduler` (the account is AAD-only, shared-key auth is disabled). That identity is granted the **Azure Batch Job Submitter** role once during [one-time setup](#one-time-setup), so no account key is stored anywhere.
-   - `host.json`, `requirements.txt` — Standard Azure Functions Python project files.
+3. **`function/` (Python Timer Trigger) + `publish-function.sh`** (implemented 2026-08-20) — The daily scheduler; rerun on every scheduler code change:
+   - `function_app.py` — Timer trigger at 12:00 UTC (6-field NCRONTAB `0 0 12 * * *`); loops over the in-code `HAZARD_CONFIGS` list and creates one Batch job per hazard. Only **floods** is scheduled for the prototype; drought is a dummy pipeline and tropicalCyclone is not ready yet.
+   - `batch_client.py` — Helper that builds the container task (command `pipeline --config pipelines/infra/configs/<hazard>.yaml`, container image `nrwdockerregistry.azurecr.io/pipelines:latest`, env vars, `maxTaskRetryCount = 0`, 10h `maxWallClockTime`) and submits it to the Batch account. Job termination uses `on_all_tasks_complete = 'terminatejob'` so the pool autoscale scales nodes back to 0. Authenticates to the Batch data plane over Entra ID: `ManagedIdentityCredential(client_id=os.environ["AZURE_CLIENT_ID"])` when deployed (the `AZURE_CLIENT_ID` app setting is set by `main.bicep` to the UAMI client ID), `DefaultAzureCredential` locally. Job IDs are `nrw-<hazard>-<YYYYMMDD>-<HHMM>`.
+   - `host.json`, `requirements.txt` (`azure-functions`, `azure-batch`, `azure-identity`, `requests`) — Standard Azure Functions Python v2 project files.
+   - `create-local-settings.sh` — Generates the gitignored `function/local.settings.json` for local runs, reading the secret values from `data/.env`.
    - `publish-function.sh` — Publishes the function code to the deployed Function App.
 
-   The `function/` folder does not exist yet. Implementation notes for when it is built:
+   Local tooling prerequisites (macOS):
 
-   - **Project layout**: `function/function_app.py`, `function/batch_client.py`, `function/host.json`, `function/requirements.txt`. Use the Python v2 programming model (decorator-based `@app.timer_trigger`).
-   - **`requirements.txt`**: `azure-functions`, `azure-batch` (data-plane SDK), and `azure-identity` (for the managed-identity token).
-   - **Batch authentication**: build the client with `azure-identity` — `ManagedIdentityCredential(client_id=os.environ["AZURE_CLIENT_ID"])` in the Function App (the `AZURE_CLIENT_ID` app setting is set by `main.bicep` to the UAMI client ID), or `DefaultAzureCredential` locally — wrapped so `azure-batch` can use it (Entra token for resource `https://batch.core.windows.net/.default`). Do **not** use `SharedKeyCredentials`; the `nrwbatchpoc` account is AAD-only and account keys are disabled. The `Azure Batch Job Submitter` role is granted to the UAMI during one-time setup.
-   - **Config source**: read `BATCH_ACCOUNT_URL` and `BATCH_POOL_ID` from app settings. Read the per-hazard configs (config path, hazard name) from a small in-code list matching the YAML configs baked into the image (`pipelines/infra/configs/*.yaml`).
-   - **Per hazard**: create one Batch job (unique ID `nrw-<hazard>-<YYYYMMDD>-<HHMM>`), then add one container task whose command is `pipeline --config pipelines/infra/configs/<hazard>.yaml`, with `maxTaskRetryCount = 0` and the environment variables from [Pipeline environment variables](#pipeline-environment-variables). Secret values are supplied via Key Vault references already present as Function app settings, so the task env is populated from `os.environ` rather than a direct Key Vault call.
-   - **Container task settings**: the task must run inside the pipeline container, so set the task's `container_settings` to image `nrwdockerregistry.azurecr.io/pipelines:latest` (the pool already prefetches it and has ACR pull configured via the pool UAMI). No image credentials are set on the task — image pull uses the pool identity.
-   - **Job termination / autoscale**: set the job's `on_all_tasks_complete = 'terminatejob'` so the job ends once its single task finishes; the pool autoscale (`$NodeDeallocationOption = taskcompletion`) then scales nodes back to 0. Optionally set the task `constraints.max_wall_clock_time` to 10h to match the documented task timeout.
-   - **Timer schedule**: the trigger uses a 6-field NCRONTAB expression `0 0 12 * * *` (12:00 UTC). Azure Functions timers evaluate in UTC unless `WEBSITE_TIME_ZONE` is set, so no extra config is needed.
-   - **Tooling / prerequisites for `publish-function.sh`**: install **Azure Functions Core Tools v4** (`func`) and Python 3.11 (matching the app runtime), and be logged in with `az`. The script runs `func azure functionapp publish nrw-batch-scheduler --python` against the app name captured in `.function-app-name`.
-   - **Local testing**: use a `function/local.settings.json` (gitignored) mirroring the deployed app settings, and `DefaultAzureCredential` so `az login` supplies the token locally. Add `function/local.settings.json` to `.gitignore`.
+   ```bash
+   brew tap azure/functions
+   brew install azure-functions-core-tools@4
+   brew install python@3.11  # matches the deployed runtime
+   ```
+
+   **Local testing**: run `./create-local-settings.sh` to generate `function/local.settings.json` from `data/.env`, then `func start` inside `function/` (requires Azurite or a real storage connection for `AzureWebJobsStorage`). Local job submission uses `DefaultAzureCredential` with the operator's `az login` identity, so **that operator needs `Azure Batch Job Submitter` on `nrwbatchpoc`** (the scheduler UAMI's grants do not apply to a human running locally). Grant it once (requires Owner / User Access Administrator):
+
+   ```bash
+   az role assignment create \
+     --assignee <operator-object-id-or-upn> \
+     --role "Azure Batch Job Submitter" \
+     --scope "/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Batch/batchAccounts/nrwbatchpoc"
+   ```
 
 ### Helper jobs
 

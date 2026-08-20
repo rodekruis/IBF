@@ -64,6 +64,11 @@ dev = [
 
 [tool.deptry]
 known_first_party = ["pipelines", "data_management", "shared"]
+# deploy/function is a standalone Azure Functions project with its own
+# requirements.txt; it is not part of the uv-managed data package. The other
+# entries are deptry's defaults, repeated because setting `exclude` overrides
+# them (deptry has no extend-exclude option).
+exclude = ["^deploy/", "^\\.venv", "^\\.git", "^\\.direnv", "^\\.eggs", "^\\.hg", "^\\.mypy_cache", "^\\.nox", "^\\.pants\\.d", "^\\.svn", "^\\.tox", "^__pypackages__", "^_build", "^buck-out", "^build", "^dist", "^node_modules", "^venv"]
 per_rule_ignores = { DEP002 = ["cfgrib", "netCDF4", "scipy", "rasterstats", "shapely", "xarray"], DEP004 = ["pytest"] }
 
 [tool.ruff.lint]
