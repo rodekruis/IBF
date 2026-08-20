@@ -11,6 +11,7 @@ class LogTag(StrEnum):
     JOB_TIMER = "job_timer"
     INFRA = "infra"
     FLOOD_LOGIC = "flood_logic"
+    TROPICAL_CYCLONE_LOGIC = "tropical_cyclone_logic"
 
 
 def log_with_tag(
