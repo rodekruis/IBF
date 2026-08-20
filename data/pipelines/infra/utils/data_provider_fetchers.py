@@ -18,6 +18,7 @@ from pipelines.infra.data_types.enums import LayerName
 from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
 from pipelines.infra.data_types.gefs_product_provider import (
     download_gefs_product_from_seed_repo,
+    GefsProduct,
 )
 from pipelines.infra.data_types.glofas_discharge_provider import (
     download_glofas_discharge_from_ftp,
@@ -101,13 +102,21 @@ def load_data_container(
 
         # --- Tropical cyclone sources ---
         case DataSource.GEFS_WIND_SEED_REPO_ALERT:
-            return _load_gefs_product_seed_repo(container, "gefs-wind", "alert")
+            return _load_gefs_product_seed_repo(
+                data_config, container, GefsProduct.WIND, "alert"
+            )
         case DataSource.GEFS_WIND_SEED_REPO_NO_ALERT:
-            return _load_gefs_product_seed_repo(container, "gefs-wind", "no-alert")
+            return _load_gefs_product_seed_repo(
+                data_config, container, GefsProduct.WIND, "no-alert"
+            )
         case DataSource.GEFS_TRACK_SEED_REPO_ALERT:
-            return _load_gefs_product_seed_repo(container, "gefs-track", "alert")
+            return _load_gefs_product_seed_repo(
+                data_config, container, GefsProduct.TRACK, "alert"
+            )
         case DataSource.GEFS_TRACK_SEED_REPO_NO_ALERT:
-            return _load_gefs_product_seed_repo(container, "gefs-track", "no-alert")
+            return _load_gefs_product_seed_repo(
+                data_config, container, GefsProduct.TRACK, "no-alert"
+            )
 
         # --- Fallback ---
         case DataSource.TODO_DATA_SOURCE:
@@ -317,10 +326,15 @@ def _load_ecmwf_forecast(config: DataSourceConfig, container: LoadedDataSource):
 
 
 def _load_gefs_product_seed_repo(
-    container: LoadedDataSource, product: str, variant: str
+    config: DataSourceConfig,
+    container: LoadedDataSource,
+    product: GefsProduct,
+    variant: str,
 ) -> None:
     container.data_type = DataType.PATH_LIST
-    container.data = download_gefs_product_from_seed_repo(product, variant)
+    container.data = download_gefs_product_from_seed_repo(
+        config.country_code_iso_3, product, variant
+    )
 
 
 # =============================================================================
