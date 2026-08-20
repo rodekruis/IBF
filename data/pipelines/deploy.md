@@ -185,15 +185,15 @@ $NodeDeallocationOption = taskcompletion;
 ## Job scheduling
 
 - **Daily schedule**: A **Python** Azure Function (Timer Trigger, **Consumption plan**) fires daily at **12:00 UTC** and creates one Batch job per hazard. Two nodes each running one job was cheaper than one larger node running all jobs concurrently, so the plan is to run one job per node. This may be changed later.
-- **Hazard configs**: 3 planned for the prototype (drought, floods, cyclones). More will be added over time. Drought is currently a dummy pipeline — its real data source will be handled later.
-- **Task retries**: Retrying is handled inside the pipeline Python code (e.g. GloFAS FTP downloads and forecast-date resolution already retry with backoff). The Azure Function creating the Batch job should set `maxTaskRetryCount = 0`, so failures surface immediately and are not hidden by Batch-level retries.
+- **Hazard configs**: 3 YAML configs exist under `pipelines/infra/configs/` (drought, floods, tropicalCyclone), but the scheduler's `HAZARD_CONFIGS` list in `function/function_app.py` currently schedules **floods only**. Drought is currently a dummy pipeline — its real data source will be handled later. More hazards will be added over time by extending `HAZARD_CONFIGS`.
+- **Task retries**: Retrying is handled inside the pipeline Python code (e.g. GloFAS FTP downloads and forecast-date resolution already retry with backoff). The Azure Function creating the Batch job sets `maxTaskRetryCount = 0`, so failures surface immediately and are not hidden by Batch-level retries.
 - **Job naming**: Jobs are named with a deterministic prefix plus the hazard and a timestamp including day, hour, and minute (e.g. `nrw-floods-20260805-1203`). Because the backend already deduplicates submitted forecasts, rerunning the same day is safe from a data standpoint, but the Batch job ID must still be unique within the account.
 - **Manual reruns**: Azure CLI or Azure Portal → Batch account → Jobs → Add.
   - No custom React page for MVP.
   - A rerun via the Azure Function with parameter overrides (e.g. `countries`) will be added later. For now, rerunning through the CLI/portal requires manually supplying all task environment variables, including secret values such as `IBF_PIPELINE_API_KEY`, `GLOFAS_FTP_USER`, and `GLOFAS_FTP_PASSWORD`, or using another method such as a script that reads them from Key Vault.
-- The Azure Function is a **Bicep-managed Function App** deployed from this repo (code will live under `data/deploy/`).
+- The Azure Function is a **Bicep-managed Function App** deployed from this repo; the code lives in [`data/deploy/function/`](../deploy/function/) and is published with `publish-function.sh`.
 - The Azure Function runs under a managed identity and can fetch secrets (e.g., GloFAS FTP credentials) from **Azure Key Vault**, injecting them as environment variables into task containers.
-- **Container task command** — The Batch task command mirrors local invocation, e.g.: `pipeline --config pipelines/infra/configs/floods.yaml`. The `pipeline` entry point is declared in `pyproject.toml`; the YAML config under `pipelines/infra/configs/` selects the hazard and countries. The Function will schedule one job per config/hazard.
+- **Container task command** — The Batch task command mirrors local invocation: `pipeline --config pipelines/infra/configs/floods.yaml`. The `pipeline` entry point is declared in `pyproject.toml`; the YAML config under `pipelines/infra/configs/` selects the hazard and countries. The Function schedules one job per entry in its `HAZARD_CONFIGS` list.
 
 ## Storage
 
