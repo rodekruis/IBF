@@ -79,42 +79,30 @@ These are the steps that get run to deploy and redeploy as the code changes. Run
 2. **`main.bicep` + `parameters.dev.json` + `deploy.sh`** — Bicep deploys the Function App (Consumption plan, bound to the dedicated `nrw-batch-scheduler` user-assigned managed identity) and the `TaskFailEvent` Azure Monitor alert (action group emailing `ehill@redcross.nl`). The template creates **no** role assignments — the UAMI's RBAC is granted once during setup — so `deploy.sh` only needs Contributor on the resource group. `deploy.sh` wraps the `az deployment group create` command already shown below, then captures the `functionAppName` output for `publish-function.sh`. Bicep does **not** recreate the Batch account or pool. Rerun on every infra change. **Application Insights and Function/Batch diagnostic settings are intentionally skipped for the prototype** — they are deferred until a log sink (Log Analytics / ADX) is chosen (see [Logging (post-prototype)](#logging-post-prototype)).
 3. **`function/` (Python Timer Trigger) + `publish-function.sh`** (implemented 2026-08-20) — The daily scheduler; rerun on every scheduler code change:
    - `function_app.py` — Timer trigger at 12:00 UTC (6-field NCRONTAB `0 0 12 * * *`); loops over the in-code `HAZARD_CONFIGS` list and creates one Batch job per hazard. Only **floods** is scheduled for the prototype; drought is a dummy pipeline and tropicalCyclone is not ready yet.
-   - `batch_client.py` — Helper that builds the container task (command `pipeline --config pipelines/infra/configs/<hazard>.yaml`, container image `nrwdockerregistry.azurecr.io/pipelines:latest`, env vars, `maxTaskRetryCount = 0`, 10h `maxWallClockTime`) and submits it to the Batch account. Job termination uses `on_all_tasks_complete = 'terminatejob'` so the pool autoscale scales nodes back to 0. Authenticates to the Batch data plane over Entra ID: `ManagedIdentityCredential(client_id=os.environ["AZURE_CLIENT_ID"])` when deployed (the `AZURE_CLIENT_ID` app setting is set by `main.bicep` to the UAMI client ID), `DefaultAzureCredential` locally. Job IDs are `nrw-<hazard>-<YYYYMMDD>-<HHMM>`.
-   - `host.json`, `requirements.txt` (`azure-functions`, `azure-batch`, `azure-identity`, `requests`) — Standard Azure Functions Python v2 project files.
+   - `batch_client.py` — Helper that builds the container task (command `pipeline --config pipelines/infra/configs/<hazard>.yaml`, container image `nrwdockerregistry.azurecr.io/pipelines:latest`, env vars, `maxTaskRetryCount = 0`, 10h `maxWallClockTime`) and submits it to the Batch account. Job termination uses `all_tasks_complete_mode = 'terminatejob'` so the pool autoscale scales nodes back to 0. Authenticates to the Batch data plane over Entra ID using the azure-batch 15.x azure-core SDK (`BatchClient` takes a TokenCredential directly): `ManagedIdentityCredential(client_id=os.environ["AZURE_CLIENT_ID"])` when deployed (the `AZURE_CLIENT_ID` app setting is set by `main.bicep` to the UAMI client ID), `DefaultAzureCredential` locally. Job IDs are `nrw-<hazard>-<YYYYMMDD>-<HHMM>`.
+   - `host.json`, `requirements.txt` (`azure-functions`, `azure-batch>=15`, `azure-identity`) — Standard Azure Functions Python v2 project files. `azure-batch` is pinned to the 15.x azure-core generation: 14.x (msrest) is legacy and its generated models emit warnings on Python 3.14, while 15.x removed the 14.x `BatchServiceClient` API.
    - `create-local-settings.sh` — Generates the gitignored `function/local.settings.json` for local runs, reading the secret values from `data/.env`.
    - `publish-function.sh` — Publishes the function code to the deployed Function App.
 
-   Local tooling prerequisites (macOS):
-
-   ```bash
-   brew tap azure/functions
-   brew install azure-functions-core-tools@4
-   brew install python@3.11  # matches the deployed runtime
-   ```
-
-   **Local testing**: run `./create-local-settings.sh` to generate `function/local.settings.json` from `data/.env`, then `func start` inside `function/` (requires Azurite or a real storage connection for `AzureWebJobsStorage`). Local job submission uses `DefaultAzureCredential` with the operator's `az login` identity, so **that operator needs `Azure Batch Job Submitter` on `nrwbatchpoc`** (the scheduler UAMI's grants do not apply to a human running locally). Grant it once (requires Owner / User Access Administrator):
+   **Local testing**: run `./create-local-settings.sh` to generate `function/local.settings.json` from `data/.env`, then `func start` inside `function/` (requires Azurite or a real storage connection for `AzureWebJobsStorage`). Local job submission uses `DefaultAzureCredential` with the operator's `az login` identity, so **that operator needs `Azure Batch Job Submitter` on `nrwbatchpoc`** (the scheduler UAMI's grants do not apply to a human running locally). Grant it once (requires Owner / User Access Administrator). Use `--assignee-object-id` with `--assignee-principal-type User` when passing an object ID (`--assignee` with a GUID is rejected by current Azure CLI versions); `--assignee <upn>` also works but requires the grantor to have Entra ID read permission to resolve it:
 
    ```bash
    az role assignment create \
-     --assignee <operator-object-id-or-upn> \
+     --assignee-object-id <operator-object-id> \
+     --assignee-principal-type User \
      --role "Azure Batch Job Submitter" \
      --scope "/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Batch/batchAccounts/nrwbatchpoc"
    ```
 
 ### Helper jobs
 
-| Group       | Job / script   | Purpose                                                   |
-| ----------- | -------------- | --------------------------------------------------------- |
-| Helper jobs | `rerun-job.sh` | Manually rerun a Batch job (reads secrets from Key Vault) |
+| Group       | Job / script                             | Purpose                                                   |
+| ----------- | ---------------------------------------- | --------------------------------------------------------- |
+| Helper jobs | `rerun-job.sh` (`function/rerun_job.py`) | Manually rerun a Batch job (reads secrets from Key Vault) |
 
 Run on demand, not part of the normal deploy flow.
 
-- **`rerun-job.sh`** — Reads the three secrets from Key Vault and submits a single Batch job for a chosen hazard/config, so manual reruns don't require pasting secret values by hand. Optional for MVP; a Function-based rerun with parameter overrides will replace it later.
-
-  Notes for when it is built:
-  - **Auth parity**: like the Function, it must authenticate to Batch over Entra ID (the account is AAD-only — no shared key). It runs as the operator's own `az login` identity, so **that operator needs `Azure Batch Job Submitter` on `nrwbatchpoc` and `Key Vault Secrets User` on `nrw-batch-poc`** (the scheduler UAMI's grants do not apply to a human running the CLI).
-  - **Secret handling**: read the secrets with `az keyvault secret show` and pass them as task environment variables; never echo them to stdout or commit them.
-  - **Reuse**: prefer sharing the job/task construction with `function/batch_client.py` (e.g. import it or mirror its container-task definition) so reruns stay identical to scheduled runs.
+- **`rerun-job.sh` + `function/rerun_job.py`** (implemented 2026-08-20) — Submits a single Batch job for a chosen hazard: `./rerun-job.sh <hazard-type> [config-path]` (config path defaults to `pipelines/infra/configs/<hazard-type>.yaml`). The Python entry point imports `function/batch_client.py`, so the job/task construction (container image, command, env vars, `maxTaskRetryCount = 0`, 10h `maxWallClockTime`) is identical to the scheduled runs; the shell script only injects environment variables. Secrets are read with `az keyvault secret show` and passed as task environment variables — never echoed or taken from the command line. `IBF_API_URL` is read from `data/.env`; the remaining values mirror the Function App settings. Auth is the operator's own `az login` identity over Entra ID (the account is AAD-only), so **that operator needs `Azure Batch Job Submitter` on `nrwbatchpoc` and `Key Vault Secrets User` on `nrw-batch-poc`** (the scheduler UAMI's grants do not apply to a human running the CLI); the grant command in [Deploy to Azure](#deploy-to-azure) covers the Batch half. A Function-based rerun with parameter overrides will replace this later.
 
 ## Compute
 

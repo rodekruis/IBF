@@ -1,4 +1,3 @@
 azure-functions
-azure-batch
+azure-batch>=15
 azure-identity
-requests

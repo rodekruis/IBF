@@ -3,14 +3,15 @@
 # set-secrets.sh — Store pipeline secrets in the nrw-batch-poc Key Vault.
 #
 # One-time setup script. Rerun only on secret rotation.
-# Values are read from data/.env (never committed) and pushed to Key Vault.
-# The scheduling Azure Function reads these secrets at job-creation time and
-# injects them as Batch task environment variables.
+# Values are read from the local data/.env file and pushed to Key Vault for these vars
+#    "IBF_PIPELINE_API_KEY"
+#    "GLOFAS_FTP_USER"
+#    "GLOFAS_FTP_PASSWORD"
 #
 # Prerequisites:
 #   - Azure CLI logged in (`az login`) with an identity that has the
 #     "Key Vault Secrets Officer" role on the nrw-batch-poc vault.
-#   - data/.env populated with IBF_PIPELINE_API_KEY, GLOFAS_FTP_USER and
+#   - In data/.env populated with IBF_PIPELINE_API_KEY, GLOFAS_FTP_USER and
 #     GLOFAS_FTP_PASSWORD.
 #
 # Usage:
