@@ -161,7 +161,8 @@ export class SeedController {
     name: 'issuedAt',
     required: false,
     type: String,
-    description: `ISO8601 date for the forecast issuedAt (e.g. ${new Date().toISOString()}). Defaults to now.`,
+    description:
+      'ISO8601 date for the forecast issuedAt (e.g. 2026-08-19T14:37:32.907Z). Defaults to now.',
   })
   public async mockEvents(
     @Body() body: SecretDto,
