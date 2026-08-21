@@ -32,8 +32,10 @@ fi
 echo "Logging in to ACR '${ACR_NAME}'."
 az acr login --name "${ACR_NAME}" --output none
 
+# Batch nodes are amd64; pin the platform so arm64 build hosts (e.g. Apple Silicon) still produce a runnable image.
 echo "Building image '${IMAGE}' from '${DOCKERFILE}' (context '${BUILD_CONTEXT}')."
 docker build \
+  --platform linux/amd64 \
   --file "${DOCKERFILE}" \
   --tag "${IMAGE}" \
   "${BUILD_CONTEXT}"
