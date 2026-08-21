@@ -295,7 +295,7 @@
             "name": "issuedAt",
             "required": false,
             "in": "query",
-            "description": "ISO8601 date for the forecast issuedAt (e.g. 2026-08-20T10:54:50.582Z). Defaults to now.",
+            "description": "ISO8601 date for the forecast issuedAt (e.g. 2026-08-21T05:28:32.535Z). Defaults to now.",
             "schema": {
               "type": "string"
             }

@@ -1,8 +1,5 @@
 # Pipeline cloud deployment plan
 
-> Work-in-progress plan for moving NRW Python pipeline jobs from local/scheduled runs to Azure Batch.
-> Last updated: 2026-08-20
-
 ## Overview
 
 Run the existing [data/Dockerfile](../../Dockerfile) based pipeline as container tasks on Azure Batch.
@@ -76,7 +73,7 @@ These run once on first setup (and only again on rotation/policy changes).
 These are the steps that get run to deploy and redeploy as the code changes. Run in order.
 
 1. **`build-and-push-image.sh`** — Wraps `az acr login`, `docker build` (context `data/`, from `data/Dockerfile`), and `docker push` to `nrwdockerregistry.azurecr.io/pipelines:latest`. Rerun on every image change. Replaced by CI/CD later.
-2. **`main.bicep` + `parameters.dev.json` + `deploy.sh`** — Bicep deploys the Function App (Consumption plan, bound to the dedicated `nrw-batch-scheduler` user-assigned managed identity) and the `TaskFailEvent` Azure Monitor alert (action group emailing `ehill@redcross.nl`). The template creates **no** role assignments — the UAMI's RBAC is granted once during setup — so `deploy.sh` only needs Contributor on the resource group. `deploy.sh` wraps the `az deployment group create` command already shown below, then captures the `functionAppName` output for `publish-function.sh`. Bicep does **not** recreate the Batch account or pool. Rerun on every infra change. **Application Insights and Function/Batch diagnostic settings are intentionally skipped for the prototype** — they are deferred until a log sink (Log Analytics / ADX) is chosen (see [Logging (post-prototype)](#logging-post-prototype)).
+2. **`main.bicep` + `parameters.dev.json` + `deploy.sh`** — Bicep deploys the Function App (Consumption plan, bound to the dedicated `nrw-batch-scheduler` user-assigned managed identity) and the `TaskFailEvent` Azure Monitor alert (action group emailing `ehill@redcross.nl`). The template creates **no** role assignments — the UAMI's RBAC is granted once during setup — so `deploy.sh` only needs Contributor on the resource group. `deploy.sh` wraps the `az deployment group create` command already shown below, then captures the `functionAppName` output for `publish-function.sh`. Bicep does **not** recreate the Batch account or pool. Rerun on every infra change. The template also deploys a Log Analytics workspace (`nrw-batch-scheduler-logs`, 90-day retention) and a workspace-based **Application Insights** component wired to the Function App via the `APPLICATIONINSIGHTS_CONNECTION_STRING` app setting (added 2026-08-20) — Batch diagnostic settings remain deferred (see [Logging (post-prototype)](#logging-post-prototype)).
 3. **`function/` (Python Timer Trigger) + `publish-function.sh`** (implemented 2026-08-20) — The daily scheduler; rerun on every scheduler code change:
    - `function_app.py` — Timer trigger at 12:00 UTC (6-field NCRONTAB `0 0 12 * * *`); loops over the in-code `HAZARD_CONFIGS` list and creates one Batch job per hazard. Only **floods** is scheduled for the prototype; drought is a dummy pipeline and tropicalCyclone is not ready yet.
    - `batch_client.py` — Helper that builds the container task (command `pipeline --config pipelines/infra/configs/<hazard>.yaml`, container image `nrwdockerregistry.azurecr.io/pipelines:latest`, env vars, `maxTaskRetryCount = 0`, 10h `maxWallClockTime`) and submits it to the Batch account. Job termination uses `all_tasks_complete_mode = 'terminatejob'` so the pool autoscale scales nodes back to 0. Authenticates to the Batch data plane over Entra ID using the azure-batch 15.x azure-core SDK (`BatchClient` takes a TokenCredential directly): `ManagedIdentityCredential(client_id=os.environ["AZURE_CLIENT_ID"])` when deployed (the `AZURE_CLIENT_ID` app setting is set by `main.bicep` to the UAMI client ID), `DefaultAzureCredential` locally. Job IDs are `nrw-<hazard>-<YYYYMMDD>-<HHMM>`.
@@ -148,27 +145,7 @@ Provisioning a Batch account through the Azure Portal has a few non-obvious requ
 
 #### Autoscale formula
 
-This is a code sample from Klaas.
-The pool uses the following autoscale formula (max 2 nodes, scale down after task completion):
-
-```text
-// In this example, the pool size is adjusted based on the number of tasks in the queue.
-// Note that both comments and line breaks are acceptable in formula strings.
-
-// Get pending tasks for the past 15 minutes.
-$samples = $ActiveTasks.GetSamplePercent(TimeInterval_Minute * 15);
-// If we have fewer than 70 percent data points, use the last sample point,
-// otherwise use the maximum of last sample point and the history average.
-$tasks = $samples < 70 ? max(0, $ActiveTasks.GetSample(1)) :
-    max($ActiveTasks.GetSample(1), avg($ActiveTasks.GetSample(TimeInterval_Minute * 15)));
-// If number of pending tasks is not 0, set targetVM to pending tasks, otherwise 0.
-$targetVMs = $tasks > 0 ? $tasks : 0;
-// The pool size is capped at 2.
-cappedPoolSize = 2;
-$TargetDedicatedNodes = max(0, min($targetVMs, cappedPoolSize));
-// Keep nodes active only until tasks finish.
-$NodeDeallocationOption = taskcompletion;
-```
+This was suggested by Klaas and is in `pool.json`. It should be evaluated when moving from POC to MVP.
 
 ## Job scheduling
 
@@ -209,7 +186,7 @@ NOAA data is not yet integrated into the pipeline; retention rules for NOAA will
 - **CI/CD image builds**: Set up a GitHub Actions workflow to build and push the Docker image to ACR on merge to main (tag by commit SHA or date). Until then, the image is built and pushed locally.
 - Confirm Azure Batch quota and VM family limits in target subscription for `Standard_E2as_v4`.
 - Measure actual peak memory during a full run to validate the `Standard_E2as_v4` choice.
-- **ADX cluster**: Set up ADX for centralized logging (deferred from prototype due to ~$150/month minimum cost).
+- **ADX cluster**: Set up ADX for centralized logging (deferred from prototype due to ~$100/month minimum cost).
 - We need to set up data input for a test env for this so we can have predictable tests. This may be on the country level, or maybe we need to cache an alert generating global glofas file somewhere (such as in a new folder in blob storage).
 
 ### Handle after MVP or as need arises
@@ -223,7 +200,7 @@ NOAA data is not yet integrated into the pipeline; retention rules for NOAA will
 
 ## Logging (post-prototype)
 
-ADX is deferred until after the prototype due to its minimum cost (~$150/month). For the prototype, rely on Azure Batch's built-in stdout/stderr logs (viewable in Portal and Batch Explorer).
+ADX is deferred until after the prototype due to its minimum cost (maybe about $100/month). For the prototype, the scheduler Function App is connected to **Application Insights** (workspace-based, backed by the `nrw-batch-scheduler-logs` Log Analytics workspace with 90-day retention, deployed by `main.bicep` since 2026-08-20): this gives portal invocation history, failures, Live Metrics, and KQL queries over the function's `logging` traces. For pipeline run output, rely on Azure Batch's built-in stdout/stderr logs (viewable in Portal and Batch Explorer).
 
 Target state after prototype:
 

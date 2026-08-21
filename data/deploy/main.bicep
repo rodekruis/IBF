@@ -12,10 +12,11 @@
 //     template creates no role assignments and the deploying principal does not
 //     need RBAC-write rights.
 //   - Action group + TaskFailEvent metric alert on the Batch account.
+//   - Log Analytics workspace + workspace-based Application Insights connected
+//     to the Function App (invocation history, traces, KQL via the Logs blade).
 //
-// Application Insights is intentionally NOT deployed for the prototype (see
-// data/pipelines/deploy.md). Diagnostic settings are likewise deferred until a
-// log sink (Log Analytics / ADX) is chosen post-prototype.
+// Batch diagnostic settings remain deferred until the aggregate log strategy
+// (ADX) is decided post-prototype (see data/pipelines/deploy.md).
 
 @description('Location for all resources.')
 param location string = resourceGroup().location
@@ -81,6 +82,32 @@ var apiKeyReference = '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=
 var glofasUserReference = '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=glofas-ftp-user)'
 var glofasPasswordReference = '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=glofas-ftp-password)'
 
+// Pay-as-you-go ingestion with a 5 GB/month free grant, so the scheduler's log
+// volume costs effectively $0. Retention matches the post-prototype target
+// (90 days; the Function logs contain no PII).
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
+  name: '${functionAppName}-logs'
+  location: location
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+    retentionInDays: 90
+  }
+}
+
+// Classic (workspace-less) Application Insights is retired, so the component
+// must be workspace-based.
+resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: functionAppName
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logAnalyticsWorkspace.id
+  }
+}
+
 resource hostingPlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: '${functionAppName}-plan'
   location: location
@@ -117,6 +144,14 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'AzureWebJobsStorage'
           value: storageConnectionString
+        }
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: applicationInsights.properties.ConnectionString
+        }
+        {
+          name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
+          value: '~3'
         }
         {
           name: 'FUNCTIONS_EXTENSION_VERSION'
