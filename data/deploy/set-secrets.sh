@@ -48,6 +48,9 @@ read_env_var() {
     return 1
   fi
   local value="${line#*=}"
+  # Strip CR first: a CRLF .env leaves '\r' after the closing quote, which
+  # would otherwise survive quote stripping and poison the stored secret.
+  value="${value%$'\r'}"
   value="${value%\"}"
   value="${value#\"}"
   value="${value%\'}"

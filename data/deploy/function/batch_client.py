@@ -21,6 +21,7 @@ from azure.batch.models import (
     BatchTaskConstraints,
     BatchTaskContainerSettings,
     BatchTaskCreateOptions,
+    ContainerWorkingDirectory,
     EnvironmentSetting,
 )
 from azure.core.credentials import TokenCredential
@@ -93,7 +94,12 @@ def build_container_task(hazard_config: HazardConfig) -> BatchTaskCreateOptions:
     return BatchTaskCreateOptions(
         id=f"{hazard_config.hazard_type}-task",
         command_line=f"pipeline --config {hazard_config.config_path}",
-        container_settings=BatchTaskContainerSettings(image_name=CONTAINER_IMAGE),
+        container_settings=BatchTaskContainerSettings(
+            image_name=CONTAINER_IMAGE,
+            # Use the image WORKDIR (/home/pipelines/app) so the relative config
+            # path resolves; Batch otherwise defaults to the task working directory.
+            working_directory=ContainerWorkingDirectory.CONTAINER_IMAGE_DEFAULT,
+        ),
         environment_settings=task_environment_settings(),
         constraints=BatchTaskConstraints(
             max_wall_clock_time=TASK_MAX_WALL_CLOCK_TIME,
