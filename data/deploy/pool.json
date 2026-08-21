@@ -37,7 +37,7 @@
         "identityReference": {
           "resourceId": "/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourcegroups/nrw-batch-poc/providers/Microsoft.ManagedIdentity/userAssignedIdentities/nrw-batch-poc"
         },
-        "blobfuseOptions": ""
+        "blobfuseOptions": "-o allow_other -o uid=1000 -o gid=1000"
       }
     }
   ]
