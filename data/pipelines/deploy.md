@@ -200,7 +200,11 @@ NOAA data is not yet integrated into the pipeline; retention rules for NOAA will
 
 ## Logging (post-prototype)
 
-ADX is deferred until after the prototype due to its minimum cost (maybe about $100/month). For the prototype, the scheduler Function App is connected to **Application Insights** (workspace-based, backed by the `nrw-batch-scheduler-logs` Log Analytics workspace with 90-day retention, deployed by `main.bicep` since 2026-08-20): this gives portal invocation history, failures, Live Metrics, and KQL queries over the function's `logging` traces. For pipeline run output, rely on Azure Batch's built-in stdout/stderr logs (viewable in Portal and Batch Explorer).
+ADX is deferred until after the prototype due to its minimum cost (maybe about $100/month). For the prototype, the scheduler Function App is connected to **Application Insights** (workspace-based, backed by the `nrw-batch-scheduler-logs` Log Analytics workspace with 90-day retention, deployed by `main.bicep` since 2026-08-20): this gives portal invocation history, failures, Live Metrics, and KQL queries over the function's `logging` traces.
+
+**Pipeline task logs** (added 2026-08-21): the pipeline entrypoint (`run_forecasts.py`) attaches `azure-monitor-opentelemetry`'s `configure_azure_monitor` to the root logger when `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, so all pipeline `logging` output (including the `tag_*` tags from `pipelines/infra/utils/nrw_logger.py`) lands in the same App Insights component as the scheduler, queryable in the `traces`/`exceptions` tables. `batch_client.py` forwards the Function App's `APPLICATIONINSIGHTS_CONNECTION_STRING` app setting onto each Batch task; `rerun-job.sh` reads the same connection string with `az monitor app-insights component show`. The wiring is additive to `logging.basicConfig`, so console output (Batch task `stdout.txt`/`stderr.txt`, local runs) is unchanged, and local runs without the env var export nothing. Azure Batch's built-in stdout/stderr files in Portal and Batch Explorer remain as a fallback.
+
+**Network requirement**: Batch nodes must reach the App Insights ingestion endpoint (HTTPS 443 to `dc.services.visualstudio.com`, covered by the `AzureMonitor` service tag). If telemetry stops arriving, check the egress rules on NSG `nrw-NSG-test`.
 
 Target state after prototype:
 

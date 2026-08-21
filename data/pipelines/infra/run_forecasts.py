@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,7 +13,6 @@ from shared.country_data import CountryCodeIso3
 
 from pipelines.drought.forecast import calculate_drought_forecasts
 from pipelines.flood.forecast import calculate_flood_forecasts
-from pipelines.tropical_cyclone.forecast import calculate_tropical_cyclone_forecasts
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
@@ -31,6 +31,7 @@ from pipelines.infra.utils.alert_admin_aggregation import (
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.infra_mock_generator import make_infra_mock_hazard_function
 from pipelines.infra.utils.nrw_logger import log_error, log_info, log_warning, LogTag
+from pipelines.tropical_cyclone.forecast import calculate_tropical_cyclone_forecasts
 
 logger = logging.getLogger(__name__)
 
@@ -244,6 +245,23 @@ def run_forecasts(
     return all_errors
 
 
+def configure_app_insights() -> None:
+    """Attach Azure Monitor log export when a connection string is present.
+
+    Additive to the console handler installed by logging.basicConfig, and a
+    no-op locally where APPLICATIONINSIGHTS_CONNECTION_STRING is not set.
+    """
+    connection_string = os.environ.get("APPLICATIONINSIGHTS_CONNECTION_STRING")
+    if not connection_string:
+        return
+    from azure.monitor.opentelemetry import configure_azure_monitor
+
+    configure_azure_monitor(
+        connection_string=connection_string,
+        logger_name="",  # root logger, so every pipeline logger is captured
+    )
+
+
 @click.command()
 @click.option(
     "--config",
@@ -341,6 +359,7 @@ def main(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    configure_app_insights()
 
     try:
         env = load_environment_settings()

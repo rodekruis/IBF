@@ -13,6 +13,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
+    "azure-monitor-opentelemetry",
     "cfgrib",
     "click",
     "eccodes",

@@ -95,6 +95,14 @@ export GITHUB_DATA_BASE_URL="https://raw.githubusercontent.com/rodekruis/IBF-see
 export GLOFAS_FTP_HOST="aux.ecmwf.int"
 export DATA_CACHE_DIR="/mnt/batch/tasks/fsmounts/nrw-data-cache"
 
+# Mirror the Function App setting from main.bicep so reruns export pipeline
+# logs to the same Application Insights component as the scheduled runs.
+export APPLICATIONINSIGHTS_CONNECTION_STRING="$(az monitor app-insights component show \
+  --app nrw-batch-scheduler \
+  --resource-group nrw-batch-poc \
+  --query connectionString \
+  --output tsv)"
+
 # Force the operator's own identity: a stray AZURE_CLIENT_ID in the shell
 # would make batch_client use ManagedIdentityCredential instead of
 # DefaultAzureCredential.

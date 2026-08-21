@@ -43,6 +43,9 @@ TASK_ENVIRONMENT_VARIABLES = (
     "GLOFAS_FTP_USER",
     "GLOFAS_FTP_PASSWORD",
     "DATA_CACHE_DIR",
+    # Set by main.bicep on the Function App; enables pipeline log export to
+    # Application Insights inside the Batch task containers.
+    "APPLICATIONINSIGHTS_CONNECTION_STRING",
 )
 
 
