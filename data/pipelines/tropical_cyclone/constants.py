@@ -36,13 +36,11 @@ class AveragingPeriod(StrEnum):
     TEN_MINUTE = "10min"
 
 
+# Consider moving this to infra-code once a second hazard pipeline needs country-specific config
 @dataclass
 class CountryConfig:
     exposure_class: ExposureClass
     sustained_wind_averaging_period: AveragingPeriod
-    # TODO-infra: move alongside COUNTRY_CONFIGS if/when that migrates to the db/API.
-    # this is only a placeholder for now, since the pipeline code needs to know
-    # which forecast source to use for each
     forecast_source: ForecastSource
 
 

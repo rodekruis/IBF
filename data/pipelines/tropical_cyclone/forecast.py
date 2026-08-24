@@ -115,7 +115,6 @@ def calculate_tropical_cyclone_forecasts(
         return
 
     ### Step 2 - Resolve the country's config (exposure class, sustained-wind convention) ###
-    # TODO-infra: consider moving COUNTRY_CONFIGS into the db/API instead of a code constant.
     country_config = COUNTRY_CONFIGS.get(CountryCodeIso3(country))
     if country_config is None:
         data_submitter.add_error(
