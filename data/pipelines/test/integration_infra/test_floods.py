@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 # NOTE: These are pipeline-infra integration tests. They use the --infra-only
@@ -11,17 +13,22 @@ import pytest
 
 
 @pytest.mark.parametrize("mock", [0, 1, 2])
-def test_floods_infra_only(pipeline, mock):
-    """Run the flood pipeline for UGA with --infra-only and the --mock number of
-    mock alerts. A zero exit code implies the API accepted the forecast,
-    which—given server-side validation—implicitly asserts correct structure."""
+def test_floods_infra_only(pipeline, mock, tmp_path):
+    output_path = str(tmp_path / "output")
     result = pipeline.run_pipeline(
         "pipelines/infra/configs/floods.yaml",
         mock=mock,
         infra_only=True,
         country="UGA",
         issued_at="2026-04-17T12:00:00Z",
+        output_mode="local",
+        output_path=output_path,
     )
     assert (
         result.returncode == 0
     ), f"Pipeline failed.\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+
+    forecast_files = list(tmp_path.rglob("forecast.json"))
+    assert len(forecast_files) == 1, f"Expected 1 forecast.json, found {forecast_files}"
+    forecast = json.loads(forecast_files[0].read_text())
+    assert len(forecast["alerts"]) == mock
