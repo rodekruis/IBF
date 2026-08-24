@@ -4,7 +4,38 @@ This is the user-facing guide to help with running jobs, debugging, etc.
 See deploy.md for the full details on the deployment, including post-MVP plans.
 See deploy_requirements.md for the initial requirements of the work.
 
-## Debugging
+## Getting files for local debugging
+
+You can get Glofas data from Azure for debugging local runs. Here are examples with Glofas data after it has been split into individual countries.
+
+From the azure portal:
+[Azure → nrwbatchpoc storage account → Containers → nrw-data-cache → browse into glofas/country_split/.](https://portal.azure.com/#view/Microsoft_Azure_Storage/ContainerMenuBlade/~/overview/storageAccountId/%2Fsubscriptions%2F57b0d17a-5429-4dbb-8366-35c928e3ed94%2FresourceGroups%2Fnrw-batch-poc%2Fproviders%2FMicrosoft.Storage%2FstorageAccounts%2Fnrwbatchpoc/path/nrw-data-cache/etag/%220x8DEF2D384D83E43%22/defaultId//publicAccessVal/None)
+You can select multiple, click '...' -> 'download' for one file, and it will download for all of them.
+
+From the command line, after logging in with `az login`, you can download with something like the following command. This fetches all MWI data for Aug 23, 2026. Set the timestamp and country as needed.
+
+```
+az storage blob download-batch \
+  --account-name nrwbatchpoc \
+  --source nrw-data-cache \
+  --pattern "glofas/country_split/20260823/*MWI*" \
+  --destination data/data \
+  --auth-mode key
+```
+
+The files should be placed in `{DATA_CACHE_DIR}/glofas/country_split/{date}/`. The above command would do that automatically if ran from repo root.
+
+To use these, from `./data` run something like this with the correct country and timestamp.
+
+```
+cd data
+uv run pipeline --config pipelines/infra/configs/floods.yaml \
+  --country MWI \
+  --local-data country \
+  --local-data-date 20260822
+```
+
+## Getting Logs
 
 ### From App Insights
 
@@ -14,7 +45,8 @@ Example query:
 
 ```kusto
 union traces, exceptions
-| where timestamp between (datetime(2026-08-23T14:00:51Z) .. datetime(2026-08-23T16:16:20Z))
+| where timestamp between (datetime(2026-08-21T14:30Z) .. datetime(2026-08-21T15:45Z))
+| where severityLevel >= 2
 | order by timestamp asc
 ```
 
