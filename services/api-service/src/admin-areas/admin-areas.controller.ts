@@ -40,7 +40,7 @@ export class AdminAreasController {
     name: 'filter',
     required: false,
     type: String,
-    description: "countryCodeIso3='MWI' AND adminLevel=1",
+    example: "countryCodeIso3='MWI' AND adminLevel=1",
   })
   @ApiQuery({
     name: 'limit',
@@ -52,7 +52,7 @@ export class AdminAreasController {
     name: 'transform',
     required: false,
     type: String,
-    description: 'simplify,0.05',
+    example: 'simplify,0.05',
   })
   @ApiResponse({
     status: HttpStatus.OK,

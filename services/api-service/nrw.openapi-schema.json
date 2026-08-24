@@ -668,8 +668,8 @@
             "name": "transform",
             "required": false,
             "in": "query",
-            "description": "simplify,0.05",
             "schema": {
+              "example": "simplify,0.05",
               "type": "string"
             }
           },
@@ -685,8 +685,8 @@
             "name": "filter",
             "required": false,
             "in": "query",
-            "description": "countryCodeIso3='MWI' AND adminLevel=1",
             "schema": {
+              "example": "countryCodeIso3='MWI' AND adminLevel=1",
               "type": "string"
             }
           }
