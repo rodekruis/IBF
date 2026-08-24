@@ -40,8 +40,7 @@ export class AdminAreasController {
     name: 'filter',
     required: false,
     type: String,
-    description:
-      'pg_featureserv filter expression, e.g. "countryCodeIso3=\'ETH\' AND adminLevel=0"',
+    description: "countryCodeIso3='MWI' AND adminLevel=1",
   })
   @ApiQuery({
     name: 'limit',
@@ -53,7 +52,7 @@ export class AdminAreasController {
     name: 'transform',
     required: false,
     type: String,
-    description: 'e.g. "simplify,0.05"',
+    description: 'simplify,0.05',
   })
   @ApiResponse({
     status: HttpStatus.OK,

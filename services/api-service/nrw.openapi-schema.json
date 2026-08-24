@@ -668,7 +668,7 @@
             "name": "transform",
             "required": false,
             "in": "query",
-            "description": "e.g. \"simplify,0.05\"",
+            "description": "simplify,0.05",
             "schema": {
               "type": "string"
             }
@@ -685,7 +685,7 @@
             "name": "filter",
             "required": false,
             "in": "query",
-            "description": "pg_featureserv filter expression, e.g. \"countryCodeIso3='ETH' AND adminLevel=0\"",
+            "description": "countryCodeIso3='MWI' AND adminLevel=1",
             "schema": {
               "type": "string"
             }
