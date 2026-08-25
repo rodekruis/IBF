@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.flood.compute_flood_depth import (
-    _resolve_flood_depth,
+    _resolve_flood_depth_raster,
     compute_flood_depth,
 )
 from pipelines.flood.determine_alerts import TimeIntervalReturnPeriodSeverity
@@ -72,7 +72,7 @@ def test_falls_back_to_closest_lower_return_period():
     assert selected is _MOCK_RASTER
 
 
-def test_falls_back_to_empty_when_no_lower_return_period_exists():
+def test_falls_back_to_lowest_available_when_no_lower_return_period_exists():
     provider = _make_provider([50])
     time_interval_severities = _build_time_interval_severities(10)
 
@@ -83,28 +83,67 @@ def test_falls_back_to_empty_when_no_lower_return_period_exists():
         )
 
     mock.assert_called_once_with(50)
-    assert np.all(selected.array == 0)
-    assert selected.transform == _MOCK_RASTER.transform
-    assert selected.crs == _MOCK_RASTER.crs
-    assert selected.nodata == _MOCK_RASTER.nodata
+    assert selected is _MOCK_RASTER
+
+
+def test_falls_back_to_lowest_available_among_multiple_maps():
+    provider = _make_provider([10, 50, 100])
+    time_interval_severities = _build_time_interval_severities(5)
+
+    with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
+        selected = compute_flood_depth(
+            time_interval_severities=time_interval_severities,
+            flood_depth_provider=provider,
+        )
+
+    mock.assert_called_once_with(10)
+    assert selected is _MOCK_RASTER
 
 
 def test_raises_when_no_available_return_periods():
     provider = _make_provider([])
     time_interval_severities = _build_time_interval_severities(10)
 
-    with pytest.raises(FileNotFoundError, match="no available return period"):
+    with pytest.raises(ValueError):
         compute_flood_depth(
             time_interval_severities=time_interval_severities,
             flood_depth_provider=provider,
         )
 
 
+def test_returns_empty_raster_when_no_threshold_exceeded():
+    provider = _make_provider([10, 50])
+    time_interval_severities = _build_time_interval_severities(0)
+
+    with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
+        selected = compute_flood_depth(
+            time_interval_severities=time_interval_severities,
+            flood_depth_provider=provider,
+        )
+
+    mock.assert_called_once_with(10)
+    assert np.all(selected.array == 0)
+
+
+def test_non_integer_return_period_falls_back_to_closest_lower():
+    provider = _make_provider([5, 10, 50])
+    time_interval_severities = _build_time_interval_severities(7.5)
+
+    with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
+        selected = compute_flood_depth(
+            time_interval_severities=time_interval_severities,
+            flood_depth_provider=provider,
+        )
+
+    mock.assert_called_once_with(5)
+    assert selected is _MOCK_RASTER
+
+
 def test_private_resolver_returns_exact_return_period():
     provider = _make_provider([20, 50])
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
-        selected = _resolve_flood_depth(
+        selected = _resolve_flood_depth_raster(
             return_period=20,
             flood_depth_provider=provider,
         )
