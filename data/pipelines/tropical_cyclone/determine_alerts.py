@@ -32,7 +32,7 @@ def determine_severities(
     systematically underestimates severity for a high track-position-variance event (max and
     median don't commute). Buckets whose MEDIAN doesn't clear MIN_SEVERITY_MS are dropped. Also
     retains each member's own land-clipped raster (not just its scalar max), for
-    compute_wind_extent.py's per-cell-max envelope.
+    compute_wind_spatial_extent.py's per-cell-max envelope.
 
     Clips with all_touched so admin areas smaller than one wind cell still register: at GEFS's
     0.25 degree resolution a centre-only mask drops whole island groups (PHL's Batanes among

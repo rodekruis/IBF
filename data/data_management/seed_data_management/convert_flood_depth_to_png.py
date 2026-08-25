@@ -1,12 +1,12 @@
 """
-One-off script to convert flood extent GeoTIFFs to RGBA data PNGs for the seed repo.
+One-off script to convert flood depth GeoTIFFs to RGBA data PNGs for the seed repo.
 
-Reads flood extent rasters from the seed repo at /raster-data/flood-extents/tif/
+Reads flood depth rasters from the seed repo at /raster-data/flood-extents/tif/
 and writes data-encoded PNGs + metadata JSONs to /raster-data/flood-extents/data-png/
 
 Usage:
     cd data
-    uv run python data_management/seed_data_management/convert_flood_extents_to_png.py
+    uv run python data_management/seed_data_management/convert_flood_depth_to_png.py
 """
 
 import json
@@ -24,7 +24,7 @@ OUTPUT_DIR = (
 COUNTRIES = sorted(target_countries_iso_a3)
 
 
-def convert_flood_extent(tif_path: Path, output_name: str):
+def convert_flood_depth(tif_path: Path, output_name: str):
     with open(tif_path, "rb") as f:
         tif_bytes = f.read()
 
@@ -48,10 +48,10 @@ if __name__ == "__main__":
     for COUNTRY in COUNTRIES:
         tif_files = sorted(INPUT_DIR.glob(f"flood_map_{COUNTRY}_*.tif"))
         if not tif_files:
-            print(f"No flood extent TIFFs found in {INPUT_DIR} for {COUNTRY}")
+            print(f"No flood depth TIFFs found in {INPUT_DIR} for {COUNTRY}")
             continue
 
-        print(f"Converting {len(tif_files)} flood extent rasters for {COUNTRY}:")
+        print(f"Converting {len(tif_files)} flood depth rasters for {COUNTRY}:")
         return_periods: list[int] = []
         for tif_path in tif_files:
             stem = tif_path.stem.lower()
@@ -59,7 +59,7 @@ if __name__ == "__main__":
             if suffix == "empty":
                 continue
             output_name = f"{COUNTRY}_flood_extent_{suffix}"
-            convert_flood_extent(tif_path, output_name)
+            convert_flood_depth(tif_path, output_name)
 
             if suffix.startswith("rp") and suffix[2:].isdigit():
                 return_periods.append(int(suffix[2:]))

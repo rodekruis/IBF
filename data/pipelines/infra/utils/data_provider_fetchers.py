@@ -15,7 +15,7 @@ from pipelines.infra.data_types.data_config_types import (
     DataSourceConfig,
 )
 from pipelines.infra.data_types.enums import LayerName
-from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
+from pipelines.infra.data_types.flood_depth_provider import FloodDepthProvider
 from pipelines.infra.data_types.gefs_product_provider import (
     download_gefs_product_from_seed_repo,
     GefsProduct,
@@ -40,7 +40,7 @@ from shared.image_helpers import rgba_png_to_float_array
 
 logger = logging.getLogger(__name__)
 
-SEED_REPO_FLOOD_EXTENTS_DATA_PNG_PATH = "/raster-data/flood-extents/data-png/"
+SEED_REPO_FLOOD_DEPTH_DATA_PNG_PATH = "/raster-data/flood-extents/data-png/"
 
 
 def _get_seed_repo_uri() -> str:
@@ -77,8 +77,8 @@ def load_data_container(
             )
         case DataSource.POPULATION_IBF_API:
             return _load_ibf_api_population_data(data_config, container, api_client)
-        case DataSource.FLOOD_EXTENTS_SEED_REPO:
-            return _load_seed_repo_flood_extents(data_config, container)
+        case DataSource.FLOOD_DEPTH_SEED_REPO:
+            return _load_seed_repo_flood_depth(data_config, container)
 
         # --- Flood sources ---
         case DataSource.GLOFAS_STATIONS_IBF_API:
@@ -224,23 +224,21 @@ def _load_ibf_api_population_data(
     )
 
 
-def _load_seed_repo_flood_extents(
-    config: DataSourceConfig, container: LoadedDataSource
-):
-    container.data_type = DataType.FLOOD_EXTENT_PROVIDER
+def _load_seed_repo_flood_depth(config: DataSourceConfig, container: LoadedDataSource):
+    container.data_type = DataType.FLOOD_DEPTH_PROVIDER
 
     country = config.country_code_iso_3
-    base_url = _get_seed_repo_uri() + SEED_REPO_FLOOD_EXTENTS_DATA_PNG_PATH
+    base_url = _get_seed_repo_uri() + SEED_REPO_FLOOD_DEPTH_DATA_PNG_PATH
     manifest_url = f"{base_url}{country}_flood_extents_manifest.json"
 
     manifest = download_json_source(manifest_url, check_count=False)
     if manifest is None:
         container.error = (
-            f"Failed to download flood extents manifest from '{manifest_url}'"
+            f"Failed to download flood depth manifest from '{manifest_url}'"
         )
         raise FileNotFoundError(container.error)
 
-    container.data = FloodExtentProvider(
+    container.data = FloodDepthProvider(
         available_return_periods=manifest["return_periods"],
         base_url=base_url,
         country=country,

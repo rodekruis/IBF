@@ -23,7 +23,7 @@ def aggregate_population_exposed(
     admin_areas: AdminAreasSet,
 ) -> dict[str, float]:
     """
-    Aggregate population exposed within the alert extent per place code.
+    Aggregate population exposed within the alert spatial extent per place code.
     """
 
     population: dict[str, float] = {}
@@ -57,18 +57,18 @@ def aggregate_population_exposed(
 
 def compute_population_exposed(
     population_raster: RasterData,
-    hazard_extent_raster: RasterData,
+    hazard_spatial_extent_raster: RasterData,
 ) -> RasterData | None:
     """
-    Masks the population raster with the (binary) hazard extent raster
+    Masks the population raster with the (binary) hazard spatial extent raster
     so only exposed pixels count toward the population sum.
     Returns the exposed population as in-memory raster data.
     """
     if (
         population_raster is None
-        or hazard_extent_raster is None
+        or hazard_spatial_extent_raster is None
         or population_raster.array.size == 0
-        or hazard_extent_raster.array.size == 0
+        or hazard_spatial_extent_raster.array.size == 0
     ):
         return None
 
@@ -77,16 +77,16 @@ def compute_population_exposed(
     pop_crs = population_raster.crs
 
     cropped_pop_array, cropped_pop_transform = _crop_to_hazard_bounds(
-        pop_array, pop_transform, hazard_extent_raster, pop_crs
+        pop_array, pop_transform, hazard_spatial_extent_raster, pop_crs
     )
 
-    hazard_nodata = hazard_extent_raster.nodata
+    hazard_nodata = hazard_spatial_extent_raster.nodata
     hazard_array_resampled = np.zeros(cropped_pop_array.shape, dtype=np.float32)
     reproject(
-        source=hazard_extent_raster.array.astype(np.float32),
+        source=hazard_spatial_extent_raster.array.astype(np.float32),
         destination=hazard_array_resampled,
-        src_transform=hazard_extent_raster.transform,
-        src_crs=hazard_extent_raster.crs,
+        src_transform=hazard_spatial_extent_raster.transform,
+        src_crs=hazard_spatial_extent_raster.crs,
         dst_transform=cropped_pop_transform,
         dst_crs=pop_crs,
         src_nodata=hazard_nodata,
@@ -95,15 +95,15 @@ def compute_population_exposed(
     )
 
     # A pixel is exposed only if it's positive and not the raster's own nodata value.
-    binary_hazard_extent = (
+    binary_hazard_spatial_extent = (
         (hazard_array_resampled > 0) & (hazard_array_resampled != hazard_nodata)
     ).astype(np.uint8)
-    population_in_hazard_extent = np.where(
-        binary_hazard_extent == 1, cropped_pop_array, 0.0
+    population_in_hazard_spatial_extent = np.where(
+        binary_hazard_spatial_extent == 1, cropped_pop_array, 0.0
     )
 
     return RasterData(
-        array=population_in_hazard_extent.astype(np.float32),
+        array=population_in_hazard_spatial_extent.astype(np.float32),
         transform=cropped_pop_transform,
         crs=pop_crs,
         nodata=population_raster.nodata,
@@ -113,19 +113,19 @@ def compute_population_exposed(
 def _crop_to_hazard_bounds(
     pop_array: np.ndarray,
     pop_transform: Affine,
-    hazard_extent_raster: RasterData,
+    hazard_spatial_extent_raster: RasterData,
     pop_crs: str,
 ) -> tuple[np.ndarray, Affine]:
     """
-    Crop the population array to the bounding box of the hazard extent raster.
+    Crop the population array to the bounding box of the hazard spatial extent raster.
     Returns the cropped array and its new transform. Falls back to the full array
     if the window is invalid or empty.
     """
-    if hazard_extent_raster.crs != pop_crs:
+    if hazard_spatial_extent_raster.crs != pop_crs:
         return pop_array, pop_transform
 
-    hazard_t = hazard_extent_raster.transform
-    hazard_rows, hazard_cols = hazard_extent_raster.array.shape
+    hazard_t = hazard_spatial_extent_raster.transform
+    hazard_rows, hazard_cols = hazard_spatial_extent_raster.array.shape
     hazard_corners = [
         hazard_t * (0, 0),
         hazard_t * (hazard_cols, 0),
