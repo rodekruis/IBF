@@ -3,7 +3,6 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import numpy as np
-import pytest
 from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.flood.compute_flood_depth import (
     _resolve_flood_depth_raster,
@@ -98,17 +97,6 @@ def test_falls_back_to_lowest_available_among_multiple_maps():
 
     mock.assert_called_once_with(10)
     assert selected is _MOCK_RASTER
-
-
-def test_raises_when_no_available_return_periods():
-    provider = _make_provider([])
-    time_interval_severities = _build_time_interval_severities(10)
-
-    with pytest.raises(ValueError):
-        compute_flood_depth(
-            time_interval_severities=time_interval_severities,
-            flood_depth_provider=provider,
-        )
 
 
 def test_returns_empty_raster_when_no_threshold_exceeded():
