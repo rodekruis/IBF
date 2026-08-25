@@ -93,7 +93,7 @@ export class AlertCreateDto {
 ## Database
 
 - ORM: Prisma with PostgreSQL
-- Always include `"api-service"` schema in raw SQL queries
+- Always include `"api-service"` schema in raw SQL queries, including migration files
 - Use Prisma migrations for schema changes; keep migrations minimal and focused
 - Migrations should assume a production database with existing data
   - Consider the prisma schema in the main branch as the production schema
