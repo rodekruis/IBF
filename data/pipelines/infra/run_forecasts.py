@@ -246,11 +246,7 @@ def run_forecasts(
 
 
 def configure_app_insights() -> None:
-    """Attach Azure Monitor log export when a connection string is present.
-
-    Additive to the console handler installed by logging.basicConfig, and a
-    no-op locally where APPLICATIONINSIGHTS_CONNECTION_STRING is not set.
-    """
+    """Export to Azure Monitor log when a connection string is present."""
     connection_string = os.environ.get("APPLICATIONINSIGHTS_CONNECTION_STRING")
     if not connection_string:
         return
@@ -258,7 +254,7 @@ def configure_app_insights() -> None:
 
     configure_azure_monitor(
         connection_string=connection_string,
-        logger_name="",  # root logger, so every pipeline logger is captured
+        logger_name="",  # root logger (get all logs)
     )
 
 
