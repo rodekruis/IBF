@@ -52,12 +52,16 @@ export class UserService {
     return { userRo: user, cookieSettings, token };
   }
 
-  public async create(
-    username: string,
-    displayName: string | null,
-    password: string,
-  ): Promise<User> {
-    username = username.toLowerCase();
+  public async create({
+    username: rawUsername,
+    displayName,
+    password,
+  }: {
+    username: string;
+    displayName: string | null;
+    password: string;
+  }): Promise<User> {
+    const username = rawUsername.toLowerCase();
     // check uniqueness of email
     const user = await this.prisma.user.findUnique({
       where: { username },

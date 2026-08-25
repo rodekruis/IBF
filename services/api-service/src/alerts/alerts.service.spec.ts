@@ -18,10 +18,13 @@ import {
 const TEST_RASTER_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWNoaGj4DwAFhAKAfr3l1AAAAABJRU5ErkJggg==';
 
-function createMockValidForecast(
-  alerts: AlertCreateDto[],
-  overrides: Partial<ForecastCreateDto> = {},
-): ForecastCreateDto {
+function createMockValidForecast({
+  alerts,
+  overrides = {},
+}: {
+  alerts: AlertCreateDto[];
+  overrides?: Partial<ForecastCreateDto>;
+}): ForecastCreateDto {
   return {
     countryCodeIso3: 'ETH',
     issuedAt: new Date('2026-03-20T12:00:00Z'),
@@ -119,7 +122,7 @@ describe('AlertsService', () => {
   describe('createAlerts – valid data', () => {
     it('should create alerts when integrity checks pass', async () => {
       const alerts = [createMockValidAlert()];
-      await service.createAlerts(createMockValidForecast(alerts));
+      await service.createAlerts(createMockValidForecast({ alerts }));
       expect(repository.createAlerts).toHaveBeenCalledWith(
         expect.objectContaining({
           alertCreateDtos: alerts,
@@ -139,7 +142,7 @@ describe('AlertsService', () => {
         }),
       ];
       await expect(
-        service.createAlerts(createMockValidForecast(alerts)),
+        service.createAlerts(createMockValidForecast({ alerts })),
       ).rejects.toThrow(HttpException);
     });
 
@@ -150,7 +153,7 @@ describe('AlertsService', () => {
         }),
       ];
       await expect(
-        service.createAlerts(createMockValidForecast(alerts)),
+        service.createAlerts(createMockValidForecast({ alerts })),
       ).rejects.toThrow(HttpException);
     });
 
@@ -162,7 +165,7 @@ describe('AlertsService', () => {
         }),
       ];
       const error = await service
-        .createAlerts(createMockValidForecast(alerts))
+        .createAlerts(createMockValidForecast({ alerts }))
         .catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);
       const response = (error as HttpException).getResponse() as {
@@ -181,7 +184,7 @@ describe('AlertsService', () => {
     it('should reject empty severity data', async () => {
       const alerts = [createMockValidAlert({ severity: [] })];
       await expect(
-        service.createAlerts(createMockValidForecast(alerts)),
+        service.createAlerts(createMockValidForecast({ alerts })),
       ).rejects.toThrow(HttpException);
     });
 
@@ -211,7 +214,7 @@ describe('AlertsService', () => {
         }),
       ];
       const error = await service
-        .createAlerts(createMockValidForecast(alerts))
+        .createAlerts(createMockValidForecast({ alerts }))
         .catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);
       const response = (error as HttpException).getResponse() as {
@@ -241,7 +244,7 @@ describe('AlertsService', () => {
         }),
       ];
       const error = await service
-        .createAlerts(createMockValidForecast(alerts))
+        .createAlerts(createMockValidForecast({ alerts }))
         .catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);
       const response = (error as HttpException).getResponse() as {
@@ -271,7 +274,7 @@ describe('AlertsService', () => {
         }),
       ];
       const error = await service
-        .createAlerts(createMockValidForecast(alerts))
+        .createAlerts(createMockValidForecast({ alerts }))
         .catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);
       const response = (error as HttpException).getResponse() as {
@@ -302,7 +305,7 @@ describe('AlertsService', () => {
         }),
       ];
       const error = await service
-        .createAlerts(createMockValidForecast(alerts))
+        .createAlerts(createMockValidForecast({ alerts }))
         .catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);
       const response = (error as HttpException).getResponse() as {
@@ -338,7 +341,7 @@ describe('AlertsService', () => {
         }),
       ];
       const error = await service
-        .createAlerts(createMockValidForecast(alerts))
+        .createAlerts(createMockValidForecast({ alerts }))
         .catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);
       const response = (error as HttpException).getResponse() as {
@@ -386,7 +389,7 @@ describe('AlertsService', () => {
         }),
       ];
       const error = await service
-        .createAlerts(createMockValidForecast(alerts))
+        .createAlerts(createMockValidForecast({ alerts }))
         .catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);
       const response = (error as HttpException).getResponse() as {
@@ -426,7 +429,7 @@ describe('AlertsService', () => {
         }),
       ];
       const error = await service
-        .createAlerts(createMockValidForecast(alerts))
+        .createAlerts(createMockValidForecast({ alerts }))
         .catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);
       const response = (error as HttpException).getResponse() as {
@@ -460,7 +463,7 @@ describe('AlertsService', () => {
         }),
       ];
       const error = await service
-        .createAlerts(createMockValidForecast(alerts))
+        .createAlerts(createMockValidForecast({ alerts }))
         .catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);
       const response = (error as HttpException).getResponse() as {
@@ -496,7 +499,7 @@ describe('AlertsService', () => {
         }),
       ];
       const error = await service
-        .createAlerts(createMockValidForecast(alerts))
+        .createAlerts(createMockValidForecast({ alerts }))
         .catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);
       const response = (error as HttpException).getResponse() as {
@@ -535,7 +538,7 @@ describe('AlertsService', () => {
         }),
       ];
       const error = await service
-        .createAlerts(createMockValidForecast(alerts))
+        .createAlerts(createMockValidForecast({ alerts }))
         .catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);
       const response = (error as HttpException).getResponse() as {
@@ -570,7 +573,7 @@ describe('AlertsService', () => {
           },
         }),
       ];
-      await service.createAlerts(createMockValidForecast(alerts));
+      await service.createAlerts(createMockValidForecast({ alerts }));
       expect(repository.createAlerts).toHaveBeenCalledWith(
         expect.objectContaining({
           alertCreateDtos: alerts,
@@ -596,7 +599,7 @@ describe('AlertsService', () => {
           },
         }),
       ];
-      await service.createAlerts(createMockValidForecast(alerts));
+      await service.createAlerts(createMockValidForecast({ alerts }));
       expect(repository.createAlerts).toHaveBeenCalledWith(
         expect.objectContaining({
           alertCreateDtos: alerts,
@@ -614,7 +617,7 @@ describe('AlertsService', () => {
         }),
       ];
       const error = await service
-        .createAlerts(createMockValidForecast(alerts))
+        .createAlerts(createMockValidForecast({ alerts }))
         .catch((e: unknown) => e);
       expect(error).toBeInstanceOf(HttpException);
       expect((error as HttpException).getStatus()).toBe(HttpStatus.BAD_REQUEST);
@@ -630,8 +633,9 @@ describe('AlertsService', () => {
   describe('createAlerts – closeStaleEvents', () => {
     it('should call closeStaleEvents with countryCodeIso3 from forecast', async () => {
       const alerts = [createMockValidAlert()];
-      const forecast = createMockValidForecast(alerts, {
-        countryCodeIso3: 'UGA',
+      const forecast = createMockValidForecast({
+        alerts,
+        overrides: { countryCodeIso3: 'UGA' },
       });
 
       await service.createAlerts(forecast);
@@ -646,8 +650,9 @@ describe('AlertsService', () => {
     });
 
     it('should call closeStaleEvents with empty excludeEventNames for empty alerts', async () => {
-      const forecast = createMockValidForecast([], {
-        countryCodeIso3: 'MWI',
+      const forecast = createMockValidForecast({
+        alerts: [],
+        overrides: { countryCodeIso3: 'MWI' },
       });
 
       await service.createAlerts(forecast);

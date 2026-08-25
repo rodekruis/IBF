@@ -8,11 +8,15 @@ import {
   reproject4326To3857,
 } from '@api-service/src/utils/raster-colorization.helper';
 
-function createGrayscalePng(
-  width: number,
-  height: number,
-  values: number[],
-): string {
+function createGrayscalePng({
+  width,
+  height,
+  values,
+}: {
+  width: number;
+  height: number;
+  values: number[];
+}): string {
   const png = new PNG({ width, height });
   for (let i = 0; i < width * height; i++) {
     const idx = i * 4;
@@ -26,10 +30,13 @@ function createGrayscalePng(
   return buffer.toString('base64');
 }
 
-function readOutputPixel(
-  base64: string,
-  pixelIndex: number,
-): { r: number; g: number; b: number; a: number } {
+function readOutputPixel({
+  base64,
+  pixelIndex,
+}: {
+  base64: string;
+  pixelIndex: number;
+}): { r: number; g: number; b: number; a: number } {
   const buffer = Buffer.from(base64, 'base64');
   const png = PNG.sync.read(buffer);
   const idx = pixelIndex * 4;
@@ -44,25 +51,40 @@ function readOutputPixel(
 describe('raster-colorization.helper', () => {
   describe('colorizeGrayscalePng', () => {
     it('should return empty string for empty input', () => {
-      expect(colorizeGrayscalePng('', FLOOD_DEPTH_CONFIG)).toBe('');
+      expect(
+        colorizeGrayscalePng({
+          base64Grayscale: '',
+          config: FLOOD_DEPTH_CONFIG,
+        }),
+      ).toBe('');
     });
 
     it('should make zero pixels transparent with default config', () => {
-      const input = createGrayscalePng(2, 2, [0, 100, 200, 0]);
-      const result = colorizeGrayscalePng(input, FLOOD_DEPTH_CONFIG);
+      const input = createGrayscalePng({
+        width: 2,
+        height: 2,
+        values: [0, 100, 200, 0],
+      });
+      const result = colorizeGrayscalePng({
+        base64Grayscale: input,
+        config: FLOOD_DEPTH_CONFIG,
+      });
 
-      const pixel0 = readOutputPixel(result, 0);
+      const pixel0 = readOutputPixel({ base64: result, pixelIndex: 0 });
       expect(pixel0.a).toBe(0);
 
-      const pixel3 = readOutputPixel(result, 3);
+      const pixel3 = readOutputPixel({ base64: result, pixelIndex: 3 });
       expect(pixel3.a).toBe(0);
     });
 
     it('should colorize non-zero pixels with opacity', () => {
-      const input = createGrayscalePng(1, 1, [128]);
-      const result = colorizeGrayscalePng(input, FLOOD_DEPTH_CONFIG);
+      const input = createGrayscalePng({ width: 1, height: 1, values: [128] });
+      const result = colorizeGrayscalePng({
+        base64Grayscale: input,
+        config: FLOOD_DEPTH_CONFIG,
+      });
 
-      const pixel = readOutputPixel(result, 0);
+      const pixel = readOutputPixel({ base64: result, pixelIndex: 0 });
       expect(pixel.a).toBe(179);
       expect(pixel.r).toBeGreaterThanOrEqual(0);
       expect(pixel.r).toBeLessThanOrEqual(255);
@@ -76,10 +98,10 @@ describe('raster-colorization.helper', () => {
         steps: 6,
         useLogScale: false,
       };
-      const input = createGrayscalePng(1, 1, [0]);
-      const result = colorizeGrayscalePng(input, config);
+      const input = createGrayscalePng({ width: 1, height: 1, values: [0] });
+      const result = colorizeGrayscalePng({ base64Grayscale: input, config });
 
-      const pixel = readOutputPixel(result, 0);
+      const pixel = readOutputPixel({ base64: result, pixelIndex: 0 });
       expect(pixel.r).toBe(255);
       expect(pixel.g).toBe(0);
       expect(pixel.b).toBe(0);
@@ -94,10 +116,14 @@ describe('raster-colorization.helper', () => {
         steps: 6,
         useLogScale: false,
       };
-      const input = createGrayscalePng(1, 2, [0, 200]);
-      const result = colorizeGrayscalePng(input, config);
+      const input = createGrayscalePng({
+        width: 1,
+        height: 2,
+        values: [0, 200],
+      });
+      const result = colorizeGrayscalePng({ base64Grayscale: input, config });
 
-      const pixel = readOutputPixel(result, 1);
+      const pixel = readOutputPixel({ base64: result, pixelIndex: 1 });
       expect(pixel.r).toBe(0);
       expect(pixel.b).toBe(255);
       expect(pixel.a).toBe(255);
@@ -111,11 +137,15 @@ describe('raster-colorization.helper', () => {
         steps: 100,
         useLogScale: false,
       };
-      const input = createGrayscalePng(1, 3, [0, 100, 200]);
-      const result = colorizeGrayscalePng(input, config);
+      const input = createGrayscalePng({
+        width: 1,
+        height: 3,
+        values: [0, 100, 200],
+      });
+      const result = colorizeGrayscalePng({ base64Grayscale: input, config });
 
-      const pixelMid = readOutputPixel(result, 1);
-      const pixelHigh = readOutputPixel(result, 2);
+      const pixelMid = readOutputPixel({ base64: result, pixelIndex: 1 });
+      const pixelHigh = readOutputPixel({ base64: result, pixelIndex: 2 });
       expect(pixelMid.r).toBeGreaterThan(0);
       expect(pixelMid.r).toBeLessThan(pixelHigh.r);
     });
@@ -130,13 +160,26 @@ describe('raster-colorization.helper', () => {
       };
       const configLog = { ...configLinear, useLogScale: true };
 
-      const input = createGrayscalePng(1, 3, [0, 10, 200]);
+      const input = createGrayscalePng({
+        width: 1,
+        height: 3,
+        values: [0, 10, 200],
+      });
 
-      const resultLinear = colorizeGrayscalePng(input, configLinear);
-      const resultLog = colorizeGrayscalePng(input, configLog);
+      const resultLinear = colorizeGrayscalePng({
+        base64Grayscale: input,
+        config: configLinear,
+      });
+      const resultLog = colorizeGrayscalePng({
+        base64Grayscale: input,
+        config: configLog,
+      });
 
-      const linearMid = readOutputPixel(resultLinear, 1);
-      const logMid = readOutputPixel(resultLog, 1);
+      const linearMid = readOutputPixel({
+        base64: resultLinear,
+        pixelIndex: 1,
+      });
+      const logMid = readOutputPixel({ base64: resultLog, pixelIndex: 1 });
 
       expect(logMid.r).toBeGreaterThan(linearMid.r);
     });
@@ -149,22 +192,33 @@ describe('raster-colorization.helper', () => {
         steps: 2,
         useLogScale: false,
       };
-      const input = createGrayscalePng(1, 5, [0, 50, 100, 150, 200]);
-      const result = colorizeGrayscalePng(input, config);
+      const input = createGrayscalePng({
+        width: 1,
+        height: 5,
+        values: [0, 50, 100, 150, 200],
+      });
+      const result = colorizeGrayscalePng({ base64Grayscale: input, config });
 
       const colors = new Set<number>();
       for (let i = 1; i < 5; i++) {
-        colors.add(readOutputPixel(result, i).r);
+        colors.add(readOutputPixel({ base64: result, pixelIndex: i }).r);
       }
       expect(colors.size).toBeLessThanOrEqual(3);
     });
 
     it('should handle all-zero image', () => {
-      const input = createGrayscalePng(2, 2, [0, 0, 0, 0]);
-      const result = colorizeGrayscalePng(input, FLOOD_DEPTH_CONFIG);
+      const input = createGrayscalePng({
+        width: 2,
+        height: 2,
+        values: [0, 0, 0, 0],
+      });
+      const result = colorizeGrayscalePng({
+        base64Grayscale: input,
+        config: FLOOD_DEPTH_CONFIG,
+      });
 
       for (let i = 0; i < 4; i++) {
-        const pixel = readOutputPixel(result, i);
+        const pixel = readOutputPixel({ base64: result, pixelIndex: i });
         expect(pixel.a).toBe(0);
       }
     });
@@ -177,11 +231,15 @@ describe('raster-colorization.helper', () => {
         steps: 6,
         useLogScale: false,
       };
-      const input = createGrayscalePng(2, 2, [50, 50, 50, 50]);
-      const result = colorizeGrayscalePng(input, config);
+      const input = createGrayscalePng({
+        width: 2,
+        height: 2,
+        values: [50, 50, 50, 50],
+      });
+      const result = colorizeGrayscalePng({ base64Grayscale: input, config });
 
-      const pixel0 = readOutputPixel(result, 0);
-      const pixel3 = readOutputPixel(result, 3);
+      const pixel0 = readOutputPixel({ base64: result, pixelIndex: 0 });
+      const pixel3 = readOutputPixel({ base64: result, pixelIndex: 3 });
       expect(pixel0.r).toBe(pixel3.r);
       expect(pixel0.g).toBe(pixel3.g);
       expect(pixel0.b).toBe(pixel3.b);
@@ -229,7 +287,13 @@ describe('raster-colorization.helper', () => {
   });
 
   describe('processPopulationRaster', () => {
-    function createTestPngBuffer(width: number, height: number): Buffer {
+    function createTestPngBuffer({
+      width,
+      height,
+    }: {
+      width: number;
+      height: number;
+    }): Buffer {
       const png = new PNG({ width, height });
       for (let i = 0; i < width * height; i++) {
         const idx = i * 4;
@@ -242,10 +306,13 @@ describe('raster-colorization.helper', () => {
     }
 
     it('should compute extent from transform and PNG dimensions', () => {
-      const pngBuffer = createTestPngBuffer(10, 20);
-      const result = processPopulationRaster(pngBuffer, {
-        transform: [0.5, 0, 33.0, 0, -0.25, 5.0],
-        crs: EPSG.WGS84,
+      const pngBuffer = createTestPngBuffer({ width: 10, height: 20 });
+      const result = processPopulationRaster({
+        dataPngBuffer: pngBuffer,
+        metadata: {
+          transform: [0.5, 0, 33.0, 0, -0.25, 5.0],
+          crs: EPSG.WGS84,
+        },
       });
 
       expect(result.metadata.data.extent.xmin).toBe(33.0);
@@ -255,30 +322,39 @@ describe('raster-colorization.helper', () => {
     });
 
     it('should set data CRS from input metadata', () => {
-      const pngBuffer = createTestPngBuffer(2, 2);
-      const result = processPopulationRaster(pngBuffer, {
-        transform: [1, 0, 0, 0, -1, 2],
-        crs: EPSG.WGS84,
+      const pngBuffer = createTestPngBuffer({ width: 2, height: 2 });
+      const result = processPopulationRaster({
+        dataPngBuffer: pngBuffer,
+        metadata: {
+          transform: [1, 0, 0, 0, -1, 2],
+          crs: EPSG.WGS84,
+        },
       });
 
       expect(result.metadata.data.crs).toBe(EPSG.WGS84);
     });
 
     it('should set nodata to 0', () => {
-      const pngBuffer = createTestPngBuffer(2, 2);
-      const result = processPopulationRaster(pngBuffer, {
-        transform: [1, 0, 0, 0, -1, 2],
-        crs: EPSG.WGS84,
+      const pngBuffer = createTestPngBuffer({ width: 2, height: 2 });
+      const result = processPopulationRaster({
+        dataPngBuffer: pngBuffer,
+        metadata: {
+          transform: [1, 0, 0, 0, -1, 2],
+          crs: EPSG.WGS84,
+        },
       });
 
       expect(result.metadata.data.nodata).toBe(0);
     });
 
     it('should reproject coloured extent to EPSG:3857 when input is EPSG:4326', () => {
-      const pngBuffer = createTestPngBuffer(4, 4);
-      const result = processPopulationRaster(pngBuffer, {
-        transform: [1, 0, 33.0, 0, -1, 5.0],
-        crs: EPSG.WGS84,
+      const pngBuffer = createTestPngBuffer({ width: 4, height: 4 });
+      const result = processPopulationRaster({
+        dataPngBuffer: pngBuffer,
+        metadata: {
+          transform: [1, 0, 33.0, 0, -1, 5.0],
+          crs: EPSG.WGS84,
+        },
       });
 
       expect(result.metadata.coloured.crs).toBe(EPSG.WebMercator);
@@ -288,10 +364,13 @@ describe('raster-colorization.helper', () => {
     });
 
     it('should keep coloured extent unchanged when input is not EPSG:4326', () => {
-      const pngBuffer = createTestPngBuffer(4, 4);
-      const result = processPopulationRaster(pngBuffer, {
-        transform: [1000, 0, 500000, 0, -1000, 600000],
-        crs: EPSG.WebMercator,
+      const pngBuffer = createTestPngBuffer({ width: 4, height: 4 });
+      const result = processPopulationRaster({
+        dataPngBuffer: pngBuffer,
+        metadata: {
+          transform: [1000, 0, 500000, 0, -1000, 600000],
+          crs: EPSG.WebMercator,
+        },
       });
 
       expect(result.metadata.coloured.crs).toBe(EPSG.WebMercator);
@@ -301,10 +380,13 @@ describe('raster-colorization.helper', () => {
     });
 
     it('should return a valid base64 coloured PNG', () => {
-      const pngBuffer = createTestPngBuffer(4, 4);
-      const result = processPopulationRaster(pngBuffer, {
-        transform: [1, 0, 0, 0, -1, 4],
-        crs: EPSG.WGS84,
+      const pngBuffer = createTestPngBuffer({ width: 4, height: 4 });
+      const result = processPopulationRaster({
+        dataPngBuffer: pngBuffer,
+        metadata: {
+          transform: [1, 0, 0, 0, -1, 4],
+          crs: EPSG.WGS84,
+        },
       });
 
       expect(result.colouredBase64).toBeTruthy();
@@ -317,10 +399,13 @@ describe('raster-colorization.helper', () => {
     });
 
     it('should downsample a 20x20 input to 2x2', () => {
-      const pngBuffer = createTestPngBuffer(20, 20);
-      const result = processPopulationRaster(pngBuffer, {
-        transform: [1, 0, 0, 0, -1, 20],
-        crs: EPSG.WGS84,
+      const pngBuffer = createTestPngBuffer({ width: 20, height: 20 });
+      const result = processPopulationRaster({
+        dataPngBuffer: pngBuffer,
+        metadata: {
+          transform: [1, 0, 0, 0, -1, 20],
+          crs: EPSG.WGS84,
+        },
       });
 
       const decoded = Buffer.from(result.colouredBase64, 'base64');
@@ -330,10 +415,13 @@ describe('raster-colorization.helper', () => {
     });
 
     it('should not downsample when input is smaller than the factor', () => {
-      const pngBuffer = createTestPngBuffer(4, 4);
-      const result = processPopulationRaster(pngBuffer, {
-        transform: [1, 0, 0, 0, -1, 4],
-        crs: EPSG.WGS84,
+      const pngBuffer = createTestPngBuffer({ width: 4, height: 4 });
+      const result = processPopulationRaster({
+        dataPngBuffer: pngBuffer,
+        metadata: {
+          transform: [1, 0, 0, 0, -1, 4],
+          crs: EPSG.WGS84,
+        },
       });
 
       const decoded = Buffer.from(result.colouredBase64, 'base64');

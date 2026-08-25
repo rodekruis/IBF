@@ -226,8 +226,11 @@ async function bootstrap(): Promise<void> {
 
     const logService = new AzureLogService();
     if (logService) {
-      logService.logError(error, true);
-      logService.logError(new Error('Uncaught Exception: restarting'), true);
+      logService.logError({ error, alert: true });
+      logService.logError({
+        error: new Error('Uncaught Exception: restarting'),
+        alert: true,
+      });
     }
 
     // eslint-disable-next-line n/no-process-exit -- Trigger a reboot, as the app is in an unknown state.

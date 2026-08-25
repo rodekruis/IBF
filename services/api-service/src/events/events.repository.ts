@@ -41,11 +41,15 @@ export interface ExposedAdminAreaRecord {
 export class EventsRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
-  public async getEvents(
-    viewTime: Date,
-    active?: boolean,
-    countryCodeIso3?: string,
-  ): Promise<Event[]> {
+  public async getEvents({
+    viewTime,
+    active,
+    countryCodeIso3,
+  }: {
+    viewTime: Date;
+    active?: boolean;
+    countryCodeIso3?: string;
+  }): Promise<Event[]> {
     const countryFilter = countryCodeIso3 ? { countryCodeIso3 } : {};
 
     if (active === undefined) {
@@ -89,8 +93,11 @@ export class EventsRepository {
     return this.prisma.event.create({ data });
   }
 
-  public async updateEvent(
-    id: number,
+  public async updateEvent({
+    id,
+    data,
+  }: {
+    id: number;
     data: Pick<
       Event,
       | 'alertClass'
@@ -99,8 +106,8 @@ export class EventsRepository {
       | 'reachesPeakAlertClassAt'
       | 'endAt'
       | 'lastUpdatedAt'
-    >,
-  ): Promise<Event> {
+    >;
+  }): Promise<Event> {
     return this.prisma.event.update({
       where: { id },
       data,

@@ -69,10 +69,13 @@ export class AdminAreasRepository {
     }
   }
 
-  public async updateAdminAreaOrThrow(
-    placeCode: string,
-    adminAreaUpdateDto: AdminAreaUpdateDto,
-  ): Promise<Feature> {
+  public async updateAdminAreaOrThrow({
+    placeCode,
+    adminAreaUpdateDto,
+  }: {
+    placeCode: string;
+    adminAreaUpdateDto: AdminAreaUpdateDto;
+  }): Promise<Feature> {
     if (adminAreaUpdateDto.geometry !== undefined) {
       this.validateMultiPolygonGeometry(adminAreaUpdateDto.geometry);
     }

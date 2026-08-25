@@ -22,10 +22,13 @@ export class AlertToEventService {
     private readonly alertClassificationService: AlertClassificationService,
   ) {}
 
-  public async matchAndStore(
-    alert: AlertCreateDto,
-    forecast: ForecastMetadata,
-  ): Promise<number | null> {
+  public async matchAndStore({
+    alert,
+    forecast,
+  }: {
+    alert: AlertCreateDto;
+    forecast: ForecastMetadata;
+  }): Promise<number | null> {
     const classification = await this.alertClassificationService.classifyAlert({
       countryCodeIso3: forecast.countryCodeIso3,
       hazardType: forecast.hazardType,
@@ -48,23 +51,31 @@ export class AlertToEventService {
     );
 
     if (existingOpenEvent) {
-      await this.updateExistingEvent(
-        existingOpenEvent,
-        classification,
-        forecast.issuedAt,
-      );
+      await this.updateExistingEvent({
+        existingEvent: existingOpenEvent,
+        latestAlert: classification,
+        issuedAt: forecast.issuedAt,
+      });
       return existingOpenEvent.id;
     } else {
-      const event = await this.createNewEvent(alert, forecast, classification);
+      const event = await this.createNewEvent({
+        alert,
+        forecast,
+        classification,
+      });
       return event.id;
     }
   }
 
-  private async createNewEvent(
-    alert: AlertCreateDto,
-    forecast: ForecastMetadata,
-    classification: ClassificationResult,
-  ): Promise<Event> {
+  private async createNewEvent({
+    alert,
+    forecast,
+    classification,
+  }: {
+    alert: AlertCreateDto;
+    forecast: ForecastMetadata;
+    classification: ClassificationResult;
+  }): Promise<Event> {
     return this.eventsRepository.createEvent({
       countryCodeIso3: forecast.countryCodeIso3,
       eventName: alert.eventName,
@@ -84,35 +95,43 @@ export class AlertToEventService {
     });
   }
 
-  private async updateExistingEvent(
-    existingEvent: Pick<Event, 'id' | 'firstIssuedAt'>,
-    latestAlert: ClassificationResult,
-    issuedAt: Date,
-  ): Promise<void> {
-    const startAt = await this.resolveStartAtFromAlertHistory(
+  private async updateExistingEvent({
+    existingEvent,
+    latestAlert,
+    issuedAt,
+  }: {
+    existingEvent: Pick<Event, 'id' | 'firstIssuedAt'>;
+    latestAlert: ClassificationResult;
+    issuedAt: Date;
+  }): Promise<void> {
+    const startAt = await this.resolveStartAtFromAlertHistory({
       existingEvent,
       latestAlert,
-      issuedAt,
-    );
+      latestIssuedAt: issuedAt,
+    });
 
-    await this.eventsRepository.updateEvent(existingEvent.id, {
-      alertClass: latestAlert.alertClass!,
-      trigger: latestAlert.trigger,
-      startAt,
-      reachesPeakAlertClassAt: latestAlert.reachesPeakAlertClassAt,
-      endAt: latestAlert.endAt,
-      lastUpdatedAt: issuedAt,
+    await this.eventsRepository.updateEvent({
+      id: existingEvent.id,
+      data: {
+        alertClass: latestAlert.alertClass!,
+        trigger: latestAlert.trigger,
+        startAt,
+        reachesPeakAlertClassAt: latestAlert.reachesPeakAlertClassAt,
+        endAt: latestAlert.endAt,
+        lastUpdatedAt: issuedAt,
+      },
     });
   }
 
-  private async resolveStartAtFromAlertHistory(
-    existingEvent: {
-      id: number;
-      firstIssuedAt: Date;
-    },
-    latestAlert: ClassificationResult,
-    latestIssuedAt: Date,
-  ): Promise<Date> {
+  private async resolveStartAtFromAlertHistory({
+    existingEvent,
+    latestAlert,
+    latestIssuedAt,
+  }: {
+    existingEvent: { id: number; firstIssuedAt: Date };
+    latestAlert: ClassificationResult;
+    latestIssuedAt: Date;
+  }): Promise<Date> {
     const historicalAlertsForEvent =
       await this.eventsRepository.getAlertHistoryForEvent({
         eventId: existingEvent.id,

@@ -48,10 +48,13 @@ export class RastersRepository {
     return Buffer.from(raster.valueColoured, 'base64');
   }
 
-  public async getStaticRasterOrThrow(
-    countryCodeIso3: string,
-    layerName: LayerName,
-  ): Promise<StaticRasterResponseDto> {
+  public async getStaticRasterOrThrow({
+    countryCodeIso3,
+    layerName,
+  }: {
+    countryCodeIso3: string;
+    layerName: LayerName;
+  }): Promise<StaticRasterResponseDto> {
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {
         countryCodeIso3_layerName: { countryCodeIso3, layerName },
@@ -76,33 +79,43 @@ export class RastersRepository {
     };
   }
 
-  public async getStaticRasterImageOrThrow(
-    countryCodeIso3: string,
-    layerName: LayerName,
-  ): Promise<Buffer> {
-    return this.getStaticRasterImageBufferOrThrow(
+  public async getStaticRasterImageOrThrow({
+    countryCodeIso3,
+    layerName,
+  }: {
+    countryCodeIso3: string;
+    layerName: LayerName;
+  }): Promise<Buffer> {
+    return this.getStaticRasterImageBufferOrThrow({
       countryCodeIso3,
       layerName,
-      'valueColoured',
-    );
+      field: 'valueColoured',
+    });
   }
 
-  public async getStaticRasterDataImageOrThrow(
-    countryCodeIso3: string,
-    layerName: LayerName,
-  ): Promise<Buffer> {
-    return this.getStaticRasterImageBufferOrThrow(
+  public async getStaticRasterDataImageOrThrow({
+    countryCodeIso3,
+    layerName,
+  }: {
+    countryCodeIso3: string;
+    layerName: LayerName;
+  }): Promise<Buffer> {
+    return this.getStaticRasterImageBufferOrThrow({
       countryCodeIso3,
       layerName,
-      'valueData',
-    );
+      field: 'valueData',
+    });
   }
 
-  private async getStaticRasterImageBufferOrThrow(
-    countryCodeIso3: string,
-    layerName: LayerName,
-    field: 'valueColoured' | 'valueData',
-  ): Promise<Buffer> {
+  private async getStaticRasterImageBufferOrThrow({
+    countryCodeIso3,
+    layerName,
+    field,
+  }: {
+    countryCodeIso3: string;
+    layerName: LayerName;
+    field: 'valueColoured' | 'valueData';
+  }): Promise<Buffer> {
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {
         countryCodeIso3_layerName: { countryCodeIso3, layerName },
@@ -157,10 +170,13 @@ export class RastersRepository {
     };
   }
 
-  public async deleteStaticRasterOrThrow(
-    countryCodeIso3: string,
-    layerName: LayerName,
-  ): Promise<void> {
+  public async deleteStaticRasterOrThrow({
+    countryCodeIso3,
+    layerName,
+  }: {
+    countryCodeIso3: string;
+    layerName: LayerName;
+  }): Promise<void> {
     const raster = await this.prisma.staticRasterData.findUnique({
       where: {
         countryCodeIso3_layerName: { countryCodeIso3, layerName },

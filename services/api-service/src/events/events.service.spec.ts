@@ -68,7 +68,9 @@ describe('EventsService', () => {
         new Map(),
       );
 
-      const result = await service.getEvents(new Date('2026-03-25T12:00:00Z'));
+      const result = await service.getEvents({
+        viewTime: new Date('2026-03-25T12:00:00Z'),
+      });
 
       expect(result[0].centroid).toEqual({ latitude: 0.35, longitude: 32.6 });
     });
@@ -79,7 +81,9 @@ describe('EventsService', () => {
         new Map(),
       );
 
-      const result = await service.getEvents(new Date('2026-03-25T12:00:00Z'));
+      const result = await service.getEvents({
+        viewTime: new Date('2026-03-25T12:00:00Z'),
+      });
 
       expect(result[0].startAt).toBe('2026-03-25T00:00:00.000Z');
       expect(result[0].reachesPeakAlertClassAt).toBe(
@@ -98,7 +102,9 @@ describe('EventsService', () => {
         new Map(),
       );
 
-      const result = await service.getEvents(new Date('2026-03-25T12:00:00Z'));
+      const result = await service.getEvents({
+        viewTime: new Date('2026-03-25T12:00:00Z'),
+      });
 
       expect(result[0].hazardType).toEqual(HazardType.floods);
     });
@@ -130,7 +136,9 @@ describe('EventsService', () => {
         new Map([[42, exposedAreas]]),
       );
 
-      const result = await service.getEvents(new Date('2026-03-25T12:00:00Z'));
+      const result = await service.getEvents({
+        viewTime: new Date('2026-03-25T12:00:00Z'),
+      });
 
       expect(result[0].exposedAdminAreas).toEqual({
         1: [

@@ -19,9 +19,9 @@ describe('/ Alerts', () => {
   let seededAlertId: number;
 
   beforeAll(async () => {
-    await resetDB(['MWI'], __filename);
+    await resetDB({ countryCodes: ['MWI'], resetIdentifier: __filename });
     const alert = buildAlert({ eventName: ALERT_NAME });
-    await createAlerts(buildForecast([alert]));
+    await createAlerts({ forecast: buildForecast({ alerts: [alert] }) });
     adminAccessToken = await getAccessToken();
     seededAlertId = (await readAlerts(adminAccessToken)).body[0].id;
   });
@@ -55,7 +55,10 @@ describe('/ Alerts', () => {
 
   describe('GET /alerts/:id – authentication', () => {
     it('should reject request without authentication', async () => {
-      const response = await readAlertById(seededAlertId, '');
+      const response = await readAlertById({
+        id: seededAlertId,
+        accessToken: '',
+      });
 
       expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
     });
@@ -63,7 +66,10 @@ describe('/ Alerts', () => {
 
   describe('GET /alerts/:id – success', () => {
     it('should return the alert for the given id', async () => {
-      const response = await readAlertById(seededAlertId, adminAccessToken);
+      const response = await readAlertById({
+        id: seededAlertId,
+        accessToken: adminAccessToken,
+      });
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.id).toBe(seededAlertId);
@@ -71,7 +77,10 @@ describe('/ Alerts', () => {
     });
 
     it('should return full nested data', async () => {
-      const response = await readAlertById(seededAlertId, adminAccessToken);
+      const response = await readAlertById({
+        id: seededAlertId,
+        accessToken: adminAccessToken,
+      });
 
       expect(response.body.severity).toBeDefined();
       expect(Array.isArray(response.body.severity)).toBe(true);
@@ -83,7 +92,10 @@ describe('/ Alerts', () => {
 
   describe('GET /alerts/:id – not found', () => {
     it('should return 404 for a non-existent alert id', async () => {
-      const response = await readAlertById(999999, adminAccessToken);
+      const response = await readAlertById({
+        id: 999999,
+        accessToken: adminAccessToken,
+      });
 
       expect(response.status).toBe(HttpStatus.NOT_FOUND);
     });

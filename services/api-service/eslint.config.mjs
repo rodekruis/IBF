@@ -127,6 +127,10 @@ export default [
         },
       ],
       'simple-import-sort/exports': 'error',
+      'custom-rules/prefer-object-params': [
+        'warn',
+        { ignoredMethodNames: ['validate'] },
+      ],
       '@eslint-community/eslint-comments/disable-enable-pair': [
         'error',
         { allowWholeFile: true },

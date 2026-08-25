@@ -24,11 +24,14 @@ export class LayersService {
     return this.layersRepository.createLayer(dto);
   }
 
-  public async updateLayerOrThrow(
-    layerName: LayerName,
-    dto: LayerUpdateDto,
-  ): Promise<LayerReadDto> {
-    return this.layersRepository.updateLayerOrThrow(layerName, dto);
+  public async updateLayerOrThrow({
+    layerName,
+    dto,
+  }: {
+    layerName: LayerName;
+    dto: LayerUpdateDto;
+  }): Promise<LayerReadDto> {
+    return this.layersRepository.updateLayerOrThrow({ layerName, dto });
   }
 
   public async deleteLayerOrThrow(layerName: LayerName): Promise<void> {

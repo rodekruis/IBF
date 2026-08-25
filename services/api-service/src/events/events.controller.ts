@@ -51,6 +51,6 @@ export class EventsController {
     @Query('timestamp') timestamp?: string,
   ): Promise<EventResponseDto[]> {
     const viewTime = timestamp ? new Date(timestamp) : new Date();
-    return this.eventsService.getEvents(viewTime, active, countryCodeIso3);
+    return this.eventsService.getEvents({ viewTime, active, countryCodeIso3 });
   }
 }

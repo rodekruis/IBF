@@ -12,6 +12,10 @@
 
 File naming matches class: `AlertsModule` → `alerts.module.ts`, `AlertCreateDto` → `alert-create.dto.ts`
 
+## General guidelines
+
+- Functions with more than one parameter must use a single destructured object parameter (enforced by `custom-rules/prefer-object-params`)
+
 ## Module Architecture
 
 - Each module has one responsibility; avoid circular dependencies

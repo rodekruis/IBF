@@ -97,18 +97,22 @@ export class AlertClassificationService {
       );
     }
 
-    return this.classify(
-      classificationInput.severity,
-      classificationInput.issuedAt,
-      config[0],
-    );
+    return this.classify({
+      severityData: classificationInput.severity,
+      issuedAt: classificationInput.issuedAt,
+      config: config[0],
+    });
   }
 
-  private classify(
-    severityData: SeverityDto[],
-    issuedAt: Date,
-    config: AlertConfigResponseDto,
-  ): ClassificationResult {
+  private classify({
+    severityData,
+    issuedAt,
+    config,
+  }: {
+    severityData: SeverityDto[];
+    issuedAt: Date;
+    config: AlertConfigResponseDto;
+  }): ClassificationResult {
     const timeIntervalGroups = this.groupByTimeInterval(severityData);
     const alertClassPerTimeInterval = new Map<string, AlertClass | null>();
     const sortedSeverityLevels = this.sortByThresholdDescending(
@@ -122,11 +126,11 @@ export class AlertClassificationService {
     let latestEnd: Date | undefined;
 
     for (const group of timeIntervalGroups) {
-      const alertClassForTimeInterval = this.computeAlertClassForTimeInterval(
+      const alertClassForTimeInterval = this.computeAlertClassForTimeInterval({
         group,
         sortedSeverityLevels,
         sortedProbabilityLevels,
-      );
+      });
       alertClassPerTimeInterval.set(group.start, alertClassForTimeInterval);
 
       const start = new Date(group.start);
@@ -141,18 +145,18 @@ export class AlertClassificationService {
 
     const alertClass = this.computeAlertClass(alertClassPerTimeInterval);
 
-    const reachesPeakAlertClassAt = this.computeReachesPeakAlertClassAt(
+    const reachesPeakAlertClassAt = this.computeReachesPeakAlertClassAt({
       alertClassPerTimeInterval,
-      alertClass,
-      earliestStart!,
-    );
+      overallAlertClass: alertClass,
+      fallback: earliestStart!,
+    });
 
-    const trigger = this.computeTrigger(
+    const trigger = this.computeTrigger({
       alertClass,
       reachesPeakAlertClassAt,
       issuedAt,
       config,
-    );
+    });
 
     return {
       alertClassPerTimeInterval,
@@ -198,15 +202,19 @@ export class AlertClassificationService {
     );
   }
 
-  private computeAlertClassForTimeInterval(
-    group: TimeIntervalGroup,
-    sortedSeverityLevels: ClassLevelDto[],
-    sortedProbabilityLevels: ClassLevelDto[],
-  ): AlertClass | null {
-    const severityClass = this.classifyValue(
-      group.medianValue,
-      sortedSeverityLevels,
-    );
+  private computeAlertClassForTimeInterval({
+    group,
+    sortedSeverityLevels,
+    sortedProbabilityLevels,
+  }: {
+    group: TimeIntervalGroup;
+    sortedSeverityLevels: ClassLevelDto[];
+    sortedProbabilityLevels: ClassLevelDto[];
+  }): AlertClass | null {
+    const severityClass = this.classifyValue({
+      value: group.medianValue,
+      sortedLevelsDescending: sortedSeverityLevels,
+    });
     if (!severityClass) {
       return null;
     }
@@ -214,14 +222,14 @@ export class AlertClassificationService {
     const severityThreshold =
       sortedSeverityLevels.find((l) => l.label === severityClass)?.threshold ??
       0;
-    const probability = this.computeProbability(
-      group.ensembleRunValues,
+    const probability = this.computeProbability({
+      runValues: group.ensembleRunValues,
       severityThreshold,
-    );
-    const probabilityClass = this.classifyValue(
-      probability,
-      sortedProbabilityLevels,
-    );
+    });
+    const probabilityClass = this.classifyValue({
+      value: probability,
+      sortedLevelsDescending: sortedProbabilityLevels,
+    });
     if (!probabilityClass) {
       return null;
     }
@@ -229,10 +237,13 @@ export class AlertClassificationService {
     return ALERT_CLASS_MATRIX[severityClass]?.[probabilityClass] ?? null;
   }
 
-  private classifyValue(
-    value: number,
-    sortedLevelsDescending: ClassLevelDto[],
-  ): AlertClassificationLevel | null {
+  private classifyValue({
+    value,
+    sortedLevelsDescending,
+  }: {
+    value: number;
+    sortedLevelsDescending: ClassLevelDto[];
+  }): AlertClassificationLevel | null {
     for (const level of sortedLevelsDescending) {
       if (value >= level.threshold) {
         return level.label;
@@ -241,10 +252,13 @@ export class AlertClassificationService {
     return null;
   }
 
-  private computeProbability(
-    runValues: number[],
-    severityThreshold: number,
-  ): number {
+  private computeProbability({
+    runValues,
+    severityThreshold,
+  }: {
+    runValues: number[];
+    severityThreshold: number;
+  }): number {
     if (runValues.length === 0) {
       return 0;
     }
@@ -272,11 +286,15 @@ export class AlertClassificationService {
     return highestAlertClass;
   }
 
-  private computeReachesPeakAlertClassAt(
-    alertClassPerTimeInterval: Map<string, AlertClass | null>,
-    overallAlertClass: AlertClass | null,
-    fallback: Date,
-  ): Date {
+  private computeReachesPeakAlertClassAt({
+    alertClassPerTimeInterval,
+    overallAlertClass,
+    fallback,
+  }: {
+    alertClassPerTimeInterval: Map<string, AlertClass | null>;
+    overallAlertClass: AlertClass | null;
+    fallback: Date;
+  }): Date {
     if (overallAlertClass === null) {
       return fallback;
     }
@@ -293,12 +311,17 @@ export class AlertClassificationService {
     return earliest ?? fallback;
   }
 
-  private computeTrigger(
-    alertClass: AlertClass | null,
-    reachesPeakAlertClassAt: Date,
-    issuedAt: Date,
-    config: AlertConfigResponseDto,
-  ): boolean {
+  private computeTrigger({
+    alertClass,
+    reachesPeakAlertClassAt,
+    issuedAt,
+    config,
+  }: {
+    alertClass: AlertClass | null;
+    reachesPeakAlertClassAt: Date;
+    issuedAt: Date;
+    config: AlertConfigResponseDto;
+  }): boolean {
     if (!config.triggerAlertClass || alertClass === null) {
       return false;
     }
@@ -311,10 +334,10 @@ export class AlertClassificationService {
     }
 
     if (config.triggerLeadTimeDuration) {
-      const deadline = this.addIsoDuration(
-        issuedAt,
-        config.triggerLeadTimeDuration,
-      );
+      const deadline = this.addIsoDuration({
+        base: issuedAt,
+        duration: config.triggerLeadTimeDuration,
+      });
       if (reachesPeakAlertClassAt > deadline) {
         return false;
       }
@@ -323,7 +346,13 @@ export class AlertClassificationService {
     return true;
   }
 
-  private addIsoDuration(base: Date, duration: string): Date {
+  private addIsoDuration({
+    base,
+    duration,
+  }: {
+    base: Date;
+    duration: string;
+  }): Date {
     const match = duration.match(
       /^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/,
     );
