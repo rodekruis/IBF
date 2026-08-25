@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import cast
 
-from pipelines.flood.compute_flood_extent import compute_flood_extent
+from pipelines.flood.compute_flood_depth import compute_flood_depth
 from pipelines.flood.determine_alerts import (
     determine_temporal_extent,
     ReturnPeriodThresholds,
@@ -17,7 +17,7 @@ from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.enums import EnsembleMemberType, LayerName, SeverityKey
-from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
+from pipelines.infra.data_types.flood_depth_provider import FloodDepthProvider
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.exposure import (
@@ -55,18 +55,18 @@ def calculate_flood_forecasts(
     target_admin_areas = data_provider.get_data(
         DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
     )
-    flood_extent_provider: FloodExtentProvider = data_provider.get_data(
-        DataSource.FLOOD_EXTENTS_SEED_REPO, FloodExtentProvider
+    flood_depth_provider: FloodDepthProvider = data_provider.get_data(
+        DataSource.FLOOD_DEPTH_SEED_REPO, FloodDepthProvider
     )
 
     if (
         not alert_configs
         or not glofas_stations
         or not target_admin_areas
-        or not flood_extent_provider
+        or not flood_depth_provider
     ):
         data_submitter.add_error(
-            f"Missing input data: alert_configs={bool(alert_configs)}, glofas_stations={bool(glofas_stations)}, admin_areas={bool(target_admin_areas)}, flood_extents={bool(flood_extent_provider)}"
+            f"Missing input data: alert_configs={bool(alert_configs)}, glofas_stations={bool(glofas_stations)}, admin_areas={bool(target_admin_areas)}, flood_depths={bool(flood_depth_provider)}"
         )
         return
 
@@ -141,21 +141,21 @@ def calculate_flood_forecasts(
                 )
                 continue
 
-            ### Step 5 - Compute flood extent
-            flood_extent = compute_flood_extent(
+            ### Step 5 - Compute flood depth
+            flood_depth = compute_flood_depth(
                 time_interval_severities=time_interval_severities,
-                flood_extent_provider=flood_extent_provider,
+                flood_depth_provider=flood_depth_provider,
             )
 
             ### Step 6 - Determine spatial extent
-            clipped_flood_extent, place_codes_exposed = determine_spatial_extent(
+            clipped_flood_depth, place_codes_exposed = determine_spatial_extent(
                 station=station,
                 station_place_codes=config.spatial_extent_place_codes,
                 admin_areas=target_admin_areas,
-                flood_extent_raster=flood_extent,
+                flood_depth_raster=flood_depth,
             )
 
-            if not place_codes_exposed or clipped_flood_extent is None:
+            if not place_codes_exposed or clipped_flood_depth is None:
                 log_info(
                     logger,
                     LogTag.FLOOD_LOGIC,
@@ -163,7 +163,7 @@ def calculate_flood_forecasts(
                 )
                 continue
 
-            ### Step 7 - Compute exposure within the flood extent ###
+            ### Step 7 - Compute exposure within the flood depth ###
             # Load here instead of at the top since this is a costly operation and only needed if there is exposure to compute.
             # the 'if' makes sure, it's only loaded once for the first alert-station
             # TODO: this is not actually lazy-loading at the moment, only lazy-reading earlier downloaded data. Consider true lazy loading.
@@ -174,7 +174,7 @@ def calculate_flood_forecasts(
 
             population_exposed_raster = compute_population_exposed(
                 population_raster,
-                clipped_flood_extent,
+                clipped_flood_depth,
             )
 
             if population_exposed_raster is None:
@@ -236,8 +236,8 @@ def calculate_flood_forecasts(
             data_submitter.add_raster_exposure(
                 event_name=event_name,
                 layer=LayerName.FLOOD_DEPTH,
-                value_greyscale=raster_to_base64_png(clipped_flood_extent),
-                extent=get_raster_extent(clipped_flood_extent),
+                value_greyscale=raster_to_base64_png(clipped_flood_depth),
+                extent=get_raster_extent(clipped_flood_depth),
             )
 
             ### Step 9 - Actions after alert submitted ###

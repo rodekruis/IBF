@@ -85,11 +85,11 @@ COUNTRY_CONFIGS: dict[CountryCodeIso3, CountryConfig] = {
 
 # Buffer added around each country's admin-area bounding box before slicing the global GRIB2/ATCF
 # data, so the monitoring box can see the storm approaching over open ocean before landfall — a
-# small island's own land extent doesn't capture that. Also doubles as the monitoring-trigger
+# small island's own land spatial extent doesn't capture that. Also doubles as the monitoring-trigger
 # radius: a country is "watched" once a storm's track enters this padded box.
 # 1000 km = WMO's upper bound on tropical-cyclone diameter, chosen deliberately generous to avoid
 # missing storms whose wind field reaches land while the track/centroid itself stays offshore
-# (a real scenario - wind extent is not bounded by the track). A track further than this cannot
+# (a real scenario - wind spatial extent is not bounded by the track). A track further than this cannot
 # physically have a wind field reaching the country, so the severity gate (wind-driven, not
 # track-driven - see MIN_SEVERITY_MS below) never needs a track-based fallback for that case.
 # Revisit if this introduces too much noise in production.

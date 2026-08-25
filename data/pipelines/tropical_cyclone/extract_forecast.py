@@ -321,7 +321,7 @@ def _aggregate_bucket_rasters(
 
 def _envelope_max(rasters: list[RasterData]) -> RasterData:
     """Per-cell max across same-grid rasters, nodata-aware (a cell stays nodata only if it is
-    nodata in every input) - same precautionary-envelope approach as compute_wind_extent.py's
+    nodata in every input) - same precautionary-envelope approach as compute_wind_spatial_extent.py's
     per-member footprint, applied here across a single member's native lead-time steps instead of
     across members."""
     if len(rasters) == 1:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.flood.determine_exposure import (
-    clip_flood_extent_to_admin_areas,
+    clip_flood_depth_to_admin_areas,
     determine_spatial_extent,
 )
 from pipelines.infra.data_types.admin_area_types import (
@@ -77,7 +77,7 @@ def test_compute_population_exposed_sums_only_flooded_pixels():
         crs=DEFAULT_CRS,
         nodata=-9999.0,
     )
-    flood_extent_data = RasterData(
+    flood_depth_data = RasterData(
         array=np.array([[0, 5], [2, 0]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
         crs=DEFAULT_CRS,
@@ -86,7 +86,7 @@ def test_compute_population_exposed_sums_only_flooded_pixels():
 
     population_exposed_raster = compute_population_exposed(
         population_raster=population_data,
-        hazard_extent_raster=flood_extent_data,
+        hazard_spatial_extent_raster=flood_depth_data,
     )
     assert population_exposed_raster is not None
 
@@ -99,14 +99,14 @@ def test_compute_population_exposed_sums_only_flooded_pixels():
     assert population == {"PC001": 50.0}
 
 
-def test_compute_population_exposed_returns_zero_for_empty_extent():
+def test_compute_population_exposed_returns_zero_for_empty_spatial_extent():
     population_data = RasterData(
         array=np.array([[10.0, 20.0], [30.0, 40.0]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
         crs=DEFAULT_CRS,
         nodata=-9999.0,
     )
-    flood_extent_data = RasterData(
+    flood_depth_data = RasterData(
         array=np.zeros((2, 2), dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
         crs=DEFAULT_CRS,
@@ -115,7 +115,7 @@ def test_compute_population_exposed_returns_zero_for_empty_extent():
 
     population_exposed_raster = compute_population_exposed(
         population_raster=population_data,
-        hazard_extent_raster=flood_extent_data,
+        hazard_spatial_extent_raster=flood_depth_data,
     )
     assert population_exposed_raster is not None
 
@@ -128,18 +128,18 @@ def test_compute_population_exposed_returns_zero_for_empty_extent():
     assert population == {}
 
 
-def test_clip_flood_extent_to_admin_areas_clips_to_geometry():
-    flood_extent_data = RasterData(
+def test_clip_flood_depth_to_admin_areas_clips_to_geometry():
+    flood_depth_data = RasterData(
         array=np.array([[1, 2], [3, 4]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
         crs=DEFAULT_CRS,
         nodata=POPULATION_NODATA_VALUE,
     )
 
-    clipped = clip_flood_extent_to_admin_areas(
+    clipped = clip_flood_depth_to_admin_areas(
         place_codes=["PC001"],
         admin_areas=_build_partial_admin_areas(),
-        flood_extent_raster=flood_extent_data,
+        flood_depth_raster=flood_depth_data,
         station_code="station_001",
     )
 
@@ -152,7 +152,7 @@ def _build_station(station_id: str = "station_001") -> LocationPoint:
 
 
 def test_determine_spatial_extent_filters_to_valid_place_codes():
-    flood_extent_data = RasterData(
+    flood_depth_data = RasterData(
         array=np.array([[1, 2], [3, 4]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
         crs=DEFAULT_CRS,
@@ -165,7 +165,7 @@ def test_determine_spatial_extent_filters_to_valid_place_codes():
         station=_build_station(),
         station_place_codes=["PC001", "INVALID_CODE"],
         admin_areas=admin_areas,
-        flood_extent_raster=flood_extent_data,
+        flood_depth_raster=flood_depth_data,
     )
 
     assert valid_codes == ["PC001"]
@@ -173,7 +173,7 @@ def test_determine_spatial_extent_filters_to_valid_place_codes():
 
 
 def test_determine_spatial_extent_returns_early_when_all_place_codes_invalid():
-    flood_extent_data = RasterData(
+    flood_depth_data = RasterData(
         array=np.array([[1, 2], [3, 4]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
         crs=DEFAULT_CRS,
@@ -186,7 +186,7 @@ def test_determine_spatial_extent_returns_early_when_all_place_codes_invalid():
         station=_build_station(),
         station_place_codes=["INVALID_1", "INVALID_2"],
         admin_areas=admin_areas,
-        flood_extent_raster=flood_extent_data,
+        flood_depth_raster=flood_depth_data,
     )
 
     assert valid_codes == []
@@ -194,7 +194,7 @@ def test_determine_spatial_extent_returns_early_when_all_place_codes_invalid():
 
 
 def test_determine_spatial_extent_returns_early_when_place_codes_empty():
-    flood_extent_data = RasterData(
+    flood_depth_data = RasterData(
         array=np.array([[1, 2], [3, 4]], dtype=np.float32),
         transform=from_origin(0, 2, 1, 1),
         crs=DEFAULT_CRS,
@@ -207,7 +207,7 @@ def test_determine_spatial_extent_returns_early_when_place_codes_empty():
         station=_build_station(),
         station_place_codes=[],
         admin_areas=admin_areas,
-        flood_extent_raster=flood_extent_data,
+        flood_depth_raster=flood_depth_data,
     )
 
     assert valid_codes == []

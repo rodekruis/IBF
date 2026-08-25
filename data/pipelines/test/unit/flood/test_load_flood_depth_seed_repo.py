@@ -8,18 +8,18 @@ from PIL import Image
 from pipelines.constants import DEFAULT_CRS
 from pipelines.infra.data_types.data_config_types import DataSource, DataSourceConfig
 from pipelines.infra.data_types.enums import HazardType
-from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
+from pipelines.infra.data_types.flood_depth_provider import FloodDepthProvider
 from pipelines.infra.data_types.loaded_data_types import (
     DataType,
     LoadedDataSource,
     RasterData,
 )
-from pipelines.infra.utils.data_provider_fetchers import _load_seed_repo_flood_extents
+from pipelines.infra.utils.data_provider_fetchers import _load_seed_repo_flood_depth
 from shared.country_data import CountryCodeIso3
 
 # Fake URLs; actual HTTP calls are mocked via patch() so these are never fetched
 MOCK_SEED_REPO_BASE_URL = "https://test-seed-repo"
-MOCK_FLOOD_EXTENT_BASE_URL = "https://test-seed-repo/flood-extents/data-png/"
+MOCK_FLOOD_DEPTH_BASE_URL = "https://test-seed-repo/flood-extents/data-png/"
 
 
 def _make_config(
@@ -27,7 +27,7 @@ def _make_config(
 ) -> DataSourceConfig:
     return DataSourceConfig(
         country_code_iso_3=country,
-        source=DataSource.FLOOD_EXTENTS_SEED_REPO,
+        source=DataSource.FLOOD_DEPTH_SEED_REPO,
         hazard_type=HazardType.FLOODS,
     )
 
@@ -35,7 +35,7 @@ def _make_config(
 def _make_container() -> LoadedDataSource:
     return LoadedDataSource(
         data_type=DataType.UNSPECIFIED,
-        data_source=DataSource.FLOOD_EXTENTS_SEED_REPO,
+        data_source=DataSource.FLOOD_DEPTH_SEED_REPO,
     )
 
 
@@ -76,7 +76,7 @@ def _make_metadata(width: int, height: int) -> dict:
     }
 
 
-class TestLoadSeedRepoFloodExtents:
+class TestLoadSeedRepoFloodDepth:
     def test_loads_manifest_and_creates_provider(self, monkeypatch):
         monkeypatch.setenv("GITHUB_DATA_BASE_URL", MOCK_SEED_REPO_BASE_URL)
         manifest = {
@@ -90,10 +90,10 @@ class TestLoadSeedRepoFloodExtents:
             "pipelines.infra.utils.data_provider_fetchers.download_json_source",
             return_value=manifest,
         ):
-            _load_seed_repo_flood_extents(config, container)
+            _load_seed_repo_flood_depth(config, container)
 
-        assert container.data_type == DataType.FLOOD_EXTENT_PROVIDER
-        assert isinstance(container.data, FloodExtentProvider)
+        assert container.data_type == DataType.FLOOD_DEPTH_PROVIDER
+        assert isinstance(container.data, FloodDepthProvider)
         assert container.data.available_return_periods == [10, 20, 50, 75, 100]
 
     def test_raises_when_manifest_download_fails(self, monkeypatch):
@@ -106,30 +106,30 @@ class TestLoadSeedRepoFloodExtents:
             return_value=None,
         ):
             with pytest.raises(
-                FileNotFoundError, match="Failed to download flood extents manifest"
+                FileNotFoundError, match="Failed to download flood depth manifest"
             ):
-                _load_seed_repo_flood_extents(config, container)
+                _load_seed_repo_flood_depth(config, container)
 
         assert container.error is not None
 
 
-class TestFloodExtentProviderGetRaster:
+class TestFloodDepthProviderGetRaster:
     def test_downloads_and_decodes_raster_data(self):
         flood_values = np.array([[0.5, 1.2], [0.0, 3.0]], dtype=np.float64)
         png_bytes = _make_rgba_png_bytes(flood_values)
         metadata = _make_metadata(2, 2)
 
-        provider = FloodExtentProvider(
+        provider = FloodDepthProvider(
             available_return_periods=[10, 20],
-            base_url=MOCK_FLOOD_EXTENT_BASE_URL,
+            base_url=MOCK_FLOOD_DEPTH_BASE_URL,
             country="KEN",
         )
 
         with patch(
-            "pipelines.infra.data_types.flood_extent_provider.download_object",
+            "pipelines.infra.data_types.flood_depth_provider.download_object",
             return_value=png_bytes,
         ), patch(
-            "pipelines.infra.data_types.flood_extent_provider.download_json_source",
+            "pipelines.infra.data_types.flood_depth_provider.download_json_source",
             return_value=metadata,
         ):
             raster = provider.get_raster(10)
@@ -144,17 +144,17 @@ class TestFloodExtentProviderGetRaster:
         png_bytes = _make_rgba_png_bytes(flood_values)
         metadata = _make_metadata(1, 1)
 
-        provider = FloodExtentProvider(
+        provider = FloodDepthProvider(
             available_return_periods=[10],
-            base_url=MOCK_FLOOD_EXTENT_BASE_URL,
+            base_url=MOCK_FLOOD_DEPTH_BASE_URL,
             country="KEN",
         )
 
         with patch(
-            "pipelines.infra.data_types.flood_extent_provider.download_object",
+            "pipelines.infra.data_types.flood_depth_provider.download_object",
             return_value=png_bytes,
         ) as mock_download, patch(
-            "pipelines.infra.data_types.flood_extent_provider.download_json_source",
+            "pipelines.infra.data_types.flood_depth_provider.download_json_source",
             return_value=metadata,
         ):
             raster1 = provider.get_raster(10)
@@ -164,17 +164,17 @@ class TestFloodExtentProviderGetRaster:
         assert mock_download.call_count == 1
 
     def test_raises_when_png_download_fails(self):
-        provider = FloodExtentProvider(
+        provider = FloodDepthProvider(
             available_return_periods=[10],
-            base_url=MOCK_FLOOD_EXTENT_BASE_URL,
+            base_url=MOCK_FLOOD_DEPTH_BASE_URL,
             country="KEN",
         )
 
         with patch(
-            "pipelines.infra.data_types.flood_extent_provider.download_object",
+            "pipelines.infra.data_types.flood_depth_provider.download_object",
             return_value=None,
         ):
             with pytest.raises(
-                FileNotFoundError, match="Failed to download flood extent PNG"
+                FileNotFoundError, match="Failed to download flood depth PNG"
             ):
                 provider.get_raster(10)

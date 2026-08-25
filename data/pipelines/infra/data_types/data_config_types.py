@@ -29,7 +29,7 @@ class DataSource(StrEnum):
     ALERT_CONFIGS_IBF_API = "alert_configs_ibf_api"
     GLOFAS_STATIONS_IBF_API = "glofas_stations_ibf_api"
     POPULATION_IBF_API = "population_ibf_api"
-    FLOOD_EXTENTS_SEED_REPO = "flood_extents_seed_repo"
+    FLOOD_DEPTH_SEED_REPO = "flood_depth_seed_repo"
     GLOFAS_DISCHARGE_FTP = "glofas_discharge_ftp"
     GLOFAS_DISCHARGE_SEED_REPO_ALERT = "glofas_discharge_seed_repo_alert"
     GLOFAS_DISCHARGE_SEED_REPO_NO_ALERT = "glofas_discharge_seed_repo_no_alert"

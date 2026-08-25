@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import numpy as np
 from pipelines.infra.data_types.loaded_data_types import RasterData
-from pipelines.tropical_cyclone.compute_wind_extent import compute_alert_extent
+from pipelines.tropical_cyclone.compute_wind_spatial_extent import (
+    compute_alert_spatial_extent,
+)
 from pipelines.tropical_cyclone.determine_alerts import TimeIntervalWindSpeedSeverity
 from rasterio.transform import from_origin
 
@@ -32,7 +34,7 @@ def _make_severity(
     )
 
 
-class TestComputeAlertExtent:
+class TestComputeAlertSpatialExtent:
     def test_unions_exposure_across_time_buckets_not_just_the_peak(self):
         early_raster = _make_raster(_NODATA)
         early_raster.array[0, 0] = 40.0
@@ -42,7 +44,7 @@ class TestComputeAlertExtent:
         late_raster.array[0, 1] = 45.0
         late = _make_severity(45.0, [late_raster], time_interval_start="late")
 
-        result = compute_alert_extent([early, late])
+        result = compute_alert_spatial_extent([early, late])
 
         assert result.array[0, 0] == 40.0
         assert result.array[0, 1] == 45.0
@@ -54,13 +56,13 @@ class TestComputeAlertExtent:
         member_b.array[0, 0] = 60.0
         severity = _make_severity(45.0, [member_a, member_b])
 
-        result = compute_alert_extent([severity])
+        result = compute_alert_spatial_extent([severity])
 
         assert result.array[0, 0] == 60.0
 
     def test_masks_cells_at_or_below_min_severity(self):
         severity = _make_severity(45.0, [_make_raster(20.0)])
 
-        result = compute_alert_extent([severity])
+        result = compute_alert_spatial_extent([severity])
 
         assert np.all(result.array == result.nodata)
