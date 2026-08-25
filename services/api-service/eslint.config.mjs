@@ -120,6 +120,10 @@ export default [
           rootDir: '.',
         },
       ],
+      'custom-rules/prefer-object-params': [
+        'error',
+        { ignoredMethodNames: ['validate'] },
+      ],
       'simple-import-sort/imports': [
         'error',
         {
@@ -127,10 +131,6 @@ export default [
         },
       ],
       'simple-import-sort/exports': 'error',
-      'custom-rules/prefer-object-params': [
-        'warn',
-        { ignoredMethodNames: ['validate'] },
-      ],
       '@eslint-community/eslint-comments/disable-enable-pair': [
         'error',
         { allowWholeFile: true },
