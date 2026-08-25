@@ -27,7 +27,7 @@ BASE_SEED_REPO_DIR = get_seed_data_repo_path()
 # Data is in AdminAreaFeatureCollection format
 ADMIN_AREAS_DIR = Path(BASE_SEED_REPO_DIR) / "admin-areas" / "processed"
 # Population rasters, as PNGs converted from GeoTIFFs
-DATA_PNG_OUTPUT_DIR = Path(BASE_SEED_REPO_DIR) / "raster-data/population/data-png/"
+DATA_PNG_OUTPUT_DIR = Path(BASE_SEED_REPO_DIR) / "exposure/population/data-png/"
 
 POPULATION_PNG_SUFFIX = "_population.png"
 POPULATION_METADATA_SUFFIX = "_population_metadata.json"

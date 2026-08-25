@@ -19,7 +19,9 @@ from shared.country_data import CountryCodeIso3
 
 # Fake URLs; actual HTTP calls are mocked via patch() so these are never fetched
 MOCK_SEED_REPO_BASE_URL = "https://test-seed-repo"
-MOCK_FLOOD_DEPTH_BASE_URL = "https://test-seed-repo/flood-extents/data-png/"
+MOCK_FLOOD_DEPTH_BASE_URL = (
+    "https://test-seed-repo/hazard/flood/flood-extents/data-png/"
+)
 
 
 def _make_config(

@@ -21,7 +21,7 @@ sources = {
 
 # Output Dir
 BASE_REPO_DIR = get_seed_data_repo_path()
-DATA_DIR = Path(BASE_REPO_DIR) / "country-data"
+DATA_DIR = Path(BASE_REPO_DIR) / "reference" / "go-data"
 
 if __name__ == "__main__":
     DATA_DIR.mkdir(parents=True, exist_ok=True)
