@@ -27,14 +27,17 @@ export class CountriesService {
     return this.countriesRepository.createCountries(dtos);
   }
 
-  public async updateCountryOrThrow(
-    countryCodeIso3: string,
-    countryUpdateDto: CountryUpdateDto,
-  ): Promise<CountryResponseDto> {
-    return this.countriesRepository.updateCountryOrThrow(
+  public async updateCountryOrThrow({
+    countryCodeIso3,
+    countryUpdateDto,
+  }: {
+    countryCodeIso3: string;
+    countryUpdateDto: CountryUpdateDto;
+  }): Promise<CountryResponseDto> {
+    return this.countriesRepository.updateCountryOrThrow({
       countryCodeIso3,
       countryUpdateDto,
-    );
+    });
   }
 
   public async deleteCountryOrThrow(countryCodeIso3: string): Promise<void> {

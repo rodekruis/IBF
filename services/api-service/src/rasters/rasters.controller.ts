@@ -62,7 +62,10 @@ export class RastersController {
     @Param('layer') layerParam: string,
   ): Promise<StaticRasterResponseDto> {
     const layer = this.parseLayerNameOrThrow(layerParam);
-    return this.rastersService.getStaticRasterOrThrow(countryCodeIso3, layer);
+    return this.rastersService.getStaticRasterOrThrow({
+      countryCodeIso3,
+      layer,
+    });
   }
 
   @Get('static/:countryCodeIso3/:layer/image')
@@ -82,10 +85,10 @@ export class RastersController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     const layer = this.parseLayerNameOrThrow(layerParam);
-    const buffer = await this.rastersService.getStaticRasterImageOrThrow(
+    const buffer = await this.rastersService.getStaticRasterImageOrThrow({
       countryCodeIso3,
       layer,
-    );
+    });
     res.set({
       'Content-Type': 'image/png',
       'Content-Length': buffer.length,
@@ -115,10 +118,10 @@ export class RastersController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     const layer = this.parseLayerNameOrThrow(layerParam);
-    const buffer = await this.rastersService.getStaticRasterDataImageOrThrow(
+    const buffer = await this.rastersService.getStaticRasterDataImageOrThrow({
       countryCodeIso3,
       layer,
-    );
+    });
     res.set({
       'Content-Type': 'image/png',
       'Content-Length': buffer.length,
@@ -166,7 +169,10 @@ export class RastersController {
     @Param('layer') layerParam: string,
   ): Promise<void> {
     const layer = this.parseLayerNameOrThrow(layerParam);
-    await this.rastersService.deleteStaticRasterOrThrow(countryCodeIso3, layer);
+    await this.rastersService.deleteStaticRasterOrThrow({
+      countryCodeIso3,
+      layer,
+    });
   }
 
   @Get('alert/:id')

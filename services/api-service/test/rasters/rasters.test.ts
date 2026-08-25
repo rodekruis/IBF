@@ -30,9 +30,11 @@ describe('/rasters', () => {
   jest.setTimeout(60_000);
 
   beforeAll(async () => {
-    await resetDB(['MWI'], __filename);
+    await resetDB({ countryCodes: ['MWI'], resetIdentifier: __filename });
     const alert = buildAlert({ eventName: 'raster-test' });
-    const createResponse = await createAlerts(buildForecast([alert]));
+    const createResponse = await createAlerts({
+      forecast: buildForecast({ alerts: [alert] }),
+    });
     const createdAlert = createResponse.body[0];
     rasterId = createdAlert.exposure.rasters[0].id;
   });
@@ -97,7 +99,11 @@ describe('/rasters/static', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(['MWI'], __filename, false);
+    await resetDB({
+      countryCodes: ['MWI'],
+      resetIdentifier: __filename,
+      skipStaticRasters: false,
+    });
     accessToken = await getAccessToken();
   });
 
@@ -183,11 +189,11 @@ describe('/rasters/static', () => {
     const deleteLayer = LayerName.clinics;
 
     it('should delete the static raster and return 204', async () => {
-      const createResponse = await createStaticRaster(
+      const createResponse = await createStaticRaster({
         accessToken,
-        country,
-        deleteLayer,
-      );
+        countryCodeIso3: country,
+        layer: deleteLayer,
+      });
       expect(createResponse.status).toBe(HttpStatus.OK);
 
       const response = await getServer()

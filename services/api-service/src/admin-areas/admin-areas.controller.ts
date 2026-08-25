@@ -113,10 +113,10 @@ export class AdminAreasController {
     @Param('placeCode') placeCode: string,
     @Body() adminAreaUpdateDto: AdminAreaUpdateDto,
   ): Promise<Feature> {
-    return this.adminAreasService.updateAdminAreaOrThrow(
+    return this.adminAreasService.updateAdminAreaOrThrow({
       placeCode,
       adminAreaUpdateDto,
-    );
+    });
   }
 
   @Delete(':placeCode')

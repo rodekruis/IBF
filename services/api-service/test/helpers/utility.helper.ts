@@ -13,11 +13,15 @@ export function getServer(): TestAgent<request.Test> {
   return request.agent(getHostname());
 }
 
-export async function resetDB(
-  countryCodes: string[],
-  resetIdentifier: string,
+export async function resetDB({
+  countryCodes,
+  resetIdentifier,
   skipStaticRasters = true,
-): Promise<request.Response> {
+}: {
+  countryCodes: string[];
+  resetIdentifier: string;
+  skipStaticRasters?: boolean;
+}): Promise<request.Response> {
   const response = await getServer()
     .post('/reset')
     .query({
@@ -59,10 +63,13 @@ async function waitForResetComplete(): Promise<void> {
   throw new Error('Reset did not complete within the expected time');
 }
 
-export function loginApi(
-  username: string,
-  password: string,
-): Promise<request.Response> {
+export function loginApi({
+  username,
+  password,
+}: {
+  username: string;
+  password: string;
+}): Promise<request.Response> {
   return getServer().post(`/users/login`).send({
     username,
     password,
@@ -75,11 +82,14 @@ export async function logoutUser(
   return getServer().post('/users/logout').set('Cookie', [accessToken]).send();
 }
 
-export async function getAccessToken(
+export async function getAccessToken({
   username = env.USERCONFIG_API_SERVICE_EMAIL_ADMIN,
   password = env.USERCONFIG_API_SERVICE_PASSWORD_ADMIN,
-): Promise<string> {
-  const login = await loginApi(username, password);
+}: {
+  username?: string;
+  password?: string;
+} = {}): Promise<string> {
+  const login = await loginApi({ username, password });
 
   if (login.statusCode !== HttpStatus.CREATED) {
     throw new Error(`Login failed with status code: ${login.statusCode}`);

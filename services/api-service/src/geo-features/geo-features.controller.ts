@@ -95,10 +95,10 @@ export class GeoFeaturesController {
     @Param('id', ParseIntPipe) id: number,
     @Body() geoFeatureUpdateDto: GeoFeatureUpdateDto,
   ): Promise<Feature> {
-    return this.geoFeaturesService.updateGeoFeatureOrThrow(
+    return this.geoFeaturesService.updateGeoFeatureOrThrow({
       id,
       geoFeatureUpdateDto,
-    );
+    });
   }
 
   @Delete(':id')

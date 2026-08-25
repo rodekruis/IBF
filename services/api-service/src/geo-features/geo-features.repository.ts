@@ -53,10 +53,13 @@ export class GeoFeaturesRepository {
     return collection.features[0];
   }
 
-  public async updateGeoFeatureOrThrow(
-    id: number,
-    geoFeatureUpdateDto: GeoFeatureUpdateDto,
-  ): Promise<Feature> {
+  public async updateGeoFeatureOrThrow({
+    id,
+    geoFeatureUpdateDto,
+  }: {
+    id: number;
+    geoFeatureUpdateDto: GeoFeatureUpdateDto;
+  }): Promise<Feature> {
     try {
       await this.prisma.$transaction(async (tx) => {
         await tx.geoFeature.update({

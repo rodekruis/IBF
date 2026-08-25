@@ -10,7 +10,7 @@ describe('/ Countries', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(['MWI'], __filename);
+    await resetDB({ countryCodes: ['MWI'], resetIdentifier: __filename });
     accessToken = await getAccessToken();
   });
 
