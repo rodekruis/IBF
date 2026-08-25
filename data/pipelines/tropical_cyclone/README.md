@@ -84,14 +84,14 @@ The sections below describe each piece in more technical detail.
   - `determine_severities`: per time bucket per member, land-clips wind speed and takes the max
     (the `RUN` value); `MEDIAN` is the median of those. Drops buckets under `MIN_SEVERITY_MS`.
 
-- `compute_wind_extent.py`
+- `compute_wind_spatial_extent.py`
 
-  - `compute_alert_extent`: precautionary per-cell-max envelope across every member and every
+  - `compute_alert_spatial_extent`: precautionary per-cell-max envelope across every member and every
     qualifying time bucket, masked below `MIN_SEVERITY_MS`.
 
 - `determine_exposure.py`
 
-  - `clip_wind_extent_to_admin_areas`: clips the wind-extent raster to the alert's admin areas.
+  - `clip_wind_spatial_extent_to_admin_areas`: clips the wind spatial extent raster to the alert's admin areas.
 
 - `constants.py`
   - Per-country config (`COUNTRY_CONFIGS`): exposure class, averaging-period convention, forecast
@@ -148,8 +148,8 @@ mock_no_alert`); each downloads + caches its seeded GEFS cycle via the matching 
 6. Loop over alert configs (spatial extents) x temporal extents. Per spatial extent, scope every
    storm to its own admin areas and flag any pair that overlaps.
 7. `extract_wind_speed` once per temporal extent (shared across all storms).
-8. Per storm: `determine_severities` -> `derive_alert_centroid` -> `compute_alert_extent` +
-   `clip_wind_extent_to_admin_areas` -> `compute_population_exposed` + `aggregate_population_exposed`
+8. Per storm: `determine_severities` -> `derive_alert_centroid` -> `compute_alert_spatial_extent` +
+   `clip_wind_spatial_extent_to_admin_areas` -> `compute_population_exposed` + `aggregate_population_exposed`
    -> submit via `DataSubmitter` under that storm's `storm_identifier`.
 
 ## Output

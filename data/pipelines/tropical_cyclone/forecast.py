@@ -4,7 +4,7 @@ Orchestration for the tropical-cyclone hazard forecast.
 STATUS: all five hazard-logic modules are real, wired-in implementations, each verified against
 real GEFS/ATCF data - `extract_wind_speed` (`tropical_cyclone/extract_forecast.py`), `extract_track`
 (`tropical_cyclone/extract_track.py`), `determine_severities` (`tropical_cyclone/determine_alerts.py`),
-`compute_alert_extent` (`tropical_cyclone/compute_wind_extent.py`), `clip_wind_extent_to_admin_areas`
+`compute_alert_spatial_extent` (`tropical_cyclone/compute_wind_spatial_extent.py`), `clip_wind_spatial_extent_to_admin_areas`
 (`tropical_cyclone/determine_exposure.py`), and `compute_population_exposed`
 (`infra.utils.exposure`). GEFS wind + track are loaded through the DataProvider from the seed repo
 (alert/no-alert `DataSource.GEFS_WIND_SEED_REPO_*`/`GEFS_TRACK_SEED_REPO_*`, `--mock`-selected,
@@ -69,7 +69,9 @@ from pipelines.infra.utils.raster import (
     pad_bounding_box,
     raster_to_base64_png,
 )
-from pipelines.tropical_cyclone.compute_wind_extent import compute_alert_extent
+from pipelines.tropical_cyclone.compute_wind_spatial_extent import (
+    compute_alert_spatial_extent,
+)
 from pipelines.tropical_cyclone.constants import (
     COUNTRY_CONFIGS,
     MIN_SEVERITY_MS,
@@ -77,7 +79,7 @@ from pipelines.tropical_cyclone.constants import (
 )
 from pipelines.tropical_cyclone.determine_alerts import determine_severities
 from pipelines.tropical_cyclone.determine_exposure import (
-    clip_wind_extent_to_admin_areas,
+    clip_wind_spatial_extent_to_admin_areas,
 )
 from pipelines.tropical_cyclone.extract_forecast import extract_wind_speed
 from pipelines.tropical_cyclone.extract_track import (
@@ -167,7 +169,7 @@ def calculate_tropical_cyclone_forecasts(
 
     ### Step 4 - Country bounding box ###
     # Computed from admin-area geometry, padded by MONITORING_BOX_BUFFER_KM so the box can
-    # see the storm approaching over open ocean before landfall - a small country's own land extent
+    # see the storm approaching over open ocean before landfall - a small country's own land spatial extent
     # doesn't capture that, especially for a small island. The buffer is a placeholder pending domain-owner validation - see
     # MONITORING_BOX_BUFFER_KM's docstring.
     country_bounds = pad_bounding_box(
@@ -291,22 +293,24 @@ def calculate_tropical_cyclone_forecasts(
                     )
                     continue
 
-                ### Step 8 - Compute the alert extent and its spatial exposure ###
-                wind_extent = compute_alert_extent(time_interval_severities)
-                clipped_wind_extent = clip_wind_extent_to_admin_areas(
-                    wind_extent, storm_place_codes, target_admin_areas
+                ### Step 8 - Compute the alert spatial extent and its spatial exposure ###
+                wind_spatial_extent = compute_alert_spatial_extent(
+                    time_interval_severities
+                )
+                clipped_wind_spatial_extent = clip_wind_spatial_extent_to_admin_areas(
+                    wind_spatial_extent, storm_place_codes, target_admin_areas
                 )
 
-                if clipped_wind_extent is None:
+                if clipped_wind_spatial_extent is None:
                     data_submitter.add_error(
-                        f"Could not compute wind extent for country '{country}', storm "
+                        f"Could not compute wind spatial extent for country '{country}', storm "
                         f"'{storm_track.storm_identifier}'"
                     )
                     continue
 
                 ### Step 9 - Compute and aggregate population exposure ###
                 population_exposed_raster = compute_population_exposed(
-                    population_raster, clipped_wind_extent
+                    population_raster, clipped_wind_spatial_extent
                 )
                 if population_exposed_raster is None:
                     data_submitter.add_error(
@@ -366,8 +370,8 @@ def calculate_tropical_cyclone_forecasts(
                 data_submitter.add_raster_exposure(
                     event_name=event_name,
                     layer=LayerName.WIND_SPEED,
-                    value_greyscale=raster_to_base64_png(clipped_wind_extent),
-                    extent=get_raster_extent(clipped_wind_extent),
+                    value_greyscale=raster_to_base64_png(clipped_wind_spatial_extent),
+                    extent=get_raster_extent(clipped_wind_spatial_extent),
                 )
 
 

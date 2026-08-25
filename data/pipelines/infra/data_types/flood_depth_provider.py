@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class FloodExtentProvider:
+class FloodDepthProvider:
     available_return_periods: list[int]
     base_url: str
     country: str
@@ -39,13 +39,13 @@ class FloodExtentProvider:
         png_bytes = download_object(png_url)
         if png_bytes is None:
             raise FileNotFoundError(
-                f"Failed to download flood extent PNG from '{png_url}'"
+                f"Failed to download flood depth PNG from '{png_url}'"
             )
 
         json_data = download_json_source(json_url, check_count=False)
         if json_data is None:
             raise FileNotFoundError(
-                f"Failed to download flood extent metadata from '{json_url}'"
+                f"Failed to download flood depth metadata from '{json_url}'"
             )
 
         float_array = rgba_png_to_float_array(png_bytes)
@@ -53,7 +53,7 @@ class FloodExtentProvider:
         crs = json_data["crs"]
         nodata = json_data["nodata"]
 
-        log_info(logger, LogTag.INFRA, f"Downloaded and decoded flood extent '{key}'")
+        log_info(logger, LogTag.INFRA, f"Downloaded and decoded flood depth '{key}'")
         return RasterData(
             array=float_array.astype(np.float32),
             transform=transform,

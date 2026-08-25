@@ -5,12 +5,12 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
-from pipelines.flood.compute_flood_extent import (
-    _resolve_flood_extent,
-    compute_flood_extent,
+from pipelines.flood.compute_flood_depth import (
+    _resolve_flood_depth,
+    compute_flood_depth,
 )
 from pipelines.flood.determine_alerts import TimeIntervalReturnPeriodSeverity
-from pipelines.infra.data_types.flood_extent_provider import FloodExtentProvider
+from pipelines.infra.data_types.flood_depth_provider import FloodDepthProvider
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from rasterio.transform import from_origin
 
@@ -22,8 +22,8 @@ _MOCK_RASTER = RasterData(
 )
 
 
-def _make_provider(return_periods: list[int]) -> FloodExtentProvider:
-    provider = FloodExtentProvider(
+def _make_provider(return_periods: list[int]) -> FloodDepthProvider:
+    provider = FloodDepthProvider(
         available_return_periods=return_periods,
         base_url="http://mock/",
         country="UGA",
@@ -49,9 +49,9 @@ def test_returns_exact_matching_return_period():
     time_interval_severities = _build_time_interval_severities(50)
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
-        selected = compute_flood_extent(
+        selected = compute_flood_depth(
             time_interval_severities=time_interval_severities,
-            flood_extent_provider=provider,
+            flood_depth_provider=provider,
         )
 
     mock.assert_called_once_with(50)
@@ -63,9 +63,9 @@ def test_falls_back_to_closest_lower_return_period():
     time_interval_severities = _build_time_interval_severities(50)
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
-        selected = compute_flood_extent(
+        selected = compute_flood_depth(
             time_interval_severities=time_interval_severities,
-            flood_extent_provider=provider,
+            flood_depth_provider=provider,
         )
 
     mock.assert_called_once_with(25)
@@ -77,9 +77,9 @@ def test_falls_back_to_empty_when_no_lower_return_period_exists():
     time_interval_severities = _build_time_interval_severities(10)
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
-        selected = compute_flood_extent(
+        selected = compute_flood_depth(
             time_interval_severities=time_interval_severities,
-            flood_extent_provider=provider,
+            flood_depth_provider=provider,
         )
 
     mock.assert_called_once_with(50)
@@ -94,9 +94,9 @@ def test_raises_when_no_available_return_periods():
     time_interval_severities = _build_time_interval_severities(10)
 
     with pytest.raises(FileNotFoundError, match="no available return period"):
-        compute_flood_extent(
+        compute_flood_depth(
             time_interval_severities=time_interval_severities,
-            flood_extent_provider=provider,
+            flood_depth_provider=provider,
         )
 
 
@@ -104,9 +104,9 @@ def test_private_resolver_returns_exact_return_period():
     provider = _make_provider([20, 50])
 
     with patch.object(provider, "get_raster", return_value=_MOCK_RASTER) as mock:
-        selected = _resolve_flood_extent(
+        selected = _resolve_flood_depth(
             return_period=20,
-            flood_extent_provider=provider,
+            flood_depth_provider=provider,
         )
 
     mock.assert_called_once_with(20)

@@ -15,13 +15,13 @@ This folder contains the flood-specific forecast logic used by the pipeline fram
   - Samples GloFAS discharge values from (sliced) NetCDF rasters at station coordinates.
   - Produces per-station, per-lead-time ensemble discharge series.
 
-- `compute_flood_extent.py`
-  - Resolves the flood extent raster to use for an alert from the available flood extent files.
+- `compute_flood_depth.py`
+  - Resolves the flood depth raster to use for an alert from the available flood depth files.
   - Selects the highest matched return period, falls back to the closest lower return period, then to `*_empty.tif`.
 
 - `determine_exposure.py`
   - Reads the station-to-admin-area mapping and filters to place codes present in the loaded admin areas.
-  - Clips the selected flood extent raster to affected admin areas for raster exposure output.
+  - Clips the selected flood depth raster to affected admin areas for raster exposure output.
   - Computes an exposed-population raster and aggregates exposed population per place code.
 
 - `pipelines/infra/utils/raster.py`
@@ -43,7 +43,7 @@ GloFAS discharge NetCDF files are sourced either from:
 
 1. Load core inputs:
    - Load GloFAS station metadata and target admin areas through `DataProvider`.
-   - Load threshold JSON, population raster, and flood extent rasters through `DataProvider`.
+   - Load threshold JSON, population raster, and flood depth rasters through `DataProvider`.
    - Stop early and record an error if stations or admin areas are missing.
 
 2. Build country spatial extent
@@ -57,8 +57,8 @@ GloFAS discharge NetCDF files are sourced either from:
    - Skip stations with no threshold exceedance.
 
 4. Build alert payload
-   - Select the flood extent raster based on the matched return periods.
-   - Clip the flood extent to mapped admin areas and collect exposed place codes.
+   - Select the flood depth raster based on the matched return periods.
+   - Clip the flood depth to mapped admin areas and collect exposed place codes.
    - Compute the exposed-population raster and aggregate exposed population per place code.
 
 5. Compute exposure

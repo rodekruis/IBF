@@ -7,7 +7,7 @@ from pipelines.tropical_cyclone.constants import MIN_SEVERITY_MS
 from pipelines.tropical_cyclone.determine_alerts import TimeIntervalWindSpeedSeverity
 
 
-def compute_alert_extent(
+def compute_alert_spatial_extent(
     time_interval_severities: list[TimeIntervalWindSpeedSeverity],
 ) -> RasterData:
     """

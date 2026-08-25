@@ -16,7 +16,7 @@ interface ColorizationConfig {
   colorHigh: Rgba;
 
   // Whether zero-value pixels are fully transparent.
-  // true: zero pixels are invisible (typical for flood extents on a map).
+  // true: zero pixels are invisible (typical for flood depth rasters on a map).
   // false: zero pixels are rendered using colorLow.
   zeroIsTransparent: boolean;
 
