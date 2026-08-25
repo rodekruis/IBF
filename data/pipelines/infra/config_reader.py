@@ -168,9 +168,7 @@ class ConfigReader:
                 success = False
                 # Continue processing - still validate rest of country config
 
-            # Require a forecast source for the selected source target. Skipped under
-            # --infra-only (forecast.py is bypassed) and for unfiltered debug
-            # loads (source_target is None, all sources kept).
+            # Warning only: to accomodate early-dev phase of new pipelines, which may fetch forecast data manually
             if (
                 not self.infra_only
                 and self.source_target is not None
