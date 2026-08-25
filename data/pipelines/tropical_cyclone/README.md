@@ -53,7 +53,7 @@ The sections below describe each piece in more technical detail.
   - Entry point via `calculate_tropical_cyclone_forecasts(...)`.
   - Loads target admin areas and alert configs through `DataProvider`, resolves the country's
     exposure-class/averaging-period/forecast-source config, then loads that source's wind and
-    track data (currently local test fixtures - see "Forecast-source data").
+    track data (GEFS from the seed repo, ECMWF from local fixtures - see "Forecast-source data").
   - Builds alerts, severity time series, admin-area exposure, and raster exposure through
     `DataSubmitter` - one alert per tracked storm.
 
@@ -84,14 +84,14 @@ The sections below describe each piece in more technical detail.
   - `determine_severities`: per time bucket per member, land-clips wind speed and takes the max
     (the `RUN` value); `MEDIAN` is the median of those. Drops buckets under `MIN_SEVERITY_MS`.
 
-- `compute_wind_extent.py`
+- `compute_wind_spatial_extent.py`
 
-  - `compute_alert_extent`: precautionary per-cell-max envelope across every member and every
+  - `compute_alert_spatial_extent`: precautionary per-cell-max envelope across every member and every
     qualifying time bucket, masked below `MIN_SEVERITY_MS`.
 
 - `determine_exposure.py`
 
-  - `clip_wind_extent_to_admin_areas`: clips the wind-extent raster to the alert's admin areas.
+  - `clip_wind_spatial_extent_to_admin_areas`: clips the wind spatial extent raster to the alert's admin areas.
 
 - `constants.py`
   - Per-country config (`COUNTRY_CONFIGS`): exposure class, averaging-period convention, forecast
@@ -102,36 +102,41 @@ The sections below describe each piece in more technical detail.
 ## Forecast-source data
 
 - **Alert config**: spatial + temporal extent (`"lead-time-spectrum"`), fetched from the IBF API.
-- **Wind** (GRIB2) and **track** aren't wired through `DataProvider` yet (`# TODO-infra`).
-  `forecast.py` reads the most recent local cycle directly: GEFS from
-  `bronze/gefs_wind/`/`bronze/gefs_track/`, ECMWF from `bronze/ecmwf_wind/`/`bronze/ecmwf_track/`.
-  These layouts are a local-testing convention only, not a fixed contract.
-- Every country is on **GEFS** today. Whichever source a country uses needs its `bronze/` fixtures
-  on disk, or the run stops at the wind/track loading guard.
-- ECMWF fixtures: `uv run python data_management/seed_data_management/fetch_ecmwf_tropical_cyclone_test_data.py`
-  (from `data/`). GEFS fixtures are fetched by hand.
+- **Wind** (GRIB2) and **track** (ATCF) for **GEFS** are wired through `DataProvider`:
+  `DataSource.GEFS_WIND_SEED_REPO_*` / `GEFS_TRACK_SEED_REPO_*` download the cycle from the
+  seed-data repo (like floods' GloFAS mock data) and cache it under `DATA_CACHE_DIR` - see
+  `infra/data_types/gefs_product_provider.py`. Each product (`gefs-wind`, `gefs-track`) ships two
+  scenario manifests - `manifest.alert.json` (the over-threshold cycle, `--mock 1`) and
+  `manifest.no-alert.json` (the under-threshold cycle, `--mock 0`) - each listing that cycle's
+  files as paths relative to the product dir. The seed fixtures are maintained by hand in the
+  IBF-seed-data repo (no publish script here); each cycle keeps its real NOAA
+  `gefs.<date>/<HH>/atmos/pgrb2sp25/` (wind) and `.../tctrack/` (track) layout, which the
+  extractors parse for the forecast cycle datetime.
+- **ECMWF** wind/track aren't wired through `DataProvider` yet (`# TODO AB#44097`): `forecast.py`
+  reads the most recent local cycle directly from `bronze/ecmwf_wind/`/`bronze/ecmwf_track/`. This
+  layout is a local-testing convention only, not a fixed contract.
+- Every country is on **GEFS** today. A country on ECMWF needs its `bronze/ecmwf_*` fixtures on
+  disk (`uv run python data_management/seed_data_management/fetch_ecmwf_tropical_cyclone_test_data.py`),
+  or the run stops at the wind/track loading guard.
 
 ## Running this locally
 
-`tropicalCyclone.yaml` has no `source_target`-tagged data source yet, so a real (non-`--infra-only`)
-run needs a local-only gate relax in `config_reader.py` - **never commit it**:
-
-```python
-# data/pipelines/infra/config_reader.py, in _parse_countries
-log_warning(...)   # was log_error
-# success = False   <- drop
-# continue          <- drop
-```
-
-Then:
-
 ```bash
+# Alert scenario: Krathon/Julian, WP20/2024 gefs.20240929/06
 uv run pipeline --config pipelines/infra/configs/tropicalCyclone.yaml --country PHL --mock 1 --output-mode local
+# eventName: WP20_2024
+# centroid: latitude: 20.635, longitude: 121.858
+# median severities: 38.67, 33.75, 37.33, 41.22, 41.32, 41.96, 37.15 m/s (7 buckets, all above MIN_SEVERITY_MS=33.0)
+# total population exposed: 60090
+
+# No-alert scenario: WP03/2021 gefs.20210512/18
+uv run pipeline --config pipelines/infra/configs/tropicalCyclone.yaml --country PHL --mock 0 --output-mode local
+# storm: WP03_2021 median severities: 19 buckets, ~11.15-12.66 m/s (peak 12.66) - all below MIN_SEVERITY_MS=33.0
 ```
 
-A running backend with PHL seeded is still required (admin areas/population/alert configs hit the
-real API); wind/track come from whichever `bronze/` cycle is most recent on disk, regardless of
-`--mock`.
+`--mock 1` selects the `gefs_wind_seed_repo_alert` / `gefs_track_seed_repo_alert` sources
+(`source_target: mock_alert`) and `--mock 0` the `*_no_alert` sources (`source_target:
+mock_no_alert`); each downloads + caches its seeded GEFS cycle via the matching scenario manifest.
 
 ## `forecast.py` flow (read -> output)
 
@@ -143,8 +148,8 @@ real API); wind/track come from whichever `bronze/` cycle is most recent on disk
 6. Loop over alert configs (spatial extents) x temporal extents. Per spatial extent, scope every
    storm to its own admin areas and flag any pair that overlaps.
 7. `extract_wind_speed` once per temporal extent (shared across all storms).
-8. Per storm: `determine_severities` -> `derive_alert_centroid` -> `compute_alert_extent` +
-   `clip_wind_extent_to_admin_areas` -> `compute_population_exposed` + `aggregate_population_exposed`
+8. Per storm: `determine_severities` -> `derive_alert_centroid` -> `compute_alert_spatial_extent` +
+   `clip_wind_spatial_extent_to_admin_areas` -> `compute_population_exposed` + `aggregate_population_exposed`
    -> submit via `DataSubmitter` under that storm's `storm_identifier`.
 
 ## Output

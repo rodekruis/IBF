@@ -21,14 +21,17 @@ export class AdminAreasService {
     return this.adminAreasRepository.createAdminAreas(dtos);
   }
 
-  public async updateAdminAreaOrThrow(
-    placeCode: string,
-    adminAreaUpdateDto: AdminAreaUpdateDto,
-  ): Promise<Feature> {
-    return this.adminAreasRepository.updateAdminAreaOrThrow(
+  public async updateAdminAreaOrThrow({
+    placeCode,
+    adminAreaUpdateDto,
+  }: {
+    placeCode: string;
+    adminAreaUpdateDto: AdminAreaUpdateDto;
+  }): Promise<Feature> {
+    return this.adminAreasRepository.updateAdminAreaOrThrow({
       placeCode,
       adminAreaUpdateDto,
-    );
+    });
   }
 
   public async deleteAdminAreaOrThrow(placeCode: string): Promise<void> {

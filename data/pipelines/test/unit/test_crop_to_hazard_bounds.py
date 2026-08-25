@@ -11,7 +11,7 @@ from pipelines.infra.utils.exposure import (
 
 
 class TestCropToHazardBounds:
-    def test_crops_population_to_hazard_extent(self):
+    def test_crops_population_to_hazard_spatial_extent(self):
         pop_array = np.ones((100, 100), dtype=np.float32) * 10.0
         pop_transform = Affine(0.01, 0, 0.0, 0, -0.01, 1.0)
 

@@ -40,7 +40,7 @@ describe('POST /mock', () => {
 
   describe('single country', () => {
     beforeAll(async () => {
-      await resetDB([COUNTRY_1], __filename);
+      await resetDB({ countryCodes: [COUNTRY_1], resetIdentifier: __filename });
       accessToken = await getAccessToken();
     });
 
@@ -53,8 +53,12 @@ describe('POST /mock', () => {
     });
 
     it('should create events for the country', async () => {
-      const response = await readEvents(accessToken, COUNTRY_1, {
-        active: true,
+      const response = await readEvents({
+        accessToken,
+        countryCodeIso3: COUNTRY_1,
+        query: {
+          active: true,
+        },
       });
 
       expect(response.status).toBe(HttpStatus.OK);
@@ -71,8 +75,12 @@ describe('POST /mock', () => {
         scenario: MockScenario.noEvents,
       });
 
-      const response = await readEvents(accessToken, COUNTRY_1, {
-        active: true,
+      const response = await readEvents({
+        accessToken,
+        countryCodeIso3: COUNTRY_1,
+        query: {
+          active: true,
+        },
       });
 
       expect(response.status).toBe(HttpStatus.OK);
@@ -91,8 +99,12 @@ describe('POST /mock', () => {
         clearEvents: true,
       });
 
-      const response = await readEvents(accessToken, COUNTRY_1, {
-        active: true,
+      const response = await readEvents({
+        accessToken,
+        countryCodeIso3: COUNTRY_1,
+        query: {
+          active: true,
+        },
       });
 
       expect(response.status).toBe(HttpStatus.OK);
@@ -109,7 +121,10 @@ describe('POST /mock', () => {
         issuedAt: pastDate,
       });
 
-      const response = await readEvents(accessToken, COUNTRY_1);
+      const response = await readEvents({
+        accessToken,
+        countryCodeIso3: COUNTRY_1,
+      });
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.length).toBeGreaterThan(0);
@@ -140,7 +155,10 @@ describe('POST /mock', () => {
 
   describe('multiple countries', () => {
     beforeAll(async () => {
-      await resetDB([COUNTRY_1, COUNTRY_2], __filename);
+      await resetDB({
+        countryCodes: [COUNTRY_1, COUNTRY_2],
+        resetIdentifier: __filename,
+      });
       accessToken = await getAccessToken();
     });
 
@@ -151,11 +169,19 @@ describe('POST /mock', () => {
         clearEvents: true,
       });
 
-      const country1Response = await readEvents(accessToken, COUNTRY_1, {
-        active: true,
+      const country1Response = await readEvents({
+        accessToken,
+        countryCodeIso3: COUNTRY_1,
+        query: {
+          active: true,
+        },
       });
-      const country2Response = await readEvents(accessToken, COUNTRY_2, {
-        active: true,
+      const country2Response = await readEvents({
+        accessToken,
+        countryCodeIso3: COUNTRY_2,
+        query: {
+          active: true,
+        },
       });
 
       expect(country1Response.status).toBe(HttpStatus.OK);
@@ -175,11 +201,19 @@ describe('POST /mock', () => {
         scenario: MockScenario.noEvents,
       });
 
-      const country1Response = await readEvents(accessToken, COUNTRY_1, {
-        active: true,
+      const country1Response = await readEvents({
+        accessToken,
+        countryCodeIso3: COUNTRY_1,
+        query: {
+          active: true,
+        },
       });
-      const country2Response = await readEvents(accessToken, COUNTRY_2, {
-        active: true,
+      const country2Response = await readEvents({
+        accessToken,
+        countryCodeIso3: COUNTRY_2,
+        query: {
+          active: true,
+        },
       });
 
       expect(country1Response.status).toBe(HttpStatus.OK);
@@ -202,8 +236,12 @@ describe('POST /mock', () => {
         clearEvents: true,
       });
 
-      const country2Response = await readEvents(accessToken, COUNTRY_2, {
-        active: true,
+      const country2Response = await readEvents({
+        accessToken,
+        countryCodeIso3: COUNTRY_2,
+        query: {
+          active: true,
+        },
       });
 
       expect(country2Response.status).toBe(HttpStatus.OK);
@@ -227,11 +265,19 @@ describe('POST /mock', () => {
 
       expect(response.status).toBe(HttpStatus.OK);
 
-      const country1Response = await readEvents(accessToken, COUNTRY_1, {
-        active: true,
+      const country1Response = await readEvents({
+        accessToken,
+        countryCodeIso3: COUNTRY_1,
+        query: {
+          active: true,
+        },
       });
-      const country2Response = await readEvents(accessToken, COUNTRY_2, {
-        active: true,
+      const country2Response = await readEvents({
+        accessToken,
+        countryCodeIso3: COUNTRY_2,
+        query: {
+          active: true,
+        },
       });
 
       expect(country1Response.body.length).toBeGreaterThan(0);

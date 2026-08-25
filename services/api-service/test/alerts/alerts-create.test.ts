@@ -14,13 +14,13 @@ import {
   resetDB,
 } from '@api-service/test/helpers/utility.helper';
 
-const VALID_FORECAST = buildForecast([buildAlert()]);
+const VALID_FORECAST = buildForecast({ alerts: [buildAlert()] });
 
 describe('POST /alerts', () => {
   const apiKey = env.PIPELINE_API_KEY;
   let accessToken: string;
   beforeAll(async () => {
-    await resetDB(['MWI'], __filename);
+    await resetDB({ countryCodes: ['MWI'], resetIdentifier: __filename });
 
     accessToken = await getAccessToken();
   });
@@ -28,7 +28,10 @@ describe('POST /alerts', () => {
   describe('successful submission', () => {
     // NOTE: event-lifecycle.test.ts covers more detailed successful submission scenarios. Also the test_pipeline_api.py pipeline tests asserts successful submission of alerts.
     it('should accept valid alert', async () => {
-      const response = await createAlerts(VALID_FORECAST, apiKey!);
+      const response = await createAlerts({
+        forecast: VALID_FORECAST,
+        apiKey: apiKey!,
+      });
 
       expect(response.status).toBe(HttpStatus.CREATED);
     });
@@ -58,9 +61,12 @@ describe('POST /alerts', () => {
         ],
       });
 
-      await createAlerts(buildForecast([lowSeverityAlert]), apiKey!);
+      await createAlerts({
+        forecast: buildForecast({ alerts: [lowSeverityAlert] }),
+        apiKey: apiKey!,
+      });
 
-      const eventResponse = await getActiveEvents(accessToken);
+      const eventResponse = await getActiveEvents({ accessToken });
       expect(eventResponse.status).toBe(HttpStatus.OK);
       const event = eventResponse.body.find(
         (e: { name: string }) => e.name === lowSeverityAlert.eventName,
@@ -124,7 +130,10 @@ describe('POST /alerts', () => {
         ],
       });
 
-      const response = await createAlerts(buildForecast([badAlert]), apiKey!);
+      const response = await createAlerts({
+        forecast: buildForecast({ alerts: [badAlert] }),
+        apiKey: apiKey!,
+      });
 
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
       expect(response.body.errors).toBeDefined();

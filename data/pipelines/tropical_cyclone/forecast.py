@@ -4,12 +4,14 @@ Orchestration for the tropical-cyclone hazard forecast.
 STATUS: all five hazard-logic modules are real, wired-in implementations, each verified against
 real GEFS/ATCF data - `extract_wind_speed` (`tropical_cyclone/extract_forecast.py`), `extract_track`
 (`tropical_cyclone/extract_track.py`), `determine_severities` (`tropical_cyclone/determine_alerts.py`),
-`compute_alert_extent` (`tropical_cyclone/compute_wind_extent.py`), `clip_wind_extent_to_admin_areas`
+`compute_alert_spatial_extent` (`tropical_cyclone/compute_wind_spatial_extent.py`), `clip_wind_spatial_extent_to_admin_areas`
 (`tropical_cyclone/determine_exposure.py`), and `compute_population_exposed`
-(`infra.utils.exposure`). The remaining `_placeholder_*` functions are Step 3's local-file-path
-loaders, which read from a local test-fixture directory (`tropical_cyclone/bronze/`, most recent
-forecast cycle only) rather than a real data source - still `# TODO-infra` pending real
-`DataSource.GEFS_WIND`/`DataSource.GEFS_TRACK` fetchers.
+(`infra.utils.exposure`). GEFS wind + track are loaded through the DataProvider from the seed repo
+(alert/no-alert `DataSource.GEFS_WIND_SEED_REPO_*`/`GEFS_TRACK_SEED_REPO_*`, `--mock`-selected,
+downloaded + cached - see `infra/data_types/gefs_product_provider.py`). The remaining `_placeholder_*` functions are Step
+3's ECMWF-only local-file-path loaders, reading the most recent cycle from a local test-fixture
+directory (`tropical_cyclone/bronze/ecmwf_*`) - still `# TODO AB#44097` pending a real
+`DataSource.ECMWF_WIND`/`DataSource.ECMWF_TRACK` fetcher.
 
 Step 1 now fetches `AlertConfig`s (spatial + temporal extents) from `DataSource.ALERT_CONFIGS_IBF_API`
 instead of synthesizing one locally - PR #307 seeded a real per-country config
@@ -28,14 +30,13 @@ raises `NotImplementedError` for ECMWF.
 
 The hazard is fully registered: `HazardType.TROPICAL_CYCLONE`, `ForecastSource.GEFS`,
 `SeverityKey.WIND_SPEED`, `LayerName.WIND_SPEED` all resolve, and the CLI dispatches to this
-function for the `tropicalCyclone` hazard type. Runnable end to end today by direct function call
-against local test-fixture data (see Step 3); not runnable via the `pipeline` CLI yet, since the
-hazard's config YAML has no data source tagged for a `source_target`, which the CLI's config
-validation requires outside of `--infra-only` (which bypasses this function entirely).
+function for the `tropicalCyclone` hazard type. Runnable end to end via the `pipeline` CLI with
+`--mock 1` (GEFS wind/track are downloaded from the seed repo), or by direct function call.
+`--infra-only` bypasses this function entirely.
 
-TODO-infra-remove: delete this full status header block once GEFS wind/track are wired through
-real `DataSource.GEFS_WIND`/`DataSource.GEFS_TRACK` fetchers and the local-fixture placeholders in
-this file are removed.
+TODO AB#44097: delete this full status header block once ECMWF wind/track are also wired
+through real `DataSource.ECMWF_WIND`/`DataSource.ECMWF_TRACK` fetchers and the local-fixture
+placeholders in this file are removed.
 """
 
 from __future__ import annotations
@@ -68,7 +69,9 @@ from pipelines.infra.utils.raster import (
     pad_bounding_box,
     raster_to_base64_png,
 )
-from pipelines.tropical_cyclone.compute_wind_extent import compute_alert_extent
+from pipelines.tropical_cyclone.compute_wind_spatial_extent import (
+    compute_alert_spatial_extent,
+)
 from pipelines.tropical_cyclone.constants import (
     COUNTRY_CONFIGS,
     MIN_SEVERITY_MS,
@@ -76,7 +79,7 @@ from pipelines.tropical_cyclone.constants import (
 )
 from pipelines.tropical_cyclone.determine_alerts import determine_severities
 from pipelines.tropical_cyclone.determine_exposure import (
-    clip_wind_extent_to_admin_areas,
+    clip_wind_spatial_extent_to_admin_areas,
 )
 from pipelines.tropical_cyclone.extract_forecast import extract_wind_speed
 from pipelines.tropical_cyclone.extract_track import (
@@ -114,7 +117,6 @@ def calculate_tropical_cyclone_forecasts(
         return
 
     ### Step 2 - Resolve the country's config (exposure class, sustained-wind convention) ###
-    # TODO-infra: consider moving COUNTRY_CONFIGS into the db/API instead of a code constant.
     country_config = COUNTRY_CONFIGS.get(CountryCodeIso3(country))
     if country_config is None:
         data_submitter.add_error(
@@ -123,18 +125,25 @@ def calculate_tropical_cyclone_forecasts(
         return
 
     ### Step 3 - Load this country's forecast-source wind and track data ###
-    # TODO-infra: move to data providers (DataSource.GEFS_WIND/GEFS_TRACK and the ECMWF
-    # equivalents) once real fetchers exist. Until then, this reads local wind + track member file
-    # paths directly, picking the loaders for the country's configured forecast source. Two
-    # distinct products (different subtrees, different formats) - two loads, two guards.
-    # NOTE (extract-layer TODO, not this file): the loaded paths are handed to extract_wind_speed
-    # and extract_track below. Both are now source-aware and dispatch on
-    # country_config.forecast_source - extract_wind_speed parses GEFS's per-member GRIB2 or ECMWF's
-    # number-keyed ensemble GRIB2, and extract_track parses GEFS's ATCF or ECMWF's BUFR (see
-    # extract_forecast.py / extract_track.py).
+    # GEFS wind + track are loaded through the DataProvider from the seed repo (see
+    # gefs_product_provider.py); ECMWF is still read from local bronze fixtures pending a real
+    # fetcher. Two distinct products (different subtrees, different formats) - two loads, two
+    # guards.
+    # NOTE (extract-layer): the loaded paths are handed to extract_wind_speed and extract_track
+    # below. Both are source-aware and dispatch on country_config.forecast_source -
+    # extract_wind_speed parses GEFS's per-member GRIB2 or ECMWF's number-keyed ensemble GRIB2, and
+    # extract_track parses GEFS's ATCF or ECMWF's BUFR (see extract_forecast.py / extract_track.py).
     if country_config.forecast_source == ForecastSource.GEFS:
-        wind_member_paths = _placeholder_load_local_gefs_wind_paths(country)
-        track_member_paths = _placeholder_load_local_gefs_track_paths(country)
+        wind_member_paths: list[str] = _get_gefs_product_paths(
+            data_provider,
+            DataSource.GEFS_WIND_SEED_REPO_ALERT,
+            DataSource.GEFS_WIND_SEED_REPO_NO_ALERT,
+        )
+        track_member_paths: list[str] = _get_gefs_product_paths(
+            data_provider,
+            DataSource.GEFS_TRACK_SEED_REPO_ALERT,
+            DataSource.GEFS_TRACK_SEED_REPO_NO_ALERT,
+        )
     elif country_config.forecast_source == ForecastSource.ECMWF:
         wind_member_paths = _placeholder_load_local_ecmwf_wind_paths(country)
         track_member_paths = _placeholder_load_local_ecmwf_track_paths(country)
@@ -159,7 +168,7 @@ def calculate_tropical_cyclone_forecasts(
 
     ### Step 4 - Country bounding box ###
     # Computed from admin-area geometry, padded by MONITORING_BOX_BUFFER_KM so the box can
-    # see the storm approaching over open ocean before landfall - a small country's own land extent
+    # see the storm approaching over open ocean before landfall - a small country's own land spatial extent
     # doesn't capture that, especially for a small island. The buffer is a placeholder pending domain-owner validation - see
     # MONITORING_BOX_BUFFER_KM's docstring.
     country_bounds = pad_bounding_box(
@@ -283,22 +292,24 @@ def calculate_tropical_cyclone_forecasts(
                     )
                     continue
 
-                ### Step 8 - Compute the alert extent and its spatial exposure ###
-                wind_extent = compute_alert_extent(time_interval_severities)
-                clipped_wind_extent = clip_wind_extent_to_admin_areas(
-                    wind_extent, storm_place_codes, target_admin_areas
+                ### Step 8 - Compute the alert spatial extent and its spatial exposure ###
+                wind_spatial_extent = compute_alert_spatial_extent(
+                    time_interval_severities
+                )
+                clipped_wind_spatial_extent = clip_wind_spatial_extent_to_admin_areas(
+                    wind_spatial_extent, storm_place_codes, target_admin_areas
                 )
 
-                if clipped_wind_extent is None:
+                if clipped_wind_spatial_extent is None:
                     data_submitter.add_error(
-                        f"Could not compute wind extent for country '{country}', storm "
+                        f"Could not compute wind spatial extent for country '{country}', storm "
                         f"'{storm_track.storm_identifier}'"
                     )
                     continue
 
                 ### Step 9 - Compute and aggregate population exposure ###
                 population_exposed_raster = compute_population_exposed(
-                    population_raster, clipped_wind_extent
+                    population_raster, clipped_wind_spatial_extent
                 )
                 if population_exposed_raster is None:
                     data_submitter.add_error(
@@ -358,58 +369,52 @@ def calculate_tropical_cyclone_forecasts(
                 data_submitter.add_raster_exposure(
                     event_name=event_name,
                     layer=LayerName.WIND_SPEED,
-                    value_greyscale=raster_to_base64_png(clipped_wind_extent),
-                    extent=get_raster_extent(clipped_wind_extent),
+                    value_greyscale=raster_to_base64_png(clipped_wind_spatial_extent),
+                    extent=get_raster_extent(clipped_wind_spatial_extent),
                 )
 
 
-# Local test-fixture roots, not a real data source - see the two functions below. Deliberately
-# just `tropical_cyclone/bronze/<dataset>/`, not driven by an env var or CLI flag like floods'
-# DATA_CACHE_DIR/--local-data: whoever builds the real DataSource.GEFS_WIND/GEFS_TRACK fetcher
-# should feel free to pick whatever directory layout and live/mock source-target wiring suits
-# that fetcher - nothing here is meant to constrain that design.
-_LOCAL_GEFS_WIND_ROOT = Path(__file__).parent / "bronze" / "gefs_wind"
-_LOCAL_GEFS_TRACK_ROOT = Path(__file__).parent / "bronze" / "gefs_track"
+def _get_gefs_product_paths(
+    data_provider: DataProvider,
+    alert_source: DataSource,
+    no_alert_source: DataSource,
+) -> list[str]:
+    # Only one variant is loaded per run: --mock 1 loads the alert source, --mock 0 the no-alert
+    # one (mirrors flood/forecast.py::_get_glofas_discharge_paths). Return whichever is present.
+    for source in (alert_source, no_alert_source):
+        if source in data_provider.loaded_data:
+            return data_provider.get_data(source, list)
+    raise KeyError(
+        f"No GEFS product loaded (expected {alert_source} or {no_alert_source}); "
+        "check the tropicalCyclone config data_sources and the --mock flag."
+    )
+
+
+# Local test-fixture roots for ECMWF, not a real data source - see the two functions below. GEFS
+# is loaded through DataSource.GEFS_WIND_SEED_REPO_* / GEFS_TRACK_SEED_REPO_* instead (see Step 3);
+# ECMWF stays here until it gets an equivalent fetcher. Deliberately just
+# `tropical_cyclone/bronze/<dataset>/`, not driven by an env var or CLI flag - whoever builds the
+# real ECMWF fetcher should feel free to pick whatever directory layout and live/mock
+# source-target wiring suits it.
 _LOCAL_ECMWF_WIND_ROOT = Path(__file__).parent / "bronze" / "ecmwf_wind"
 _LOCAL_ECMWF_TRACK_ROOT = Path(__file__).parent / "bronze" / "ecmwf_track"
 
 
-def _placeholder_load_local_gefs_wind_paths(country: str) -> list[str]:
-    """
-    TODO-infra: replace with DataSource.GEFS_WIND once a fetcher exists. Local-testing stand-in
-    only: reads every file under the most recent `gefs.<date>/<hour>` cycle directory found
-    locally, regardless of `country` - there is currently only ever one local dataset on disk, and
-    every supported country shares the same GEFS wind product (only the bounds passed to
-    extract_wind_speed differ per country). Returns an empty list (halting the pipeline at the
-    Step 3 guard above) if no local fixture data exists.
-    """
-    return _most_recent_cycle_files(_LOCAL_GEFS_WIND_ROOT, date_dir_glob="gefs.*")
-
-
-def _placeholder_load_local_gefs_track_paths(country: str) -> list[str]:
-    """
-    TODO-infra: replace with DataSource.GEFS_TRACK once a fetcher exists. Local-testing stand-in
-    only: same approach as _placeholder_load_local_gefs_wind_paths, applied to the ATCF track
-    fixture directory.
-    """
-    return _most_recent_cycle_files(_LOCAL_GEFS_TRACK_ROOT, date_dir_glob="gefs.*")
-
-
 def _placeholder_load_local_ecmwf_wind_paths(country: str) -> list[str]:
     """
-    TODO-infra: replace with DataSource.ECMWF_WIND once a fetcher exists. Local-testing stand-in
-    only: ECMWF counterpart to _placeholder_load_local_gefs_wind_paths, reading the most recent
-    `<YYYYMMDD>/<HH>z/...` cycle under the ECMWF GRIB2 wind fixture directory. The extractor still
-    needs ECMWF-aware GRIB2 parsing (member via the GRIB `number` key) before this runs end to end
-    - see extract_forecast.py.
+    TODO AB#44097: replace with DataSource.ECMWF_WIND once a fetcher exists (as GEFS now is - see
+    Step 3). Local-testing stand-in only: reads the most recent `<YYYYMMDD>/<HH>z/...` cycle under
+    the ECMWF GRIB2 wind fixture directory, regardless of `country`. The extractor still needs
+    ECMWF-aware GRIB2 parsing (member via the GRIB `number` key) before this runs end to end - see
+    extract_forecast.py.
     """
     return _most_recent_cycle_files(_LOCAL_ECMWF_WIND_ROOT, date_dir_glob="[0-9]*")
 
 
 def _placeholder_load_local_ecmwf_track_paths(country: str) -> list[str]:
     """
-    TODO-infra: replace with DataSource.ECMWF_TRACK once a fetcher exists. Local-testing stand-in
-    only: ECMWF counterpart to _placeholder_load_local_gefs_track_paths. ECMWF tracks are BUFR
+    TODO AB#44097: replace with DataSource.ECMWF_TRACK once a fetcher exists (as GEFS now is - see
+    Step 3). Local-testing stand-in only: the ECMWF track fixture directory. ECMWF tracks are BUFR
     (one file per run, all members/features inside), not ATCF, so extract_track needs BUFR-aware
     parsing before this runs end to end - see extract_track.py.
     """

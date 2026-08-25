@@ -295,7 +295,7 @@
             "name": "issuedAt",
             "required": false,
             "in": "query",
-            "description": "ISO8601 date for the forecast issuedAt (e.g. 2026-08-25T05:15:29.165Z). Defaults to now.",
+            "description": "ISO8601 date for the forecast issuedAt (e.g. 2026-08-19T14:37:32.907Z). Defaults to now.",
             "schema": {
               "type": "string"
             }
@@ -663,7 +663,34 @@
       "get": {
         "description": "Example current use: GET /admin-areas?filter=countryCodeIso3='ETH' AND adminLevel=2",
         "operationId": "AdminAreasController_getAdminAreas",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "transform",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "simplify,0.05",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "countryCodeIso3='MWI' AND adminLevel=1",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "GeoJSON FeatureCollection of admin areas",

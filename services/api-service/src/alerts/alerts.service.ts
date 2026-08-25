@@ -47,10 +47,10 @@ export class AlertsService {
     const eventIds = new Map<string, number | null>();
     await Promise.all(
       forecast.alerts.map(async (alert) => {
-        const eventId = await this.alertToEventService.matchAndStore(
+        const eventId = await this.alertToEventService.matchAndStore({
           alert,
-          forecastMetadata,
-        );
+          forecast: forecastMetadata,
+        });
         eventIds.set(alert.eventName, eventId);
       }),
     );

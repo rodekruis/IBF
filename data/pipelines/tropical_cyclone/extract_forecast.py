@@ -273,12 +273,6 @@ def _resolve_configured_interval_hours(
     future change to the alert config (e.g. 3-hour -> 6-hour steps) is picked up automatically
     without a code change here. Falls back to the loading source's native cadence
     (`native_step_hours`) for a single-point spectrum, where no spacing can be derived.
-
-    TODO-infra: PR #306 discussion (comment on this function) - consider validating a config's
-    lead-hour spacing against its data source's native cadence at the API layer too (AlertConfig
-    has no forecastSource link yet, ForecastSource has no cadence attached). Flood has no
-    equivalent check today, so that's the natural place to start. Keep this check here regardless
-    - it protects _aggregate_bucket_rasters below, and removing it fails silently, not loudly.
     """
     if len(lead_hour_spectrum) < 2:
         return native_step_hours
@@ -321,7 +315,7 @@ def _aggregate_bucket_rasters(
 
 def _envelope_max(rasters: list[RasterData]) -> RasterData:
     """Per-cell max across same-grid rasters, nodata-aware (a cell stays nodata only if it is
-    nodata in every input) - same precautionary-envelope approach as compute_wind_extent.py's
+    nodata in every input) - same precautionary-envelope approach as compute_wind_spatial_extent.py's
     per-member footprint, applied here across a single member's native lead-time steps instead of
     across members."""
     if len(rasters) == 1:

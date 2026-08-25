@@ -118,12 +118,17 @@ const DROUGHT_PROBABILITY_CLASS_LEVELS: ClassLevel[] = [
   { label: singleThreshold, threshold: 0 },
 ];
 
-function createDroughtAlertConfig(
-  countryCodeIso3: string,
-  regionName: string,
-  placeCodes: string[],
-  seasons: Record<string, number[]>[],
-): SeedAlertConfig {
+function createDroughtAlertConfig({
+  countryCodeIso3,
+  regionName,
+  placeCodes,
+  seasons,
+}: {
+  countryCodeIso3: string;
+  regionName: string;
+  placeCodes: string[];
+  seasons: Record<string, number[]>[];
+}): SeedAlertConfig {
   return {
     countryCodeIso3,
     hazardType: HazardType.drought,
@@ -140,10 +145,10 @@ function createDroughtAlertConfig(
 // --- DROUGHT: ETH  ---
 
 const ETH_DROUGHT_CONFIGS: SeedAlertConfig[] = [
-  createDroughtAlertConfig(
-    'ETH',
-    'Belg',
-    [
+  createDroughtAlertConfig({
+    countryCodeIso3: 'ETH',
+    regionName: 'Belg',
+    placeCodes: [
       'ET0104',
       'ET0106',
       'ET0107',
@@ -177,12 +182,12 @@ const ETH_DROUGHT_CONFIGS: SeedAlertConfig[] = [
       'ET1301',
       'ET1600',
     ],
-    [{ MAM: [2, 3, 4, 5] }, { JAS: [6, 7, 8, 9] }],
-  ),
-  createDroughtAlertConfig(
-    'ETH',
-    'Meher',
-    [
+    seasons: [{ MAM: [2, 3, 4, 5] }, { JAS: [6, 7, 8, 9] }],
+  }),
+  createDroughtAlertConfig({
+    countryCodeIso3: 'ETH',
+    regionName: 'Meher',
+    placeCodes: [
       'ET0101',
       'ET0102',
       'ET0105',
@@ -220,12 +225,12 @@ const ETH_DROUGHT_CONFIGS: SeedAlertConfig[] = [
       'ET1204',
       'ET1401',
     ],
-    [{ JAS: [6, 7, 8, 9] }],
-  ),
-  createDroughtAlertConfig(
-    'ETH',
-    'Northern',
-    [
+    seasons: [{ JAS: [6, 7, 8, 9] }],
+  }),
+  createDroughtAlertConfig({
+    countryCodeIso3: 'ETH',
+    regionName: 'Northern',
+    placeCodes: [
       'ET0103',
       'ET0201',
       'ET0202',
@@ -236,12 +241,12 @@ const ETH_DROUGHT_CONFIGS: SeedAlertConfig[] = [
       'ET1501',
       'ET1502',
     ],
-    [{ MAM: [3, 4, 5] }, { JAS: [7, 8, 9] }],
-  ),
-  createDroughtAlertConfig(
-    'ETH',
-    'Southern',
-    [
+    seasons: [{ MAM: [3, 4, 5] }, { JAS: [7, 8, 9] }],
+  }),
+  createDroughtAlertConfig({
+    countryCodeIso3: 'ETH',
+    regionName: 'Southern',
+    placeCodes: [
       'ET0411',
       'ET0412',
       'ET0414',
@@ -258,28 +263,28 @@ const ETH_DROUGHT_CONFIGS: SeedAlertConfig[] = [
       'ET0511',
       'ET0712',
     ],
-    [{ MAM: [3, 4, 5] }, { OND: [10, 11, 12] }],
-  ),
+    seasons: [{ MAM: [3, 4, 5] }, { OND: [10, 11, 12] }],
+  }),
 ];
 
 // --- DROUGHT: KEN ---
 
 const KEN_DROUGHT_CONFIGS: SeedAlertConfig[] = [
-  createDroughtAlertConfig(
-    'KEN',
-    'National',
-    [],
-    [{ MAM: [3, 4, 5] }, { OND: [10, 11, 12] }],
-  ),
+  createDroughtAlertConfig({
+    countryCodeIso3: 'KEN',
+    regionName: 'National',
+    placeCodes: [],
+    seasons: [{ MAM: [3, 4, 5] }, { OND: [10, 11, 12] }],
+  }),
 ];
 
 // --- DROUGHT: UGA ---
 
 const UGA_DROUGHT_CONFIGS: SeedAlertConfig[] = [
-  createDroughtAlertConfig(
-    'UGA',
-    'Karamoja',
-    [
+  createDroughtAlertConfig({
+    countryCodeIso3: 'UGA',
+    regionName: 'Karamoja',
+    placeCodes: [
       'UG3066',
       'UG3070',
       'UG3074',
@@ -301,12 +306,12 @@ const UGA_DROUGHT_CONFIGS: SeedAlertConfig[] = [
       'UG3093',
       'UG3099',
     ],
-    [{ Karamoja: [4, 5, 6, 7, 8, 9, 10] }],
-  ),
-  createDroughtAlertConfig(
-    'UGA',
-    'Central',
-    [
+    seasons: [{ Karamoja: [4, 5, 6, 7, 8, 9, 10] }],
+  }),
+  createDroughtAlertConfig({
+    countryCodeIso3: 'UGA',
+    regionName: 'Central',
+    placeCodes: [
       'UG3092',
       'UG3094',
       'UG4101',
@@ -416,36 +421,41 @@ const UGA_DROUGHT_CONFIGS: SeedAlertConfig[] = [
       'UG3098',
       'UG3100',
     ],
-    [{ MAM: [3, 4, 5] }, { OND: [9, 10, 11] }],
-  ),
+    seasons: [{ MAM: [3, 4, 5] }, { OND: [9, 10, 11] }],
+  }),
 ];
 
 // --- DROUGHT: ZMB ---
 
 const ZMB_DROUGHT_CONFIGS: SeedAlertConfig[] = [
-  createDroughtAlertConfig(
-    'ZMB',
-    'National',
-    [],
-    [{ OND: [10, 11, 12, 1, 2, 3] }],
-  ),
+  createDroughtAlertConfig({
+    countryCodeIso3: 'ZMB',
+    regionName: 'National',
+    placeCodes: [],
+    seasons: [{ OND: [10, 11, 12, 1, 2, 3] }],
+  }),
 ];
 
 // --- DROUGHT: ZWE ---
 
 const ZWE_DROUGHT_CONFIGS: SeedAlertConfig[] = [
-  createDroughtAlertConfig('ZWE', 'National', [], [{ MAM: [4, 5, 6, 7, 8] }]),
+  createDroughtAlertConfig({
+    countryCodeIso3: 'ZWE',
+    regionName: 'National',
+    placeCodes: [],
+    seasons: [{ MAM: [4, 5, 6, 7, 8] }],
+  }),
 ];
 
 // --- DROUGHT: LSO ---
 
 const LSO_DROUGHT_CONFIGS: SeedAlertConfig[] = [
-  createDroughtAlertConfig(
-    'LSO',
-    'National',
-    [],
-    [{ Drought: [10, 11, 12, 1, 2, 3] }],
-  ),
+  createDroughtAlertConfig({
+    countryCodeIso3: 'LSO',
+    regionName: 'National',
+    placeCodes: [],
+    seasons: [{ Drought: [10, 11, 12, 1, 2, 3] }],
+  }),
 ];
 
 export const SEED_DROUGHT_ALERT_CONFIGS: SeedAlertConfig[] = [
@@ -485,8 +495,8 @@ const TROPICAL_CYCLONE_CLASSIFICATION_BY_COUNTRY: Record<
 > = {
   PHL: {
     severityClassLevels: [
-      { label: low, threshold: 119 },
-      { label: high, threshold: 154 },
+      { label: low, threshold: 33 },
+      { label: high, threshold: 43 },
     ],
     probabilityClassLevels: [{ label: singleThreshold, threshold: 0 }],
     triggerAlertClass: AlertClass.high,

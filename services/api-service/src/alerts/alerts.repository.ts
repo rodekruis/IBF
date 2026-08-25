@@ -144,10 +144,10 @@ export class AlertsRepository {
               create: (alertCreateDto.exposure.rasters ?? []).map((entry) => ({
                 layerName: entry.layer,
                 valueGreyscale: entry.valueGreyscale,
-                valueColoured: colorizeGrayscalePng(
-                  entry.valueGreyscale,
-                  FLOOD_DEPTH_CONFIG,
-                ),
+                valueColoured: colorizeGrayscalePng({
+                  base64Grayscale: entry.valueGreyscale,
+                  config: FLOOD_DEPTH_CONFIG,
+                }),
                 metadata: {
                   data: {
                     extent: { ...entry.extent },

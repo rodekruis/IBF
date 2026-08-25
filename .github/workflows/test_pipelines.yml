@@ -104,7 +104,7 @@ jobs:
         run: |
           docker compose exec api-service npm run prisma:migrate:deploy
 
-      - name: Reset database to UGA for tests
+      - name: Reset database to UGA+PHL for tests
         run: |
           curl --fail --silent --show-error \
             --request POST \

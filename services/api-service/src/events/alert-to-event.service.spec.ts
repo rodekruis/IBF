@@ -82,7 +82,10 @@ describe('AlertToEventService', () => {
       );
 
       await expect(
-        service.matchAndStore(buildAlert(), buildForecastMetadata()),
+        service.matchAndStore({
+          alert: buildAlert(),
+          forecast: buildForecastMetadata(),
+        }),
       ).rejects.toThrow('No classification config found');
       expect(repository.createEvent).not.toHaveBeenCalled();
     });
@@ -94,7 +97,7 @@ describe('AlertToEventService', () => {
 
       const alert = buildAlert();
       const forecast = buildForecastMetadata();
-      const result = await service.matchAndStore(alert, forecast);
+      const result = await service.matchAndStore({ alert, forecast });
 
       expect(result).toBeNull();
       expect(repository.closeOpenEventsByName).toHaveBeenCalledWith({
@@ -113,7 +116,7 @@ describe('AlertToEventService', () => {
 
       const alert = buildAlert();
       const forecast = buildForecastMetadata();
-      const result = await service.matchAndStore(alert, forecast);
+      const result = await service.matchAndStore({ alert, forecast });
 
       expect(result).toBe(99);
       expect(repository.createEvent).toHaveBeenCalledWith({
@@ -177,19 +180,22 @@ describe('AlertToEventService', () => {
         },
       ]);
 
-      const result = await service.matchAndStore(
-        buildAlert(),
-        buildForecastMetadata(),
-      );
+      const result = await service.matchAndStore({
+        alert: buildAlert(),
+        forecast: buildForecastMetadata(),
+      });
 
       expect(result).toBe(42);
-      expect(repository.updateEvent).toHaveBeenCalledWith(42, {
-        alertClass: AlertClass.high,
-        trigger: true,
-        startAt: new Date('2026-04-08T00:00:00Z'),
-        reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
-        endAt: classification.endAt,
-        lastUpdatedAt: expect.any(Date),
+      expect(repository.updateEvent).toHaveBeenCalledWith({
+        id: 42,
+        data: {
+          alertClass: AlertClass.high,
+          trigger: true,
+          startAt: new Date('2026-04-08T00:00:00Z'),
+          reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
+          endAt: classification.endAt,
+          lastUpdatedAt: expect.any(Date),
+        },
       });
     });
 
@@ -246,17 +252,19 @@ describe('AlertToEventService', () => {
         },
       ]);
 
-      await service.matchAndStore(
-        buildAlert(),
-        buildForecastMetadata({ issuedAt: new Date('2026-04-02T00:00:00Z') }),
-      );
+      await service.matchAndStore({
+        alert: buildAlert(),
+        forecast: buildForecastMetadata({
+          issuedAt: new Date('2026-04-02T00:00:00Z'),
+        }),
+      });
 
-      expect(repository.updateEvent).toHaveBeenCalledWith(
-        42,
-        expect.objectContaining({
+      expect(repository.updateEvent).toHaveBeenCalledWith({
+        id: 42,
+        data: expect.objectContaining({
           startAt: new Date('2026-03-27T00:00:00Z'),
         }),
-      );
+      });
     });
   });
 });

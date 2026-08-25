@@ -35,8 +35,8 @@ class DataType(StrEnum):
     # In-memory raster data (array + geo metadata)
     RASTER_DATA = "raster_data"
 
-    # A FloodExtentProvider that lazily fetches flood extent rasters on demand
-    FLOOD_EXTENT_PROVIDER = "flood_extent_provider"
+    # A FloodDepthProvider that lazily fetches flood depth rasters on demand
+    FLOOD_DEPTH_PROVIDER = "flood_depth_provider"
 
     # an AdminAreasSet object
     ADMIN_AREA_SET = "admin_area_set"

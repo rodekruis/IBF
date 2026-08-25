@@ -36,13 +36,11 @@ class AveragingPeriod(StrEnum):
     TEN_MINUTE = "10min"
 
 
+# Consider moving this to infra-code once a second hazard pipeline needs country-specific config
 @dataclass
 class CountryConfig:
     exposure_class: ExposureClass
     sustained_wind_averaging_period: AveragingPeriod
-    # TODO-infra: move alongside COUNTRY_CONFIGS if/when that migrates to the db/API.
-    # this is only a placeholder for now, since the pipeline code needs to know
-    # which forecast source to use for each
     forecast_source: ForecastSource
 
 
@@ -53,14 +51,12 @@ class CountryConfig:
 # each dispatch on this value - so switching a country over is a config change, not a code change.
 # Every country is on GEFS today.
 #
-# Neither source has a real data-provider fetcher yet (DataSource carries only a
-# TODO_ECMWF_FORECAST placeholder), so Step 3 reads local fixtures from bronze/<source>_wind and
-# bronze/<source>_track instead. Whichever source a country is set to therefore needs those
-# fixtures on disk, or its local run stops at the Step 3 guard. ECMWF fixtures can be downloaded
-# with data_management/seed_data_management/fetch_ecmwf_tropical_cyclone_test_data.py; GEFS has no
-# equivalent script yet and is fetched by hand.
-# TODO(data-scientist): add a real fetcher for ECMWF wind + track (and GEFS's, TODO-infra items
-# 1-2 in tropical_cyclone/README.md) so this stops depending on hand-managed fixture trees.
+# ECMWF has no fetcher yet (DataSource carries only the TODO_ECMWF_FORECAST placeholder), so Step 3
+# still reads local fixtures from bronze/ecmwf_wind and bronze/ecmwf_track; a country on ECMWF
+# therefore needs those on disk (download with fetch_ecmwf_tropical_cyclone_test_data.py) or its run
+# stops at the Step 3 guard.
+# TODO(data-scientist): add a real fetcher for ECMWF wind + track so this stops depending on
+# hand-managed fixture trees.
 COUNTRY_CONFIGS: dict[CountryCodeIso3, CountryConfig] = {
     CountryCodeIso3.PHL: CountryConfig(
         exposure_class=ExposureClass.IN_LAND,  # TODO(data-scientist): confirm,
@@ -87,11 +83,11 @@ COUNTRY_CONFIGS: dict[CountryCodeIso3, CountryConfig] = {
 
 # Buffer added around each country's admin-area bounding box before slicing the global GRIB2/ATCF
 # data, so the monitoring box can see the storm approaching over open ocean before landfall — a
-# small island's own land extent doesn't capture that. Also doubles as the monitoring-trigger
+# small island's own land spatial extent doesn't capture that. Also doubles as the monitoring-trigger
 # radius: a country is "watched" once a storm's track enters this padded box.
 # 1000 km = WMO's upper bound on tropical-cyclone diameter, chosen deliberately generous to avoid
 # missing storms whose wind field reaches land while the track/centroid itself stays offshore
-# (a real scenario - wind extent is not bounded by the track). A track further than this cannot
+# (a real scenario - wind spatial extent is not bounded by the track). A track further than this cannot
 # physically have a wind field reaching the country, so the severity gate (wind-driven, not
 # track-driven - see MIN_SEVERITY_MS below) never needs a track-based fallback for that case.
 # Revisit if this introduces too much noise in production.
@@ -141,7 +137,7 @@ GEFS_TRACK_MEMBER_IDS: list[str] = ["ac00", *[f"ap{i:02d}" for i in range(1, 31)
 # value keeps exactly one row per (member, lead hour).
 ATCF_WIND_RADII_THRESHOLD_KNOTS = 34
 
-# Native GEFS forecast cadence for the wind (pgrb2sp25) product - a fixed physical property of the
+# Native GEFS cadence for the wind (pgrb2sp25) product - a fixed physical property of the
 # data source, independent of whatever lead-time bucketing the alert config's temporal extent
 # specifies (see AlertConfig's "lead-time-spectrum", e.g. 3-hour or 6-hour steps up to some max
 # lead time). extract_wind_speed() aggregates native-step rasters (per-cell max, per ensemble

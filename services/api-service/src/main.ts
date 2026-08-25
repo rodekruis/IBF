@@ -115,7 +115,7 @@ function generateSwaggerSummaryJson(app: INestApplication<any>): void {
   writeFileSync('swagger.json', document);
 }
 
-function generateSwaggerJson(app: INestApplication<any>): void {
+function generateNrwOpenApiSwagger(app: INestApplication<any>): void {
   // The frontend needs an OpenAPI compatible Swagger export.
   const options = new DocumentBuilder()
     .setTitle(APP_TITLE)
@@ -209,7 +209,7 @@ async function bootstrap(): Promise<void> {
   if (IS_DEVELOPMENT) {
     generateModuleDependencyGraph(app);
     generateSwaggerSummaryJson(app);
-    generateSwaggerJson(app);
+    generateNrwOpenApiSwagger(app);
   }
 
   // Set up generic error handling:
@@ -226,8 +226,11 @@ async function bootstrap(): Promise<void> {
 
     const logService = new AzureLogService();
     if (logService) {
-      logService.logError(error, true);
-      logService.logError(new Error('Uncaught Exception: restarting'), true);
+      logService.logError({ error, alert: true });
+      logService.logError({
+        error: new Error('Uncaught Exception: restarting'),
+        alert: true,
+      });
     }
 
     // eslint-disable-next-line n/no-process-exit -- Trigger a reboot, as the app is in an unknown state.

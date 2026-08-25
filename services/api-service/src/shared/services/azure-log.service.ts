@@ -14,7 +14,7 @@ export class AzureLogService {
     }
   }
 
-  public logError(error: Error, alert: boolean): void {
+  public logError({ error, alert }: { error: Error; alert: boolean }): void {
     if (!this.defaultClient) {
       throw error;
     }

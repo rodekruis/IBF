@@ -215,9 +215,9 @@ def test_multiple_layers_aggregated_independently():
 
     level_2 = _entries_at_level(alert, 2)
     population = [e for e in level_2 if e.layer == LayerName.POPULATION_EXPOSED]
-    extent = [e for e in level_2 if e.layer == LayerName.FLOOD_DEPTH]
+    flood_depth = [e for e in level_2 if e.layer == LayerName.FLOOD_DEPTH]
 
     assert len(population) == 1
     assert population[0].value == 300
-    assert len(extent) == 1
-    assert extent[0].value == 30
+    assert len(flood_depth) == 1
+    assert flood_depth[0].value == 30

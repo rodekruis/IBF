@@ -46,8 +46,8 @@ def calculate_forecasts(
     # Step 2 - Calculate the forecast.
     # Replace the placeholder logic below with actual hazard-specific computations:
     # - Determine severity per ensemble member
-    # - Generate hazard extent rasters
-    # - Compute population exposure from population raster + hazard extent
+    # - Generate hazard spatial extent rasters
+    # - Compute population exposure from population raster + hazard spatial extent
     # - Compute geo-feature exposure (hospitals, roads, etc.)
 
     # REQUIRED: loop over spatial extents (alert configs)

@@ -16,7 +16,7 @@ interface ColorizationConfig {
   colorHigh: Rgba;
 
   // Whether zero-value pixels are fully transparent.
-  // true: zero pixels are invisible (typical for flood extents on a map).
+  // true: zero pixels are invisible (typical for flood depth rasters on a map).
   // false: zero pixels are rendered using colorLow.
   zeroIsTransparent: boolean;
 
@@ -49,10 +49,13 @@ export const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
 };
 // ──────────────────────────────────────────────────────────────────────────────
 
-export function colorizeGrayscalePng(
-  base64Grayscale: string,
-  config: ColorizationConfig,
-): string {
+export function colorizeGrayscalePng({
+  base64Grayscale,
+  config,
+}: {
+  base64Grayscale: string;
+  config: ColorizationConfig;
+}): string {
   if (!base64Grayscale) {
     return '';
   }
@@ -132,10 +135,13 @@ export interface PopulationRasterResult {
   metadata: RasterMetadata;
 }
 
-function computeRasterMetadata(
-  dataPngBuffer: Buffer,
-  metadata: { transform: number[]; crs: EPSG },
-): RasterMetadata {
+function computeRasterMetadata({
+  dataPngBuffer,
+  metadata,
+}: {
+  dataPngBuffer: Buffer;
+  metadata: { transform: number[]; crs: EPSG };
+}): RasterMetadata {
   const width = dataPngBuffer.readUInt32BE(16);
   const height = dataPngBuffer.readUInt32BE(20);
 
@@ -159,16 +165,19 @@ function computeRasterMetadata(
   };
 }
 
-export function processPopulationRaster(
-  dataPngBuffer: Buffer,
-  metadata: { transform: number[]; crs: EPSG },
-): PopulationRasterResult {
-  const rasterMetadata = computeRasterMetadata(dataPngBuffer, metadata);
-  const colouredBase64 = colorizeRgbaEncodedPng(
-    dataPngBuffer,
-    POPULATION_CONFIG,
-    POPULATION_DOWNSAMPLE_FACTOR,
-  );
+export function processPopulationRaster({
+  dataPngBuffer,
+  metadata,
+}: {
+  dataPngBuffer: Buffer;
+  metadata: { transform: number[]; crs: EPSG };
+}): PopulationRasterResult {
+  const rasterMetadata = computeRasterMetadata({ dataPngBuffer, metadata });
+  const colouredBase64 = colorizeRgbaEncodedPng({
+    inputBuffer: dataPngBuffer,
+    config: POPULATION_CONFIG,
+    downsampleFactor: POPULATION_DOWNSAMPLE_FACTOR,
+  });
 
   return {
     colouredBase64,
@@ -183,11 +192,15 @@ export function processPopulationRaster(
 // This function decodes those values (optionally downsampling) and colorizes based on population.
 // It allocates a Float32Array for decoded values and uses three passes (decode, max scan, render).
 // Peak memory is roughly input + output + decoded, so keep downsampleFactor in mind for large rasters.
-function colorizeRgbaEncodedPng(
-  inputBuffer: Buffer,
-  config: ColorizationConfig,
+function colorizeRgbaEncodedPng({
+  inputBuffer,
+  config,
   downsampleFactor = 1,
-): string {
+}: {
+  inputBuffer: Buffer;
+  config: ColorizationConfig;
+  downsampleFactor?: number;
+}): string {
   const { colorLow, colorHigh, zeroIsTransparent, steps, useLogScale } = config;
 
   const png = PNG.sync.read(inputBuffer);

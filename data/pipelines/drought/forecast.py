@@ -44,8 +44,8 @@ def calculate_drought_forecasts(
     # - Loop over alert configs (spatial extents / climate regions) and temporal extents (seasons)
     # - Compute aggregate severity per season
     # - If minimum severity threshold is passed, create an alert
-    # - Generate drought extent rasters
-    # - Compute population exposure from population raster + drought extent
+    # - Generate drought spatial extent rasters
+    # - Compute population exposure from population raster + drought spatial extent
     # - Compute geo-feature exposure (hospitals, roads, etc.)
 
     # REQUIRED: loop over spatial extents (alert configs)
