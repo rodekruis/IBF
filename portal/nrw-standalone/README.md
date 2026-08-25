@@ -76,7 +76,7 @@ The app is deployed to Azure Static Web Apps by the GitHub Actions workflows in 
 
 Both workflows build the app with the shared [`build-frontend`](../../.github/actions/build-frontend/action.yml) action: it checks out the `go-web-app` submodule (sparse), installs dependencies with pnpm, and runs `pnpm build`. The build reads its configuration (see `sample.env`) from the GitHub environment instead of an `.env` file:
 
-- `APP_IBF_API_BACKEND` — environment variable, URL of the deployed `api-service`
+- `APP_NRW_API_BACKEND` — environment variable, URL of the deployed `api-service`
 - `APP_SEED_DATA_REPO` — environment variable, base URL of the seed-data repository
 - `APP_MAPBOX_ACCESS_TOKEN` — environment secret
 - `AZURE_STATIC_WEB_APPS_API_TOKEN_PORTAL` — environment secret, deployment token of the Azure Static Web App
