@@ -12,7 +12,7 @@ describe('/ Users', () => {
     };
 
     beforeAll(async () => {
-      await resetDB(['MWI'], __filename);
+      await resetDB({ countryCodes: ['MWI'], resetIdentifier: __filename });
     });
 
     it('should log-in with valid credentials', async () => {
@@ -20,7 +20,10 @@ describe('/ Users', () => {
       const testUser = fixtureUser;
 
       // Act
-      const response = await loginApi(testUser.username, testUser.password);
+      const response = await loginApi({
+        username: testUser.username,
+        password: testUser.password,
+      });
 
       // Assert
       expect(response.status).toBe(HttpStatus.CREATED);
@@ -43,7 +46,10 @@ describe('/ Users', () => {
       };
 
       // Act
-      const response = await loginApi(testUser.username, testUser.password);
+      const response = await loginApi({
+        username: testUser.username,
+        password: testUser.password,
+      });
 
       // Assert
       expect(response.status).toBe(HttpStatus.UNAUTHORIZED);

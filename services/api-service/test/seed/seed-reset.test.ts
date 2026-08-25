@@ -16,7 +16,11 @@ describe('POST /reset', () => {
   jest.setTimeout(60_000);
 
   beforeAll(async () => {
-    await resetDB([countryCodeIso3], __filename, false);
+    await resetDB({
+      countryCodes: [countryCodeIso3],
+      resetIdentifier: __filename,
+      skipStaticRasters: false,
+    });
     accessToken = await getAccessToken();
   });
 

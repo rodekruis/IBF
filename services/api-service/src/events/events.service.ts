@@ -15,37 +15,46 @@ import { LayerType } from '@api-service/src/shared-enums';
 export class EventsService {
   public constructor(private readonly eventsRepository: EventsRepository) {}
 
-  public async getEvents(
-    viewTime: Date,
-    active?: boolean,
-    countryCodeIso3?: string,
-  ): Promise<EventResponseDto[]> {
-    const events = await this.eventsRepository.getEvents(
+  public async getEvents({
+    viewTime,
+    active,
+    countryCodeIso3,
+  }: {
+    viewTime: Date;
+    active?: boolean;
+    countryCodeIso3?: string;
+  }): Promise<EventResponseDto[]> {
+    const events = await this.eventsRepository.getEvents({
       viewTime,
       active,
       countryCodeIso3,
-    );
+    });
     const eventIds = events.map((event) => event.id);
     const exposedAdminAreasByEventId =
       await this.eventsRepository.getExposedAdminAreasForLatestAlerts(eventIds);
     const rastersByEventId =
       await this.eventsRepository.getRasterIdsForLatestAlerts(eventIds);
     return events.map((event) =>
-      this.mapEventToResponse(
+      this.mapEventToResponse({
         event,
         viewTime,
-        exposedAdminAreasByEventId.get(event.id) ?? [],
-        rastersByEventId.get(event.id) ?? [],
-      ),
+        exposedAdminAreas: exposedAdminAreasByEventId.get(event.id) ?? [],
+        rasters: rastersByEventId.get(event.id) ?? [],
+      }),
     );
   }
 
-  private mapEventToResponse(
-    event: Event,
-    viewTime: Date,
-    exposedAdminAreas: ExposedAdminAreaRecord[],
-    rasters: { id: number; layer: Layer }[],
-  ): EventResponseDto {
+  private mapEventToResponse({
+    event,
+    viewTime,
+    exposedAdminAreas,
+    rasters,
+  }: {
+    event: Event;
+    viewTime: Date;
+    exposedAdminAreas: ExposedAdminAreaRecord[];
+    rasters: { id: number; layer: Layer }[];
+  }): EventResponseDto {
     return {
       eventId: event.id,
       countryCodeIso3: event.countryCodeIso3,

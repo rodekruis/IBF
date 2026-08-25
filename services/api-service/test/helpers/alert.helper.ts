@@ -18,10 +18,13 @@ import { getServer } from '@api-service/test/helpers/utility.helper';
 const TEST_RASTER_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4AWNoaGj4DwAFhAKAfr3l1AAAAABJRU5ErkJggg==';
 
-export async function createAlerts(
-  forecast: ForecastCreateDto,
-  apiKey: string = env.PIPELINE_API_KEY!,
-): Promise<request.Response> {
+export async function createAlerts({
+  forecast,
+  apiKey = env.PIPELINE_API_KEY!,
+}: {
+  forecast: ForecastCreateDto;
+  apiKey?: string;
+}): Promise<request.Response> {
   return getServer().post('/alerts').set('x-api-key', apiKey).send(forecast);
 }
 
@@ -31,17 +34,23 @@ export async function readAlerts(
   return getServer().get('/alerts').set('Cookie', [accessToken]);
 }
 
-export async function readAlertById(
-  id: number,
-  accessToken: string,
-): Promise<request.Response> {
+export async function readAlertById({
+  id,
+  accessToken,
+}: {
+  id: number;
+  accessToken: string;
+}): Promise<request.Response> {
   return getServer().get(`/alerts/${id}`).set('Cookie', [accessToken]);
 }
 
-export async function deleteAlert(
-  id: number,
-  accessToken: string,
-): Promise<request.Response> {
+export async function deleteAlert({
+  id,
+  accessToken,
+}: {
+  id: number;
+  accessToken: string;
+}): Promise<request.Response> {
   return getServer().delete(`/alerts/${id}`).set('Cookie', [accessToken]);
 }
 
@@ -94,10 +103,13 @@ export function buildAlert(
   };
 }
 
-export function buildForecast(
-  alerts: AlertCreateDto[],
-  overrides: Partial<Omit<ForecastCreateDto, 'alerts'>> = {},
-): ForecastCreateDto {
+export function buildForecast({
+  alerts,
+  overrides = {},
+}: {
+  alerts: AlertCreateDto[];
+  overrides?: Partial<Omit<ForecastCreateDto, 'alerts'>>;
+}): ForecastCreateDto {
   return {
     countryCodeIso3: 'MWI',
     issuedAt: new Date(),

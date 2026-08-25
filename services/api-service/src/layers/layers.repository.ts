@@ -112,10 +112,13 @@ export class LayersRepository {
     return this.toReadDto(row);
   }
 
-  public async updateLayerOrThrow(
-    layerName: LayerName,
-    dto: LayerUpdateDto,
-  ): Promise<LayerReadDto> {
+  public async updateLayerOrThrow({
+    layerName,
+    dto,
+  }: {
+    layerName: LayerName;
+    dto: LayerUpdateDto;
+  }): Promise<LayerReadDto> {
     const existing = await this.prisma.layer.findUnique({
       where: { name: layerName },
       select: { id: true },

@@ -12,11 +12,15 @@ import {
   buildSeverityData,
 } from '@api-service/test/helpers/alert.helper';
 
-function toClassificationInput(
-  alert: ReturnType<typeof buildAlert>,
-  hazardType: HazardType = HazardType.floods,
-  issuedAt: Date = new Date(),
-): AlertClassificationInput {
+function toClassificationInput({
+  alert,
+  hazardType = HazardType.floods,
+  issuedAt = new Date(),
+}: {
+  alert: ReturnType<typeof buildAlert>;
+  hazardType?: HazardType;
+  issuedAt?: Date;
+}): AlertClassificationInput {
   return {
     countryCodeIso3: 'ETH',
     hazardType,
@@ -86,7 +90,7 @@ describe('AlertClassificationService', () => {
       const alert = buildAlert();
       await expect(
         service.classifyAlert(
-          toClassificationInput(alert, 'unknown' as HazardType),
+          toClassificationInput({ alert, hazardType: 'unknown' as HazardType }),
         ),
       ).rejects.toThrow(
         "No classification config found for hazard type 'unknown'",
@@ -122,7 +126,7 @@ describe('AlertClassificationService', () => {
         });
 
         const result = await service.classifyAlert(
-          toClassificationInput(alert),
+          toClassificationInput({ alert }),
         );
         expect(result.alertClass).toBeNull();
       });
@@ -138,7 +142,7 @@ describe('AlertClassificationService', () => {
         });
 
         const result = await service.classifyAlert(
-          toClassificationInput(alert),
+          toClassificationInput({ alert }),
         );
         expect(result.alertClass).toBe(AlertClassificationLevel.medium);
       });
@@ -154,7 +158,7 @@ describe('AlertClassificationService', () => {
         });
 
         const result = await service.classifyAlert(
-          toClassificationInput(alert),
+          toClassificationInput({ alert }),
         );
         expect(result.alertClass).toBe(AlertClassificationLevel.high);
       });
@@ -180,7 +184,7 @@ describe('AlertClassificationService', () => {
         });
 
         const result = await service.classifyAlert(
-          toClassificationInput(alert),
+          toClassificationInput({ alert }),
         );
         expect(result.alertClass).toBe(AlertClassificationLevel.high);
         expect(result.startAt).toEqual(new Date('2026-04-01T00:00:00Z'));
@@ -202,11 +206,11 @@ describe('AlertClassificationService', () => {
           });
 
           const result = await service.classifyAlert(
-            toClassificationInput(
+            toClassificationInput({
               alert,
-              HazardType.floods,
-              new Date('2026-03-30T00:00:00Z'),
-            ),
+              hazardType: HazardType.floods,
+              issuedAt: new Date('2026-03-30T00:00:00Z'),
+            }),
           );
           expect(result.trigger).toBe(true);
         });
@@ -222,11 +226,11 @@ describe('AlertClassificationService', () => {
           });
 
           const result = await service.classifyAlert(
-            toClassificationInput(
+            toClassificationInput({
               alert,
-              HazardType.floods,
-              new Date('2026-03-30T00:00:00Z'),
-            ),
+              hazardType: HazardType.floods,
+              issuedAt: new Date('2026-03-30T00:00:00Z'),
+            }),
           );
           expect(result.alertClass).toBe(AlertClassificationLevel.high);
           expect(result.trigger).toBe(false);
@@ -243,7 +247,7 @@ describe('AlertClassificationService', () => {
           });
 
           const result = await service.classifyAlert(
-            toClassificationInput(alert),
+            toClassificationInput({ alert }),
           );
           expect(result.alertClass).toBe(AlertClassificationLevel.medium);
           expect(result.trigger).toBe(false);
@@ -263,7 +267,7 @@ describe('AlertClassificationService', () => {
         });
 
         const result = await service.classifyAlert(
-          toClassificationInput(alert, HazardType.drought),
+          toClassificationInput({ alert, hazardType: HazardType.drought }),
         );
         expect(result.alertClass).toBe(AlertClassificationLevel.high);
         expect(result.trigger).toBe(false);

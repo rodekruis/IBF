@@ -23,7 +23,10 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
   let accessToken: string;
 
   beforeEach(async () => {
-    await resetDB([countryCodeIso3], __filename);
+    await resetDB({
+      countryCodes: [countryCodeIso3],
+      resetIdentifier: __filename,
+    });
     accessToken = await getAccessToken();
   });
 
@@ -68,17 +71,20 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     });
 
     // Step 1: Create alert → creates event
-    await createAlerts(
-      buildForecast([alertA], {
-        countryCodeIso3,
-        issuedAt: new Date('2026-03-23T12:00:00Z'),
+    await createAlerts({
+      forecast: buildForecast({
+        alerts: [alertA],
+        overrides: {
+          countryCodeIso3,
+          issuedAt: new Date('2026-03-23T12:00:00Z'),
+        },
       }),
-    );
-    let response = await getActiveEvents(
+    });
+    let response = await getActiveEvents({
       accessToken,
       countryCodeIso3,
-      viewTimestamp,
-    );
+      timestamp: viewTimestamp,
+    });
     expect(response.status).toBe(HttpStatus.OK);
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
@@ -107,17 +113,20 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     });
 
     // Step 2: Create an alert with higher severity → updates event
-    await createAlerts(
-      buildForecast([alertAUpgraded], {
-        countryCodeIso3,
-        issuedAt: new Date('2026-03-24T12:00:00Z'),
+    await createAlerts({
+      forecast: buildForecast({
+        alerts: [alertAUpgraded],
+        overrides: {
+          countryCodeIso3,
+          issuedAt: new Date('2026-03-24T12:00:00Z'),
+        },
       }),
-    );
-    response = await getActiveEvents(
+    });
+    response = await getActiveEvents({
       accessToken,
       countryCodeIso3,
-      viewTimestamp,
-    );
+      timestamp: viewTimestamp,
+    });
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
       eventName: 'station-A',
@@ -141,17 +150,20 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     });
 
     // Step 3: Create two alerts → both events open
-    await createAlerts(
-      buildForecast([alertAUpgraded, alertB], {
-        countryCodeIso3,
-        issuedAt: new Date('2026-03-24T12:00:00Z'),
+    await createAlerts({
+      forecast: buildForecast({
+        alerts: [alertAUpgraded, alertB],
+        overrides: {
+          countryCodeIso3,
+          issuedAt: new Date('2026-03-24T12:00:00Z'),
+        },
       }),
-    );
-    response = await getActiveEvents(
+    });
+    response = await getActiveEvents({
       accessToken,
       countryCodeIso3,
-      viewTimestamp,
-    );
+      timestamp: viewTimestamp,
+    });
     expect(response.body).toHaveLength(2);
     const names = response.body
       .map((e: { eventName: string }) => e.eventName)
@@ -159,17 +171,20 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     expect(names).toEqual(['station-A', 'station-B']);
 
     // Step 4: Create only alertB → stale event for alertA is closed
-    await createAlerts(
-      buildForecast([alertB], {
-        countryCodeIso3,
-        issuedAt: new Date('2026-03-24T12:00:00Z'),
+    await createAlerts({
+      forecast: buildForecast({
+        alerts: [alertB],
+        overrides: {
+          countryCodeIso3,
+          issuedAt: new Date('2026-03-24T12:00:00Z'),
+        },
       }),
-    );
-    response = await getActiveEvents(
+    });
+    response = await getActiveEvents({
       accessToken,
       countryCodeIso3,
-      laterViewTimestamp,
-    );
+      timestamp: laterViewTimestamp,
+    });
     expect(response.body).toHaveLength(1);
     expect(response.body[0].eventName).toBe('station-B');
     expect(response.body[0].isOngoing).toBe(true);
@@ -190,18 +205,21 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         }),
       });
 
-      await createAlerts(
-        buildForecast([alertThatStartsNextDay], {
-          countryCodeIso3,
-          issuedAt: new Date('2026-03-23T12:00:00Z'),
+      await createAlerts({
+        forecast: buildForecast({
+          alerts: [alertThatStartsNextDay],
+          overrides: {
+            countryCodeIso3,
+            issuedAt: new Date('2026-03-23T12:00:00Z'),
+          },
         }),
-      );
+      });
 
-      const responseBeforeStart = await getActiveEvents(
+      const responseBeforeStart = await getActiveEvents({
         accessToken,
         countryCodeIso3,
-        viewTimestamp,
-      );
+        timestamp: viewTimestamp,
+      });
       expect(responseBeforeStart.status).toBe(HttpStatus.OK);
       expect(responseBeforeStart.body).toHaveLength(1);
       expect(responseBeforeStart.body[0]).toMatchObject({
@@ -211,11 +229,11 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         isOngoing: false,
       });
 
-      const responseOnStartDay = await getActiveEvents(
+      const responseOnStartDay = await getActiveEvents({
         accessToken,
         countryCodeIso3,
-        laterViewTimestamp,
-      );
+        timestamp: laterViewTimestamp,
+      });
       expect(responseOnStartDay.status).toBe(HttpStatus.OK);
       expect(responseOnStartDay.body).toHaveLength(1);
       expect(responseOnStartDay.body[0]).toMatchObject({
@@ -240,18 +258,21 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         }),
       });
 
-      await createAlerts(
-        buildForecast([expiredAlert], {
-          countryCodeIso3,
-          issuedAt: new Date('2026-03-23T12:00:00Z'),
+      await createAlerts({
+        forecast: buildForecast({
+          alerts: [expiredAlert],
+          overrides: {
+            countryCodeIso3,
+            issuedAt: new Date('2026-03-23T12:00:00Z'),
+          },
         }),
-      );
+      });
 
-      const responseBeforeExpiry = await getActiveEvents(
+      const responseBeforeExpiry = await getActiveEvents({
         accessToken,
         countryCodeIso3,
-        viewTimestamp,
-      );
+        timestamp: viewTimestamp,
+      });
       expect(responseBeforeExpiry.status).toBe(HttpStatus.OK);
       expect(responseBeforeExpiry.body).toHaveLength(1);
       expect(responseBeforeExpiry.body[0]).toMatchObject({
@@ -261,11 +282,11 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         isOngoing: true,
       });
 
-      const responseAfterExpiry = await getActiveEvents(
+      const responseAfterExpiry = await getActiveEvents({
         accessToken,
         countryCodeIso3,
-        laterViewTimestamp,
-      );
+        timestamp: laterViewTimestamp,
+      });
       expect(responseAfterExpiry.status).toBe(HttpStatus.OK);
       expect(responseAfterExpiry.body).toHaveLength(0);
     });
@@ -304,30 +325,39 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       }),
     });
 
-    await createAlerts(
-      buildForecast([firstUpcomingAlert], {
-        countryCodeIso3,
-        issuedAt: new Date('2026-03-20T12:00:00Z'),
+    await createAlerts({
+      forecast: buildForecast({
+        alerts: [firstUpcomingAlert],
+        overrides: {
+          countryCodeIso3,
+          issuedAt: new Date('2026-03-20T12:00:00Z'),
+        },
       }),
-    );
-    await createAlerts(
-      buildForecast([firstOngoingAlert], {
-        countryCodeIso3,
-        issuedAt: new Date('2026-03-27T12:00:00Z'),
+    });
+    await createAlerts({
+      forecast: buildForecast({
+        alerts: [firstOngoingAlert],
+        overrides: {
+          countryCodeIso3,
+          issuedAt: new Date('2026-03-27T12:00:00Z'),
+        },
       }),
-    );
-    await createAlerts(
-      buildForecast([laterUpcomingAlert], {
-        countryCodeIso3,
-        issuedAt: new Date('2026-03-28T12:00:00Z'),
+    });
+    await createAlerts({
+      forecast: buildForecast({
+        alerts: [laterUpcomingAlert],
+        overrides: {
+          countryCodeIso3,
+          issuedAt: new Date('2026-03-28T12:00:00Z'),
+        },
       }),
-    );
+    });
 
-    const response = await getActiveEvents(
+    const response = await getActiveEvents({
       accessToken,
       countryCodeIso3,
-      '2026-03-29T00:00:00Z',
-    );
+      timestamp: '2026-03-29T00:00:00Z',
+    });
     expect(response.status).toBe(HttpStatus.OK);
 
     const pinnedStartEvent = response.body.find(
@@ -366,24 +396,30 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       }),
     });
 
-    await createAlerts(
-      buildForecast([firstUpcomingAlert], {
-        countryCodeIso3,
-        issuedAt: new Date('2026-04-01T12:00:00Z'),
+    await createAlerts({
+      forecast: buildForecast({
+        alerts: [firstUpcomingAlert],
+        overrides: {
+          countryCodeIso3,
+          issuedAt: new Date('2026-04-01T12:00:00Z'),
+        },
       }),
-    );
-    await createAlerts(
-      buildForecast([secondUpcomingAlert], {
-        countryCodeIso3,
-        issuedAt: new Date('2026-04-02T12:00:00Z'),
+    });
+    await createAlerts({
+      forecast: buildForecast({
+        alerts: [secondUpcomingAlert],
+        overrides: {
+          countryCodeIso3,
+          issuedAt: new Date('2026-04-02T12:00:00Z'),
+        },
       }),
-    );
+    });
 
-    const response = await getActiveEvents(
+    const response = await getActiveEvents({
       accessToken,
       countryCodeIso3,
-      '2026-04-03T00:00:00Z',
-    );
+      timestamp: '2026-04-03T00:00:00Z',
+    });
     expect(response.status).toBe(HttpStatus.OK);
 
     const eventWithLatestStartAt = response.body.find(
@@ -411,10 +447,13 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         runValues: [25, 25, 25],
       }),
     });
-    const oldFloodsForecast = buildForecast([oldFloodsAlert], {
-      countryCodeIso3,
-      hazardType: HazardType.floods,
-      issuedAt: new Date(oldForecastTimestamp),
+    const oldFloodsForecast = buildForecast({
+      alerts: [oldFloodsAlert],
+      overrides: {
+        countryCodeIso3,
+        hazardType: HazardType.floods,
+        issuedAt: new Date(oldForecastTimestamp),
+      },
     });
 
     const oldDroughtEventName = 'event-close-previous';
@@ -427,30 +466,36 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         runValues: [25, 25, 25],
       }),
     });
-    const oldDroughtForecast = buildForecast([oldDroughtAlert], {
-      countryCodeIso3,
-      hazardType: HazardType.drought,
-      issuedAt: new Date(oldForecastTimestamp),
+    const oldDroughtForecast = buildForecast({
+      alerts: [oldDroughtAlert],
+      overrides: {
+        countryCodeIso3,
+        hazardType: HazardType.drought,
+        issuedAt: new Date(oldForecastTimestamp),
+      },
     });
 
-    await createAlerts(oldFloodsForecast);
-    await createAlerts(oldDroughtForecast);
+    await createAlerts({ forecast: oldFloodsForecast });
+    await createAlerts({ forecast: oldDroughtForecast });
 
     // Act
     const currentForecastTimestamp = '2026-04-11T00:00:00Z';
     const currentFloodsAlerts: never[] = [];
-    const currentFloodsForecast = buildForecast(currentFloodsAlerts, {
-      countryCodeIso3,
-      hazardType: HazardType.floods,
-      issuedAt: new Date(currentForecastTimestamp),
+    const currentFloodsForecast = buildForecast({
+      alerts: currentFloodsAlerts,
+      overrides: {
+        countryCodeIso3,
+        hazardType: HazardType.floods,
+        issuedAt: new Date(currentForecastTimestamp),
+      },
     });
-    await createAlerts(currentFloodsForecast);
+    await createAlerts({ forecast: currentFloodsForecast });
 
-    const response = await getActiveEvents(
+    const response = await getActiveEvents({
       accessToken,
       countryCodeIso3,
-      currentForecastTimestamp,
-    );
+      timestamp: currentForecastTimestamp,
+    });
     expect(response.status).toBe(HttpStatus.OK);
 
     const oldFloodsEvent = response.body.find(

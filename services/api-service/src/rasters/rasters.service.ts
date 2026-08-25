@@ -20,34 +20,43 @@ export class RastersService {
     return this.rastersRepository.getAlertRasterImageOrThrow(id);
   }
 
-  public async getStaticRasterOrThrow(
-    countryCodeIso3: string,
-    layer: LayerName,
-  ): Promise<StaticRasterResponseDto> {
-    return this.rastersRepository.getStaticRasterOrThrow(
+  public async getStaticRasterOrThrow({
+    countryCodeIso3,
+    layer,
+  }: {
+    countryCodeIso3: string;
+    layer: LayerName;
+  }): Promise<StaticRasterResponseDto> {
+    return this.rastersRepository.getStaticRasterOrThrow({
       countryCodeIso3,
-      layer,
-    );
+      layerName: layer,
+    });
   }
 
-  public async getStaticRasterImageOrThrow(
-    countryCodeIso3: string,
-    layer: LayerName,
-  ): Promise<Buffer> {
-    return this.rastersRepository.getStaticRasterImageOrThrow(
+  public async getStaticRasterImageOrThrow({
+    countryCodeIso3,
+    layer,
+  }: {
+    countryCodeIso3: string;
+    layer: LayerName;
+  }): Promise<Buffer> {
+    return this.rastersRepository.getStaticRasterImageOrThrow({
       countryCodeIso3,
-      layer,
-    );
+      layerName: layer,
+    });
   }
 
-  public async getStaticRasterDataImageOrThrow(
-    countryCodeIso3: string,
-    layer: LayerName,
-  ): Promise<Buffer> {
-    return this.rastersRepository.getStaticRasterDataImageOrThrow(
+  public async getStaticRasterDataImageOrThrow({
+    countryCodeIso3,
+    layer,
+  }: {
+    countryCodeIso3: string;
+    layer: LayerName;
+  }): Promise<Buffer> {
+    return this.rastersRepository.getStaticRasterDataImageOrThrow({
       countryCodeIso3,
-      layer,
-    );
+      layerName: layer,
+    });
   }
 
   public async upsertStaticRaster(
@@ -56,13 +65,16 @@ export class RastersService {
     return this.rastersRepository.upsertStaticRaster(dto);
   }
 
-  public async deleteStaticRasterOrThrow(
-    countryCodeIso3: string,
-    layer: LayerName,
-  ): Promise<void> {
-    await this.rastersRepository.deleteStaticRasterOrThrow(
+  public async deleteStaticRasterOrThrow({
+    countryCodeIso3,
+    layer,
+  }: {
+    countryCodeIso3: string;
+    layer: LayerName;
+  }): Promise<void> {
+    await this.rastersRepository.deleteStaticRasterOrThrow({
       countryCodeIso3,
-      layer,
-    );
+      layerName: layer,
+    });
   }
 }

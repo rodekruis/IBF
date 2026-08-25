@@ -20,7 +20,7 @@ from pipelines.infra.data_types.data_config_types import (
     SourceTarget,
 )
 from pipelines.infra.data_types.enums import HazardType
-from pipelines.infra.utils.nrw_logger import log_error, LogTag
+from pipelines.infra.utils.nrw_logger import log_error, log_warning, LogTag
 
 logger = logging.getLogger(__name__)
 
@@ -168,22 +168,18 @@ class ConfigReader:
                 success = False
                 # Continue processing - still validate rest of country config
 
-            # Require a forecast source for the selected source target. Skipped under
-            # --infra-only (forecast.py is bypassed) and for unfiltered debug
-            # loads (source_target is None, all sources kept).
+            # Warning only: to accomodate early-dev phase of new pipelines, which may fetch forecast data manually
             if (
                 not self.infra_only
                 and self.source_target is not None
                 and not any(source.source_target is not None for source in data_sources)
             ):
-                log_error(
+                log_warning(
                     logger,
                     LogTag.INFRA,
                     f"No forecast data source configured for source target"
                     f" '{self.source_target}' for country '{iso_3_code}'",
                 )
-                success = False
-                continue
 
             target_admin_level = country_raw["target_admin_level"]
             if (

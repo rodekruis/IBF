@@ -21,14 +21,17 @@ export class GeoFeaturesService {
     return this.geoFeaturesRepository.createGeoFeatures(dtos);
   }
 
-  public async updateGeoFeatureOrThrow(
-    id: number,
-    geoFeatureUpdateDto: GeoFeatureUpdateDto,
-  ): Promise<Feature> {
-    return this.geoFeaturesRepository.updateGeoFeatureOrThrow(
+  public async updateGeoFeatureOrThrow({
+    id,
+    geoFeatureUpdateDto,
+  }: {
+    id: number;
+    geoFeatureUpdateDto: GeoFeatureUpdateDto;
+  }): Promise<Feature> {
+    return this.geoFeaturesRepository.updateGeoFeatureOrThrow({
       id,
       geoFeatureUpdateDto,
-    );
+    });
   }
 
   public async deleteGeoFeatureOrThrow(id: number): Promise<void> {

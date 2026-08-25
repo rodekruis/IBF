@@ -6,11 +6,15 @@ import { getServer } from '@api-service/test/helpers/utility.helper';
 const MINIMAL_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
 
-export function createStaticRaster(
-  accessToken: string,
-  countryCodeIso3: string,
-  layer: LayerName,
-) {
+export function createStaticRaster({
+  accessToken,
+  countryCodeIso3,
+  layer,
+}: {
+  accessToken: string;
+  countryCodeIso3: string;
+  layer: LayerName;
+}) {
   return getServer()
     .put('/rasters/static')
     .set('Cookie', [accessToken])
