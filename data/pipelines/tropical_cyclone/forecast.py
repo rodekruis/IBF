@@ -10,7 +10,7 @@ real GEFS/ATCF data - `extract_wind_speed` (`tropical_cyclone/extract_forecast.p
 (alert/no-alert `DataSource.GEFS_WIND_SEED_REPO_*`/`GEFS_TRACK_SEED_REPO_*`, `--mock`-selected,
 downloaded + cached - see `infra/data_types/gefs_product_provider.py`). The remaining `_placeholder_*` functions are Step
 3's ECMWF-only local-file-path loaders, reading the most recent cycle from a local test-fixture
-directory (`tropical_cyclone/bronze/ecmwf_*`) - still `# TODO-infra` pending a real
+directory (`tropical_cyclone/bronze/ecmwf_*`) - still `# TODO AB#44097` pending a real
 `DataSource.ECMWF_WIND`/`DataSource.ECMWF_TRACK` fetcher.
 
 Step 1 now fetches `AlertConfig`s (spatial + temporal extents) from `DataSource.ALERT_CONFIGS_IBF_API`
@@ -34,7 +34,7 @@ function for the `tropicalCyclone` hazard type. Runnable end to end via the `pip
 `--mock 1` (GEFS wind/track are downloaded from the seed repo), or by direct function call.
 `--infra-only` bypasses this function entirely.
 
-TODO-infra-remove: delete this full status header block once ECMWF wind/track are also wired
+TODO AB#44097: delete this full status header block once ECMWF wind/track are also wired
 through real `DataSource.ECMWF_WIND`/`DataSource.ECMWF_TRACK` fetchers and the local-fixture
 placeholders in this file are removed.
 """
@@ -117,7 +117,6 @@ def calculate_tropical_cyclone_forecasts(
         return
 
     ### Step 2 - Resolve the country's config (exposure class, sustained-wind convention) ###
-    # TODO-infra: consider moving COUNTRY_CONFIGS into the db/API instead of a code constant.
     country_config = COUNTRY_CONFIGS.get(CountryCodeIso3(country))
     if country_config is None:
         data_submitter.add_error(
@@ -403,7 +402,7 @@ _LOCAL_ECMWF_TRACK_ROOT = Path(__file__).parent / "bronze" / "ecmwf_track"
 
 def _placeholder_load_local_ecmwf_wind_paths(country: str) -> list[str]:
     """
-    TODO-infra: replace with DataSource.ECMWF_WIND once a fetcher exists (as GEFS now is - see
+    TODO AB#44097: replace with DataSource.ECMWF_WIND once a fetcher exists (as GEFS now is - see
     Step 3). Local-testing stand-in only: reads the most recent `<YYYYMMDD>/<HH>z/...` cycle under
     the ECMWF GRIB2 wind fixture directory, regardless of `country`. The extractor still needs
     ECMWF-aware GRIB2 parsing (member via the GRIB `number` key) before this runs end to end - see
@@ -414,7 +413,7 @@ def _placeholder_load_local_ecmwf_wind_paths(country: str) -> list[str]:
 
 def _placeholder_load_local_ecmwf_track_paths(country: str) -> list[str]:
     """
-    TODO-infra: replace with DataSource.ECMWF_TRACK once a fetcher exists (as GEFS now is - see
+    TODO AB#44097: replace with DataSource.ECMWF_TRACK once a fetcher exists (as GEFS now is - see
     Step 3). Local-testing stand-in only: the ECMWF track fixture directory. ECMWF tracks are BUFR
     (one file per run, all members/features inside), not ATCF, so extract_track needs BUFR-aware
     parsing before this runs end to end - see extract_track.py.
