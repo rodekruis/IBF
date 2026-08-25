@@ -37,7 +37,7 @@ These are the general requirements. See [deploy.md](deploy.md) for the practical
 
 > Note: Periods below are just what we'd start with. We can re-evaluate retention periods as needed.
 
-- For text logs, there will be no PII. If possible, we want a long retention policy: 180 days if possible, but 90 days might be fine. 30 is too short.
+- For text logs, there will be no PII. Retention period is not fixed for the POC — consider an appropriate long retention policy post-POC.
 - We will want to save GloFAS data for N days for debugging. For the start, all country-split GloFAS data should be saved for a month.
 - We might want to save some data for longer. For the start, save country-split GloFAS data for runs that resulted in an alert (minimum severity threshold passed to send the data to the backend) until deleted. If we set a period on this, it might be 2 years or more.
 - Note we'll also need to save NOAA data.

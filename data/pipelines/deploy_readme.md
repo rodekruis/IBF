@@ -18,7 +18,7 @@ From the command line, after logging in with `az login`, you can download with s
 az storage blob download-batch \
   --account-name nrwbatchpoc \
   --source nrw-data-cache \
-  --pattern "glofas/country_split/20260823/*MWI*" \
+  --pattern "glofas/country_split/20260822/*MWI*" \
   --destination data/data \
   --auth-mode key
 ```
@@ -28,7 +28,6 @@ The files should be placed in `{DATA_CACHE_DIR}/glofas/country_split/{date}/`. T
 To use these, from `./data` run something like this with the correct country and timestamp.
 
 ```
-cd data
 uv run pipeline --config pipelines/infra/configs/floods.yaml \
   --country MWI \
   --local-data country \
@@ -41,10 +40,26 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml \
 
 - In the portal, go to the [nrw-batch-scheduler App Insights → Logs](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Insights/components/nrw-batch-scheduler/logs)
 
+You can see live metrics and performance, as well as see logs.
+
 Example query:
 
 ```kusto
 union traces, exceptions
+| where timestamp between (datetime(2026-08-21T14:30Z) .. datetime(2026-08-21T15:45Z))
+| where severityLevel >= 2
+| order by timestamp asc
+```
+
+This component's Logs blade shows only the pipeline's telemetry, so the query above needs no extra filter.
+
+### From the shared nrw-app-law workspace
+
+The logs are also sent to a shared NRW workspace at [nrw-app-law → Logs](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.OperationalInsights/workspaces/nrw-app-law/logs). Filter by the `cloud_RoleName` to see pipeline logs. You can query here for both NRW backend service logs as well as pipeline logs.
+
+```kusto
+union traces, exceptions
+| where cloud_RoleName == "nrw-batch-scheduler"
 | where timestamp between (datetime(2026-08-21T14:30Z) .. datetime(2026-08-21T15:45Z))
 | where severityLevel >= 2
 | order by timestamp asc

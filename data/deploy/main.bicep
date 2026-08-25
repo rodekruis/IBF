@@ -12,8 +12,10 @@
 //     template creates no role assignments and the deploying principal does not
 //     need RBAC-write rights.
 //   - Action group + TaskFailEvent metric alert on the Batch account.
-//   - Log Analytics workspace + workspace-based Application Insights connected
-//     to the Function App (invocation history, traces, KQL via the Logs blade).
+//   - Workspace-based Application Insights connected to the Function App and to
+//     the shared nrw-app-law Log Analytics workspace, so pipeline telemetry
+//     lands alongside the backend's logs (invocation history, traces, KQL via
+//     the Logs blade).
 //
 // Batch diagnostic settings remain deferred until the aggregate log strategy
 // (ADX) is decided post-prototype (see data/pipelines/deploy.md).
@@ -63,6 +65,12 @@ param dataCacheDir string = '/mnt/batch/tasks/fsmounts/nrw-data-cache'
 @description('Email address that receives TaskFailEvent alerts.')
 param alertEmail string = 'ehill@redcross.nl'
 
+@description('Existing shared Log Analytics workspace that also backs the NRW backend Application Insights.')
+param logAnalyticsWorkspaceName string = 'nrw-app-law'
+
+@description('Resource group holding the shared Log Analytics workspace.')
+param logAnalyticsResourceGroup string = 'NRW'
+
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
   name: storageAccountName
 }
@@ -82,22 +90,17 @@ var apiKeyReference = '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=
 var glofasUserReference = '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=glofas-ftp-user)'
 var glofasPasswordReference = '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=glofas-ftp-password)'
 
-// Pay-as-you-go ingestion with a 5 GB/month free grant, so the scheduler's log
-// volume costs effectively $0. Retention matches the post-prototype target
-// (90 days; the Function logs contain no PII).
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
-  name: '${functionAppName}-logs'
-  location: location
-  properties: {
-    sku: {
-      name: 'PerGB2018'
-    }
-    retentionInDays: 90
-  }
+// Shared workspace already provisioned for the backend; pipeline telemetry is
+// joined here rather than in a dedicated workspace. Retention is governed by
+// this workspace and revisited post-POC (see data/pipelines/deploy.md).
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
+  name: logAnalyticsWorkspaceName
+  scope: resourceGroup(logAnalyticsResourceGroup)
 }
 
 // Classic (workspace-less) Application Insights is retired, so the component
-// must be workspace-based.
+// must be workspace-based. It points at the shared nrw-app-law workspace so its
+// traces/exceptions land alongside the backend's logs.
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: functionAppName
   location: location
