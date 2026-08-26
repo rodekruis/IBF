@@ -1,4 +1,4 @@
-import { addDays } from 'date-fns';
+import { addDays, addHours } from 'date-fns';
 
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
@@ -36,19 +36,75 @@ const ZMB_NGWERERECONFLUENCE_FLOOD_DEPTH_BASE64 =
 const MOCK_RASTER_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAA8AAAAUCAYAAABSx2cSAAAA0ElEQVR4AaXBsW0jQRREwXezedDpNNpmTDTXZEy0OxLa7fwIpFvgCAjCeVP153a7fd3vdy6Px4OP5/PJ5fV68X6/+Z/FhmNmzrZIIgm2udgmCZJoy8zw22LDYsMBnDNDWySRBNtcbJMESbRlZvhpsWGxYbHhAE7+mhnaIokk2OZimyRIoi0zw8diw2LDAZz8MzO0RRJJsM3FNkmQRFtmhstiw2LDAZz8MDO0RRJJsM3FNkmQRFtmhsWGxYbFhgM4+WVmaIskkmCbi22SIIm2fANUaHZa8hEamQAAAABJRU5ErkJggg==';
 
-const MOCK_BUILDERS: Record<string, MockCountryBuilder> = {
-  ETH: buildEthiopiaAlerts,
-  UGA: buildUgandaAlerts,
-  MWI: buildMalawiAlerts,
-  KEN: buildKenyaAlerts,
-  PHL: buildPhilippinesAlerts,
-  SSD: buildSouthSudanAlerts,
-  ZMB: buildZambiaAlerts,
+const PHL_WP20_WIND_SPEED_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAADAAAAAvCAAAAACA6RYVAAAALklEQVR4nGNgwA/+owsw4VfvvYOBRJBAonrGC6TaMApGwSgYBaNgFIyCUcCAAACvkwM25qvXfgAAAABJRU5ErkJggg==';
+
+type MockCountryBuilder = (issuedAt: Date) => AlertCreateDto[];
+
+interface MockHazardConfig {
+  hazardType: HazardType;
+  forecastSources: ForecastSource[];
+  builder: MockCountryBuilder;
+}
+
+const MOCK_BUILDERS: Record<string, MockHazardConfig[]> = {
+  ETH: [
+    {
+      hazardType: HazardType.floods,
+      forecastSources: [ForecastSource.glofas],
+      builder: buildEthiopiaAlerts,
+    },
+  ],
+  UGA: [
+    {
+      hazardType: HazardType.floods,
+      forecastSources: [ForecastSource.glofas],
+      builder: buildUgandaAlerts,
+    },
+  ],
+  MWI: [
+    {
+      hazardType: HazardType.floods,
+      forecastSources: [ForecastSource.glofas],
+      builder: buildMalawiAlerts,
+    },
+  ],
+  KEN: [
+    {
+      hazardType: HazardType.floods,
+      forecastSources: [ForecastSource.glofas],
+      builder: buildKenyaAlerts,
+    },
+  ],
+  PHL: [
+    {
+      hazardType: HazardType.floods,
+      forecastSources: [ForecastSource.glofas],
+      builder: buildPhilippinesAlerts,
+    },
+    {
+      hazardType: HazardType.tropicalCyclone,
+      forecastSources: [ForecastSource.GEFS],
+      builder: buildPhilippinesTropicalCycloneAlerts,
+    },
+  ],
+  SSD: [
+    {
+      hazardType: HazardType.floods,
+      forecastSources: [ForecastSource.glofas],
+      builder: buildSouthSudanAlerts,
+    },
+  ],
+  ZMB: [
+    {
+      hazardType: HazardType.floods,
+      forecastSources: [ForecastSource.glofas],
+      builder: buildZambiaAlerts,
+    },
+  ],
 };
 
 export const SUPPORTED_MOCK_COUNTRIES = Object.keys(MOCK_BUILDERS);
-
-type MockCountryBuilder = (issuedAt: Date) => AlertCreateDto[];
 
 function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
@@ -1130,6 +1186,104 @@ function buildPhilippinesAlerts(issuedAt: Date): AlertCreateDto[] {
   ];
 }
 
+function buildPhilippinesTropicalCycloneAlerts(
+  issuedAt: Date,
+): AlertCreateDto[] {
+  return [
+    {
+      eventName: 'WP20_2024',
+      centroid: { latitude: 20.69, longitude: 121.8 },
+      severity: [
+        ...Array.from({ length: 7 }, (_, i) => ({
+          timeInterval: {
+            start: addHours(issuedAt, i * 3),
+            end: addHours(issuedAt, (i + 1) * 3),
+          },
+          ensembleMemberType: EnsembleMemberType.median,
+          severityKey: SeverityKey.windSpeed,
+          severityValue: [38.7, 33.8, 37.3, 41.2, 41.3, 42.0, 37.2][i],
+        })),
+        ...Array.from({ length: 21 }, (_, i) => ({
+          timeInterval: {
+            start: addHours(issuedAt, Math.floor(i / 3) * 3),
+            end: addHours(issuedAt, (Math.floor(i / 3) + 1) * 3),
+          },
+          ensembleMemberType: EnsembleMemberType.run,
+          severityKey: SeverityKey.windSpeed,
+          severityValue: [
+            40.3, 28.5, 38.7, 40.8, 30.9, 33.8, 40.6, 32.7, 37.3, 42.6, 35.9,
+            41.2, 42.5, 37.9, 41.3, 42.8, 37.8, 42.0, 37.9, 37.0, 37.2,
+          ][i],
+        })),
+      ],
+      exposure: {
+        adminAreas: [
+          {
+            placeCode: 'PH020901000',
+            adminLevel: 3,
+            layer: LayerName.populationExposed,
+            value: 10216,
+          },
+          {
+            placeCode: 'PH020902000',
+            adminLevel: 3,
+            layer: LayerName.populationExposed,
+            value: 3362,
+          },
+          {
+            placeCode: 'PH020903000',
+            adminLevel: 3,
+            layer: LayerName.populationExposed,
+            value: 1422,
+          },
+          {
+            placeCode: 'PH020904000',
+            adminLevel: 3,
+            layer: LayerName.populationExposed,
+            value: 1799,
+          },
+          {
+            placeCode: 'PH020905000',
+            adminLevel: 3,
+            layer: LayerName.populationExposed,
+            value: 1802,
+          },
+          {
+            placeCode: 'PH020906000',
+            adminLevel: 3,
+            layer: LayerName.populationExposed,
+            value: 1429,
+          },
+          {
+            placeCode: 'PH020900000',
+            adminLevel: 2,
+            layer: LayerName.populationExposed,
+            value: 20030,
+          },
+          {
+            placeCode: 'PH020000000',
+            adminLevel: 1,
+            layer: LayerName.populationExposed,
+            value: 20030,
+          },
+        ],
+        rasters: [
+          {
+            layer: LayerName.windSpeed,
+            valueGreyscale: PHL_WP20_WIND_SPEED_BASE64,
+            extent: {
+              xmin: 114.125,
+              ymin: 9.375,
+              xmax: 126.125,
+              ymax: 21.125,
+            },
+          },
+        ],
+      },
+    },
+  ];
+}
+
 function buildSouthSudanAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
@@ -1676,32 +1830,45 @@ function buildZambiaAlerts(issuedAt: Date): AlertCreateDto[] {
   ];
 }
 
-export function buildMockForecast({
+export class MockConfigError extends Error {}
+
+export function buildMockForecasts({
   countryCodeIso3,
   issuedAt,
   alertsOverride,
+  hazardTypes,
 }: {
   countryCodeIso3: string;
   issuedAt: Date;
   alertsOverride?: AlertCreateDto[];
-}): ForecastCreateDto {
-  let alerts: AlertCreateDto[];
-  if (alertsOverride !== undefined) {
-    alerts = alertsOverride;
-  } else {
-    if (!Object.hasOwn(MOCK_BUILDERS, countryCodeIso3)) {
-      throw new Error(
-        `No mock event configuration for country '${countryCodeIso3}'. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
-      );
-    }
-    alerts = MOCK_BUILDERS[countryCodeIso3](issuedAt);
+  hazardTypes?: HazardType[];
+}): ForecastCreateDto[] {
+  if (!Object.hasOwn(MOCK_BUILDERS, countryCodeIso3)) {
+    throw new Error(
+      `No mock event configuration for country '${countryCodeIso3}'. Supported: ${SUPPORTED_MOCK_COUNTRIES.join(', ')}`,
+    );
   }
 
-  return {
+  const configs = hazardTypes
+    ? MOCK_BUILDERS[countryCodeIso3].filter((c) =>
+        hazardTypes.includes(c.hazardType),
+      )
+    : MOCK_BUILDERS[countryCodeIso3];
+
+  if (configs.length === 0) {
+    const available = MOCK_BUILDERS[countryCodeIso3]
+      .map((c) => c.hazardType)
+      .join(', ');
+    throw new MockConfigError(
+      `No mock configuration for hazard type(s) '${hazardTypes?.join(', ')}' in country '${countryCodeIso3}'. Available: ${available}`,
+    );
+  }
+
+  return configs.map((config) => ({
     issuedAt,
-    hazardType: HazardType.floods, // TODO: for now we mock only flood events. To be extended later.
-    forecastSources: [ForecastSource.glofas],
+    hazardType: config.hazardType,
+    forecastSources: config.forecastSources,
     countryCodeIso3,
-    alerts,
-  };
+    alerts: alertsOverride ?? config.builder(issuedAt),
+  }));
 }

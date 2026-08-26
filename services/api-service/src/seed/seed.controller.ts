@@ -25,6 +25,7 @@ import { env } from '@api-service/src/env';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import { SeedService } from '@api-service/src/seed/seed.service';
 import { SUPPORTED_MOCK_COUNTRIES } from '@api-service/src/seed/seed-data/mock-events.helper';
+import { HazardType } from '@api-service/src/shared-enums';
 
 class SecretDto {
   @ApiProperty({ example: 'fill_in_secret' })
@@ -143,6 +144,15 @@ export class SeedController {
       'If omitted, all seeded countries with mock support are mocked.',
   })
   @ApiQuery({
+    name: 'hazardTypes',
+    required: false,
+    enum: HazardType,
+    isArray: true,
+    description:
+      'Hazard types to mock. Select one or more. ' +
+      'If omitted, all hazard types configured for the country are mocked.',
+  })
+  @ApiQuery({
     name: 'scenario',
     enum: MockScenario,
     required: true,
@@ -170,6 +180,8 @@ export class SeedController {
       'countryCodes',
       new ParseArrayPipe({ items: String, optional: true }),
     )
+    @Query('hazardTypes', new ParseArrayPipe({ items: String, optional: true }))
+    hazardTypes: string[] | undefined,
     countryCodes: string[] | undefined,
     @Query('scenario') scenario: string,
     @Query('clearEvents', new ParseBoolPipe({ optional: true }))
@@ -212,11 +224,28 @@ export class SeedController {
       );
     }
 
+    const resolvedHazardTypes = hazardTypes
+      ? (Array.from(new Set(hazardTypes.map((h) => h.trim()))) as HazardType[])
+      : undefined;
+
+    if (resolvedHazardTypes) {
+      const validHazardTypes = Object.values(HazardType) as string[];
+      const invalidTypes = resolvedHazardTypes.filter(
+        (h) => !validHazardTypes.includes(h),
+      );
+      if (invalidTypes.length > 0) {
+        throw new BadRequestException(
+          `Invalid hazard types: ${invalidTypes.join(', ')}. Supported: ${validHazardTypes.join(', ')}`,
+        );
+      }
+    }
+
     await this.seedService.mockEvents({
       countryCodes: resolvedCountryCodes,
       scenario: scenario as MockScenario,
       clearEvents: clearEvents ?? false,
       issuedAt: issuedAtDate,
+      hazardTypes: resolvedHazardTypes,
     });
 
     return `Mock scenario(s) applied`;
