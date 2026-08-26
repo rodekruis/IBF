@@ -64,57 +64,6 @@ function generateModuleDependencyGraph(app: INestApplication): void {
   });
 }
 
-interface MethodInfo {
-  method: string;
-  path: string;
-  params: string[];
-  returnType?: string;
-}
-
-function generateSwaggerSummaryJson(app: INestApplication<any>): void {
-  const options = new DocumentBuilder()
-    .setTitle(APP_TITLE)
-    .setVersion(APP_VERSION)
-    .build();
-  const openApiDocument = SwaggerModule.createDocument(app, options);
-
-  const summaryDocument: MethodInfo[] = [];
-
-  for (const path in openApiDocument.paths) {
-    for (const method in openApiDocument.paths[path]) {
-      const methodInfo = openApiDocument.paths[path][method];
-      const schema =
-        methodInfo.responses['200']?.content?.['application/json']?.schema ||
-        methodInfo.responses['201']?.content?.['application/json']?.schema;
-
-      let returnType: string | undefined;
-      if (schema?.$ref) {
-        returnType = schema.$ref.split('/').pop();
-      } else if (schema?.items?.$ref) {
-        returnType = `${schema.items.$ref.split('/').pop()}[]`;
-      }
-
-      const params =
-        methodInfo.parameters?.map((param: any) => param.name) || [];
-
-      const methodInfoObject: MethodInfo = {
-        method,
-        path,
-        params,
-      };
-
-      if (returnType) {
-        methodInfoObject.returnType = returnType;
-      }
-
-      summaryDocument.push(methodInfoObject);
-    }
-  }
-
-  const document = JSON.stringify(summaryDocument, null, 2);
-  writeFileSync('swagger.json', document);
-}
-
 function generateNrwOpenApiSwagger(app: INestApplication<any>): void {
   // The frontend needs an OpenAPI compatible Swagger export.
   const options = new DocumentBuilder()
@@ -208,7 +157,6 @@ async function bootstrap(): Promise<void> {
 
   if (IS_DEVELOPMENT) {
     generateModuleDependencyGraph(app);
-    generateSwaggerSummaryJson(app);
     generateNrwOpenApiSwagger(app);
   }
 
