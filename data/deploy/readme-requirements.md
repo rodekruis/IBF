@@ -1,6 +1,6 @@
 # Pipeline Deploy Requirements
 
-These are the general requirements. See [deploy.md](deploy.md) for the practical implementation overview.
+These are the general requirements. See [readme-requirements.md](readme-requirements.md) for the current actual implementation overview.
 
 ## Basic flow (MVP)
 

@@ -1,8 +1,9 @@
 # Pipelines deploy guide
 
 This is the user-facing guide to help with running jobs, debugging, etc.
-See deploy.md for the full details on the deployment, including post-MVP plans.
-See deploy_requirements.md for the initial requirements of the work.
+
+See [readme-implementation.md](readme-implementation.md) for the current actual implementation overview.
+See [readme-requirements.md](readme-requirements.md) for the initial requirements of the work.
 
 ## Getting files for local debugging
 

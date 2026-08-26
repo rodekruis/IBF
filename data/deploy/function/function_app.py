@@ -1,6 +1,6 @@
 """Daily Timer Trigger that submits one Azure Batch job per hazard pipeline.
 
-Fires daily at 12:00 UTC (Azure Functions timers evaluate in UTC) and creates
+Fires daily at set time in UTC and creates
 one Batch job per entry in HAZARD_CONFIGS. Only floods is scheduled for the
 prototype; drought is a dummy pipeline and tropicalCyclone is not ready yet.
 """
