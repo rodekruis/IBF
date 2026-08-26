@@ -250,6 +250,22 @@ describe('raster-colorization.helper', () => {
     });
   });
 
+  describe('getColorizationConfig', () => {
+    it('should return a distinct config for windSpeed vs floodDepth', () => {
+      const floodConfig = getColorizationConfig(LayerName.floodDepth);
+      const windConfig = getColorizationConfig(LayerName.windSpeed);
+
+      expect(windConfig).not.toEqual(floodConfig);
+    });
+
+    it('should fall back to floodDepth config for unknown layers', () => {
+      const floodConfig = getColorizationConfig(LayerName.floodDepth);
+      const unknownConfig = getColorizationConfig(LayerName.population);
+
+      expect(unknownConfig).toEqual(floodConfig);
+    });
+  });
+
   describe('reproject4326To3857', () => {
     it('should convert (0,0) to (0,0)', () => {
       const result = reproject4326To3857({
