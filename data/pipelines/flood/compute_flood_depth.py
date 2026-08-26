@@ -18,11 +18,10 @@ def compute_flood_depth(
 
     return_period = _resolve_requested_return_period_value(time_interval_severities)
 
-    flood_depth = _resolve_flood_depth(
+    return _resolve_flood_depth_raster(
         return_period=return_period,
         flood_depth_provider=flood_depth_provider,
     )
-    return flood_depth
 
 
 def _resolve_requested_return_period_value(
@@ -39,31 +38,28 @@ def _resolve_requested_return_period_value(
     return float(highest_return_period)
 
 
-def _resolve_flood_depth(
+def _resolve_flood_depth_raster(
     return_period: float | None,
     flood_depth_provider: FloodDepthProvider,
 ) -> RasterData:
     """
     Resolve the flood depth raster using this order:
-    1. Exact return period raster.
-    2. Closest lower-or-equal available return period raster.
-    3. Empty fallback raster.
+    1. Highest available return period that is <= the forecast return period.
+    2. Lowest available return period overall (when forecast RP is below all available maps).
+    3. Empty fallback raster (when no threshold is exceeded).
     """
     available = flood_depth_provider.available_return_periods
 
     if return_period is not None:
-        exact_match = (
-            int(return_period) if return_period == int(return_period) else None
-        )
-        if exact_match is not None and exact_match in available:
-            return flood_depth_provider.get_raster(exact_match)
-
-        fallback_value = max(
+        highest_below_or_equal_to_forecast = max(
             (rp for rp in available if rp <= return_period),
             default=None,
         )
-        if fallback_value is not None:
-            return flood_depth_provider.get_raster(fallback_value)
+        if highest_below_or_equal_to_forecast is not None:
+            return flood_depth_provider.get_raster(highest_below_or_equal_to_forecast)
+
+        lowest_available_overall = min(available)
+        return flood_depth_provider.get_raster(lowest_available_overall)
 
     return _create_empty_raster(flood_depth_provider)
 
