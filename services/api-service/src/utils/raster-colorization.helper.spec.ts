@@ -1,12 +1,15 @@
 import { PNG } from 'pngjs';
 
 import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
+import { LayerName } from '@api-service/src/shared-enums';
 import {
   colorizeGrayscalePng,
-  FLOOD_DEPTH_CONFIG,
+  getColorizationConfig,
   processPopulationRaster,
   reproject4326To3857,
 } from '@api-service/src/utils/raster-colorization.helper';
+
+const FLOOD_DEPTH_CONFIG = getColorizationConfig(LayerName.floodDepth);
 
 function createGrayscalePng({
   width,

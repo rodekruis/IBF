@@ -180,9 +180,9 @@ export class SeedController {
       'countryCodes',
       new ParseArrayPipe({ items: String, optional: true }),
     )
+    countryCodes: string[] | undefined,
     @Query('hazardTypes', new ParseArrayPipe({ items: String, optional: true }))
     hazardTypes: string[] | undefined,
-    countryCodes: string[] | undefined,
     @Query('scenario') scenario: string,
     @Query('clearEvents', new ParseBoolPipe({ optional: true }))
     clearEvents: boolean,

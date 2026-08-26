@@ -41,7 +41,7 @@ const POPULATION_CONFIG: ColorizationConfig = {
 
 const POPULATION_DOWNSAMPLE_FACTOR = 10;
 
-export const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
+const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
   colorLow: [173, 216, 230, 179],
   colorHigh: [0, 0, 139, 179],
   zeroIsTransparent: true,
@@ -49,7 +49,7 @@ export const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
   useLogScale: false,
 };
 
-export const WIND_SPEED_CONFIG: ColorizationConfig = {
+const WIND_SPEED_CONFIG: ColorizationConfig = {
   colorLow: [255, 237, 160, 179],
   colorHigh: [189, 0, 38, 179],
   zeroIsTransparent: true,
