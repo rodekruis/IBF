@@ -55,7 +55,7 @@ from shared.country_data import CountryCodeIso2
 from shared.data_helpers import get_seed_data_repo_path
 
 BASE_REPO_DIR = get_seed_data_repo_path()
-INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas" / "admin-areas-v1"
+INPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas" / "sources" / "ibf-v1"
 OUTPUT_DIR = Path(BASE_REPO_DIR) / "admin-areas" / "processed"
 
 # Known field names from AdminAreaProperties dataclass

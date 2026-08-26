@@ -2,7 +2,8 @@
 Converts a folder of GeoTiff images into greyscale and colored PNGS.
 This is used to set up test data quickly from a batch of GeoTiffs.
 
-Change the input and output directories as needed.
+Change the input and output directories as needed. They default to temp/input and temp/output
+in the seed repo, which is gitignored scratch space.
 This is just a seed/test data set up script and will have no use outside of dev/set up.
 """
 
@@ -15,10 +16,10 @@ from shared.image_helpers import colorize_image_array, geotiff_to_array
 
 # Input/Output dirs
 BASE_REPO_DIR = get_seed_data_repo_path()
-INPUT_DIR = Path(BASE_REPO_DIR) / "temp/mock"
-BASE_RASTER_DIR = "raster-data/mock-events"
-GREYSCALE_OUTPUT_DIR = Path(BASE_REPO_DIR) / f"{BASE_RASTER_DIR}/greyscale/"
-RGBA_OUTPUT_DIR = Path(BASE_REPO_DIR) / f"{BASE_RASTER_DIR}/rgba/"
+INPUT_DIR = Path(BASE_REPO_DIR) / "temp/input"
+OUTPUT_DIR = Path(BASE_REPO_DIR) / "temp/output"
+GREYSCALE_OUTPUT_DIR = OUTPUT_DIR / "greyscale"
+RGBA_OUTPUT_DIR = OUTPUT_DIR / "rgba"
 
 # Design settings:
 COLOR_STEPS = 6

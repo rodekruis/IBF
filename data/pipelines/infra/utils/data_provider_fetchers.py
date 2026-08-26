@@ -40,7 +40,7 @@ from shared.image_helpers import rgba_png_to_float_array
 
 logger = logging.getLogger(__name__)
 
-SEED_REPO_FLOOD_DEPTH_DATA_PNG_PATH = "/raster-data/flood-extents/data-png/"
+SEED_REPO_FLOOD_DEPTH_DATA_PNG_PATH = "/hazard/flood/flood-extents/data-png/"
 
 
 def _get_seed_repo_uri() -> str:

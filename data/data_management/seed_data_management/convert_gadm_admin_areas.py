@@ -35,7 +35,7 @@ from shared.data_helpers import get_seed_data_repo_path
 
 # Input/Output dirs
 BASE_SEED_REPO_DIR = get_seed_data_repo_path()
-INPUT_DIR = Path(BASE_SEED_REPO_DIR) / "admin-areas" / "admin-areas-gadm"
+INPUT_DIR = Path(BASE_SEED_REPO_DIR) / "admin-areas" / "sources" / "gadm"
 OUTPUT_DIR = Path(BASE_SEED_REPO_DIR) / "admin-areas" / "processed"
 
 # Set this to any level you want to convert (e.g. [0, 1, 2, 3])
