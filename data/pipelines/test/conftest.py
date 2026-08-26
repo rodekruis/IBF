@@ -90,6 +90,8 @@ def _run_pipeline(
     infra_only: bool = False,
     issued_at: str | None = None,
     country: str | None = None,
+    output_mode: str | None = None,
+    output_path: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     cmd = [
         sys.executable,
@@ -106,6 +108,10 @@ def _run_pipeline(
         cmd.extend(["--issued-at", issued_at])
     if country:
         cmd.extend(["--country", country])
+    if output_mode:
+        cmd.extend(["--output-mode", output_mode])
+    if output_path:
+        cmd.extend(["--output-path", output_path])
 
     return subprocess.run(
         cmd,

@@ -90,7 +90,7 @@ export class LayersController {
     @Body() dto: LayerUpdateDto,
   ): Promise<LayerReadDto> {
     const layerName = this.parseLayerNameOrThrow(layerNameParam);
-    return this.layersService.updateLayerOrThrow(layerName, dto);
+    return this.layersService.updateLayerOrThrow({ layerName, dto });
   }
 
   @Delete(':layerName')

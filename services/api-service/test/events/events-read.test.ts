@@ -17,12 +17,12 @@ describe('GET /events', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB(['MWI'], __filename);
+    await resetDB({ countryCodes: ['MWI'], resetIdentifier: __filename });
     accessToken = await getAccessToken();
   });
 
   async function seedEventsForReadTests(): Promise<void> {
-    await resetDB(['MWI'], __filename);
+    await resetDB({ countryCodes: ['MWI'], resetIdentifier: __filename });
 
     const closedAlert = buildAlert({
       eventName: 'station-closed',
@@ -54,16 +54,22 @@ describe('GET /events', () => {
       }),
     });
 
-    await createAlerts(
-      buildForecast([closedAlert], {
-        issuedAt: new Date('2026-03-23T12:00:00Z'),
+    await createAlerts({
+      forecast: buildForecast({
+        alerts: [closedAlert],
+        overrides: {
+          issuedAt: new Date('2026-03-23T12:00:00Z'),
+        },
       }),
-    );
-    await createAlerts(
-      buildForecast([ongoingAlert, expiredAlert], {
-        issuedAt: new Date('2026-03-24T12:00:00Z'),
+    });
+    await createAlerts({
+      forecast: buildForecast({
+        alerts: [ongoingAlert, expiredAlert],
+        overrides: {
+          issuedAt: new Date('2026-03-24T12:00:00Z'),
+        },
       }),
-    );
+    });
   }
 
   describe('active filter', () => {
@@ -72,8 +78,12 @@ describe('GET /events', () => {
     });
 
     it('should return all events when active is omitted', async () => {
-      const response = await readEvents(accessToken, 'MWI', {
-        timestamp: viewTimestamp,
+      const response = await readEvents({
+        accessToken,
+        countryCodeIso3: 'MWI',
+        query: {
+          timestamp: viewTimestamp,
+        },
       });
 
       expect(response.status).toBe(HttpStatus.OK);
@@ -86,9 +96,13 @@ describe('GET /events', () => {
     });
 
     it('should return only ongoing open events when active is true', async () => {
-      const response = await readEvents(accessToken, 'MWI', {
-        active: true,
-        timestamp: viewTimestamp,
+      const response = await readEvents({
+        accessToken,
+        countryCodeIso3: 'MWI',
+        query: {
+          active: true,
+          timestamp: viewTimestamp,
+        },
       });
 
       expect(response.status).toBe(HttpStatus.OK);
@@ -101,9 +115,13 @@ describe('GET /events', () => {
     });
 
     it('should return closed or expired events when active is false', async () => {
-      const response = await readEvents(accessToken, 'MWI', {
-        active: false,
-        timestamp: viewTimestamp,
+      const response = await readEvents({
+        accessToken,
+        countryCodeIso3: 'MWI',
+        query: {
+          active: false,
+          timestamp: viewTimestamp,
+        },
       });
 
       expect(response.status).toBe(HttpStatus.OK);
@@ -129,15 +147,20 @@ describe('GET /events', () => {
   describe('event label derivation', () => {
     it('should derive event label from event name', async () => {
       const eventName = 'Meher_MAM';
-      await createAlerts(
-        buildForecast([
-          buildAlert({
-            eventName,
-          }),
-        ]),
-      );
+      await createAlerts({
+        forecast: buildForecast({
+          alerts: [
+            buildAlert({
+              eventName,
+            }),
+          ],
+        }),
+      });
 
-      const response = await readEvents(accessToken, 'MWI');
+      const response = await readEvents({
+        accessToken,
+        countryCodeIso3: 'MWI',
+      });
       const event = response.body.find(
         (event: { eventName: string }) => event.eventName === eventName,
       );
@@ -152,8 +175,12 @@ describe('GET /events', () => {
     });
 
     it('should return only events for the specified country', async () => {
-      const response = await readEvents(accessToken, 'MWI', {
-        timestamp: viewTimestamp,
+      const response = await readEvents({
+        accessToken,
+        countryCodeIso3: 'MWI',
+        query: {
+          timestamp: viewTimestamp,
+        },
       });
 
       expect(response.status).toBe(HttpStatus.OK);
@@ -167,8 +194,12 @@ describe('GET /events', () => {
     });
 
     it('should return no events for a country with no events', async () => {
-      const response = await readEvents(accessToken, 'KEN', {
-        timestamp: viewTimestamp,
+      const response = await readEvents({
+        accessToken,
+        countryCodeIso3: 'KEN',
+        query: {
+          timestamp: viewTimestamp,
+        },
       });
 
       expect(response.status).toBe(HttpStatus.OK);
@@ -176,8 +207,12 @@ describe('GET /events', () => {
     });
 
     it('should return all events when countryCodeIso3 is omitted', async () => {
-      const response = await readEvents(accessToken, undefined, {
-        timestamp: viewTimestamp,
+      const response = await readEvents({
+        accessToken,
+        countryCodeIso3: undefined,
+        query: {
+          timestamp: viewTimestamp,
+        },
       });
 
       expect(response.status).toBe(HttpStatus.OK);

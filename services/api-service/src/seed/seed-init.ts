@@ -57,10 +57,13 @@ const ADMIN_AREAS_PATH = '/admin-areas/processed';
 const STATION_THRESHOLDS_PATH = '/hazard/flood/glofas-stations';
 const POPULATION_RASTER_PATH = '/exposure/population/data-png';
 
-function getAdminAreaFileUrl(
-  countryCodeIso3: string,
-  adminLevel: number,
-): string {
+function getAdminAreaFileUrl({
+  countryCodeIso3,
+  adminLevel,
+}: {
+  countryCodeIso3: string;
+  adminLevel: number;
+}): string {
   return `${SEED_REPO_RAW_BASE_URL}${ADMIN_AREAS_PATH}/${countryCodeIso3}_adm${adminLevel}.json`;
 }
 
@@ -150,17 +153,23 @@ export class SeedInit {
         adminLevel <= country.deepestAdminLevel;
         adminLevel++
       ) {
-        await this.seedAdminAreaFile(country.countryCodeIso3, adminLevel);
+        await this.seedAdminAreaFile({
+          countryCodeIso3: country.countryCodeIso3,
+          adminLevel,
+        });
       }
     }
   }
 
-  private async seedAdminAreaFile(
-    countryCodeIso3: string,
-    adminLevel: number,
-  ): Promise<void> {
+  private async seedAdminAreaFile({
+    countryCodeIso3,
+    adminLevel,
+  }: {
+    countryCodeIso3: string;
+    adminLevel: number;
+  }): Promise<void> {
     const filename = `${countryCodeIso3}_adm${adminLevel}.json`;
-    const url = getAdminAreaFileUrl(countryCodeIso3, adminLevel);
+    const url = getAdminAreaFileUrl({ countryCodeIso3, adminLevel });
     this.logger.log(`Download ${filename}...`);
 
     const response = await fetch(url);
@@ -179,9 +188,9 @@ export class SeedInit {
 
     const adminAreas = geojson.features
       .map((feature) =>
-        this.parseAdminAreaFeature(feature, {
-          countryCodeIso3,
-          adminLevel,
+        this.parseAdminAreaFeature({
+          feature,
+          file: { countryCodeIso3, adminLevel },
         }),
       )
       .filter(
@@ -197,10 +206,13 @@ export class SeedInit {
     this.logger.log(`Seeded ${adminAreas.length} admin areas from ${filename}`);
   }
 
-  private parseAdminAreaFeature(
-    feature: GeoJsonFeature,
-    file: { countryCodeIso3: string; adminLevel: number },
-  ): AdminAreaCreateDto | undefined {
+  private parseAdminAreaFeature({
+    feature,
+    file,
+  }: {
+    feature: GeoJsonFeature;
+    file: { countryCodeIso3: string; adminLevel: number };
+  }): AdminAreaCreateDto | undefined {
     const props = feature.properties;
 
     const placeCode =
@@ -476,7 +488,7 @@ export class SeedInit {
     };
 
     const { colouredBase64, metadata: rasterMetadata } =
-      processPopulationRaster(dataPngBuffer, metadata);
+      processPopulationRaster({ dataPngBuffer, metadata });
 
     await this.rastersService.upsertStaticRaster({
       countryCodeIso3,

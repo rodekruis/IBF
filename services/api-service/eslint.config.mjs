@@ -120,6 +120,10 @@ export default [
           rootDir: '.',
         },
       ],
+      'custom-rules/prefer-object-params': [
+        'error',
+        { ignoredMethodNames: ['validate'] },
+      ],
       'simple-import-sort/imports': [
         'error',
         {

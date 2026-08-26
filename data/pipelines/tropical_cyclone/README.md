@@ -112,7 +112,7 @@ The sections below describe each piece in more technical detail.
   IBF-seed-data repo (no publish script here); each cycle keeps its real NOAA
   `gefs.<date>/<HH>/atmos/pgrb2sp25/` (wind) and `.../tctrack/` (track) layout, which the
   extractors parse for the forecast cycle datetime.
-- **ECMWF** wind/track aren't wired through `DataProvider` yet (`# TODO-infra`): `forecast.py`
+- **ECMWF** wind/track aren't wired through `DataProvider` yet (`# TODO AB#44097`): `forecast.py`
   reads the most recent local cycle directly from `bronze/ecmwf_wind/`/`bronze/ecmwf_track/`. This
   layout is a local-testing convention only, not a fixed contract.
 - Every country is on **GEFS** today. A country on ECMWF needs its `bronze/ecmwf_*` fixtures on

@@ -85,10 +85,13 @@ export class CountriesRepository {
     }
   }
 
-  public async updateCountryOrThrow(
-    countryCodeIso3: string,
-    countryUpdateDto: CountryUpdateDto,
-  ): Promise<CountryResponseDto> {
+  public async updateCountryOrThrow({
+    countryCodeIso3,
+    countryUpdateDto,
+  }: {
+    countryCodeIso3: string;
+    countryUpdateDto: CountryUpdateDto;
+  }): Promise<CountryResponseDto> {
     try {
       const row = await this.prisma.country.update({
         where: { countryCodeIso3 },

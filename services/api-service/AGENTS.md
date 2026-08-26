@@ -12,6 +12,10 @@
 
 File naming matches class: `AlertsModule` → `alerts.module.ts`, `AlertCreateDto` → `alert-create.dto.ts`
 
+## General guidelines
+
+- Functions with more than one parameter must use a single destructured object parameter (enforced by `custom-rules/prefer-object-params`)
+
 ## Module Architecture
 
 - Each module has one responsibility; avoid circular dependencies
@@ -89,7 +93,7 @@ export class AlertCreateDto {
 ## Database
 
 - ORM: Prisma with PostgreSQL
-- Always include `"api-service"` schema in raw SQL queries
+- Always include `"api-service"` schema in raw SQL queries, including migration files
 - Use Prisma migrations for schema changes; keep migrations minimal and focused
 - Migrations should assume a production database with existing data
   - Consider the prisma schema in the main branch as the production schema

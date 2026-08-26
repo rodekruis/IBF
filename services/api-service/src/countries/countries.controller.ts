@@ -93,10 +93,10 @@ export class CountriesController {
     @Param('countryCodeIso3') countryCodeIso3: string,
     @Body() countryUpdateDto: CountryUpdateDto,
   ): Promise<CountryResponseDto> {
-    return this.countriesService.updateCountryOrThrow(
+    return this.countriesService.updateCountryOrThrow({
       countryCodeIso3,
       countryUpdateDto,
-    );
+    });
   }
 
   @Delete(':countryCodeIso3')
