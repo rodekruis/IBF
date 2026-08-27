@@ -116,7 +116,7 @@ fi
 echo "Submitting rerun job for hazard '${HAZARD_TYPE}'."
 (
   cd "${DATA_DIR}"
-  uv run --with "azure-batch>=15" --with azure-identity \
+  uv run --with "azure-batch>=15,<16" --with azure-identity \
     python deploy/function/rerun_job.py "${RERUN_ARGS[@]}"
 )
 
