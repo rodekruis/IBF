@@ -90,6 +90,8 @@ Run these in order the first time, but after that, you can just run the ones tha
 
 - **Azure Blob Storage**: GloFAS global downloads (~600 MB per file, ~30 GB total for a daily set of ~50 files), country split outputs, debug/dev data, and large result payloads. Only one GloFAS file is loaded at a time, so peak working storage is ~600 MB–1 GB. All downloaded GloFAS files are written to Blob Storage.
 
+- **Blob storage rentention**: `glofas/raw` has the limit set in `data/deploy/blob-lifecycle-policy.json`. For `glofas/country_split` and `glofas/country_split_alert`, they are not shown in that file since we want them to be indefinite at first, and the default setting is an indefinite period.
+
 ### Blob storage retention
 
 The pipeline already writes to subdirectories under `DATA_CACHE_DIR` as defined in `pipelines/infra/utils/storage_helpers.py`. Configure Azure Blob lifecycle management policies per prefix:

@@ -34,12 +34,19 @@ if [[ ! -f "${POOL_FILE}" ]]; then
   exit 1
 fi
 
-echo "Deleting existing pool '${POOL_ID}' (safe when autoscaled to 0 nodes)."
-az batch pool delete \
+echo "Deleting existing pool '${POOL_ID}' if present (safe when autoscaled to 0 nodes)."
+if az batch pool show \
   --pool-id "${POOL_ID}" \
   --account-name "${BATCH_ACCOUNT}" \
-  --account-endpoint "${BATCH_ENDPOINT}" \
-  --yes
+  --account-endpoint "${BATCH_ENDPOINT}" > /dev/null 2>&1; then
+  az batch pool delete \
+    --pool-id "${POOL_ID}" \
+    --account-name "${BATCH_ACCOUNT}" \
+    --account-endpoint "${BATCH_ENDPOINT}" \
+    --yes
+else
+  echo "Pool '${POOL_ID}' does not exist; skipping delete."
+fi
 
 echo "Recreating pool '${POOL_ID}' from '${POOL_FILE}'."
 az batch pool create \
