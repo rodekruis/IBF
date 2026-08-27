@@ -57,6 +57,8 @@ read_env_var() {
     return 1
   fi
   local value="${line#*=}"
+  # Strip CR first from end of line
+  value="${value%$'\r'}"
   value="${value%\"}"
   value="${value#\"}"
   value="${value%\'}"

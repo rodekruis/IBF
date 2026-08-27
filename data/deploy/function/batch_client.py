@@ -35,6 +35,9 @@ TASK_MAX_RETRY_COUNT = 0
 # Environment variables forwarded from the Function App settings onto each Batch
 # task. Secret values arrive as Key Vault references on the app settings, so the
 # resolved values are read from os.environ here.
+# If passed like this, these can be read by any user with batch account permissions.
+# These secrets are not very sensitive and can already be read from github by more users,
+# so this is not considered an issue.
 TASK_ENVIRONMENT_VARIABLES = (
     "IBF_ENVIRONMENT",
     "IBF_API_URL",
@@ -86,7 +89,7 @@ def create_batch_client() -> BatchClient:
 
 def build_job_id(hazard_config: HazardConfig, run_started_at: datetime) -> str:
     """Deterministic prefix plus hazard and timestamp, unique per run."""
-    return f"nrw-{hazard_config.hazard_type}-{run_started_at:%Y%m%d-%H%M}"
+    return f"nrw-{hazard_config.hazard_type}-{run_started_at:%Y%m%d-%H%M%S}"
 
 
 def build_container_task(hazard_config: HazardConfig) -> BatchTaskCreateOptions:

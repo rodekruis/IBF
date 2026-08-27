@@ -20,6 +20,7 @@ Azure accounts
 - **`nrw-batch-poc`** (pool node UAMI — ServicePrincipal):
   - Role: `Key Vault Secrets User`; Scope: Key Vault `nrw-batch-poc`; Why: pool nodes read secrets from the vault.
   - Role: `Storage Blob Data Contributor`; Scope: Blob container `nrw-data-cache` on storage account `nrwbatchpoc`; Why: Blob mount used as `DATA_CACHE_DIR`.
+  - Role: `AcrPull`; Scope: container registry `nrwdockerregistry` (`NRW` resource group); Why: pool nodes pull `pipelines:latest` with this identity.
 - **`Microsoft Azure Batch`** (service principal — ServicePrincipal):
   - Role: `Azure Batch` (orchestration); Scope: subscription; Why: Batch account provisioning (portal setup).
   - Role: `Key Vault Secrets Officer`; Scope: Key Vault `nrw-batch-poc`; Why: Batch account uses the vault for node pool credential management (portal setup).
@@ -42,6 +43,7 @@ All files live under `data/deploy/`.
 
 - `set-secrets.sh` — store pipeline secrets in Key Vault. (If rerun this on a live instance, you need to restart the function app. (`az functionapp restart --name nrw-batch-scheduler --resource-group nrw-batch-poc`))
 - Create `nrw-batch-scheduler` UAMI + grant its roles (manual CLI) — dedicated Function identity plus `Key Vault Secrets User` and `Azure Batch Job Submitter` grants.
+- Grant the `nrw-batch-poc` pool UAMI its roles (manual CLI) — `Key Vault Secrets User`, `Storage Blob Data Contributor`, and `AcrPull` on `nrwdockerregistry` (see Permissions above).
 - `apply-lifecycle.sh` (`blob-lifecycle-policy.json`) — apply the Blob Storage retention policy.
 - `create-pool.sh` (`pool.json`) — create/recreate the Batch pool with the blob mount configured.
 
