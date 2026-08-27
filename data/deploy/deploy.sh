@@ -3,10 +3,9 @@
 # deploy.sh — Deploy the Function App and monitoring via Bicep.
 #
 # Deploy step. Rerun on every infra change. Bicep deploys the Function App
-# (Consumption plan, managed identity, Key Vault Secrets User role assignment),
-# diagnostic settings, and the TaskFailEvent Azure Monitor alert against the
-# already-provisioned Batch account and pool. It does NOT recreate the Batch
-# account or pool.
+# (Consumption plan, managed identity), Application Insights, and the
+# TaskFailEvent Azure Monitor alert against the already-provisioned Batch account
+# and pool. It does NOT recreate the Batch account or pool.
 #
 # Prerequisites:
 #   - Azure CLI logged in (`az login`) with rights to deploy to the
