@@ -13,7 +13,7 @@ From the azure portal:
 [Azure → nrwbatchpoc storage account → Containers → nrw-data-cache → browse into glofas/country_split/.](https://portal.azure.com/#view/Microsoft_Azure_Storage/ContainerMenuBlade/~/overview/storageAccountId/%2Fsubscriptions%2F57b0d17a-5429-4dbb-8366-35c928e3ed94%2FresourceGroups%2Fnrw-batch-poc%2Fproviders%2FMicrosoft.Storage%2FstorageAccounts%2Fnrwbatchpoc/path/nrw-data-cache/etag/%220x8DEF2D384D83E43%22/defaultId//publicAccessVal/None)
 You can select multiple, click '...' -> 'download' for one file, and it will download for all of them.
 
-From the command line, after logging in with `az login`, you can download with something like the following command. This fetches all MWI data for Aug 23, 2026. Set the timestamp and country as needed.
+From the command line, after logging in with `az login`, you can download with something like the following command. This fetches all MWI data for Aug 22, 2026. Set the timestamp and country as needed.
 
 ```
 az storage blob download-batch \

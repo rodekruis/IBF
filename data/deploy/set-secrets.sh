@@ -61,24 +61,44 @@ read_env_var() {
 echo "Storing pipeline secrets in Key Vault '${KEY_VAULT_NAME}' from '${ENV_FILE}'."
 echo
 
+# All secrets are required by the Function App's Key Vault references, so
+# validate every value before writing any: a partial update would leave the
+# vault in a mixed state while this script reports success.
+declare -a SECRET_VALUES=()
+missing_vars=()
+
 for index in "${!SECRET_NAMES[@]}"; do
-  secret_name="${SECRET_NAMES[$index]}"
   env_var_name="${ENV_VAR_NAMES[$index]}"
 
   if ! secret_value="$(read_env_var "${env_var_name}")" || [[ -z "${secret_value}" ]]; then
-    echo "No value for '${env_var_name}' in ${ENV_FILE}, skipping '${secret_name}'."
+    missing_vars+=("${env_var_name}")
+    SECRET_VALUES+=("")
     continue
   fi
+
+  SECRET_VALUES+=("${secret_value}")
+  unset secret_value
+done
+
+if [[ ${#missing_vars[@]} -gt 0 ]]; then
+  echo "Missing values in ${ENV_FILE} for: ${missing_vars[*]}" >&2
+  echo "All secrets are required; no secrets were written." >&2
+  exit 1
+fi
+
+for index in "${!SECRET_NAMES[@]}"; do
+  secret_name="${SECRET_NAMES[$index]}"
 
   az keyvault secret set \
     --vault-name "${KEY_VAULT_NAME}" \
     --name "${secret_name}" \
-    --value "${secret_value}" \
+    --value "${SECRET_VALUES[$index]}" \
     --output none
 
   echo "Set '${secret_name}'."
-  unset secret_value
 done
 
+unset SECRET_VALUES
+
 echo
-echo "Done. All available secrets stored in '${KEY_VAULT_NAME}'."
+echo "Done. All secrets stored in '${KEY_VAULT_NAME}'."

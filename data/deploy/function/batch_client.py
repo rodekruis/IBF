@@ -10,6 +10,7 @@ standard azure-identity TokenCredential directly.
 """
 
 import os
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -53,12 +54,26 @@ TASK_ENVIRONMENT_VARIABLES = (
 )
 
 
+# Both HazardConfig fields are interpolated into a shell-executed Batch task
+# command line, so reject anything outside a conservative allowlist of characters.
+HAZARD_TYPE_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
+CONFIG_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_./-]+$")
+
+
 @dataclass(frozen=True)
 class HazardConfig:
     """A pipeline YAML config baked into the pipeline container image."""
 
     hazard_type: str
     config_path: str
+
+    def __post_init__(self) -> None:
+        if not HAZARD_TYPE_PATTERN.fullmatch(self.hazard_type):
+            raise ValueError(f"Invalid hazard type '{self.hazard_type}'.")
+        if ".." in self.config_path or not CONFIG_PATH_PATTERN.fullmatch(
+            self.config_path
+        ):
+            raise ValueError(f"Invalid config path '{self.config_path}'.")
 
 
 def submit_hazard_job(

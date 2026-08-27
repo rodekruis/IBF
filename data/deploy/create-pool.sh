@@ -6,15 +6,20 @@
 # property can only be set at pool creation time, so any change to the Blob mount
 # requires recreating the pool.
 #
-# Wraps the three commands documented in deploy.md:
+# Wraps the three commands documented in readme-implementation.md:
 #   1. Delete the existing pool (safe when autoscaled to 0 nodes / no jobs).
 #   2. Recreate the pool from pool.json (mount, autoscale, VNet, ACR, container).
 #   3. Attach the user-assigned managed identity via the management API, which
 #      is not supported in the data-plane pool.json.
 #
 # Prerequisites:
-#   - Azure CLI logged in (`az login`) with rights on the Batch account and the
-#     nrw-batch-poc resource group.
+#   - Azure CLI logged in (`az login`). The Batch account is AAD-only, so the
+#     data-plane commands authenticate with your Entra ID token automatically;
+#     `az batch account login` (shared-key) is not possible nor needed.
+#   - `Azure Batch Data Contributor` on Batch account nrwbatchpoc (data-plane
+#     pool delete/create; `Azure Batch Job Submitter` cannot manage pools).
+#   - `Contributor` on Batch account nrwbatchpoc (management-plane identity
+#     attach via `az rest PATCH`).
 #
 # Usage:
 #   ./create-pool.sh

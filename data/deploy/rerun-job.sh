@@ -11,8 +11,8 @@
 # Auth: the Batch account is AAD-only, so the job is submitted as the
 # operator's own `az login` identity. That operator needs
 # "Azure Batch Job Submitter" on nrwbatchpoc and "Key Vault Secrets User" on
-# the nrw-batch-poc vault (see deploy.md for the one-time grant commands; the
-# scheduler UAMI's grants do not apply to a human running this script).
+# the nrw-batch-poc vault (see data/deploy/readme-implementation.md for the one-time
+# grant commands; the scheduler UAMI's grants do not apply to a human running this script).
 #
 # Prerequisites:
 #   - Azure CLI logged in (`az login`) with the grants listed above.

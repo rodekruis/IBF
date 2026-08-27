@@ -18,7 +18,7 @@
 //     the Logs blade).
 //
 // Batch diagnostic settings remain deferred until the aggregate log strategy
-// (ADX) is decided post-prototype (see data/pipelines/deploy.md).
+// (ADX) is decided post-prototype (see data/deploy/readme-implementation.md).
 
 @description('Location for all resources.')
 param location string = resourceGroup().location
@@ -92,7 +92,7 @@ var glofasPasswordReference = '@Microsoft.KeyVault(VaultName=${keyVaultName};Sec
 
 // Shared workspace already provisioned for the backend; pipeline telemetry is
 // joined here rather than in a dedicated workspace. Retention is governed by
-// this workspace and revisited post-POC (see data/pipelines/deploy.md).
+// this workspace and revisited post-POC (see data/deploy/readme-implementation.md).
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
   name: logAnalyticsWorkspaceName
   scope: resourceGroup(logAnalyticsResourceGroup)

@@ -34,6 +34,9 @@ User accounts:
 - **To run `rerun-job.sh`**
   - Role: `Key Vault Secrets User`; Scope: Key Vault `nrw-batch-poc`
   - Role: `Azure Batch Job Submitter`; Scope: Batch account `nrwbatchpoc`
+- **To run `create-pool.sh`**
+  - Role: `Azure Batch Data Contributor`; Scope: Batch account `nrwbatchpoc`; Why: pool delete/create are data-plane operations authenticated with the operator's `az login` Entra ID token; `Azure Batch Job Submitter` cannot manage pools.
+  - Role: `Contributor`; Scope: Batch account `nrwbatchpoc`; Why: attaching the pool managed identity goes through the management API (`az rest PATCH`).
 
 ## Deployment steps and scripts
 
