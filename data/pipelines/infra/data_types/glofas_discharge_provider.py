@@ -206,7 +206,7 @@ def download_glofas_discharge_from_seed_repo(
         )
 
     filename = f"{country}_glofas_discharge_{mock_variant}.nc"
-    url = f"{base_url}/pipelines/mock-data/floods/glofas-discharge/{filename}"
+    url = f"{base_url}/mock-forecasts/flood/glofas-discharge/{filename}"
 
     log_info(logger, LogTag.INFRA, f"Downloading GloFAS mock discharge from {url}")
 

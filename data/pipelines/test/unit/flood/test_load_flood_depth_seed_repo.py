@@ -19,7 +19,9 @@ from shared.country_data import CountryCodeIso3
 
 # Fake URLs; actual HTTP calls are mocked via patch() so these are never fetched
 MOCK_SEED_REPO_BASE_URL = "https://test-seed-repo"
-MOCK_FLOOD_DEPTH_BASE_URL = "https://test-seed-repo/flood-extents/data-png/"
+MOCK_FLOOD_DEPTH_BASE_URL = (
+    "https://test-seed-repo/hazard/flood/flood-extents/data-png/"
+)
 
 
 def _make_config(
@@ -108,6 +110,24 @@ class TestLoadSeedRepoFloodDepth:
             with pytest.raises(
                 FileNotFoundError, match="Failed to download flood depth manifest"
             ):
+                _load_seed_repo_flood_depth(config, container)
+
+        assert container.error is not None
+
+    def test_raises_when_manifest_has_no_return_periods(self, monkeypatch):
+        monkeypatch.setenv("GITHUB_DATA_BASE_URL", MOCK_SEED_REPO_BASE_URL)
+        manifest = {
+            "country": "KEN",
+            "return_periods": [],
+        }
+        config = _make_config()
+        container = _make_container()
+
+        with patch(
+            "pipelines.infra.utils.data_provider_fetchers.download_json_source",
+            return_value=manifest,
+        ):
+            with pytest.raises(FileNotFoundError, match="has no return periods"):
                 _load_seed_repo_flood_depth(config, container)
 
         assert container.error is not None

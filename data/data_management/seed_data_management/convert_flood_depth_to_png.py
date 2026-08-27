@@ -1,8 +1,8 @@
 """
 One-off script to convert flood depth GeoTIFFs to RGBA data PNGs for the seed repo.
 
-Reads flood depth rasters from the seed repo at /raster-data/flood-extents/tif/
-and writes data-encoded PNGs + metadata JSONs to /raster-data/flood-extents/data-png/
+Reads flood depth rasters from the seed repo at /hazard/flood/flood-extents/sources-tif/
+and writes data-encoded PNGs + metadata JSONs to /hazard/flood/flood-extents/data-png/
 
 Usage:
     cd data
@@ -16,10 +16,11 @@ from PIL import Image
 from shared.data_helpers import get_seed_data_repo_path, target_countries_iso_a3
 from shared.image_helpers import geotiff_to_rgba_data_array
 
-INPUT_DIR = Path(get_seed_data_repo_path()) / "raster-data" / "flood-extents" / "tif"
-OUTPUT_DIR = (
-    Path(get_seed_data_repo_path()) / "raster-data" / "flood-extents" / "data-png"
+FLOOD_EXTENTS_DIR = (
+    Path(get_seed_data_repo_path()) / "hazard" / "flood" / "flood-extents"
 )
+INPUT_DIR = FLOOD_EXTENTS_DIR / "sources-tif"
+OUTPUT_DIR = FLOOD_EXTENTS_DIR / "data-png"
 
 COUNTRIES = sorted(target_countries_iso_a3)
 

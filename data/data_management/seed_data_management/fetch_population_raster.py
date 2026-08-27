@@ -33,7 +33,7 @@ BASE_URL = (
 
 # Output dirs
 BASE_REPO_DIR = get_seed_data_repo_path()
-DATA_PNG_OUTPUT_DIR = Path(BASE_REPO_DIR) / "raster-data/population/data-png/"
+DATA_PNG_OUTPUT_DIR = Path(BASE_REPO_DIR) / "exposure/population/data-png/"
 
 # Option to save the original GeoTIFF files for debug.
 # NOTE: Do not check GeoTiffs into any repo since they are too large.

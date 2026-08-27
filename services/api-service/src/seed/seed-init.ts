@@ -54,7 +54,8 @@ const SEED_REPO_RAW_BASE_URL =
   'https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main';
 
 const ADMIN_AREAS_PATH = '/admin-areas/processed';
-const STATION_THRESHOLDS_PATH = '/pipelines';
+const STATION_THRESHOLDS_PATH = '/hazard/flood/glofas-stations';
+const POPULATION_RASTER_PATH = '/exposure/population/data-png';
 
 function getAdminAreaFileUrl({
   countryCodeIso3,
@@ -456,8 +457,8 @@ export class SeedInit {
   }
 
   private async seedPopulationRaster(countryCodeIso3: string): Promise<void> {
-    const dataPngUrl = `${SEED_REPO_RAW_BASE_URL}/raster-data/population/data-png/${countryCodeIso3}_population.png`;
-    const metadataUrl = `${SEED_REPO_RAW_BASE_URL}/raster-data/population/data-png/${countryCodeIso3}_population_metadata.json`;
+    const dataPngUrl = `${SEED_REPO_RAW_BASE_URL}${POPULATION_RASTER_PATH}/${countryCodeIso3}_population.png`;
+    const metadataUrl = `${SEED_REPO_RAW_BASE_URL}${POPULATION_RASTER_PATH}/${countryCodeIso3}_population_metadata.json`;
 
     this.logger.log(`Download population raster for ${countryCodeIso3}...`);
 

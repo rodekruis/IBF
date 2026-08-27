@@ -43,7 +43,7 @@ The `POST /api/mock` endpoint generates fake forecast events so the portal can b
 ## API
 
 - Access the Swagger UI via: <http://localhost:4000/docs/>
-- A JSON-document will be generated at [`swagger.json`](./swagger.json). You can use it to get a 'diff' view API changes between different version of the platform.
+- An OpenAPI schema is auto-generated in development mode at [`nrw.openapi-schema.json`](./nrw.openapi-schema.json), used by the frontend for type-safe API client generation.
 - A graph will be generated when run in development-mode at [`module-dependencies.md`](./module-dependencies.md).
   It can be viewed with <https://mermaid.live/> or the VSCode-extension: [Markdown Preview Mermaid Support](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid)
 

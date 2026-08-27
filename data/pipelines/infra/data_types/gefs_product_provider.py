@@ -15,7 +15,7 @@ from shared.download_helpers import download_json_source, download_object
 
 logger = logging.getLogger(__name__)
 
-SEED_REPO_TROPICAL_CYCLONE_PATH = "/pipelines/mock-data/tropical-cyclone/"
+SEED_REPO_TROPICAL_CYCLONE_PATH = "/mock-forecasts/tropical-cyclone/"
 
 
 class GefsProduct(StrEnum):

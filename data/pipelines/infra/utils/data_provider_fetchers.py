@@ -40,7 +40,7 @@ from shared.image_helpers import rgba_png_to_float_array
 
 logger = logging.getLogger(__name__)
 
-SEED_REPO_FLOOD_DEPTH_DATA_PNG_PATH = "/raster-data/flood-extents/data-png/"
+SEED_REPO_FLOOD_DEPTH_DATA_PNG_PATH = "/hazard/flood/flood-extents/data-png/"
 
 
 def _get_seed_repo_uri() -> str:
@@ -77,10 +77,10 @@ def load_data_container(
             )
         case DataSource.POPULATION_IBF_API:
             return _load_ibf_api_population_data(data_config, container, api_client)
-        case DataSource.FLOOD_DEPTH_SEED_REPO:
-            return _load_seed_repo_flood_depth(data_config, container)
 
         # --- Flood sources ---
+        case DataSource.FLOOD_DEPTH_SEED_REPO:
+            return _load_seed_repo_flood_depth(data_config, container)
         case DataSource.GLOFAS_STATIONS_IBF_API:
             return _load_ibf_api_glofas_stations(
                 container,
@@ -238,8 +238,15 @@ def _load_seed_repo_flood_depth(config: DataSourceConfig, container: LoadedDataS
         )
         raise FileNotFoundError(container.error)
 
+    return_periods = manifest["return_periods"]
+    if not return_periods:
+        container.error = (
+            f"Flood depth manifest at '{manifest_url}' has no return periods"
+        )
+        raise FileNotFoundError(container.error)
+
     container.data = FloodDepthProvider(
-        available_return_periods=manifest["return_periods"],
+        available_return_periods=return_periods,
         base_url=base_url,
         country=country,
     )

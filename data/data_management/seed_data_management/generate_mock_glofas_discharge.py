@@ -6,7 +6,7 @@ Two variants are generated per country:
   - alert: discharge values above threshold at one station
 
 Output files are named: {COUNTRY}_glofas_discharge_{variant}.nc
-They should be committed to the IBF-seed-data repo under pipelines/mock-data/floods/glofas-discharge/
+They should be committed to the IBF-seed-data repo under mock-forecasts/flood/glofas-discharge/
 
 Usage:
     cd data
@@ -38,9 +38,8 @@ logger = logging.getLogger(__name__)
 SEED_REPO_OUTPUT_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent.parent
     / "IBF-seed-data"
-    / "pipelines"
-    / "mock-data"
-    / "floods"
+    / "mock-forecasts"
+    / "flood"
     / "glofas-discharge"
 )
 
@@ -55,7 +54,7 @@ def fetch_station_thresholds(country: str) -> list[dict]:
     if not base_url:
         raise ValueError("GITHUB_DATA_BASE_URL environment variable is required")
 
-    url = f"{base_url}/pipelines/{country}_station_thresholds.json"
+    url = f"{base_url}/hazard/flood/glofas-stations/{country}_station_thresholds.json"
     logger.info(f"Fetching station thresholds from {url}")
     data = download_json_source(url, check_count=False)
     if data is None:
