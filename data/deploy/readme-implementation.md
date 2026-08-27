@@ -1,6 +1,6 @@
 # Pipeline cloud deployment plan
 
-The general requirements this plan implements are in [deploy_requirements.md](deploy_requirements.md); this document is the practical implementation overview.
+The general requirements this plan implements are in [readme-requirements.md](readme-requirements.md); this document is the practical implementation overview.
 
 ## Overview
 
