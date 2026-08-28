@@ -1,7 +1,7 @@
 import { Locator, Page } from '@playwright/test';
 
 /**
- * Page object for the standalone NRW page (`/countries=<countryCodes>`).
+ * Page object for the standalone NRW page.
  *
  * Locators here are the only place that should need updating as the frontend
  * evolves; the surrounding e2e setup (orchestration, seeding, CI) stays stable.
