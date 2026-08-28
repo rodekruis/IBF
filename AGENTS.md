@@ -6,7 +6,8 @@ NRW is a web app to visualize hazard forecasts. This repository contains:
 
 - `services/api-service/` — NestJS backend API (TypeScript, Prisma, PostgreSQL)
 - `data/` — Python code for both hazard forecast pipelines and data management scripts
-- `portal/nrw-standalone/` — React frontend wrapper around the IFRC Go NRW submodule
+
+React frontend code is hosted in the separate `go-web-app` repo.
 
 ---
 

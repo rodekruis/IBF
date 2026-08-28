@@ -1,1 +1,0 @@
-src/go-web-app/.github/copilot-instructions.md

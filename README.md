@@ -7,7 +7,7 @@ A system that forecasts Early Warning alerts, disseminates notifications, and vi
 
 - [data pipelines](./pipelines) producing forecasts
 - [back-end services](./services) ingesting and processing forecast data via API and publishing this - alongside seed data - via APIs
-- to e.g. a React front-end, which is used in the [NRW standalone front end](/portal/nrw-standalone/README.md) in this repo, but development for it is done in a [separate repo](https://github.com/rodekruis/go-web-app/tree/nrw-develop).
+- to e.g. a React front-end, which is developed and run in the separate [go-web-app repo](https://github.com/rodekruis/go-web-app/tree/nrw-develop).
 
 Read our [public documentation](https://github.com/rodekruis/IBF-documentation).
 
