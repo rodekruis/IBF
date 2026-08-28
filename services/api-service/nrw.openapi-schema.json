@@ -301,6 +301,23 @@
             }
           },
           {
+            "name": "hazardTypes",
+            "required": false,
+            "in": "query",
+            "description": "Hazard types to mock. Select one or more. If omitted, all hazard types configured for the country are mocked.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "floods",
+                  "drought",
+                  "tropicalCyclone"
+                ]
+              }
+            }
+          },
+          {
             "name": "countryCodes",
             "required": false,
             "in": "query",

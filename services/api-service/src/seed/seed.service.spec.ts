@@ -1,10 +1,12 @@
-import { ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 
 jest.mock('@api-service/src/env', () => ({
   env: {},
 }));
 
+import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import { SeedService } from '@api-service/src/seed/seed.service';
+import { HazardType } from '@api-service/src/shared-enums';
 
 function flushPromises(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve));
@@ -133,6 +135,69 @@ describe('SeedService', () => {
         inProgress: false,
         error: null,
       });
+    });
+  });
+
+  describe('mockEvents', () => {
+    let createAlertsMock: jest.Mock;
+    let deleteEventsMock: jest.Mock;
+
+    beforeEach(() => {
+      createAlertsMock = jest.fn().mockResolvedValue(undefined);
+      deleteEventsMock = jest.fn().mockResolvedValue(undefined);
+
+      const seedInit = { run: jest.fn().mockResolvedValue(undefined) } as never;
+      const alertsService = { createAlerts: createAlertsMock } as never;
+      const countriesService = {} as never;
+      const eventsService = {
+        deleteEventsByCountry: deleteEventsMock,
+      } as never;
+
+      service = new SeedService(
+        seedInit,
+        alertsService,
+        countriesService,
+        eventsService,
+      );
+    });
+
+    it('should throw BadRequestException for unconfigured hazard type', async () => {
+      // Arrange
+      const params = {
+        countryCodes: ['PHL'],
+        scenario: MockScenario.events,
+        clearEvents: false,
+        issuedAt: new Date('2026-08-25T12:00:00Z'),
+        hazardTypes: [HazardType.drought],
+      };
+
+      // Act & Assert
+      await expect(service.mockEvents(params)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should create forecasts for valid hazard type filter', async () => {
+      // Arrange
+      const params = {
+        countryCodes: ['PHL'],
+        scenario: MockScenario.events,
+        clearEvents: false,
+        issuedAt: new Date('2026-08-25T12:00:00Z'),
+        hazardTypes: [HazardType.tropicalCyclone],
+      };
+
+      // Act
+      await service.mockEvents(params);
+
+      // Assert
+      expect(createAlertsMock).toHaveBeenCalledTimes(1);
+      expect(createAlertsMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          hazardType: HazardType.tropicalCyclone,
+          countryCodeIso3: 'PHL',
+        }),
+      );
     });
   });
 });

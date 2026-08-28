@@ -13,7 +13,7 @@ import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 import {
   colorizeGrayscalePng,
-  FLOOD_DEPTH_CONFIG,
+  getColorizationConfig,
   reproject4326To3857,
 } from '@api-service/src/utils/raster-colorization.helper';
 
@@ -146,7 +146,7 @@ export class AlertsRepository {
                 valueGreyscale: entry.valueGreyscale,
                 valueColoured: colorizeGrayscalePng({
                   base64Grayscale: entry.valueGreyscale,
-                  config: FLOOD_DEPTH_CONFIG,
+                  config: getColorizationConfig(entry.layer),
                 }),
                 metadata: {
                   data: {
