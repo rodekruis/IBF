@@ -62,7 +62,7 @@ Run these in order the first time, but after that, you can just run the ones tha
 
 ### Helper jobs
 
-- `rerun-job.sh` (`function/rerun_job.py`) — manually rerun a Batch job (reads secrets from Key Vault); example: `./rerun-job.sh floods`.
+- `rerun-job.sh` (`function/rerun_job.py`) — manually rerun a Batch job (reads secrets from Key Vault). Example: `./rerun-job.sh floods`. Mock scenarios are supported via passthrough flags. See the mock data scripts and readme for all options. Example: `./rerun-job.sh floods --mock 1 --country KEN`
 
 ## Compute
 

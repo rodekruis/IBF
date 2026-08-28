@@ -20,9 +20,19 @@
 #   - data/.env populated with IBF_API_URL (same source as create-local-settings.sh).
 #
 # Usage:
-#   ./rerun-job.sh <hazard-type> [config-path]
+#   ./rerun-job.sh <hazard-type> [rerun flags]
 #   ./rerun-job.sh floods
-#   ./rerun-job.sh floods pipelines/infra/configs/floods.yaml
+#   ./rerun-job.sh floods --mock 0 --country PHL
+#   ./rerun-job.sh floods --config-path pipelines/infra/configs/floods.yaml
+#
+# Rerun flags are passed through to function/rerun_job.py:
+#   --config-path PATH  pipeline YAML config path inside the container image
+#   --mock N            run with mock data instead of LIVE (0 = no-alert,
+#                       1 = alert); mock input data is downloaded from the seed
+#                       repo (GITHUB_DATA_BASE_URL, exported below)
+#   --country LIST      comma-separated ISO 3 codes, e.g. PHL or KEN,ETH
+#   --infra-only        bypass hazard logic, generate --mock alerts (requires --mock)
+#   --issued-at ISO8601 pin the issued_at timestamp (requires --mock)
 
 set -euo pipefail
 
@@ -32,14 +42,14 @@ ENV_FILE="${DATA_DIR}/.env"
 SUBSCRIPTION_ID="57b0d17a-5429-4dbb-8366-35c928e3ed94"
 KEY_VAULT_NAME="nrw-batch-poc"
 
-if [[ $# -lt 1 || $# -gt 2 ]]; then
-  echo "Usage: $0 <hazard-type> [config-path]" >&2
-  echo "  e.g. $0 floods" >&2
+if [[ $# -lt 1 ]]; then
+  echo "Usage: $0 <hazard-type> [rerun flags]" >&2
+  echo "  e.g. $0 floods --mock 0 --country PHL" >&2
   exit 1
 fi
 
 HAZARD_TYPE="$1"
-CONFIG_PATH="${2:-}"
+shift
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "Env file not found: ${ENV_FILE}" >&2
@@ -110,10 +120,7 @@ export APPLICATIONINSIGHTS_CONNECTION_STRING="$(az monitor app-insights componen
 # DefaultAzureCredential.
 unset AZURE_CLIENT_ID
 
-RERUN_ARGS=("${HAZARD_TYPE}")
-if [[ -n "${CONFIG_PATH}" ]]; then
-  RERUN_ARGS+=(--config-path "${CONFIG_PATH}")
-fi
+RERUN_ARGS=("${HAZARD_TYPE}" "$@")
 
 echo "Submitting rerun job for hazard '${HAZARD_TYPE}'."
 (

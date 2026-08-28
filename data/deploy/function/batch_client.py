@@ -54,18 +54,28 @@ TASK_ENVIRONMENT_VARIABLES = (
 )
 
 
-# Both HazardConfig fields are interpolated into a shell-executed Batch task
+# HazardConfig fields are interpolated into a shell-executed Batch task
 # command line, so reject anything outside a conservative allowlist of characters.
 HAZARD_TYPE_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 CONFIG_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_./-]+$")
+COUNTRY_PATTERN = re.compile(r"^[A-Za-z]{3}(,[A-Za-z]{3})*$")
+ISSUED_AT_PATTERN = re.compile(r"^[0-9T:\-+.,Zz ]+$")
 
 
 @dataclass(frozen=True)
 class HazardConfig:
-    """A pipeline YAML config baked into the pipeline container image."""
+    """A pipeline YAML config baked into the pipeline container image.
+
+    The optional fields mirror the mock-scenario flags of the pipeline CLI
+    (see pipelines/infra/run_forecasts.py) and are only set for manual reruns.
+    """
 
     hazard_type: str
     config_path: str
+    mock: int | None = None
+    country: str | None = None
+    infra_only: bool = False
+    issued_at: str | None = None
 
     def __post_init__(self) -> None:
         if not HAZARD_TYPE_PATTERN.fullmatch(self.hazard_type):
@@ -74,6 +84,18 @@ class HazardConfig:
             self.config_path
         ):
             raise ValueError(f"Invalid config path '{self.config_path}'.")
+        if self.mock is not None and self.mock < 0:
+            raise ValueError(f"Invalid mock value '{self.mock}'.")
+        if self.country is not None and not COUNTRY_PATTERN.fullmatch(self.country):
+            raise ValueError(f"Invalid country filter '{self.country}'.")
+        if self.issued_at is not None and not ISSUED_AT_PATTERN.fullmatch(
+            self.issued_at
+        ):
+            raise ValueError(f"Invalid issued-at value '{self.issued_at}'.")
+        if self.infra_only and self.mock is None:
+            raise ValueError("infra_only requires mock to be set.")
+        if self.issued_at is not None and self.mock is None:
+            raise ValueError("issued_at requires mock to be set.")
 
 
 def submit_hazard_job(
@@ -111,7 +133,7 @@ def build_container_task(hazard_config: HazardConfig) -> BatchTaskCreateOptions:
     """Container task mirroring local invocation: `pipeline --config <path>`."""
     return BatchTaskCreateOptions(
         id=f"{hazard_config.hazard_type}-task",
-        command_line=f"pipeline --config {hazard_config.config_path}",
+        command_line=build_command_line(hazard_config),
         container_settings=BatchTaskContainerSettings(
             image_name=CONTAINER_IMAGE,
             # Use the image WORKDIR (/home/pipelines/app) so the relative config
@@ -124,6 +146,20 @@ def build_container_task(hazard_config: HazardConfig) -> BatchTaskCreateOptions:
             max_task_retry_count=TASK_MAX_RETRY_COUNT,
         ),
     )
+
+
+def build_command_line(hazard_config: HazardConfig) -> str:
+    """Render the pipeline CLI invocation, e.g. `pipeline --config <path> --mock 0 --country PHL`."""
+    parts = ["pipeline", "--config", hazard_config.config_path]
+    if hazard_config.mock is not None:
+        parts.extend(["--mock", str(hazard_config.mock)])
+    if hazard_config.infra_only:
+        parts.append("--infra-only")
+    if hazard_config.country:
+        parts.extend(["--country", hazard_config.country])
+    if hazard_config.issued_at:
+        parts.extend(["--issued-at", hazard_config.issued_at])
+    return " ".join(parts)
 
 
 def task_environment_settings() -> list[EnvironmentSetting]:

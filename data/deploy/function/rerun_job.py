@@ -17,6 +17,10 @@ def main() -> None:
     hazard_config = HazardConfig(
         hazard_type=args.hazard_type,
         config_path=args.config_path or default_config_path(args.hazard_type),
+        mock=args.mock,
+        country=args.country,
+        infra_only=args.infra_only,
+        issued_at=args.issued_at,
     )
     job_id = submit_hazard_job(
         create_batch_client(), hazard_config, datetime.now(timezone.utc)
@@ -38,6 +42,34 @@ def parse_args() -> argparse.Namespace:
             "Pipeline YAML config path inside the container image. "
             "Defaults to pipelines/infra/configs/<hazard-type>.yaml."
         ),
+    )
+    parser.add_argument(
+        "--mock",
+        type=int,
+        default=None,
+        help=(
+            "Run with mock data instead of LIVE; value is the alert count "
+            "(0 = no-alert, 1 = alert). Mock input data is downloaded from the "
+            "seed repo (GITHUB_DATA_BASE_URL)."
+        ),
+    )
+    parser.add_argument(
+        "--country",
+        default=None,
+        help=(
+            "Run only these countries (comma-separated ISO 3 codes, e.g. PHL "
+            "or KEN,ETH). Omit to run all configured countries."
+        ),
+    )
+    parser.add_argument(
+        "--infra-only",
+        action="store_true",
+        help="Bypass hazard logic and generate --mock number of alerts. Requires --mock.",
+    )
+    parser.add_argument(
+        "--issued-at",
+        default=None,
+        help="Override the issued_at timestamp (ISO 8601). Requires --mock.",
     )
     return parser.parse_args()
 
