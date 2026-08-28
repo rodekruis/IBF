@@ -74,7 +74,9 @@ class TestDetermineSeverities:
                 ],
             )
         ]
-        [severity] = determine_severities(wind_speeds, ["PC001"], _build_admin_areas())
+        [severity] = determine_severities(
+            "TEST_STORM", wind_speeds, ["PC001"], _build_admin_areas()
+        )
         assert severity.ensemble_wind_speeds == [30.0, 40.0, 50.0]
         assert severity.median_wind_speed == 40.0
 
@@ -86,7 +88,12 @@ class TestDetermineSeverities:
                 ensemble_wind_speed_rasters=[_make_raster(10.0), _make_raster(20.0)],
             )
         ]
-        assert determine_severities(wind_speeds, ["PC001"], _build_admin_areas()) == []
+        assert (
+            determine_severities(
+                "TEST_STORM", wind_speeds, ["PC001"], _build_admin_areas()
+            )
+            == []
+        )
 
     def test_keeps_only_qualifying_buckets_among_several(self):
         wind_speeds = [
@@ -101,7 +108,9 @@ class TestDetermineSeverities:
                 ensemble_wind_speed_rasters=[_make_raster(40.0)],
             ),
         ]
-        result = determine_severities(wind_speeds, ["PC001"], _build_admin_areas())
+        result = determine_severities(
+            "TEST_STORM", wind_speeds, ["PC001"], _build_admin_areas()
+        )
         assert [severity.time_interval_start for severity in result] == [
             "2026-07-10T03:00:00Z"
         ]
