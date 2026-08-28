@@ -93,9 +93,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: '${{ env.e2eTestsPath }}/package-lock.json'
 
-      - name: Set up pnpm (for the frontend)
-        uses: pnpm/action-setup@v6
-
       - name: Install E2E-Tests code-dependencies
         working-directory: ${{ env.e2eTestsPath }}
         run: |
@@ -120,6 +117,11 @@ jobs:
           repository: rodekruis/go-web-app
           ref: nrw-develop
           path: ${{ env.goWebAppPath }}
+
+      - name: Set up pnpm (for the frontend)
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: ${{ env.goWebAppPath }}/package.json
 
       - name: Set up Node.js for go-web-app
         uses: actions/setup-node@v7
