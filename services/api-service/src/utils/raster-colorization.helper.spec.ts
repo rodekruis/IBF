@@ -260,7 +260,7 @@ describe('raster-colorization.helper', () => {
 
     it('should fall back to floodDepth config for unknown layers', () => {
       const floodConfig = getColorizationConfig(LayerName.floodDepth);
-      const unknownConfig = getColorizationConfig(LayerName.population);
+      const unknownConfig = getColorizationConfig(LayerName.glofasStations);
 
       expect(unknownConfig).toEqual(floodConfig);
     });
