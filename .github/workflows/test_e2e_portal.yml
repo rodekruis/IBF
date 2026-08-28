@@ -16,9 +16,8 @@ on:
 
 env:
   e2eTestsPath: './e2e'
-  frontendPath: './portal/nrw-standalone'
+  goWebAppPath: './go-web-app'
   frontendUrl: 'http://localhost:5173'
-  FONTAWESOME_NPM_AUTH_TOKEN: ${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}
 
 jobs:
   path-filter:
@@ -45,9 +44,6 @@ jobs:
             - 'services/**'
             - '!services/**.test.ts'
             - '!services/**.spec.ts'
-            - 'portal/**'
-            - '!portal/**.test.ts'
-            - '!portal/**.spec.ts'
             - '!**.md'
 
   lint-code:
@@ -99,12 +95,9 @@ jobs:
 
       - name: Set up pnpm (for the frontend)
         uses: pnpm/action-setup@v6
-        with:
-          version: 9
 
       - name: Install E2E-Tests code-dependencies
         working-directory: ${{ env.e2eTestsPath }}
-        # We only need to install the tests' dependencies, so we can skip the `postinstall`-step
         run: |
           npm ci --ignore-scripts
 
@@ -121,18 +114,44 @@ jobs:
         run: |
           docker compose exec api-service npm run prisma:migrate:deploy
 
-      - name: Set up the frontend (submodule + dependencies)
-        run: |
-          npm run setup:frontend
+      - name: Clone go-web-app
+        uses: actions/checkout@v7
+        with:
+          repository: rodekruis/go-web-app
+          ref: nrw-develop
+          path: ${{ env.goWebAppPath }}
 
-      - name: Verify frontend submodule checkout
-        run: |
-          test -f ${{ env.frontendPath }}/src/go-web-app/app/src/components/Nrw/index.tsx \
-            || (echo "go-web-app submodule sparse-checkout is missing Nrw; aborting." && exit 1)
+      - name: Set up Node.js for go-web-app
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: '${{ env.goWebAppPath }}/.nvmrc'
+          cache: pnpm
+          cache-dependency-path: '${{ env.goWebAppPath }}/pnpm-lock.yaml'
 
-      - name: Run the frontend
+      - name: Install go-web-app dependencies
+        working-directory: ${{ env.goWebAppPath }}
+        env:
+          FONTAWESOME_API_KEY: ${{ secrets.FONTAWESOME_API_KEY }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Build go-web-app
+        working-directory: ${{ env.goWebAppPath }}
+        env:
+          APP_TITLE: NRW e2e
+          APP_ENVIRONMENT: testing
+          APP_MAPBOX_ACCESS_TOKEN: ${{ secrets.APP_MAPBOX_ACCESS_TOKEN }}
+          APP_NRW_API_ENDPOINT: http://localhost:4000/api/
+          APP_NRW_STANDALONE: true
+          APP_API_ENDPOINT: https://placeholder.example.com/
+          APP_TINY_API_KEY: unused
+          APP_RISK_API_ENDPOINT: https://placeholder.example.com/
+          APP_TRANSLATION_API_ENDPOINT: https://placeholder.example.com/
+        run: pnpm build
+
+      - name: Serve the frontend
+        working-directory: ${{ env.goWebAppPath }}
         run: |
-          npm run start:frontend > ${{ env.frontendPath }}/run-frontend-logs.txt 2>&1 &
+          npx serve build/ --listen tcp://0.0.0.0:5173 --single > frontend-logs.txt 2>&1 &
 
       - name: Install E2E-Tests runtime-dependencies
         working-directory: ${{ env.e2eTestsPath }}
@@ -160,13 +179,13 @@ jobs:
           name: test-result-artifacts-${{ matrix.shard }}
           path: |
             ${{ env.e2eTestsPath }}/test-results/
-            ${{ env.frontendPath }}/run-frontend-logs.txt
+            ${{ env.goWebAppPath }}/frontend-logs.txt
             ./backend-logs/
 
       - name: Frontend logs
         if: always()
         shell: bash
-        run: cat ${{ env.frontendPath }}/run-frontend-logs.txt
+        run: cat ${{ env.goWebAppPath }}/frontend-logs.txt
 
       - name: Docker logs
         if: always()

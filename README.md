@@ -7,7 +7,7 @@ A system that forecasts Early Warning alerts, disseminates notifications, and vi
 
 - [data pipelines](./pipelines) producing forecasts
 - [back-end services](./services) ingesting and processing forecast data via API and publishing this - alongside seed data - via APIs
-- to e.g. a React front-end, which is used in the [NRW standalone front end](/portal/nrw-standalone/README.md) in this repo, but development for it is done in a [separate repo](https://github.com/rodekruis/go-web-app/tree/ibf-main).
+- to e.g. a React front-end, which is used in the [NRW standalone front end](/portal/nrw-standalone/README.md) in this repo, but development for it is done in a [separate repo](https://github.com/rodekruis/go-web-app/tree/nrw-develop).
 
 Read our [public documentation](https://github.com/rodekruis/IBF-documentation).
 
@@ -32,7 +32,7 @@ This guide is a text version of that script which will help you troubleshoot or 
 Because IBF needs 3 repositories you'll probably want to have them in an umbrella folder next to each other.
 
 - backend (including pipelines): https://github.com/rodekruis/IBF
-- frontend (etc): https://github.com/rodekruis/go-web-app/tree/ibf-main
+- frontend (etc): https://github.com/rodekruis/go-web-app/tree/nrw-develop
 - seed data: https://github.com/rodekruis/IBF-seed-data
 
 #### Backend (`IBF` repository)
@@ -57,23 +57,13 @@ After the backend is running, seed it with base data and (optionally) mock event
 1. **Reset** — `POST /api/reset?countryCodes=MWI` seeds admin areas, and other static data.
 2. **Mock** (optional) — `POST /api/mock?countryCodes=MWI&scenario=events` creates test forecast events so the portal shows data.
 
-#### Frontend (`go-web-app` directory)
+#### Frontend (`go-web-app` repository)
 
-In the `go-web-app` directory, follow [the instructions from that repository](https://github.com/rodekruis/go-web-app/tree/ibf-main#local-development) on how to install dependencies and start the frontend.
-
-#### Frontend (`nrw-standalone`, in this repository)
-
-Alternatively, the [NRW standalone front-end](/portal/nrw-standalone/README.md) bundled in this repository can be built and served locally. From the `IBF` repository root:
-
-- `npm run setup:frontend` — one-time: initialise the `go-web-app` submodule (sparse checkout), create its `.env`, and install dependencies
-- `npm run start:frontend` — build and serve the standalone front-end on [http://localhost:5173](http://localhost:5173)
+In the `go-web-app` repository, follow [the instructions from that repository](https://github.com/rodekruis/go-web-app/tree/nrw-develop#local-development) on how to install dependencies and start the frontend.
 
 #### End-to-end tests (`e2e`)
 
-End-to-end tests (Playwright) live in [`/e2e`](/e2e/README.md) and run against a running backend and `nrw-standalone` front-end. From the `IBF` repository root:
-
-- `npm run install:e2e` — one-time: install dependencies and Playwright browsers
-- `npm run test:e2e` — run the end-to-end tests
+End-to-end tests (Playwright) live in [`/e2e`](/e2e/README.md) and run against a running backend and a cloned and running `go-web-app` front-end.
 
 See the [e2e README](/e2e/README.md) for the full setup.
 
