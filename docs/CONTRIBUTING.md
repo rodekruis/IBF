@@ -103,7 +103,7 @@ We avoid "feature branches" (long-lived branches with multiple/no owners). For P
 
 #### Cross-repo changes
 
-When a change spans both repos (e.g. a new or changed API contract):
+When a change spans both repos (e.g. a new or changed API contract), create "sibling PRs"
 
 1. Try to minimize the "shared" parts, and postpone other changes on both sides to follow-up PRs.
 2. Prepare sibling PRs in both repos as ready-to-merge. Only expect the e2e test on IBF-repo to potentially fail. (as it uses nrw-develop, and not the sibling feature branch.)
