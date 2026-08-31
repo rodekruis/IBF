@@ -98,8 +98,19 @@ We avoid "feature branches" (long-lived branches with multiple/no owners). For P
   - Example: Add unused backend endpoints or remove frontend elements without removing related endpoints.
   - Separate changes reduce risk and simplify review (though context for both sides is still needed).
 - **Separate frontend and backend changes** when possible:
-  - Exception: When backend changes break frontend compatibility, include both in one PR.
-  - Rule of thumb: If API changes are backward compatible, separate the PRs; if not, combine them.
+  - Frontend code lives in the [go-web-app](https://github.com/rodekruis/go-web-app/tree/nrw-develop) repo; backend code lives here. So they are separate by definition.
+  - When a change spans both repos, prepare sibling PRs and follow the merge order below.
+
+#### Cross-repo changes
+
+When a change spans both repos (e.g. a new or changed API contract):
+
+1. Try to minimize the "shared" parts, and postpone other changes on both sides to follow-up PRs.
+2. Prepare sibling PRs in both repos as ready-to-merge. Only expect the e2e test on IBF-repo to potentially fail. (as it uses nrw-develop, and not the sibling feature branch.)
+3. Merge the **front-end PR first** (go-web-app → nrw-develop)
+4. Re-run any failing e2e tests on the back-end PR (IBF) — they clone `nrw-develop` HEAD and should now pick up the updated FE.
+5. Merge the back-end PR if e2e passes
+6. If e2e still fails: fix the back-end PR or create a follow-up front-end PR and repeat this process.
 
 ---
 
