@@ -70,7 +70,7 @@ class DataProvider:
                     local_data_date=self.local_data_date,
                     local_data=self.local_data,
                 )
-            except Exception as exc:
+            except (OSError, ValueError, RuntimeError) as exc:
                 data_container.error = str(exc)
                 error_msg = (
                     f"Failed to load data source '{source_config.source}'"

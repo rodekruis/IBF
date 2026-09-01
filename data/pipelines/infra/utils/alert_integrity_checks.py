@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import binascii
 from datetime import datetime
 
 from pipelines.infra.data_types.dtos import (
@@ -115,7 +116,7 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
         else:
             try:
                 decoded = base64.b64decode(raster.value_greyscale, validate=True)
-            except Exception:
+            except (ValueError, binascii.Error):
                 errors.append(
                     f"Alert '{event_name}' raster '{raster.layer}': "
                     f"value_greyscale is not valid base64"

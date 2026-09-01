@@ -91,80 +91,79 @@ def geotiff_to_array(tif_data: bytes):
     Metadata is also returned.
     """
     # Open the GeoTIFF from binary data
-    with MemoryFile(tif_data) as memfile:
-        with memfile.open() as src:
-            if src.count != 1:
-                raise ValueError(
-                    f"Expected a single-band GeoTIFF, but got {src.count} bands."
+    with MemoryFile(tif_data) as memfile, memfile.open() as src:
+        if src.count != 1:
+            raise ValueError(
+                f"Expected a single-band GeoTIFF, but got {src.count} bands."
+            )
+
+        # Reproject to EPSG:3857
+        target_crs = CRS.from_string(EPSG.WEB_MERCATOR)
+        transform, width, height = calculate_default_transform(
+            src.crs, target_crs, src.width, src.height, *src.bounds
+        )
+
+        reproj_data = np.empty((height, width), dtype=src.dtypes[0])
+
+        reproject(
+            source=rasterio.band(src, 1),
+            destination=reproj_data,
+            src_transform=src.transform,
+            src_crs=src.crs,
+            dst_transform=transform,
+            dst_crs=target_crs,
+            resampling=Resampling.bilinear,
+        )
+
+        # Calculate the new bounds in 3857
+        new_bounds = array_bounds(height, width, transform)
+
+        # Get meta data
+        geo_data = {
+            "width": width,
+            "height": height,
+            "crs": str(target_crs),
+            "transform": list(transform),
+            "bounds": {
+                "left": new_bounds[0],
+                "bottom": new_bounds[1],
+                "right": new_bounds[2],
+                "top": new_bounds[3],
+            },
+            "res": (transform[0], -transform[4]),
+            "scales": src.scales,
+            "offsets": src.offsets,
+        }
+
+        # If NoData values are above 0, set it to a large negative number (-999)
+        # This way it can be set to 0 later, and actual data values of 0 are preserved
+        if src.nodata is not None and (np.isnan(src.nodata) or src.nodata > 0):
+            if not np.isnan(src.nodata):
+                print(
+                    f"Warning: This file has a NoData value greater than 0. "
+                    f"This should be handled fine, but verify results. NoData value: {src.nodata}."
                 )
-
-            # Reproject to EPSG:3857
-            target_crs = CRS.from_string(EPSG.WEB_MERCATOR)
-            transform, width, height = calculate_default_transform(
-                src.crs, target_crs, src.width, src.height, *src.bounds
-            )
-
-            reproj_data = np.empty((height, width), dtype=src.dtypes[0])
-
-            reproject(
-                source=rasterio.band(src, 1),
-                destination=reproj_data,
-                src_transform=src.transform,
-                src_crs=src.crs,
-                dst_transform=transform,
-                dst_crs=target_crs,
-                resampling=Resampling.bilinear,
-            )
-
-            # Calculate the new bounds in 3857
-            new_bounds = array_bounds(height, width, transform)
-
-            # Get meta data
-            geo_data = {
-                "width": width,
-                "height": height,
-                "crs": str(target_crs),
-                "transform": list(transform),
-                "bounds": {
-                    "left": new_bounds[0],
-                    "bottom": new_bounds[1],
-                    "right": new_bounds[2],
-                    "top": new_bounds[3],
-                },
-                "res": (transform[0], -transform[4]),
-                "scales": src.scales,
-                "offsets": src.offsets,
-            }
-
-            # If NoData values are above 0, set it to a large negative number (-999)
-            # This way it can be set to 0 later, and actual data values of 0 are preserved
-            if src.nodata is not None and (np.isnan(src.nodata) or src.nodata > 0):
-                if not np.isnan(src.nodata):
-                    print(
-                        f"Warning: This file has a NoData value greater than 0. "
-                        f"This should be handled fine, but verify results. NoData value: {src.nodata}."
-                    )
-                # replace all noData values with a large negative number (-999)
-                if np.isnan(src.nodata):
-                    reproj_data = np.where(np.isnan(reproj_data), -999, reproj_data)
-                else:
-                    reproj_data = np.where(reproj_data == src.nodata, -999, reproj_data)
-                src.nodata = -999
-
-            # Normalize data to 0-254 (if it has values above 0)
-            # 0-254 is used, since 1 is added later (bringing the max to 255)
-            # in order to offset data from the NoData value of 0.
-            if reproj_data.max() > 0:
-                norm_data = (reproj_data.astype(float) / reproj_data.max()) * 254
+            # replace all noData values with a large negative number (-999)
+            if np.isnan(src.nodata):
+                reproj_data = np.where(np.isnan(reproj_data), -999, reproj_data)
             else:
-                norm_data = reproj_data.astype(float)
+                reproj_data = np.where(reproj_data == src.nodata, -999, reproj_data)
+            src.nodata = -999
 
-            # Set 0 as the new nodata value, and make other data start at 1
-            norm_data = np.where(norm_data < 0, 0, norm_data + 1)
+        # Normalize data to 0-254 (if it has values above 0)
+        # 0-254 is used, since 1 is added later (bringing the max to 255)
+        # in order to offset data from the NoData value of 0.
+        if reproj_data.max() > 0:
+            norm_data = (reproj_data.astype(float) / reproj_data.max()) * 254
+        else:
+            norm_data = reproj_data.astype(float)
 
-            # round and cast to uint8 for PNG output
-            img_array_bw = np.round(norm_data).astype(np.uint8)
-            return geo_data, img_array_bw
+        # Set 0 as the new nodata value, and make other data start at 1
+        norm_data = np.where(norm_data < 0, 0, norm_data + 1)
+
+        # round and cast to uint8 for PNG output
+        img_array_bw = np.round(norm_data).astype(np.uint8)
+        return geo_data, img_array_bw
 
 
 def geotiff_to_rgba_data_array(tif_data: bytes):
@@ -186,74 +185,73 @@ def geotiff_to_rgba_data_array(tif_data: bytes):
       - Values are clamped between 0 and about 4.29 million (max encoding value)
       - All decimal values are rounded to 3 decimal precision.
     """
-    with MemoryFile(tif_data) as memfile:
-        with memfile.open() as src:
-            if src.count != 1:
-                raise ValueError(
-                    f"Expected a single-band GeoTIFF, but got {src.count} bands."
-                )
+    with MemoryFile(tif_data) as memfile, memfile.open() as src:
+        if src.count != 1:
+            raise ValueError(
+                f"Expected a single-band GeoTIFF, but got {src.count} bands."
+            )
 
-            raw_data = src.read(1)
+        raw_data = src.read(1)
 
-            geo_data = {
-                "width": src.width,
-                "height": src.height,
-                "count": 4,  # this will be 4 since this converts to RGBA
-                "crs": str(src.crs),
-                "transform": list(src.transform),
-                "bounds": {
-                    "left": src.bounds.left,
-                    "bottom": src.bounds.bottom,
-                    "right": src.bounds.right,
-                    "top": src.bounds.top,
-                },
-                "res": src.res,
-                "scales": src.scales,
-                "offsets": src.offsets,
-                "nodata": 0,  # NoData values are set to 0 with the conversion
-                "dtype": "uint32",  # The data type of the output array (after conversion)
-            }
+        geo_data = {
+            "width": src.width,
+            "height": src.height,
+            "count": 4,  # this will be 4 since this converts to RGBA
+            "crs": str(src.crs),
+            "transform": list(src.transform),
+            "bounds": {
+                "left": src.bounds.left,
+                "bottom": src.bounds.bottom,
+                "right": src.bounds.right,
+                "top": src.bounds.top,
+            },
+            "res": src.res,
+            "scales": src.scales,
+            "offsets": src.offsets,
+            "nodata": 0,  # NoData values are set to 0 with the conversion
+            "dtype": "uint32",  # The data type of the output array (after conversion)
+        }
 
-            # Replace nodata with 0
-            if src.nodata is not None:
-                if np.isnan(src.nodata):
-                    raw_data = np.where(np.isnan(raw_data), 0, raw_data)
-                else:
-                    raw_data = np.where(raw_data == src.nodata, 0, raw_data)
+        # Replace nodata with 0
+        if src.nodata is not None:
+            if np.isnan(src.nodata):
+                raw_data = np.where(np.isnan(raw_data), 0, raw_data)
+            else:
+                raw_data = np.where(raw_data == src.nodata, 0, raw_data)
 
-            # This does 3 things:
-            # - Remove negatives (Clip negatives to 0)
-            # - Preserve 3 decimal precision before int conversion (by multiplying by 1000)
-            # - Round to integer (PNG needs integers)
-            values = np.round(np.clip(raw_data, 0, None) * 1000).astype(np.uint64)
+        # This does 3 things:
+        # - Remove negatives (Clip negatives to 0)
+        # - Preserve 3 decimal precision before int conversion (by multiplying by 1000)
+        # - Round to integer (PNG needs integers)
+        values = np.round(np.clip(raw_data, 0, None) * 1000).astype(np.uint64)
 
-            # Get max value and throw if any values go beyond the encoding max
-            max_value = int(values.max())
-            uint32_max = 256**4 - 1
-            if max_value > uint32_max:
-                # This would never be hit for population data (unless there is a data error),
-                # but this may be hit in non-population data.
-                # Throw an error, rather than clipping the data.
-                raise ValueError(
-                    f"Max value {max_value} exceeds RGBA encoding capacity ({uint32_max})."
-                )
+        # Get max value and throw if any values go beyond the encoding max
+        max_value = int(values.max())
+        uint32_max = 256**4 - 1
+        if max_value > uint32_max:
+            # This would never be hit for population data (unless there is a data error),
+            # but this may be hit in non-population data.
+            # Throw an error, rather than clipping the data.
+            raise ValueError(
+                f"Max value {max_value} exceeds RGBA encoding capacity ({uint32_max})."
+            )
 
-            # Update the max value in the meta data
-            geo_data["max_value"] = max_value
+        # Update the max value in the meta data
+        geo_data["max_value"] = max_value
 
-            # Encode value into R, G, B, A channels
-            # This works by shifting bits by 3, 2, 1, or 0 bytes,
-            # and then grabbing the last byte.
-            # It's like taking a number in hex (such as EF9A2F1C) and
-            # splitting it into its 4 components (i.e. EF 9A 2F 1C).
-            r = ((values >> 24) & 0xFF).astype(np.uint8)
-            g = ((values >> 16) & 0xFF).astype(np.uint8)
-            b = ((values >> 8) & 0xFF).astype(np.uint8)
-            a = (values & 0xFF).astype(np.uint8)
+        # Encode value into R, G, B, A channels
+        # This works by shifting bits by 3, 2, 1, or 0 bytes,
+        # and then grabbing the last byte.
+        # It's like taking a number in hex (such as EF9A2F1C) and
+        # splitting it into its 4 components (i.e. EF 9A 2F 1C).
+        r = ((values >> 24) & 0xFF).astype(np.uint8)
+        g = ((values >> 16) & 0xFF).astype(np.uint8)
+        b = ((values >> 8) & 0xFF).astype(np.uint8)
+        a = (values & 0xFF).astype(np.uint8)
 
-            # Place into an RGBA array
-            rgba_array = np.dstack([r, g, b, a])
-            return geo_data, rgba_array
+        # Place into an RGBA array
+        rgba_array = np.dstack([r, g, b, a])
+        return geo_data, rgba_array
 
 
 # Number of image rows decoded per chunk in rgba_png_to_float_array.
