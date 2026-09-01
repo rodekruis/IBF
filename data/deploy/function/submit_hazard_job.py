@@ -37,7 +37,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "extra_args",
-        nargs="*",
+        nargs=argparse.REMAINDER,
         help=(
             "Extra pipeline flags, debug/test only. Must include --mock and be space free."
         ),

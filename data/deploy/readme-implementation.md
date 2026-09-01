@@ -123,7 +123,7 @@ Run these in order the first time, but after that, you can just run the ones tha
 
 1. `build-and-push-image.sh` — build & push the pipeline Docker image to ACR. Note that YAML configs (`pipelines/infra/configs/*.yaml`) are baked into the image, so adding a country or changing data sources requires a new build+push.
 2. `deploy.sh` (`main.bicep`, `parameters.dev.json`) — deploy the Function App + monitoring (Bicep).
-3. `publish-function.sh` (`function/`) — deploy the Azure Function code (daily job scheduler).
+3. `publish-function.sh` (`function/`) — deploy the Azure Function code and it's dependencies (from data/deploy/function/).
 
 ### Helper jobs
 
