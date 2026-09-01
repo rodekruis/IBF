@@ -3,16 +3,16 @@ revision = 3
 requires-python = ">=3.12, <4"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.13.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version < '3.13' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "python_full_version >= '3.14' and platform_machine != 'ARM64' and sys_platform == 'win32'",
     "python_full_version >= '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.13.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and platform_machine != 'ARM64' and sys_platform == 'win32'",
-    "python_full_version < '3.13' and platform_machine != 'ARM64' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and sys_platform == 'emscripten'",
-    "python_full_version < '3.13' and sys_platform == 'emscripten'",
     "python_full_version == '3.13.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.13' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version < '3.13' and platform_machine != 'ARM64' and sys_platform == 'win32'",
+    "python_full_version < '3.13' and sys_platform == 'emscripten'",
     "python_full_version < '3.13' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
@@ -312,7 +312,7 @@ wheels = [
 
 [[package]]
 name = "eccodes"
-version = "2.45.0"
+version = "2.47.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -320,11 +320,11 @@ dependencies = [
     { name = "findlibs" },
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e5/c3/41378ba5547fbbb08db9efc7c520bfd0ccf2684bf7fbba0e09eab53b9eff/eccodes-2.45.0.tar.gz", hash = "sha256:08fe1544e6fa597a416bde9a630af4b6e34a021bc3c209f0ece4f7ed5990f992", size = 2466789, upload-time = "2026-01-15T16:27:08.418Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dc/8d/63d8287e912a99a73fa37b9c821883fb8f09a900187a8c917ba72e3743be/eccodes-2.47.0.tar.gz", hash = "sha256:ae9207ef27c67656d068aab97f172abeb85fc3620f56faa22fdac5b1be75de69", size = 2467378, upload-time = "2026-04-22T11:30:08.465Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/76/2a/721b05d551f90ed198aa05c2455fd056f4f1742967cee154347eaada2745/eccodes-2.45.0-cp312-cp312-win_amd64.whl", hash = "sha256:b661ce2d0e73ce0724f137606bf6b579fb2eba4db0f5b466b4345170cb4bf5f2", size = 7406814, upload-time = "2026-01-15T16:26:42.454Z" },
-    { url = "https://files.pythonhosted.org/packages/6b/33/3dceb280fbbacb10f8f1e2e1a249a7fd80ce7cc532b69d56c981df21a348/eccodes-2.45.0-cp313-cp313-win_amd64.whl", hash = "sha256:2f07d8892cca722cf67528d3f82d25c851f298cb9b9c6de4c79cb8698857a8ef", size = 7406811, upload-time = "2026-01-15T16:26:39.689Z" },
-    { url = "https://files.pythonhosted.org/packages/7f/40/0a42c7441d76c373a7bef7ec1f535f26910a8c82a37e745ffcd3ea0cdf79/eccodes-2.45.0-py3-none-any.whl", hash = "sha256:0ba61dbd2844843f1fd466c8ca24107932cc40088338f6176428cf38c533c08c", size = 91433, upload-time = "2026-01-15T16:27:06.601Z" },
+    { url = "https://files.pythonhosted.org/packages/31/01/d8bfb2ac2ec4831789a82cc06afc609a599f5f545dc885da1c8671a308e5/eccodes-2.47.0-cp312-cp312-win_amd64.whl", hash = "sha256:7ab3b689fd3caa07451f7bcf07329b2268acdc7434bcedac8b13d1f20d3389c0", size = 7436009, upload-time = "2026-04-22T11:29:36.343Z" },
+    { url = "https://files.pythonhosted.org/packages/d7/ba/4cbca5157e90d90c318b2acae178d38b0c6c6df73b434e6a2b6a8cb23a2b/eccodes-2.47.0-cp313-cp313-win_amd64.whl", hash = "sha256:f5f9b71b6e2cb8c9b8349b88a09791e8fb6d51a4396d7160b3da2a83149a4973", size = 7436001, upload-time = "2026-04-22T11:29:36.596Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/a3/f58ff573ba0f678ff8116686e868afe436627b19b457a2aba62cd463c9ad/eccodes-2.47.0-py3-none-any.whl", hash = "sha256:13d0b28bd58e94e2c303f42415ca0dcc56ab3febf0f52b1fb0f1d4aa5e7db8e1", size = 91567, upload-time = "2026-04-22T11:30:06.789Z" },
 ]
 
 [[package]]
