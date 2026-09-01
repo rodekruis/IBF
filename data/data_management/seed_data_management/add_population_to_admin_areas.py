@@ -112,7 +112,7 @@ def add_population_to_admin_file(
     for feature, stat in zip(features, stats):
         total = stat.get("sum") if stat is not None else None
         feature.setdefault("properties", {})["POPULATION"] = (
-            int(round(total)) if total is not None else None
+            round(total) if total is not None else None
         )
 
     with open(admin_file, "w", encoding="utf-8") as f:

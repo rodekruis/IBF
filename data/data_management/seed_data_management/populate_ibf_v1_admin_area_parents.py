@@ -75,8 +75,8 @@ def discover_countries(input_dir: Path) -> dict[str, list[int]]:
             admin_level = int(match.group(2))
             countries[country].append(admin_level)
 
-    for country in countries:
-        countries[country].sort()
+    for country, levels in countries.items():
+        levels.sort()
 
     return dict(countries)
 

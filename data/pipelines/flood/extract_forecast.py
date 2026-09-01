@@ -4,7 +4,7 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import rasterio
 
@@ -112,7 +112,7 @@ def _extract_forecast_base_datetime(netcdf_path: str) -> datetime:
         raise ValueError(
             f"Unable to extract forecast date from NetCDF path: {netcdf_path}"
         )
-    return datetime.strptime(match.group(1), "%Y%m%d%H")
+    return datetime.strptime(match.group(1), "%Y%m%d%H").replace(tzinfo=UTC)
 
 
 def _lead_time_to_time_interval(

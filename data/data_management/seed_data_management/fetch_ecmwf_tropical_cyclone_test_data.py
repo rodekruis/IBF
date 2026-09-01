@@ -39,7 +39,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 
 import requests
@@ -107,9 +107,9 @@ def _resolve_cycle(session: requests.Session, override: str | None) -> datetime:
     """Return the ECMWF cycle to download: an explicit --cycle (YYYYMMDDHH) if given, otherwise the
     most recent 00/06/12/18 UTC cycle whose enfo wind is already published."""
     if override is not None:
-        return datetime.strptime(override, "%Y%m%d%H").replace(tzinfo=timezone.utc)
+        return datetime.strptime(override, "%Y%m%d%H").replace(tzinfo=UTC)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     candidate = now.replace(hour=(now.hour // 6) * 6, minute=0, second=0, microsecond=0)
     for _ in range(_MAX_CYCLE_LOOKBACK):
         index_url = _open_data_url(

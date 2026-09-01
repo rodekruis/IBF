@@ -106,11 +106,10 @@ class TestLoadSeedRepoFloodDepth:
         with patch(
             "pipelines.infra.utils.data_provider_fetchers.download_json_source",
             return_value=None,
+        ), pytest.raises(
+            FileNotFoundError, match="Failed to download flood depth manifest"
         ):
-            with pytest.raises(
-                FileNotFoundError, match="Failed to download flood depth manifest"
-            ):
-                _load_seed_repo_flood_depth(config, container)
+            _load_seed_repo_flood_depth(config, container)
 
         assert container.error is not None
 
@@ -126,9 +125,8 @@ class TestLoadSeedRepoFloodDepth:
         with patch(
             "pipelines.infra.utils.data_provider_fetchers.download_json_source",
             return_value=manifest,
-        ):
-            with pytest.raises(FileNotFoundError, match="has no return periods"):
-                _load_seed_repo_flood_depth(config, container)
+        ), pytest.raises(FileNotFoundError, match="has no return periods"):
+            _load_seed_repo_flood_depth(config, container)
 
         assert container.error is not None
 
@@ -193,8 +191,5 @@ class TestFloodDepthProviderGetRaster:
         with patch(
             "pipelines.infra.data_types.flood_depth_provider.download_object",
             return_value=None,
-        ):
-            with pytest.raises(
-                FileNotFoundError, match="Failed to download flood depth PNG"
-            ):
-                provider.get_raster(10)
+        ), pytest.raises(FileNotFoundError, match="Failed to download flood depth PNG"):
+            provider.get_raster(10)

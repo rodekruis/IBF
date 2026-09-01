@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from pipelines.infra.data_types.data_config_types import OutputMode
 from pipelines.infra.data_types.dtos import (
@@ -54,9 +54,7 @@ class DataSubmitter:
     ) -> None:
         self._forecast = Forecast(
             issued_at=(
-                issued_at.astimezone(timezone.utc)
-                if issued_at.tzinfo is not None
-                else issued_at
+                issued_at.astimezone(UTC) if issued_at.tzinfo is not None else issued_at
             ),
             hazard_type=hazard_type,
             forecast_sources=forecast_sources,
@@ -92,7 +90,7 @@ class DataSubmitter:
         time_interval_end: str,
         ensemble_member_type: EnsembleMemberType,
         severity_key: SeverityKey,
-        severity_value: float | int,
+        severity_value: float,
     ) -> None:
         alert = self._get_alert(event_name, "add_severity_data")
         if alert is None:

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import logging
 import sys
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import datetime, UTC
 from pathlib import Path
-from typing import Callable
 
 import click
 from dotenv import load_dotenv
@@ -12,7 +12,6 @@ from shared.country_data import CountryCodeIso3
 
 from pipelines.drought.forecast import calculate_drought_forecasts
 from pipelines.flood.forecast import calculate_flood_forecasts
-from pipelines.tropical_cyclone.forecast import calculate_tropical_cyclone_forecasts
 from pipelines.infra.config_reader import ConfigReader
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
@@ -31,6 +30,7 @@ from pipelines.infra.utils.alert_admin_aggregation import (
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.infra_mock_generator import make_infra_mock_hazard_function
 from pipelines.infra.utils.nrw_logger import log_error, log_info, log_warning, LogTag
+from pipelines.tropical_cyclone.forecast import calculate_tropical_cyclone_forecasts
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ def _run_country(
     # --- Set forecast metadata based on hazard type ---
     forecast_sources = FORECAST_SOURCES[hazard_type]
     data_submitter.set_forecast_metadata(
-        issued_at=issued_at or datetime.now(timezone.utc),
+        issued_at=issued_at or datetime.now(UTC),
         hazard_type=hazard_type,
         forecast_sources=forecast_sources,
         country_code_iso3=country.country_code_iso_3,
@@ -100,7 +100,7 @@ def _run_country(
         aggregate_to_parent_admin_levels(alert, admin_areas)
 
     # --- Write output ---
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     country_output_path = str(
         Path(output_path) / hazard_type / country.country_code_iso_3 / timestamp
     )
@@ -373,8 +373,8 @@ def main(
     if issued_at_str:
         parsed = datetime.fromisoformat(issued_at_str)
         if parsed.tzinfo is None:
-            parsed = parsed.replace(tzinfo=timezone.utc)
-        issued_at = parsed.astimezone(timezone.utc)
+            parsed = parsed.replace(tzinfo=UTC)
+        issued_at = parsed.astimezone(UTC)
 
     parsed_countries: list[str] | None = None
     if country_filter:
