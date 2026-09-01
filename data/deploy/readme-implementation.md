@@ -6,6 +6,71 @@ The general requirements this plan implements are in [readme-requirements.md](re
 
 Azure Batch deployment for the NRW forecast pipeline.
 
+### Azure resources
+
+#### Resource group `nrw-batch-poc`
+
+- **Batch account** `nrwbatchpoc` — AAD-only authentication, Key Vault-based node pool credential management.
+  - **Batch pool** `nrwbatchpoc` — container-enabled VM Configuration pool; `Standard_E2as_v4`, Ubuntu HPC 24.04, blobfuse mount of `nrw-data-cache`, autoscale (max 2 nodes, evaluated every 5 min).
+- **Key Vault** `nrw-batch-poc` — RBAC permission model; holds `ibf-pipeline-api-key`, `glofas-ftp-user`, `glofas-ftp-password`.
+- **Storage account** `nrwbatchpoc` — general-purpose V2; Blob container `nrw-data-cache` (mounted as `DATA_CACHE_DIR`, lifecycle policy from `blob-lifecycle-policy.json`); also reused as Function App runtime storage (`AzureWebJobsStorage`).
+- **User-assigned managed identity** `nrw-batch-poc` — pool node identity (restricted to Batch providers).
+- **User-assigned managed identity** `nrw-batch-scheduler` — dedicated Function App identity.
+- **App Service plan** `nrw-batch-scheduler-plan` — Linux Consumption (Y1).
+- **Function App** `nrw-batch-scheduler` — Python 3.11; daily job scheduler; app settings resolve secrets via Key Vault references.
+- **Application Insights** `nrw-batch-scheduler` — workspace-based component (in this RG) backed by the shared `nrw-app-law` workspace.
+- **Action group** `nrw-batch-scheduler-task-fail` — email receiver for task failures.
+- **Metric alert** `nrwbatchpoc-task-fail-event` — fires on `TaskFailEvent` > 0 on the Batch account (5 min window).
+
+#### Resource group `NRW`
+
+- **Container registry** `nrwdockerregistry` — hosts `nrwdockerregistry.azurecr.io/pipelines:latest`.
+- **Virtual network** `nrw-vnet-test` — subnet `batch` (no delegation), NSG `nrw-NSG-test`; `nrw-vnet-prod` also exists.
+- **Log Analytics workspace** `nrw-app-law` — shared with the NRW backend; backs the Application Insights component.
+
+#### Deployment diagram
+
+```mermaid
+flowchart LR
+    subgraph External
+        glofas[GloFAS FTP<br/>aux.ecmwf.int]
+        api[NRW backend API]
+        seed[GitHub seed data]
+    end
+
+    subgraph NRW[Resource group NRW]
+        acr[ACR nrwdockerregistry<br/>pipelines:latest]
+        law[Log Analytics<br/>nrw-app-law]
+        subgraph vnet[VNet nrw-vnet-test / subnet batch]
+            nodes[Batch pool nodes<br/>Standard_E2as_v4]
+        end
+    end
+
+    subgraph poc[Resource group nrw-batch-poc]
+        func[Function App<br/>nrw-batch-scheduler<br/>daily timer]
+        batch[Batch account<br/>nrwbatchpoc]
+        kv[Key Vault<br/>nrw-batch-poc]
+        st[Storage account<br/>nrwbatchpoc<br/>container nrw-data-cache]
+        ai[Application Insights<br/>nrw-batch-scheduler]
+        alert[Metric alert<br/>TaskFailEvent]
+    end
+
+    func -- "submit jobs (UAMI nrw-batch-scheduler)" --> batch
+    func -- "Key Vault references" --> kv
+    func -- "runtime storage" --> st
+    batch -- "runs tasks on" --> nodes
+    nodes -- "pull image (UAMI nrw-batch-poc)" --> acr
+    nodes -- "read secrets" --> kv
+    nodes -- "blobfuse mount DATA_CACHE_DIR" --> st
+    nodes -- "download forecasts" --> glofas
+    nodes -- "seed data" --> seed
+    nodes -- "send results" --> api
+    func -- telemetry --> ai
+    nodes -- telemetry --> ai
+    ai -- backed by --> law
+    batch -- TaskFailEvent --> alert
+```
+
 ## Permissions
 
 - Subscription: `57b0d17a-5429-4dbb-8366-35c928e3ed94`
@@ -31,7 +96,7 @@ User accounts:
   - Role: `Key Vault Administrator`; Scope: Key Vault `nrw-batch-poc`
 - **To run `func start`**
   - Role: `Azure Batch Job Submitter`; Scope: Batch account `nrwbatchpoc`; Why: local job submission uses the operator's own `az login` identity, not the scheduler UAMI.
-- **To run `rerun-job.sh`**
+- **To run `function/run_hazard_job.sh` or `function/mock_run_hazard_job.sh`**
   - Role: `Key Vault Secrets User`; Scope: Key Vault `nrw-batch-poc`
   - Role: `Azure Batch Job Submitter`; Scope: Batch account `nrwbatchpoc`
 - **To run `create-pool.sh`**
@@ -62,7 +127,8 @@ Run these in order the first time, but after that, you can just run the ones tha
 
 ### Helper jobs
 
-- `rerun-job.sh` (`function/rerun_job.py`) — manually rerun a Batch job (reads secrets from Key Vault). Example: `./rerun-job.sh floods`. Mock scenarios are supported via passthrough flags. See the mock data scripts and readme for all options. Example: `./rerun-job.sh floods --mock 1 --country KEN`
+- `run_hazard_job.sh` (`function/run_hazard_job.sh`): Manually kick off a hazard pipeline run for a given hazard. Example: `./function/run_hazard_job.sh floods`. This is the same job and parameters as a standard scheduled run of the hazard.
+- `mock_run_hazard_job.sh` (`function/mock_run_hazard_job.sh`): Run the pipeline with mock data; `--mock` is required and all other arguments are passed through unchanged. See the [pipelines readme](../pipelines/README.md) for possible flags. `./function/mock_run_hazard_job.sh floods --mock 1 --country KEN`
 
 ## Compute
 
@@ -120,10 +186,9 @@ NOAA data is not yet integrated into the pipeline; retention rules for NOAA will
 - **Additional environments**: Only `test` (`IBF_ENVIRONMENT=test`) is used for the prototype.
 - **Logging and retention**: Re-eval retention periods for logs and files.
 - **"no run" Alerts**: Consider alerts if there were no runs
-- **Test Batch account**: How do we do test runs? Do we need a new batch account to do this?
-- **CI/CD image builds**: Currently the image is built and pushed locally.
+- **Test Batch account**: Should we limit mock data runs to a specific account/env?
+- **CI/CD image builds**: Use Github actions to build and push to ACR.
 - Confirm Azure Batch quota and VM family limits in target subscription for `Standard_E2as_v4`. Also measure actual peak memory during a full run to validate the choice.
-- We need to set up data input for a test env for this so we can have predictable tests. This may be on the country level, or maybe we need to cache an alert generating global glofas file somewhere (such as in a new folder in blob storage).
 - Re-evaluate the pool autoscale formula
 
 ### Handle after MVP or as need arises

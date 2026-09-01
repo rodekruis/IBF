@@ -56,14 +56,25 @@ This component's Logs blade shows only the pipeline's telemetry, so the query ab
 
 ### From the shared nrw-app-law workspace
 
-The logs are also sent to a shared NRW workspace at [nrw-app-law → Logs](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.OperationalInsights/workspaces/nrw-app-law/logs). Filter by the `cloud_RoleName` to see pipeline logs. You can query here for both NRW backend service logs as well as pipeline logs.
+You can also see the same logs in the shared NRW workspace at [nrw-app-law → Logs](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.OperationalInsights/workspaces/nrw-app-law/logs). This lets you see it next to backend logs within the same query. Filter by the `AppRoleName` fields to see the different apps. The name changes based on the environment. Here is a sample query for `test` with the following app names:
+
+- `nrw-test`: the NRW backend
+- `nrw-pipeline`: the pipeline logs
 
 ```kusto
-union traces, exceptions
-| where cloud_RoleName == "nrw-batch-scheduler"
-| where timestamp between (datetime(2026-08-21T14:30Z) .. datetime(2026-08-21T15:45Z))
-| where severityLevel >= 2
-| order by timestamp asc
+union
+    (AppRequests
+     | where AppRoleName == "nrw-test"
+     | where OperationName has "POST /api/alerts"
+     | extend Component = "Backend API",
+              Message = strcat(Name, " -> ", ResultCode)),
+    (AppTraces
+     | where AppRoleName == "nrw-pipeline"
+     | where Message has "KEN"
+     | extend Component = "Pipeline")
+| where TimeGenerated > ago(2d)
+| order by TimeGenerated asc
+| project TimeGenerated, Component, Message
 ```
 
 ### From the batch account, while the job is running or shortly after it completed

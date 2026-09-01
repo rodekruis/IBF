@@ -58,24 +58,21 @@ TASK_ENVIRONMENT_VARIABLES = (
 # command line, so reject anything outside a conservative allowlist of characters.
 HAZARD_TYPE_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 CONFIG_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_./-]+$")
-COUNTRY_PATTERN = re.compile(r"^[A-Za-z]{3}(,[A-Za-z]{3})*$")
-ISSUED_AT_PATTERN = re.compile(r"^[0-9T:\-+.,Zz ]+$")
+EXTRA_ARG_PATTERN = re.compile(r"^[A-Za-z0-9_./:,=+-]+$")
 
 
 @dataclass(frozen=True)
 class HazardConfig:
     """A pipeline YAML config baked into the pipeline container image.
 
-    The optional fields mirror the mock-scenario flags of the pipeline CLI
-    (see pipelines/infra/run_forecasts.py) and are only set for manual reruns.
+    extra_args carries extra pipeline flags (see pipelines/infra/run_forecasts.py)
+    for manual debug/test reruns; each token is validated against
+    EXTRA_ARG_PATTERN and extra_args requires --mock.
     """
 
     hazard_type: str
     config_path: str
-    mock: int | None = None
-    country: str | None = None
-    infra_only: bool = False
-    issued_at: str | None = None
+    extra_args: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not HAZARD_TYPE_PATTERN.fullmatch(self.hazard_type):
@@ -84,18 +81,13 @@ class HazardConfig:
             self.config_path
         ):
             raise ValueError(f"Invalid config path '{self.config_path}'.")
-        if self.mock is not None and self.mock < 0:
-            raise ValueError(f"Invalid mock value '{self.mock}'.")
-        if self.country is not None and not COUNTRY_PATTERN.fullmatch(self.country):
-            raise ValueError(f"Invalid country filter '{self.country}'.")
-        if self.issued_at is not None and not ISSUED_AT_PATTERN.fullmatch(
-            self.issued_at
+        for extra_arg in self.extra_args:
+            if not EXTRA_ARG_PATTERN.fullmatch(extra_arg):
+                raise ValueError(f"Invalid extra argument '{extra_arg}'.")
+        if self.extra_args and not any(
+            arg == "--mock" or arg.startswith("--mock=") for arg in self.extra_args
         ):
-            raise ValueError(f"Invalid issued-at value '{self.issued_at}'.")
-        if self.infra_only and self.mock is None:
-            raise ValueError("infra_only requires mock to be set.")
-        if self.issued_at is not None and self.mock is None:
-            raise ValueError("issued_at requires mock to be set.")
+            raise ValueError("extra_args requires --mock to be set.")
 
 
 def submit_hazard_job(
@@ -150,15 +142,12 @@ def build_container_task(hazard_config: HazardConfig) -> BatchTaskCreateOptions:
 
 def build_command_line(hazard_config: HazardConfig) -> str:
     """Render the pipeline CLI invocation, e.g. `pipeline --config <path> --mock 0 --country PHL`."""
-    parts = ["pipeline", "--config", hazard_config.config_path]
-    if hazard_config.mock is not None:
-        parts.extend(["--mock", str(hazard_config.mock)])
-    if hazard_config.infra_only:
-        parts.append("--infra-only")
-    if hazard_config.country:
-        parts.extend(["--country", hazard_config.country])
-    if hazard_config.issued_at:
-        parts.extend(["--issued-at", hazard_config.issued_at])
+    parts = [
+        "pipeline",
+        "--config",
+        hazard_config.config_path,
+        *hazard_config.extra_args,
+    ]
     return " ".join(parts)
 
 

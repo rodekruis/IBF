@@ -1,55 +1,31 @@
 #!/usr/bin/env bash
 #
-# rerun-job.sh — Manually rerun a single pipeline Batch job.
+# hazard_job_common.sh — Shared setup for run_hazard_job.sh and
+# mock_run_hazard_job.sh. Sourced by those scripts, not run directly.
 #
-# Helper job, run on demand — not part of the normal deploy flow. Reads the
-# pipeline secrets from the nrw-batch-poc Key Vault (never from the command
-# line) and submits one Batch job for the chosen hazard via
-# function/rerun_job.py, which reuses function/batch_client.py so reruns stay
-# identical to the scheduled daily runs.
+# Reads the pipeline secrets from the nrw-batch-poc Key Vault (never from the
+# command line) and exports the same environment the Function App provides, so
+# manually submitted jobs stay identical to the scheduled daily runs.
+# Submission goes through function/submit_hazard_job.py, which reuses
+# function/batch_client.py.
 #
 # Auth: the Batch account is AAD-only, so the job is submitted as the
 # operator's own `az login` identity. That operator needs
 # "Azure Batch Job Submitter" on nrwbatchpoc and "Key Vault Secrets User" on
-# the nrw-batch-poc vault (see data/deploy/readme-implementation.md for the one-time
-# grant commands; the scheduler UAMI's grants do not apply to a human running this script).
+# the nrw-batch-poc vault (see data/deploy/readme-implementation.md for the
+# one-time grant commands; the scheduler UAMI's grants do not apply to a human
+# running these scripts).
 #
 # Prerequisites:
 #   - Azure CLI logged in (`az login`) with the grants listed above.
 #   - uv installed (provides azure-batch/azure-identity via `uv run --with`).
 #   - data/.env populated with IBF_API_URL (same source as create-local-settings.sh).
 #
-# Usage:
-#   ./rerun-job.sh <hazard-type> [rerun flags]
-#   ./rerun-job.sh floods
-#   ./rerun-job.sh floods --mock 0 --country PHL
-#   ./rerun-job.sh floods --config-path pipelines/infra/configs/floods.yaml
-#
-# Rerun flags are passed through to function/rerun_job.py:
-#   --config-path PATH  pipeline YAML config path inside the container image
-#   --mock N            run with mock data instead of LIVE (0 = no-alert,
-#                       1 = alert); mock input data is downloaded from the seed
-#                       repo (GITHUB_DATA_BASE_URL, exported below)
-#   --country LIST      comma-separated ISO 3 codes, e.g. PHL or KEN,ETH
-#   --infra-only        bypass hazard logic, generate --mock alerts (requires --mock)
-#   --issued-at ISO8601 pin the issued_at timestamp (requires --mock)
+# Expects DATA_DIR to be set by the calling script.
 
-set -euo pipefail
-
-SCRIPT_DIR="$(dirname "$0")"
-DATA_DIR="${SCRIPT_DIR}/.."
 ENV_FILE="${DATA_DIR}/.env"
 SUBSCRIPTION_ID="57b0d17a-5429-4dbb-8366-35c928e3ed94"
 KEY_VAULT_NAME="nrw-batch-poc"
-
-if [[ $# -lt 1 ]]; then
-  echo "Usage: $0 <hazard-type> [rerun flags]" >&2
-  echo "  e.g. $0 floods --mock 0 --country PHL" >&2
-  exit 1
-fi
-
-HAZARD_TYPE="$1"
-shift
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "Env file not found: ${ENV_FILE}" >&2
@@ -107,8 +83,9 @@ export GITHUB_DATA_BASE_URL="https://raw.githubusercontent.com/rodekruis/IBF-see
 export GLOFAS_FTP_HOST="aux.ecmwf.int"
 export DATA_CACHE_DIR="/mnt/batch/tasks/fsmounts/nrw-data-cache"
 
-# Mirror the Function App setting from main.bicep so reruns export pipeline
-# logs to the same Application Insights component as the scheduled runs.
+# Mirror the Function App setting from main.bicep so submitted jobs export
+# pipeline logs to the same Application Insights component as the scheduled
+# runs.
 export APPLICATIONINSIGHTS_CONNECTION_STRING="$(az monitor app-insights component show \
   --app nrw-batch-scheduler \
   --resource-group nrw-batch-poc \
@@ -120,14 +97,12 @@ export APPLICATIONINSIGHTS_CONNECTION_STRING="$(az monitor app-insights componen
 # DefaultAzureCredential.
 unset AZURE_CLIENT_ID
 
-RERUN_ARGS=("${HAZARD_TYPE}" "$@")
-
-echo "Submitting rerun job for hazard '${HAZARD_TYPE}'."
-(
-  cd "${DATA_DIR}"
-  uv run --with "azure-batch>=15,<16" --with azure-identity \
-    python deploy/function/rerun_job.py "${RERUN_ARGS[@]}"
-)
-
-unset IBF_PIPELINE_API_KEY GLOFAS_FTP_USER GLOFAS_FTP_PASSWORD
-echo "Done."
+# Submit one Batch job, passing the arguments through to submit_hazard_job.py.
+submit_job() {
+  (
+    cd "${DATA_DIR}"
+    uv run --with "azure-batch>=15,<16" --with azure-identity \
+      python deploy/function/submit_hazard_job.py "$@"
+  )
+  unset IBF_PIPELINE_API_KEY GLOFAS_FTP_USER GLOFAS_FTP_PASSWORD
+}

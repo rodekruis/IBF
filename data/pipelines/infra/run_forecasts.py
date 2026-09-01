@@ -252,6 +252,9 @@ def configure_app_insights() -> None:
         return
     from azure.monitor.opentelemetry import configure_azure_monitor
 
+    # Set AppRoleName so logs can be identified in Application Insights
+    os.environ.setdefault("OTEL_SERVICE_NAME", "nrw-pipeline")
+
     configure_azure_monitor(
         connection_string=connection_string,
         logger_name="",  # root logger (get all logs)
