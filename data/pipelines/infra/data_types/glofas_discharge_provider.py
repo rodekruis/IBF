@@ -9,13 +9,7 @@ from datetime import datetime, UTC
 
 from pipelines.flood.constants import GLOFAS_MIN_ENSEMBLE_COUNT
 from pipelines.infra.environment import load_environment_settings
-from pipelines.infra.utils.nrw_logger import (
-    log_error,
-    log_info,
-    log_warning,
-    log_with_tag,
-    LogTag,
-)
+from pipelines.infra.utils.nrw_logger import log_info, log_warning, log_with_tag, LogTag
 from pipelines.infra.utils.storage_helpers import (
     find_latest_forecast_date_in_cache,
     get_cached_glofas_country_split_files,
@@ -370,7 +364,7 @@ def _download_ftp_file(
         except ftplib.error_perm as exc:
             raise FileNotFoundError(f"FTP server rejected '{filename}': {exc}") from exc
         except ftplib.all_errors as exc:
-            log_error(
+            log_warning(
                 logger,
                 LogTag.INFRA,
                 f"Attempt {attempt}/{max_retries} failed for '{filename}': {exc}",

@@ -6,9 +6,17 @@ from enum import StrEnum
 # Add new tags as needed here with a short comment as to their use.
 # Make tags as specific as needed. Kusto queries can easily be written to combine tags.
 class LogTag(StrEnum):
-    # Timers to know how long process take
+    # Timer for measuring large download times
     DOWNLOAD_TIMER = "download_timer"
-    JOB_TIMER = "job_timer"
+
+    # Tag for generated alerts
+    # to track creation and if it passes related thresholds
+    ALERT_GENERATION = "alert_generation"
+
+    # Tag related to when alert data is sent to the backend
+    INFRA_SEND = "infra_send"
+
+    # Generic tags for different sections of the code.
     INFRA = "infra"
     FLOOD_LOGIC = "flood_logic"
     TROPICAL_CYCLONE_LOGIC = "tropical_cyclone_logic"

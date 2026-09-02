@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 import numpy as np
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.loaded_data_types import RasterData
+from pipelines.infra.utils import nrw_logger
 from pipelines.infra.utils.exposure import clip_raster_to_admin_areas
 from pipelines.tropical_cyclone.constants import MIN_SEVERITY_MS
 from pipelines.tropical_cyclone.extract_forecast import TimeIntervalWindSpeed
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -21,6 +25,7 @@ class TimeIntervalWindSpeedSeverity:
 
 
 def determine_severities(
+    storm_identifier: str,
     wind_speeds: list[TimeIntervalWindSpeed],
     place_codes: list[str],
     admin_areas: AdminAreasSet,
@@ -53,7 +58,22 @@ def determine_severities(
         median_wind_speed = float(np.median(land_masked_maxes))
 
         if median_wind_speed <= MIN_SEVERITY_MS:
+            nrw_logger.log_info(
+                logger,
+                nrw_logger.LogTag.ALERT_GENERATION,
+                f"Storm {storm_identifier} {bucket.time_interval_start} to "
+                f"{bucket.time_interval_end}: median wind speed "
+                f"{median_wind_speed:.2f} m/s at or below MIN_SEVERITY_MS={MIN_SEVERITY_MS}",
+            )
             continue
+
+        nrw_logger.log_info(
+            logger,
+            nrw_logger.LogTag.ALERT_GENERATION,
+            f"Storm {storm_identifier} {bucket.time_interval_start} to "
+            f"{bucket.time_interval_end}: median wind speed "
+            f"{median_wind_speed:.2f} m/s above MIN_SEVERITY_MS={MIN_SEVERITY_MS}",
+        )
 
         severities.append(
             TimeIntervalWindSpeedSeverity(

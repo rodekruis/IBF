@@ -36,14 +36,32 @@ class ApiClient:
 
     def submit_forecast(self, forecast: dict) -> list[str]:
         url = f"{self._base_url}{ALERTS_PATH}"
-        response = self._session.post(
-            url,
-            json=forecast,
-            timeout=60,
-        )
+        try:
+            response = self._session.post(
+                url,
+                json=forecast,
+                timeout=60,
+            )
+        except requests.RequestException as exc:
+            log_error(
+                logger,
+                LogTag.INFRA_SEND,
+                f"Failed to send forecast to '{url}': {exc}",
+            )
+            return [f"Failed to send forecast: {exc}"]
 
         if response.status_code == 201:
-            log_info(logger, LogTag.INFRA, f"Forecast submitted to '{url}'")
+            alerts = forecast.get("alerts", [])
+            log_info(
+                logger,
+                LogTag.INFRA_SEND,
+                f"Forecast sent to '{url}' "
+                f"hazard_type={forecast.get('hazardType')} "
+                f"country={forecast.get('countryCodeIso3')} "
+                f"issued_at={forecast.get('issuedAt')} "
+                f"alert_count={len(alerts)} "
+                f"event_names={[alert.get('eventName') for alert in alerts]}",
+            )
             return []
 
         try:
@@ -53,7 +71,7 @@ class ApiClient:
             errors = [f"API returned {response.status_code}: {response.text}"]
 
         for err in errors:
-            log_error(logger, LogTag.INFRA, f"API error: {err}")
+            log_error(logger, LogTag.INFRA_SEND, f"API error: {err}")
         return errors
 
     def get_admin_areas(
