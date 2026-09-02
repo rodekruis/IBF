@@ -11,7 +11,7 @@ class LogTag(StrEnum):
 
     # Tag for generated alerts
     # to track creation and if it passes related thresholds
-    GENERATED_ALERT = "generated_alert"
+    ALERT_GENERATION = "alert_generation"
 
     # Tag related to when alert data is sent to the backend
     INFRA_SEND = "infra_send"

@@ -9,8 +9,8 @@ from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.enums import EnsembleMemberType, LayerName, SeverityKey
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
+from pipelines.infra.utils import nrw_logger
 from pipelines.infra.utils.exposure import get_place_codes_for_alert_config
-from pipelines.infra.utils.nrw_logger import log_info, LogTag
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +68,9 @@ def calculate_drought_forecasts(
                 event_name=event_name,
                 centroid=Centroid(latitude=0.0, longitude=0.0),
             )
-            log_info(
+            nrw_logger.log_info(
                 logger,
-                LogTag.GENERATED_ALERT,
+                nrw_logger.LogTag.ALERT_GENERATION,
                 f"Alert generated for drought event '{event_name}'",
             )
 

@@ -60,18 +60,18 @@ def determine_severities(
         if median_wind_speed <= MIN_SEVERITY_MS:
             nrw_logger.log_info(
                 logger,
-                nrw_logger.LogTag.GENERATED_ALERT,
+                nrw_logger.LogTag.ALERT_GENERATION,
                 f"Storm {storm_identifier} {bucket.time_interval_start} to "
-                f"{bucket.time_interval_end}: failed, median wind speed "
+                f"{bucket.time_interval_end}: median wind speed "
                 f"{median_wind_speed:.2f} m/s at or below MIN_SEVERITY_MS={MIN_SEVERITY_MS}",
             )
             continue
 
         nrw_logger.log_info(
             logger,
-            nrw_logger.LogTag.GENERATED_ALERT,
+            nrw_logger.LogTag.ALERT_GENERATION,
             f"Storm {storm_identifier} {bucket.time_interval_start} to "
-            f"{bucket.time_interval_end}: passed, median wind speed "
+            f"{bucket.time_interval_end}: median wind speed "
             f"{median_wind_speed:.2f} m/s above MIN_SEVERITY_MS={MIN_SEVERITY_MS}",
         )
 

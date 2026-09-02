@@ -342,11 +342,9 @@ def calculate_tropical_cyclone_forecasts(
 
                 nrw_logger.log_info(
                     logger,
-                    nrw_logger.LogTag.GENERATED_ALERT,
+                    nrw_logger.LogTag.ALERT_GENERATION,
                     f"Alert generated for event '{event_name}' "
-                    f"({alert_config.spatial_extent_name}): "
-                    f"{len(time_interval_severities)} time intervals passed, peak median wind "
-                    f"speed "
+                    f"{len(time_interval_severities)} time intervals passed, peak median wind speed "
                     f"{max(severity.median_wind_speed for severity in time_interval_severities):.2f} m/s",
                 )
 
