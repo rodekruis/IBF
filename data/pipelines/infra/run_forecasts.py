@@ -3,9 +3,9 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import datetime, UTC
 from pathlib import Path
-from typing import Callable
 
 import click
 from dotenv import load_dotenv
@@ -81,7 +81,7 @@ def _run_country(
     # --- Set forecast metadata based on hazard type ---
     forecast_sources = FORECAST_SOURCES[hazard_type]
     data_submitter.set_forecast_metadata(
-        issued_at=issued_at or datetime.now(timezone.utc),
+        issued_at=issued_at or datetime.now(UTC),
         hazard_type=hazard_type,
         forecast_sources=forecast_sources,
         country_code_iso3=country.country_code_iso_3,
@@ -101,7 +101,7 @@ def _run_country(
         aggregate_to_parent_admin_levels(alert, admin_areas)
 
     # --- Write output ---
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     country_output_path = str(
         Path(output_path) / hazard_type / country.country_code_iso_3 / timestamp
     )
@@ -391,8 +391,8 @@ def main(
     if issued_at_str:
         parsed = datetime.fromisoformat(issued_at_str)
         if parsed.tzinfo is None:
-            parsed = parsed.replace(tzinfo=timezone.utc)
-        issued_at = parsed.astimezone(timezone.utc)
+            parsed = parsed.replace(tzinfo=UTC)
+        issued_at = parsed.astimezone(UTC)
 
     parsed_countries: list[str] | None = None
     if country_filter:

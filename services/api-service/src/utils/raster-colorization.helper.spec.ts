@@ -1,12 +1,15 @@
 import { PNG } from 'pngjs';
 
 import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
+import { LayerName } from '@api-service/src/shared-enums';
 import {
   colorizeGrayscalePng,
-  FLOOD_DEPTH_CONFIG,
+  getColorizationConfig,
   processPopulationRaster,
   reproject4326To3857,
 } from '@api-service/src/utils/raster-colorization.helper';
+
+const FLOOD_DEPTH_CONFIG = getColorizationConfig(LayerName.floodDepth);
 
 function createGrayscalePng({
   width,
@@ -244,6 +247,22 @@ describe('raster-colorization.helper', () => {
       expect(pixel0.g).toBe(pixel3.g);
       expect(pixel0.b).toBe(pixel3.b);
       expect(pixel0.a).toBe(204);
+    });
+  });
+
+  describe('getColorizationConfig', () => {
+    it('should return a distinct config for windSpeed vs floodDepth', () => {
+      const floodConfig = getColorizationConfig(LayerName.floodDepth);
+      const windConfig = getColorizationConfig(LayerName.windSpeed);
+
+      expect(windConfig).not.toEqual(floodConfig);
+    });
+
+    it('should fall back to floodDepth config for unknown layers', () => {
+      const floodConfig = getColorizationConfig(LayerName.floodDepth);
+      const unknownConfig = getColorizationConfig(LayerName.glofasStations);
+
+      expect(unknownConfig).toEqual(floodConfig);
     });
   });
 

@@ -4,7 +4,7 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from itertools import pairwise
 from statistics import fmean
 
@@ -259,7 +259,7 @@ def _parse_gefs_track_path(path: str) -> _ParsedGefsTrackPath | None:
         return None
     cycle_datetime = datetime.strptime(
         match.group("date") + match.group("cycle_hour"), "%Y%m%d%H"
-    ).replace(tzinfo=timezone.utc)
+    ).replace(tzinfo=UTC)
     return _ParsedGefsTrackPath(cycle_datetime=cycle_datetime)
 
 
@@ -371,7 +371,7 @@ def _parse_ecmwf_track_path(path: str) -> _ParsedEcmwfTrackPath | None:
         return None
     cycle_datetime = datetime.strptime(
         match.group("date") + match.group("cycle_hour"), "%Y%m%d%H"
-    ).replace(tzinfo=timezone.utc)
+    ).replace(tzinfo=UTC)
     return _ParsedEcmwfTrackPath(cycle_datetime=cycle_datetime)
 
 
@@ -625,7 +625,9 @@ def _landfall_or_closest_approach_centroid(
     bucket_centroids = [_bucket_centroid(bucket) for bucket in sorted_buckets]
 
     first_centroid = bucket_centroids[0]
-    if admin_area_union.contains(Point(first_centroid.longitude, first_centroid.latitude)):
+    if admin_area_union.contains(
+        Point(first_centroid.longitude, first_centroid.latitude)
+    ):
         return first_centroid
 
     for start, end in pairwise(bucket_centroids):
@@ -714,7 +716,7 @@ def _admin_area_union(
 
 def _parse_time_interval_start(time_interval_start: str) -> datetime:
     return datetime.strptime(time_interval_start, "%Y-%m-%dT%H:%M:%SZ").replace(
-        tzinfo=timezone.utc
+        tzinfo=UTC
     )
 
 

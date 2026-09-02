@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 from pipelines.infra.data_types.admin_area_types import (
@@ -496,7 +497,7 @@ def _build_admin_areas() -> AdminAreasSet:
 
 
 class TestDeriveAlertCentroid:
-    _PLACE_CODES = ["PC001"]
+    _PLACE_CODES: ClassVar[list[str]] = ["PC001"]
 
     def test_returns_none_when_the_peak_wind_time_is_after_the_tracked_window(self):
         track_fixes = [
@@ -681,7 +682,9 @@ class TestDeriveAlertCentroid:
         assert centroid.latitude == pytest.approx(1.0)
         assert centroid.longitude == pytest.approx(0.0)
 
-    def test_a_single_bucket_outside_the_admin_areas_reports_the_nearest_union_point(self):
+    def test_a_single_bucket_outside_the_admin_areas_reports_the_nearest_union_point(
+        self,
+    ):
         # With one bucket the pseudo-track is a single point at (5, 5); the closest point in the
         # square is its corner (2, 2).
         track_fixes = [_make_track_bucket("2026-07-10T00:00:00Z", [(5.0, 5.0)])]
@@ -743,7 +746,7 @@ def _make_storm_track(
 
 
 class TestSelectPlaceCodesNearStorm:
-    _PLACE_CODES = ["PC_WEST", "PC_MIDDLE", "PC_EAST"]
+    _PLACE_CODES: ClassVar[list[str]] = ["PC_WEST", "PC_MIDDLE", "PC_EAST"]
 
     def test_returns_only_the_admin_areas_the_padded_storm_box_reaches(self):
         storm = _make_storm_track([(0.5, 0.5)])

@@ -68,7 +68,7 @@ if __name__ == "__main__":
                 color_img.save(RGBA_OUTPUT_DIR / f"{tif_path.stem}.png", optimize=True)
 
                 processed += 1
-        except Exception as e:
+        except (OSError, ValueError) as e:
             print(f"Error processing {tif_path}: {e}")
 
     print(f"Finished. Total processed: {processed}")

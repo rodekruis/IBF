@@ -1,14 +1,21 @@
-import { ConflictException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
 import { CountriesService } from '@api-service/src/countries/countries.service';
 import { EventsService } from '@api-service/src/events/events.service';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import {
-  buildMockForecast,
+  buildMockForecasts,
+  MockConfigError,
   SUPPORTED_MOCK_COUNTRIES,
 } from '@api-service/src/seed/seed-data/mock-events.helper';
 import { SeedInit } from '@api-service/src/seed/seed-init';
+import { HazardType } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class SeedService {
@@ -66,18 +73,21 @@ export class SeedService {
     scenario,
     clearEvents,
     issuedAt,
+    hazardTypes,
   }: {
     countryCodes?: string[];
     scenario: MockScenario;
     clearEvents: boolean;
     issuedAt: Date;
+    hazardTypes?: HazardType[];
   }): Promise<void> {
     // if no countryCodes provided, mock 'all', which means 'all currently seeded countries', as we can't mock events for countries that are not seeded yet
     const resolvedCountryCodes =
       countryCodes ?? (await this.getSeededCountryCodes());
 
     this.logger.log(
-      `Mock events - Countries: ${resolvedCountryCodes.join(', ')} - Scenario: ${scenario} - Clear: ${String(clearEvents)}`,
+      `Mock events - Countries: ${resolvedCountryCodes.join(', ')} - Scenario: ${scenario} - Clear: ${String(clearEvents)}` +
+        (hazardTypes ? ` - Hazards: ${hazardTypes.join(', ')}` : ''),
     );
 
     for (const countryCodeIso3 of resolvedCountryCodes) {
@@ -85,13 +95,32 @@ export class SeedService {
         await this.eventsService.deleteEventsByCountry(countryCodeIso3);
       }
 
-      if (scenario === MockScenario.noEvents) {
-        await this.alertsService.createAlerts(
-          buildMockForecast({ countryCodeIso3, issuedAt, alertsOverride: [] }),
-        );
-      } else {
-        const forecast = buildMockForecast({ countryCodeIso3, issuedAt });
-        await this.alertsService.createAlerts(forecast);
+      try {
+        if (scenario === MockScenario.noEvents) {
+          const forecasts = buildMockForecasts({
+            countryCodeIso3,
+            issuedAt,
+            alertsOverride: [],
+            hazardTypes,
+          });
+          for (const forecast of forecasts) {
+            await this.alertsService.createAlerts(forecast);
+          }
+        } else {
+          const forecasts = buildMockForecasts({
+            countryCodeIso3,
+            issuedAt,
+            hazardTypes,
+          });
+          for (const forecast of forecasts) {
+            await this.alertsService.createAlerts(forecast);
+          }
+        }
+      } catch (error: unknown) {
+        if (error instanceof MockConfigError) {
+          throw new BadRequestException(error.message);
+        }
+        throw error;
       }
     }
   }

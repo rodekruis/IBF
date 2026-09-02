@@ -1,10 +1,10 @@
 import os
 import subprocess
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
-from typing import Callable
 from unittest.mock import MagicMock
 
 import pytest
@@ -29,7 +29,7 @@ def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
     rasters) so tests can add a single defect on top and verify it is caught."""
     submitter = DataSubmitter(mock_api_client)
     submitter.set_forecast_metadata(
-        issued_at=datetime.now(timezone.utc),
+        issued_at=datetime.now(UTC),
         hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS],
         country_code_iso3="ETH",
@@ -118,6 +118,7 @@ def _run_pipeline(
         env=os.environ.copy(),
         capture_output=True,
         text=True,
+        check=False,
     )
 
 

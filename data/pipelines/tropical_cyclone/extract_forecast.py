@@ -4,7 +4,7 @@ import logging
 import os
 import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from itertools import pairwise
 
 import numpy as np
@@ -241,7 +241,7 @@ def _parse_gefs_wind_path(path: str) -> _ParsedGefsWindPath | None:
         return None
     cycle_datetime = datetime.strptime(
         match.group("date") + match.group("cycle_hour"), "%Y%m%d%H"
-    ).replace(tzinfo=timezone.utc)
+    ).replace(tzinfo=UTC)
     return _ParsedGefsWindPath(
         cycle_datetime=cycle_datetime,
         member=match.group("member"),
@@ -454,7 +454,7 @@ def _parse_ecmwf_wind_path(path: str) -> _ParsedEcmwfWindPath | None:
         return None
     cycle_datetime = datetime.strptime(
         match.group("date") + match.group("cycle_hour"), "%Y%m%d%H"
-    ).replace(tzinfo=timezone.utc)
+    ).replace(tzinfo=UTC)
     return _ParsedEcmwfWindPath(
         cycle_datetime=cycle_datetime,
         stream=match.group("stream"),

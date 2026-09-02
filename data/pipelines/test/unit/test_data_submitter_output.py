@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -41,7 +41,7 @@ class TestLocalMode:
         api_client = MagicMock()
         submitter = DataSubmitter(api_client)
         submitter.set_forecast_metadata(
-            issued_at=datetime.now(timezone.utc),
+            issued_at=datetime.now(UTC),
             hazard_type=HazardType.FLOODS,
             forecast_sources=[ForecastSource.GLOFAS],
             country_code_iso3="MWI",
@@ -64,7 +64,7 @@ class TestLocalMode:
         api_client = MagicMock()
         submitter = DataSubmitter(api_client)
         submitter.set_forecast_metadata(
-            issued_at=datetime.now(timezone.utc),
+            issued_at=datetime.now(UTC),
             hazard_type=HazardType.FLOODS,
             forecast_sources=[ForecastSource.GLOFAS],
             country_code_iso3="MWI",
@@ -134,7 +134,7 @@ class TestApiMode:
         mock_client.submit_forecast.return_value = []
         submitter = DataSubmitter(mock_client)
         submitter.set_forecast_metadata(
-            issued_at=datetime.now(timezone.utc),
+            issued_at=datetime.now(UTC),
             hazard_type=HazardType.FLOODS,
             forecast_sources=[ForecastSource.GLOFAS],
             country_code_iso3="MWI",

@@ -20,8 +20,9 @@
     "setup:pipelines": "docker build --tag=pipelines:development --target=development data/ && docker run --rm --init --network=host --volume=$PWD/data:/home/pipelines/app",
     "start:pipelines": "npm run setup:pipelines -- pipelines:development uv run pipeline",
     "install:services": "cd services/ && docker compose --file=docker-compose.yml build",
-    "setup:frontend": "git submodule update --init portal/nrw-standalone/src/go-web-app && (cd portal/nrw-standalone/src/go-web-app && git sparse-checkout set --no-cone '/.github/copilot-instructions.md' '/app/src/utils/nrw/' '/app/src/components/Nrw/') && (cd portal/nrw-standalone && ([ -f .env ] || cp sample.env .env) && pnpm install)",
-    "start:frontend": "cd portal/nrw-standalone && pnpm build && pnpm exec vite preview --port 5173 --strictPort",
+    "setup:e2e:frontend": "[ -d go-web-app ] && (cd go-web-app && git pull origin nrw-develop) || git clone --depth 1 --branch nrw-develop https://github.com/rodekruis/go-web-app.git go-web-app && (cd go-web-app && ([ -f app/.env ] || cp app/sample.env app/.env))",
+    "install:e2e:frontend": "cd go-web-app && pnpm install",
+    "start:e2e:frontend": "cd go-web-app && pnpm build && npx serve build/ --listen tcp://0.0.0.0:5173 --single",
     "install:e2e": "cd e2e && npm run setup",
     "test:e2e": "cd e2e && npm test",
     "typecheck": "echo 'Not available here! Run inside the sub-folder of a specific package/component.' && exit 0",
@@ -39,7 +40,7 @@
   "devDependencies": {
     "@prettier/plugin-xml": "^3.4.2",
     "husky": "^9.1.7",
-    "lint-staged": "^17.2.0",
+    "lint-staged": "^17.3.0",
     "prettier": "^3.9.4",
     "prettier-plugin-organize-imports": "^4.3.0"
   },

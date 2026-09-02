@@ -1,6 +1,7 @@
 import { PNG } from 'pngjs';
 
 import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
+import { LayerName } from '@api-service/src/shared-enums';
 
 type Rgba = [number, number, number, number];
 
@@ -40,13 +41,34 @@ const POPULATION_CONFIG: ColorizationConfig = {
 
 const POPULATION_DOWNSAMPLE_FACTOR = 10;
 
-export const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
+const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
   colorLow: [173, 216, 230, 179],
   colorHigh: [0, 0, 139, 179],
   zeroIsTransparent: true,
   steps: 6,
   useLogScale: false,
 };
+
+const WIND_SPEED_CONFIG: ColorizationConfig = {
+  colorLow: [255, 237, 160, 179],
+  colorHigh: [189, 0, 38, 179],
+  zeroIsTransparent: true,
+  steps: 8,
+  useLogScale: false,
+};
+
+const LAYER_COLORIZATION_CONFIG: Partial<
+  Record<LayerName, ColorizationConfig>
+> = {
+  [LayerName.floodDepth]: FLOOD_DEPTH_CONFIG,
+  [LayerName.windSpeed]: WIND_SPEED_CONFIG,
+};
+
+export function getColorizationConfig(
+  layerName: LayerName,
+): ColorizationConfig {
+  return LAYER_COLORIZATION_CONFIG[layerName] ?? FLOOD_DEPTH_CONFIG;
+}
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function colorizeGrayscalePng({

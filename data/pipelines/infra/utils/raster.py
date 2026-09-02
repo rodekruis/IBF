@@ -131,11 +131,20 @@ def raster_to_base64_png(raster: RasterData) -> str:
     array = np.where(np.isnan(array) | (array == raster.nodata), 0, array)
     array = np.clip(array, 0, None)
 
-    max_val = array.max()
-    if max_val > 0:
-        normalized = (array / max_val * 255).astype(np.uint8)
+    # Normalize min-max to 1-255, leaving 0 for nodata. If the array is all zeros, return a zero array.
+    nonzero_mask = array > 0
+    if not nonzero_mask.any():
+        normalized = np.zeros_like(array, dtype=np.uint8)
     else:
-        normalized = array.astype(np.uint8)
+        min_val = array[nonzero_mask].min()
+        max_val = array[nonzero_mask].max()
+        normalized = np.zeros_like(array, dtype=np.uint8)
+        if max_val > min_val:
+            normalized[nonzero_mask] = (
+                ((array[nonzero_mask] - min_val) / (max_val - min_val) * 254) + 1
+            ).astype(np.uint8)
+        else:
+            normalized[nonzero_mask] = 255
 
     img = Image.fromarray(normalized, mode="L")
     buffer = io.BytesIO()
