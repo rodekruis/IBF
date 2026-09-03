@@ -9,7 +9,7 @@ e2e/
 ├── playwright.config.ts     # Playwright configuration (baseURL, projects, ...)
 ├── env.ts                   # Centralized environment-variable access
 └── nrw/
-    ├── helpers/reset.ts     # Seeds api-service mock data via /reset
+    ├── helpers/             # Shared utilities and data
     ├── pages/NrwMapPage.ts  # Page object for the NRW map view
     └── tests/               # Test specs
 ```

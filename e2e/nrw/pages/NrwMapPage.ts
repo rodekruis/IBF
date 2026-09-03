@@ -25,4 +25,8 @@ export class NrwMapPage {
   get mapCanvas(): Locator {
     return this.page.locator('.mapboxgl-canvas');
   }
+
+  get eventMarkers(): Locator {
+    return this.page.locator('.mapboxgl-marker:has([class*="event-marker"])');
+  }
 }
