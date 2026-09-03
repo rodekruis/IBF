@@ -13,15 +13,15 @@ export class NrwMapPage {
     this.page = page;
   }
 
-  async goto(countryCode: string): Promise<void> {
-    await this.page.goto(`/?countries=${countryCode}`);
+  async goto(countryCodes: string[]): Promise<void> {
+    await this.page.goto(`/?countries=${countryCodes.join(',')}`);
   }
 
-  /**
-   * TODO: This is an intentionally simple, deterministic smoke target. It is
-   * expected to change once the frontend loads real event data from the
-   * backend — at which point only this locator/assertion needs updating.
-   */
+  async waitForMapLoaded(): Promise<void> {
+    await this.mapCanvas.waitFor({ state: 'visible' });
+    await this.page.waitForLoadState('networkidle');
+  }
+
   get mapCanvas(): Locator {
     return this.page.locator('.mapboxgl-canvas');
   }
