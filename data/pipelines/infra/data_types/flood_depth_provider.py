@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 from pipelines.infra.data_types.loaded_data_types import RasterData
-from pipelines.infra.utils.nrw_logger import log_info, LogTag
+from pipelines.infra.utils import nrw_logger
 from rasterio.transform import Affine
 from shared.download_helpers import download_json_source, download_object
 from shared.image_helpers import rgba_png_to_float_array
@@ -53,7 +53,11 @@ class FloodDepthProvider:
         crs = json_data["crs"]
         nodata = json_data["nodata"]
 
-        log_info(logger, LogTag.INFRA, f"Downloaded and decoded flood depth '{key}'")
+        nrw_logger.log_info(
+            logger,
+            nrw_logger.LogTag.INFRA,
+            f"Downloaded and decoded flood depth '{key}'",
+        )
         return RasterData(
             array=float_array.astype(np.float32),
             transform=transform,
