@@ -5,17 +5,11 @@ import io
 import logging
 import os
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from pipelines.flood.constants import GLOFAS_MIN_ENSEMBLE_COUNT
 from pipelines.infra.environment import load_environment_settings
-from pipelines.infra.utils.nrw_logger import (
-    log_error,
-    log_info,
-    log_warning,
-    log_with_tag,
-    LogTag,
-)
+from pipelines.infra.utils.nrw_logger import log_info, log_warning, log_with_tag, LogTag
 from pipelines.infra.utils.storage_helpers import (
     find_latest_forecast_date_in_cache,
     get_cached_glofas_country_split_files,
@@ -50,7 +44,7 @@ def download_glofas_discharge_from_ftp(country: str) -> list[str]:
     host, user, password = _load_ftp_credentials()
     ensemble_count = int(os.environ.get("GLOFAS_FTP_ENSEMBLE_COUNT", "51"))
 
-    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+    forecast_date = datetime.now(UTC).strftime("%Y%m%d")
     forecast_date = _resolve_forecast_date(forecast_date, user, password, host)
 
     existing_download = _try_reuse_existing_download(forecast_date)
@@ -216,7 +210,7 @@ def download_glofas_discharge_from_seed_repo(
     if content is None:
         raise FileNotFoundError(f"Failed to download GloFAS discharge from '{url}'")
 
-    forecast_date = datetime.now(timezone.utc).strftime("%Y%m%d")
+    forecast_date = datetime.now(UTC).strftime("%Y%m%d")
     local_filename = f"dis_00_{forecast_date}00.nc"
     output_dir = get_glofas_mock_data_dir(country)
     local_path = os.path.join(output_dir, local_filename)
@@ -370,7 +364,7 @@ def _download_ftp_file(
         except ftplib.error_perm as exc:
             raise FileNotFoundError(f"FTP server rejected '{filename}': {exc}") from exc
         except ftplib.all_errors as exc:
-            log_error(
+            log_warning(
                 logger,
                 LogTag.INFRA,
                 f"Attempt {attempt}/{max_retries} failed for '{filename}': {exc}",

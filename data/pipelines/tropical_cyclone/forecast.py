@@ -261,7 +261,10 @@ def calculate_tropical_cyclone_forecasts(
                     continue
 
                 time_interval_severities = determine_severities(
-                    wind_speeds, storm_place_codes, target_admin_areas
+                    storm_track.storm_identifier,
+                    wind_speeds,
+                    storm_place_codes,
+                    target_admin_areas,
                 )
 
                 # If no time bucket clears MIN_SEVERITY_MS, this storm raises no alert for this
@@ -336,6 +339,14 @@ def calculate_tropical_cyclone_forecasts(
                 event_name = storm_track.storm_identifier
 
                 data_submitter.create_alert(event_name=event_name, centroid=centroid)
+
+                nrw_logger.log_info(
+                    logger,
+                    nrw_logger.LogTag.ALERT_GENERATION,
+                    f"Alert generated for event '{event_name}' "
+                    f"{len(time_interval_severities)} time intervals passed, peak median wind speed "
+                    f"{max(severity.median_wind_speed for severity in time_interval_severities):.2f} m/s",
+                )
 
                 for severity in time_interval_severities:
                     for ensemble_wind_speed in severity.ensemble_wind_speeds:

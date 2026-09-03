@@ -21,6 +21,7 @@ import json
 import os
 from pathlib import Path
 
+import psycopg
 from data_management.utils.geo_utils import normalize_polygon_to_multipolygon
 from data_management.utils.postgis_handler import (
     create_gis_index,
@@ -88,7 +89,7 @@ def load_admin_areas_data(json_dir):
 
         try:
             admin_level = int(filename.split("_adm")[-1])
-        except Exception as e:
+        except (ValueError, IndexError) as e:
             print(
                 f"Error: Could not get admin level from filename '{basename}' - Error: {e}"
             )
@@ -234,7 +235,7 @@ def insert_admin_areas_data(connection, features: list[dict]):
                     ),
                 )
                 cur.execute("RELEASE SAVEPOINT row_insert")
-            except Exception as e:
+            except psycopg.Error as e:
                 cur.execute("ROLLBACK TO SAVEPOINT row_insert")
                 print(f"Error inserting feature with properties {props} - Error: {e}")
                 continue
@@ -249,7 +250,8 @@ def verify_data(connection):
     Query and print sample records to verify the data was inserted correctly.
     """
     with connection.cursor() as cur:
-        cur.execute(f"""
+        cur.execute(
+            f"""
             SELECT id, "{COL_PLACE_CODE}", "{COL_ADMIN_LEVEL}", "{COL_NAME_EN}", "{COL_COUNTRY_CODE_ISO3}",
                    "{COL_PLACE_CODE_LEVEL_1}", "{COL_PLACE_CODE_LEVEL_2}", "{COL_PLACE_CODE_LEVEL_3}", "{COL_PLACE_CODE_LEVEL_4}",
                    "{COL_ATTRIBUTES}",
@@ -257,7 +259,8 @@ def verify_data(connection):
                    ST_NumGeometries("{COL_GEOMETRY}") as num_geoms
             FROM {TABLE_NAME}
             LIMIT 3;
-        """)
+        """
+        )
         records = cur.fetchall()
         print("\nSample records from the database:")
         for record in records:

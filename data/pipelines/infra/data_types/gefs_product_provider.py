@@ -9,7 +9,7 @@ import logging
 import os
 from enum import StrEnum
 
-from pipelines.infra.utils.nrw_logger import log_info, LogTag
+from pipelines.infra.utils import nrw_logger
 from pipelines.infra.utils.storage_helpers import get_tropical_cyclone_mock_data_dir
 from shared.download_helpers import download_json_source, download_object
 
@@ -63,9 +63,9 @@ def download_gefs_product_from_seed_repo(
             _download_to_cache(f"{product_base_url}/{relative_path}", local_path)
         local_paths.append(local_path)
 
-    log_info(
+    nrw_logger.log_info(
         logger,
-        LogTag.INFRA,
+        nrw_logger.LogTag.INFRA,
         f"Loaded {len(local_paths)} GEFS '{product}' files (cache: {cache_dir})",
     )
     return sorted(local_paths)

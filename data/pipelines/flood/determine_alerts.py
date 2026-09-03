@@ -69,6 +69,14 @@ def determine_temporal_extent(
             median_discharge, station_thresholds
         )
         if median_return_period > 0:
+            nrw_logger.log_info(
+                logger,
+                nrw_logger.LogTag.ALERT_GENERATION,
+                f"Station {station_code} {time_interval_discharge.time_interval_start}"
+                f" to {time_interval_discharge.time_interval_end}: median discharge"
+                f" {median_discharge:.2f} m3/s reaches return period"
+                f" {median_return_period:g}yr (minimum {minimum_return_period})",
+            )
             ensemble_return_periods = [
                 _match_return_period_numeric(d, station_thresholds)
                 for d in time_interval_discharge.ensemble_discharges
@@ -80,6 +88,15 @@ def determine_temporal_extent(
                     median_return_period=median_return_period,
                     ensemble_return_periods=ensemble_return_periods,
                 )
+            )
+        else:
+            nrw_logger.log_info(
+                logger,
+                nrw_logger.LogTag.ALERT_GENERATION,
+                f"Station {station_code} {time_interval_discharge.time_interval_start}"
+                f" to {time_interval_discharge.time_interval_end}: median discharge"
+                f" {median_discharge:.2f} m3/s below minimum return period"
+                f" {minimum_return_period}",
             )
 
     return time_interval_severities
