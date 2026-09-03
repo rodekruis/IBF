@@ -12,6 +12,9 @@
 //     template creates no role assignments and the deploying principal does not
 //     need RBAC-write rights.
 //   - Action group + TaskFailEvent metric alert on the Batch account.
+//   - App settings that let Batch tasks persist stdout/stderr under the
+//     task-logs/ prefix of the nrw-data-cache container on completion; the
+//     upload runs as the pool node identity, so no SAS or secret is needed.
 //   - Workspace-based Application Insights connected to the Function App and to
 //     the shared nrw-app-law Log Analytics workspace, so pipeline telemetry
 //     lands alongside the backend's logs (invocation history, traces, KQL via
@@ -71,12 +74,19 @@ param logAnalyticsWorkspaceName string = 'nrw-app-law'
 @description('Resource group holding the shared Log Analytics workspace.')
 param logAnalyticsResourceGroup string = 'NRW'
 
+@description('Existing pool node managed identity; the Batch node agent uses it to upload task stdout/stderr to blob storage.')
+param poolNodeIdentityName string = 'nrw-batch-poc'
+
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' existing = {
   name: storageAccountName
 }
 
 resource batchAccount 'Microsoft.Batch/batchAccounts@2024-07-01' existing = {
   name: batchAccountName
+}
+
+resource poolNodeIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
+  name: poolNodeIdentityName
 }
 
 resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
@@ -207,6 +217,14 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         {
           name: 'GLOFAS_FTP_PASSWORD'
           value: glofasPasswordReference
+        }
+        {
+          name: 'BATCH_TASK_LOGS_CONTAINER_URL'
+          value: '${storageAccount.properties.primaryEndpoints.blob}nrw-data-cache'
+        }
+        {
+          name: 'BATCH_POOL_NODE_IDENTITY_RESOURCE_ID'
+          value: poolNodeIdentity.id
         }
       ]
     }

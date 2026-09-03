@@ -17,6 +17,24 @@
           }
         }
       }
+    },
+    {
+      "enabled": true,
+      "name": "expire-batch-task-logs",
+      "type": "Lifecycle",
+      "definition": {
+        "filters": {
+          "blobTypes": ["blockBlob"],
+          "prefixMatch": ["nrw-data-cache/task-logs/"]
+        },
+        "actions": {
+          "baseBlob": {
+            "delete": {
+              "daysAfterModificationGreaterThan": 90
+            }
+          }
+        }
+      }
     }
   ]
 }

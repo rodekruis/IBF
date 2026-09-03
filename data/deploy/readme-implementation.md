@@ -13,7 +13,7 @@ Azure Batch deployment for the NRW forecast pipeline.
 - **Batch account** `nrwbatchpoc` — AAD-only authentication, Key Vault-based node pool credential management.
   - **Batch pool** `nrwbatchpoc` — container-enabled VM Configuration pool; `Standard_E2as_v4`, Ubuntu HPC 24.04, blobfuse mount of `nrw-data-cache`, autoscale (max 2 nodes, evaluated every 5 min).
 - **Key Vault** `nrw-batch-poc` — RBAC permission model; holds `ibf-pipeline-api-key`, `glofas-ftp-user`, `glofas-ftp-password`.
-- **Storage account** `nrwbatchpoc` — general-purpose V2; Blob container `nrw-data-cache` (mounted as `DATA_CACHE_DIR`, lifecycle policy from `blob-lifecycle-policy.json`); also reused as Function App runtime storage (`AzureWebJobsStorage`).
+- **Storage account** `nrwbatchpoc` — general-purpose V2; Blob container `nrw-data-cache` (mounted as `DATA_CACHE_DIR`, lifecycle policy from `blob-lifecycle-policy.json`, receives Batch task stdout/stderr under `task-logs/`); also reused as Function App runtime storage (`AzureWebJobsStorage`).
 - **User-assigned managed identity** `nrw-batch-poc` — pool node identity (restricted to Batch providers).
 - **User-assigned managed identity** `nrw-batch-scheduler` — dedicated Function App identity.
 - **App Service plan** `nrw-batch-scheduler-plan` — Linux Consumption (Y1).
@@ -84,7 +84,7 @@ Azure accounts
   - Role: `Azure Batch Job Submitter`; Scope: Batch account `nrwbatchpoc`; Why: create Batch jobs over Entra ID (account is AAD-only).
 - **`nrw-batch-poc`** (pool node UAMI — ServicePrincipal):
   - Role: `Key Vault Secrets User`; Scope: Key Vault `nrw-batch-poc`; Why: pool nodes read secrets from the vault.
-  - Role: `Storage Blob Data Contributor`; Scope: Blob container `nrw-data-cache` on storage account `nrwbatchpoc`; Why: Blob mount used as `DATA_CACHE_DIR`.
+  - Role: `Storage Blob Data Contributor`; Scope: Blob container `nrw-data-cache` on storage account `nrwbatchpoc`; Why: Blob mount used as `DATA_CACHE_DIR`, and stdout/stderr upload by the Batch node agent.
   - Role: `AcrPull`; Scope: container registry `nrwdockerregistry` (`NRW` resource group); Why: pool nodes pull `pipelines:latest` with this identity.
 - **`Microsoft Azure Batch`** (service principal — ServicePrincipal):
   - Role: `Azure Batch` (orchestration); Scope: subscription; Why: Batch account provisioning (portal setup).
@@ -176,6 +176,9 @@ The pipeline already writes to subdirectories under `DATA_CACHE_DIR` as defined 
 - `glofas/country_split_alert/{forecast_date}/`
   - Content: country-split data that triggered alerts
   - Retention: indefinite
+- `task-logs/{hazard_type}/{job_id}/`
+  - Content: Batch task stdout/stderr files
+  - Retention: 90 days
 
 NOAA data is not yet integrated into the pipeline; retention rules for NOAA will be added when that data source is introduced.
 

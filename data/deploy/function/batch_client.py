@@ -18,12 +18,18 @@ from azure.batch import BatchClient
 from azure.batch.models import (
     BatchAllTasksCompleteMode,
     BatchJobCreateOptions,
+    BatchNodeIdentityReference,
     BatchPoolInfo,
     BatchTaskConstraints,
     BatchTaskContainerSettings,
     BatchTaskCreateOptions,
     ContainerWorkingDirectory,
     EnvironmentSetting,
+    OutputFile,
+    OutputFileBlobContainerDestination,
+    OutputFileDestination,
+    OutputFileUploadCondition,
+    OutputFileUploadConfiguration,
 )
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
@@ -104,7 +110,7 @@ def submit_hazard_job(
             all_tasks_complete_mode=BatchAllTasksCompleteMode.TERMINATE_JOB,
         )
     )
-    batch_client.create_task(job_id, build_container_task(hazard_config))
+    batch_client.create_task(job_id, build_container_task(hazard_config, job_id))
     return job_id
 
 
@@ -121,7 +127,9 @@ def build_job_id(hazard_config: HazardConfig, run_started_at: datetime) -> str:
     return f"nrw-{hazard_config.hazard_type}-{run_started_at:%Y%m%d-%H%M%S}"
 
 
-def build_container_task(hazard_config: HazardConfig) -> BatchTaskCreateOptions:
+def build_container_task(
+    hazard_config: HazardConfig, job_id: str
+) -> BatchTaskCreateOptions:
     """Container task mirroring local invocation: `pipeline --config <path>`."""
     return BatchTaskCreateOptions(
         id=f"{hazard_config.hazard_type}-task",
@@ -137,6 +145,7 @@ def build_container_task(hazard_config: HazardConfig) -> BatchTaskCreateOptions:
             max_wall_clock_time=TASK_MAX_WALL_CLOCK_TIME,
             max_task_retry_count=TASK_MAX_RETRY_COUNT,
         ),
+        output_files=task_output_files(hazard_config, job_id),
     )
 
 
@@ -156,6 +165,33 @@ def task_environment_settings() -> list[EnvironmentSetting]:
     return [
         EnvironmentSetting(name=name, value=require_app_setting(name))
         for name in TASK_ENVIRONMENT_VARIABLES
+    ]
+
+
+def task_output_files(
+    hazard_config: HazardConfig, job_id: str
+) -> list[OutputFile] | None:
+    """Write the Batch stdout.txt/stderr.txt files to blob storage"""
+    container_url = os.environ.get("BATCH_TASK_LOGS_CONTAINER_URL")
+    node_identity_resource_id = os.environ.get("BATCH_POOL_NODE_IDENTITY_RESOURCE_ID")
+    if not container_url or not node_identity_resource_id:
+        return None
+    return [
+        OutputFile(
+            file_pattern="../std*.txt",
+            destination=OutputFileDestination(
+                container=OutputFileBlobContainerDestination(
+                    container_url=container_url,
+                    path=f"task-logs/{hazard_config.hazard_type}/{job_id}",
+                    identity_reference=BatchNodeIdentityReference(
+                        resource_id=node_identity_resource_id
+                    ),
+                )
+            ),
+            upload_options=OutputFileUploadConfiguration(
+                upload_condition=OutputFileUploadCondition.TASK_COMPLETION
+            ),
+        )
     ]
 
 

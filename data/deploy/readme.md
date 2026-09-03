@@ -77,10 +77,19 @@ union
 | project TimeGenerated, Component, Message
 ```
 
-### From the batch account, while the job is running or shortly after it completed
+### Raw logs
 
-- You can see errors from before the jobs starts in Azure -> nrwbatchpoc (batch account) -> Pools
-- You can see logs in Azure Batch's built-in stdout/stderr files. Go to [Azure -> nrwbatchpoc (batch account)](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Batch/batchAccounts/nrwbatchpoc/accountOverview) -> Jobs -> select job -> select task -> stderr.txt
+These are raw logs where you can see the error output, while the job is running or shortly after it completed. These are useful since you can grab all logs quickly for one job, and then parse them yourself.
+
+For ongoing jobs, go to [Azure -> nrwbatchpoc (batch account)](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Batch/batchAccounts/nrwbatchpoc/accountOverview) -> Jobs -> select job -> select task -> stderr.txt. These will be delete here once the job stops and the node it is running on is deallocated.
+
+For completed jobs, the logs are stored in blob storage. Go to the [nrwbatchpoc storage account](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Storage/storageAccounts/nrwbatchpoc/overview) -> Containers -> nrw-data-cache, under `task-logs/<hazard-type>/<job-id>/`.
+
+## Resource deployment logs and current job status
+
+You can see the current status of jobs and errors from before the jobs starts in nrwbatchpoc (the batch account)](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Batch/batchAccounts/nrwbatchpoc/accountOverview).
+
+From there go to 'Pools' for resource allocation errors, or 'Jobs' for the current status of jobs.
 
 ## Email error notifications
 
