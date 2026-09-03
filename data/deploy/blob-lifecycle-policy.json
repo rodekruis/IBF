@@ -1,0 +1,40 @@
+{
+  "rules": [
+    {
+      "enabled": true,
+      "name": "expire-glofas-raw",
+      "type": "Lifecycle",
+      "definition": {
+        "filters": {
+          "blobTypes": ["blockBlob"],
+          "prefixMatch": ["nrw-data-cache/glofas/raw/"]
+        },
+        "actions": {
+          "baseBlob": {
+            "delete": {
+              "daysAfterModificationGreaterThan": 30
+            }
+          }
+        }
+      }
+    },
+    {
+      "enabled": true,
+      "name": "expire-batch-task-logs",
+      "type": "Lifecycle",
+      "definition": {
+        "filters": {
+          "blobTypes": ["blockBlob"],
+          "prefixMatch": ["nrw-data-cache/task-logs/"]
+        },
+        "actions": {
+          "baseBlob": {
+            "delete": {
+              "daysAfterModificationGreaterThan": 90
+            }
+          }
+        }
+      }
+    }
+  ]
+}

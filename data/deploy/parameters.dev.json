@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "functionAppName": {
+      "value": "nrw-batch-scheduler"
+    },
+    "keyVaultName": {
+      "value": "nrw-batch-poc"
+    },
+    "managedIdentityName": {
+      "value": "nrw-batch-scheduler"
+    },
+    "batchAccountName": {
+      "value": "nrwbatchpoc"
+    },
+    "batchAccountUrl": {
+      "value": "https://nrwbatchpoc.westeurope.batch.azure.com"
+    },
+    "batchPoolId": {
+      "value": "nrwbatchpoc"
+    },
+    "storageAccountName": {
+      "value": "nrwbatchpoc"
+    },
+    "pythonVersion": {
+      "value": "3.11"
+    },
+    "ibfEnvironment": {
+      "value": "test"
+    },
+    "githubDataBaseUrl": {
+      "value": "https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main"
+    },
+    "glofasFtpHost": {
+      "value": "aux.ecmwf.int"
+    },
+    "dataCacheDir": {
+      "value": "/mnt/batch/tasks/fsmounts/nrw-data-cache"
+    },
+    "alertEmail": {
+      "value": "ehill@redcross.nl"
+    }
+  }
+}
