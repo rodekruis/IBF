@@ -191,8 +191,12 @@ NOAA data is not yet integrated into the pipeline; retention rules for NOAA will
 - **"no run" Alerts**: Consider alerts if there were no runs
 - **Test Batch account**: Should we limit mock data runs to a specific account/env?
 - **CI/CD image builds**: Use Github actions to build and push to ACR.
-- Confirm Azure Batch quota and VM family limits in target subscription for `Standard_E2as_v4`. Also measure actual peak memory during a full run to validate the choice.
 - Re-evaluate the pool autoscale formula
+
+### Specs to evaluate
+
+- Be sure the nrw-batch-scheduler runs are safely within the `working memory` limit of 1.5 GB, which can be seen on the [nrw-pipelines-test-rg resource page.](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-pipelines-test-rg/metrics)
+- Check the memory and cpu usage of the backend to make sure the pipeline is not causing usage spikes. For example, you can see this [here for nrw-test.](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.Web/serverfarms/nrw-test/metrics)
 
 ### Handle after MVP or as need arises
 
