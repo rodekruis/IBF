@@ -498,11 +498,12 @@
         "operationId": "EventsController_getEvents",
         "parameters": [
           {
-            "name": "countryCodeIso3",
+            "name": "countryCodesIso3",
             "required": false,
             "in": "query",
-            "description": "ISO 3166-1 alpha-3 country code to filter events by. If omitted, returns events for all countries.",
+            "description": "ISO 3166-1 alpha-3 country codes to filter events by. If omitted, returns events for all countries.",
             "schema": {
+              "example": "MWI",
               "type": "string"
             }
           },

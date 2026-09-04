@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   HttpStatus,
+  ParseArrayPipe,
   ParseBoolPipe,
   Query,
 } from '@nestjs/common';
@@ -9,6 +10,7 @@ import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
 import { EventsService } from '@api-service/src/events/events.service';
+import { getNormalizedStringList } from '@api-service/src/utils/normalize-string-list.helper';
 
 @ApiTags('events')
 @Controller('events')
@@ -18,11 +20,12 @@ export class EventsController {
   @Get()
   @ApiOperation({ summary: 'Get all active or all closed events' })
   @ApiQuery({
-    name: 'countryCodeIso3',
+    name: 'countryCodesIso3',
     type: String,
     required: false,
+    example: 'MWI',
     description:
-      'ISO 3166-1 alpha-3 country code to filter events by. If omitted, returns events for all countries.',
+      'ISO 3166-1 alpha-3 country codes to filter events by. If omitted, returns events for all countries.',
   })
   @ApiQuery({
     name: 'active',
@@ -46,11 +49,19 @@ export class EventsController {
     type: [EventResponseDto],
   })
   public async getEvents(
-    @Query('countryCodeIso3') countryCodeIso3?: string,
+    @Query(
+      'countryCodesIso3',
+      new ParseArrayPipe({ items: String, optional: true }),
+    )
+    countryCodesIso3?: string[],
     @Query('active', new ParseBoolPipe({ optional: true })) active?: boolean,
     @Query('timestamp') timestamp?: string,
   ): Promise<EventResponseDto[]> {
     const viewTime = timestamp ? new Date(timestamp) : new Date();
-    return this.eventsService.getEvents({ viewTime, active, countryCodeIso3 });
+    return this.eventsService.getEvents({
+      viewTime,
+      active,
+      countryCodesIso3: getNormalizedStringList(countryCodesIso3),
+    });
   }
 }
