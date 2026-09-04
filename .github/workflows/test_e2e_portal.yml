@@ -76,6 +76,16 @@ jobs:
       - path-filter
       - lint-code
     if: ${{ needs.path-filter.outputs.should_skip != 'true' }}
+    env:
+      APP_TITLE: NRW e2e
+      APP_ENVIRONMENT: testing
+      APP_MAPBOX_ACCESS_TOKEN: ${{ secrets.APP_MAPBOX_ACCESS_TOKEN }}
+      APP_NRW_API_ENDPOINT: http://localhost:4000/api/
+      APP_NRW_STANDALONE: true
+      APP_API_ENDPOINT: https://placeholder.example.com/
+      APP_TINY_API_KEY: unused
+      APP_RISK_API_ENDPOINT: https://placeholder.example.com/
+      APP_TRANSLATION_API_ENDPOINT: https://placeholder.example.com/
     strategy:
       fail-fast: false
       matrix:
@@ -139,23 +149,12 @@ jobs:
 
       - name: Build go-web-app
         working-directory: ${{ env.goWebAppPath }}
-        env:
-          APP_TITLE: NRW e2e
-          APP_ENVIRONMENT: testing
-          APP_MAPBOX_ACCESS_TOKEN: ${{ secrets.APP_MAPBOX_ACCESS_TOKEN }}
-          APP_NRW_API_ENDPOINT: http://localhost:4000/api/
-          APP_NRW_STANDALONE: true
-          # Required by GO build validation but unused in NRW standalone
-          APP_API_ENDPOINT: https://placeholder.example.com/
-          APP_TINY_API_KEY: unused
-          APP_RISK_API_ENDPOINT: https://placeholder.example.com/
-          APP_TRANSLATION_API_ENDPOINT: https://placeholder.example.com/
         run: pnpm build
 
       - name: Serve the frontend
         working-directory: ${{ env.goWebAppPath }}
         run: |
-          npx serve build/ --listen tcp://0.0.0.0:5173 --single > frontend-logs.txt 2>&1 &
+          pnpm preview --port 5173 --strictPort --host 0.0.0.0 > frontend-logs.txt 2>&1 &
 
       - name: Install E2E-Tests runtime-dependencies
         working-directory: ${{ env.e2eTestsPath }}
