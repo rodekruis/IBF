@@ -141,6 +141,8 @@ jobs:
         # Downloads/caches "serve" in the background while the (slow) build below
         # runs, so the "Serve the frontend" step below doesn't stall waiting on the
         # npm registry right before the time-boxed "Wait for the frontend" step.
+        # This is a best-effort optimization: if it fails or doesn't finish in time,
+        # the (identical) "Serve the frontend" step below will just fetch it again.
         run: |
           npx --yes serve@14.2.6 --version > /dev/null 2>&1 &
 
