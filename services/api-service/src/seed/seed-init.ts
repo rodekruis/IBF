@@ -50,25 +50,50 @@ interface StationThresholdEntry {
   readonly thresholds: { return_period: number; threshold_value: number }[];
 }
 
+// ##TODO this uses a feature-branch of an unmerged seed-repo PR. Change to main before merging this code.
 const SEED_REPO_RAW_BASE_URL =
-  'https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main';
+  'https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/chore.update-admin-areas';
 
 const ADMIN_AREAS_PATH = '/admin-areas/processed';
 const STATION_THRESHOLDS_PATH = '/hazard/flood/glofas-stations';
 const POPULATION_RASTER_PATH = '/exposure/population/data-png';
 
-function getAdminAreaFileUrl({
+function getAdminAreaFilePath({
   countryCodeIso3,
   adminLevel,
 }: {
   countryCodeIso3: string;
   adminLevel: number;
 }): string {
-  return `${SEED_REPO_RAW_BASE_URL}${ADMIN_AREAS_PATH}/${countryCodeIso3}_adm${adminLevel}.json`;
+  return `${ADMIN_AREAS_PATH}/${countryCodeIso3}_adm${adminLevel}.json`;
 }
 
-function getStationThresholdsFileUrl(countryCodeIso3: string): string {
-  return `${SEED_REPO_RAW_BASE_URL}${STATION_THRESHOLDS_PATH}/${countryCodeIso3}_station_thresholds.json`;
+function getStationThresholdsFilePath(countryCodeIso3: string): string {
+  return `${STATION_THRESHOLDS_PATH}/${countryCodeIso3}_station_thresholds.json`;
+}
+
+function getSeedRepoLocation(seedRepoPath: string): string {
+  return `${SEED_REPO_RAW_BASE_URL}${seedRepoPath}`;
+}
+
+async function readSeedRepoJson<T>(
+  seedRepoPath: string,
+): Promise<T | undefined> {
+  const response = await fetch(getSeedRepoLocation(seedRepoPath));
+  if (!response.ok) {
+    return undefined;
+  }
+  return (await response.json()) as T;
+}
+
+async function readSeedRepoBuffer(
+  seedRepoPath: string,
+): Promise<Buffer | undefined> {
+  const response = await fetch(getSeedRepoLocation(seedRepoPath));
+  if (!response.ok) {
+    return undefined;
+  }
+  return Buffer.from(await response.arrayBuffer());
 }
 
 @Injectable()
@@ -169,18 +194,17 @@ export class SeedInit {
     adminLevel: number;
   }): Promise<void> {
     const filename = `${countryCodeIso3}_adm${adminLevel}.json`;
-    const url = getAdminAreaFileUrl({ countryCodeIso3, adminLevel });
-    this.logger.log(`Download ${filename}...`);
+    const seedRepoPath = getAdminAreaFilePath({ countryCodeIso3, adminLevel });
+    this.logger.log(
+      `Load ${filename} from ${getSeedRepoLocation(seedRepoPath)}...`,
+    );
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      this.logger.warn(
-        `Failed to download ${filename}: ${response.status} ${response.statusText}`,
-      );
+    const geojson =
+      await readSeedRepoJson<GeoJsonFeatureCollection>(seedRepoPath);
+    if (!geojson) {
+      this.logger.warn(`No admin-area file for ${filename}`);
       return;
     }
-
-    const geojson = (await response.json()) as GeoJsonFeatureCollection;
     if (geojson.type !== 'FeatureCollection' || !geojson.features) {
       this.logger.warn(`${filename} is not a valid FeatureCollection`);
       return;
@@ -324,20 +348,17 @@ export class SeedInit {
   ): Promise<SeedAlertConfig[]> {
     // Each GloFAS station becomes one alert-config spatial extent.
     // The station_thresholds.json maps stations to downstream admin-area place codes.
-    const url = getStationThresholdsFileUrl(country.countryCodeIso3);
+    const seedRepoPath = getStationThresholdsFilePath(country.countryCodeIso3);
     this.logger.log(
-      `Download GloFAS station thresholds for ${country.countryCodeIso3}...`,
+      `Load GloFAS station thresholds for ${country.countryCodeIso3} from ${getSeedRepoLocation(seedRepoPath)}...`,
     );
 
-    const response = await fetch(url);
-    if (!response.ok) {
-      this.logger.warn(
-        `No station thresholds for ${country.countryCodeIso3}: ${response.status}`,
-      );
+    const entries =
+      await readSeedRepoJson<StationThresholdEntry[]>(seedRepoPath);
+    if (!entries) {
+      this.logger.warn(`No station thresholds for ${country.countryCodeIso3}`);
       return [];
     }
-
-    const entries = (await response.json()) as StationThresholdEntry[];
     const targetAdminLevel = String(country.deepestAdminLevel);
 
     const stationMap = new Map<string, string[]>();
@@ -392,16 +413,15 @@ export class SeedInit {
   }
 
   private async seedGloFasStations(countryCodeIso3: string): Promise<void> {
-    const url = getStationThresholdsFileUrl(countryCodeIso3);
-    const response = await fetch(url);
-    if (!response.ok) {
+    const seedRepoPath = getStationThresholdsFilePath(countryCodeIso3);
+    const entries =
+      await readSeedRepoJson<StationThresholdEntry[]>(seedRepoPath);
+    if (!entries) {
       this.logger.warn(
-        `No station thresholds for ${countryCodeIso3}: ${response.status} — skipping geo-feature seeding`,
+        `No station thresholds for ${countryCodeIso3} — skipping geo-feature seeding`,
       );
       return;
     }
-
-    const entries = (await response.json()) as StationThresholdEntry[];
     const seenStations = new Map<
       string,
       {
@@ -457,35 +477,29 @@ export class SeedInit {
   }
 
   private async seedPopulationRaster(countryCodeIso3: string): Promise<void> {
-    const dataPngUrl = `${SEED_REPO_RAW_BASE_URL}${POPULATION_RASTER_PATH}/${countryCodeIso3}_population.png`;
-    const metadataUrl = `${SEED_REPO_RAW_BASE_URL}${POPULATION_RASTER_PATH}/${countryCodeIso3}_population_metadata.json`;
+    const dataPngPath = `${POPULATION_RASTER_PATH}/${countryCodeIso3}_population.png`;
+    const metadataPath = `${POPULATION_RASTER_PATH}/${countryCodeIso3}_population_metadata.json`;
 
-    this.logger.log(`Download population raster for ${countryCodeIso3}...`);
+    this.logger.log(`Load population raster for ${countryCodeIso3}...`);
 
-    const [dataPngResponse, metadataResponse] = await Promise.all([
-      fetch(dataPngUrl),
-      fetch(metadataUrl),
+    const [dataPngBuffer, metadata] = await Promise.all([
+      readSeedRepoBuffer(dataPngPath),
+      readSeedRepoJson<{ transform: number[]; crs: EPSG }>(metadataPath),
     ]);
 
-    if (!dataPngResponse.ok) {
+    if (!dataPngBuffer) {
       this.logger.warn(
-        `No population data PNG for ${countryCodeIso3}: ${dataPngResponse.status} — skipping`,
+        `No population data PNG for ${countryCodeIso3} — skipping`,
       );
       return;
     }
 
-    if (!metadataResponse.ok) {
+    if (!metadata) {
       this.logger.warn(
-        `No population metadata for ${countryCodeIso3}: ${metadataResponse.status} — skipping`,
+        `No population metadata for ${countryCodeIso3} — skipping`,
       );
       return;
     }
-
-    const dataPngBuffer = Buffer.from(await dataPngResponse.arrayBuffer());
-    const metadata = (await metadataResponse.json()) as {
-      transform: number[];
-      crs: EPSG;
-    };
 
     const { colouredBase64, metadata: rasterMetadata } =
       processPopulationRaster({ dataPngBuffer, metadata });
