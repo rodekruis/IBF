@@ -4,6 +4,7 @@
 !**/.vscode/extensions.json
 !**/.vscode/settings.json
 !**/.vscode/mcp.json
+!**/.vscode/README.md
 
 # Potential sensitive information
 .env
