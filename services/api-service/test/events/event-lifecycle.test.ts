@@ -82,7 +82,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     });
     let response = await getActiveEvents({
       accessToken,
-      countryCodeIso3,
+      countryCodesIso3: [countryCodeIso3],
       timestamp: viewTimestamp,
     });
     expect(response.status).toBe(HttpStatus.OK);
@@ -124,7 +124,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     });
     response = await getActiveEvents({
       accessToken,
-      countryCodeIso3,
+      countryCodesIso3: [countryCodeIso3],
       timestamp: viewTimestamp,
     });
     expect(response.body).toHaveLength(1);
@@ -161,7 +161,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     });
     response = await getActiveEvents({
       accessToken,
-      countryCodeIso3,
+      countryCodesIso3: [countryCodeIso3],
       timestamp: viewTimestamp,
     });
     expect(response.body).toHaveLength(2);
@@ -182,7 +182,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     });
     response = await getActiveEvents({
       accessToken,
-      countryCodeIso3,
+      countryCodesIso3: [countryCodeIso3],
       timestamp: laterViewTimestamp,
     });
     expect(response.body).toHaveLength(1);
@@ -217,7 +217,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       const responseBeforeStart = await getActiveEvents({
         accessToken,
-        countryCodeIso3,
+        countryCodesIso3: [countryCodeIso3],
         timestamp: viewTimestamp,
       });
       expect(responseBeforeStart.status).toBe(HttpStatus.OK);
@@ -231,7 +231,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       const responseOnStartDay = await getActiveEvents({
         accessToken,
-        countryCodeIso3,
+        countryCodesIso3: [countryCodeIso3],
         timestamp: laterViewTimestamp,
       });
       expect(responseOnStartDay.status).toBe(HttpStatus.OK);
@@ -270,7 +270,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       const responseBeforeExpiry = await getActiveEvents({
         accessToken,
-        countryCodeIso3,
+        countryCodesIso3: [countryCodeIso3],
         timestamp: viewTimestamp,
       });
       expect(responseBeforeExpiry.status).toBe(HttpStatus.OK);
@@ -284,7 +284,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       const responseAfterExpiry = await getActiveEvents({
         accessToken,
-        countryCodeIso3,
+        countryCodesIso3: [countryCodeIso3],
         timestamp: laterViewTimestamp,
       });
       expect(responseAfterExpiry.status).toBe(HttpStatus.OK);
@@ -355,7 +355,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
     const response = await getActiveEvents({
       accessToken,
-      countryCodeIso3,
+      countryCodesIso3: [countryCodeIso3],
       timestamp: '2026-03-29T00:00:00Z',
     });
     expect(response.status).toBe(HttpStatus.OK);
@@ -417,7 +417,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
     const response = await getActiveEvents({
       accessToken,
-      countryCodeIso3,
+      countryCodesIso3: [countryCodeIso3],
       timestamp: '2026-04-03T00:00:00Z',
     });
     expect(response.status).toBe(HttpStatus.OK);
@@ -493,7 +493,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
     const response = await getActiveEvents({
       accessToken,
-      countryCodeIso3,
+      countryCodesIso3: [countryCodeIso3],
       timestamp: currentForecastTimestamp,
     });
     expect(response.status).toBe(HttpStatus.OK);

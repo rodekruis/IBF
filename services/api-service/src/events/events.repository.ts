@@ -44,13 +44,16 @@ export class EventsRepository {
   public async getEvents({
     viewTime,
     active,
-    countryCodeIso3,
+    countryCodesIso3,
   }: {
     viewTime: Date;
     active?: boolean;
-    countryCodeIso3?: string;
+    countryCodesIso3?: string[];
   }): Promise<Event[]> {
-    const countryFilter = countryCodeIso3 ? { countryCodeIso3 } : {};
+    const countryFilter =
+      countryCodesIso3 && countryCodesIso3.length > 0
+        ? { countryCodeIso3: { in: countryCodesIso3 } }
+        : {};
 
     if (active === undefined) {
       return await this.prisma.event.findMany({ where: countryFilter });

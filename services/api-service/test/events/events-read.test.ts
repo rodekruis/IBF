@@ -17,12 +17,18 @@ describe('GET /events', () => {
   let accessToken: string;
 
   beforeAll(async () => {
-    await resetDB({ countryCodes: ['MWI'], resetIdentifier: __filename });
+    await resetDB({
+      countryCodes: ['MWI', 'UGA'],
+      resetIdentifier: __filename,
+    });
     accessToken = await getAccessToken();
   });
 
   async function seedEventsForReadTests(): Promise<void> {
-    await resetDB({ countryCodes: ['MWI'], resetIdentifier: __filename });
+    await resetDB({
+      countryCodes: ['MWI', 'UGA'],
+      resetIdentifier: __filename,
+    });
 
     const closedAlert = buildAlert({
       eventName: 'station-closed',
@@ -80,7 +86,7 @@ describe('GET /events', () => {
     it('should return all events when active is omitted', async () => {
       const response = await readEvents({
         accessToken,
-        countryCodeIso3: 'MWI',
+        countryCodesIso3: ['MWI'],
         query: {
           timestamp: viewTimestamp,
         },
@@ -98,7 +104,7 @@ describe('GET /events', () => {
     it('should return only ongoing open events when active is true', async () => {
       const response = await readEvents({
         accessToken,
-        countryCodeIso3: 'MWI',
+        countryCodesIso3: ['MWI'],
         query: {
           active: true,
           timestamp: viewTimestamp,
@@ -117,7 +123,7 @@ describe('GET /events', () => {
     it('should return closed or expired events when active is false', async () => {
       const response = await readEvents({
         accessToken,
-        countryCodeIso3: 'MWI',
+        countryCodesIso3: ['MWI'],
         query: {
           active: false,
           timestamp: viewTimestamp,
@@ -159,7 +165,7 @@ describe('GET /events', () => {
 
       const response = await readEvents({
         accessToken,
-        countryCodeIso3: 'MWI',
+        countryCodesIso3: ['MWI'],
       });
       const event = response.body.find(
         (event: { eventName: string }) => event.eventName === eventName,
@@ -169,7 +175,7 @@ describe('GET /events', () => {
     });
   });
 
-  describe('countryCodeIso3 filter', () => {
+  describe('countryCodesIso3 filter', () => {
     beforeEach(async () => {
       await seedEventsForReadTests();
     });
@@ -177,7 +183,7 @@ describe('GET /events', () => {
     it('should return only events for the specified country', async () => {
       const response = await readEvents({
         accessToken,
-        countryCodeIso3: 'MWI',
+        countryCodesIso3: ['MWI'],
         query: {
           timestamp: viewTimestamp,
         },
@@ -196,7 +202,7 @@ describe('GET /events', () => {
     it('should return no events for a country with no events', async () => {
       const response = await readEvents({
         accessToken,
-        countryCodeIso3: 'KEN',
+        countryCodesIso3: ['KEN'],
         query: {
           timestamp: viewTimestamp,
         },
@@ -206,10 +212,10 @@ describe('GET /events', () => {
       expect(response.body).toHaveLength(0);
     });
 
-    it('should return all events when countryCodeIso3 is omitted', async () => {
+    it('should return all events when countryCodesIso3 is omitted', async () => {
       const response = await readEvents({
         accessToken,
-        countryCodeIso3: undefined,
+        countryCodesIso3: undefined,
         query: {
           timestamp: viewTimestamp,
         },
@@ -217,6 +223,68 @@ describe('GET /events', () => {
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body).toHaveLength(3);
+    });
+  });
+
+  describe('multiple countries', () => {
+    beforeEach(async () => {
+      await seedEventsForReadTests();
+      await createAlerts({
+        forecast: buildForecast({
+          alerts: [buildAlert({ eventName: 'station-second-country' })],
+          overrides: {
+            countryCodeIso3: 'UGA',
+            issuedAt: new Date('2026-03-24T12:00:00Z'),
+          },
+        }),
+      });
+    });
+
+    it('should return events for all requested countries', async () => {
+      const response = await readEvents({
+        accessToken,
+        countryCodesIso3: ['MWI', 'UGA'],
+        query: {
+          timestamp: viewTimestamp,
+        },
+      });
+
+      expect(response.status).toBe(HttpStatus.OK);
+      expect(response.body).toHaveLength(4);
+      expect(
+        new Set(
+          response.body.map(
+            (event: { countryCodeIso3: string }) => event.countryCodeIso3,
+          ),
+        ),
+      ).toEqual(new Set(['MWI', 'UGA']));
+    });
+
+    it('should ignore unknown countries in the list', async () => {
+      const response = await readEvents({
+        accessToken,
+        countryCodesIso3: ['UGA', 'KEN'],
+        query: {
+          timestamp: viewTimestamp,
+        },
+      });
+
+      expect(response.status).toBe(HttpStatus.OK);
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0].countryCodeIso3).toBe('UGA');
+    });
+
+    it('should return events for all countries when countryCodesIso3 is omitted', async () => {
+      const response = await readEvents({
+        accessToken,
+        countryCodesIso3: undefined,
+        query: {
+          timestamp: viewTimestamp,
+        },
+      });
+
+      expect(response.status).toBe(HttpStatus.OK);
+      expect(response.body).toHaveLength(4);
     });
   });
 });
