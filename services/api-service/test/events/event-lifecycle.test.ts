@@ -2,6 +2,7 @@ import { HttpStatus } from '@nestjs/common';
 
 import {
   AlertClass,
+  EventStatus,
   ForecastSource,
   HazardType,
 } from '@api-service/src/shared-enums';
@@ -97,7 +98,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       lastUpdatedAt: '2026-03-23T12:00:00.000Z',
       startAt: '2026-03-25T00:00:00.000Z',
       endAt: '2026-03-26T00:00:00.000Z',
-      isOngoing: true,
+      eventStatus: EventStatus.ongoing,
       exposedAdminAreas: {
         '3': [
           {
@@ -134,7 +135,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       trigger: true,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',
       lastUpdatedAt: '2026-03-24T12:00:00.000Z',
-      isOngoing: true,
+      eventStatus: EventStatus.ongoing,
       exposedAdminAreas: {
         '3': [
           {
@@ -187,7 +188,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     });
     expect(response.body).toHaveLength(1);
     expect(response.body[0].eventName).toBe('station-B');
-    expect(response.body[0].isOngoing).toBe(true);
+    expect(response.body[0].eventStatus).toBe(EventStatus.ongoing);
   });
 
   describe('view-timestamp behavior', () => {
@@ -226,7 +227,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         eventName: 'station-no-rerun',
         startAt: '2026-03-24T00:00:00.000Z',
         endAt: '2026-03-25T00:00:00.000Z',
-        isOngoing: false,
+        eventStatus: EventStatus.imminent,
       });
 
       const responseOnStartDay = await getActiveEvents({
@@ -240,7 +241,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         eventName: 'station-no-rerun',
         startAt: '2026-03-24T00:00:00.000Z',
         endAt: '2026-03-25T00:00:00.000Z',
-        isOngoing: true,
+        eventStatus: EventStatus.ongoing,
       });
     });
 
@@ -248,8 +249,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       const viewTimestamp = '2026-03-24T12:00:00Z';
       const laterViewTimestamp = '2026-03-25T12:00:00Z';
 
-      const expiredAlert = buildAlert({
-        eventName: 'station-expired',
+      const endedAlert = buildAlert({
+        eventName: 'station-ended',
         severity: buildSeverityData({
           start: new Date('2026-03-24T00:00:00Z'),
           end: new Date('2026-03-25T00:00:00Z'),
@@ -260,7 +261,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
       await createAlerts({
         forecast: buildForecast({
-          alerts: [expiredAlert],
+          alerts: [endedAlert],
           overrides: {
             countryCodeIso3,
             issuedAt: new Date('2026-03-23T12:00:00Z'),
@@ -268,27 +269,27 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         }),
       });
 
-      const responseBeforeExpiry = await getActiveEvents({
+      const responseBeforeEnd = await getActiveEvents({
         accessToken,
         countryCodeIso3,
         timestamp: viewTimestamp,
       });
-      expect(responseBeforeExpiry.status).toBe(HttpStatus.OK);
-      expect(responseBeforeExpiry.body).toHaveLength(1);
-      expect(responseBeforeExpiry.body[0]).toMatchObject({
-        eventName: 'station-expired',
+      expect(responseBeforeEnd.status).toBe(HttpStatus.OK);
+      expect(responseBeforeEnd.body).toHaveLength(1);
+      expect(responseBeforeEnd.body[0]).toMatchObject({
+        eventName: 'station-ended',
         startAt: '2026-03-24T00:00:00.000Z',
         endAt: '2026-03-25T00:00:00.000Z',
-        isOngoing: true,
+        eventStatus: EventStatus.ongoing,
       });
 
-      const responseAfterExpiry = await getActiveEvents({
+      const responseAfterEnd = await getActiveEvents({
         accessToken,
         countryCodeIso3,
         timestamp: laterViewTimestamp,
       });
-      expect(responseAfterExpiry.status).toBe(HttpStatus.OK);
-      expect(responseAfterExpiry.body).toHaveLength(0);
+      expect(responseAfterEnd.status).toBe(HttpStatus.OK);
+      expect(responseAfterEnd.body).toHaveLength(0);
     });
   });
 
@@ -369,7 +370,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       firstIssuedAt: '2026-03-20T12:00:00.000Z',
       startAt: '2026-03-26T00:00:00.000Z',
       endAt: '2026-03-31T00:00:00.000Z',
-      isOngoing: true,
+      eventStatus: EventStatus.ongoing,
     });
   });
 
@@ -431,7 +432,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       firstIssuedAt: '2026-04-01T12:00:00.000Z',
       startAt: '2026-04-07T00:00:00.000Z',
       endAt: '2026-04-08T00:00:00.000Z',
-      isOngoing: false,
+      eventStatus: EventStatus.imminent,
     });
   });
 

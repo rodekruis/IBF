@@ -9,6 +9,7 @@ import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
 import { EventsService } from '@api-service/src/events/events.service';
+import { AssertIso8601Pipe } from '@api-service/src/pipes/assert-iso8601.pipe';
 
 @ApiTags('events')
 @Controller('events')
@@ -16,7 +17,7 @@ export class EventsController {
   public constructor(private readonly eventsService: EventsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all active or all closed events' })
+  @ApiOperation({ summary: 'Get all ended or all not-ended events' })
   @ApiQuery({
     name: 'countryCodeIso3',
     type: String,
@@ -30,14 +31,14 @@ export class EventsController {
     required: false,
     default: true, // This defines Swagger default only.
     description:
-      'Use to filter active or closed events that were ongoing at the time of the request.',
+      'Use to filter events that have not ended (imminent or ongoing) or that have ended.',
   })
   @ApiQuery({
     name: 'timestamp',
     type: String,
     required: false,
     description:
-      'NOTE: only use for mock/testing, never in production. ISO 8601 timestamp used to determine if ongoing at time of request. Defaults to now.',
+      'NOTE: only use for mock/testing, never in production. ISO 8601 timestamp used to determine event status at time of request. Defaults to now.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -48,7 +49,8 @@ export class EventsController {
   public async getEvents(
     @Query('countryCodeIso3') countryCodeIso3?: string,
     @Query('active', new ParseBoolPipe({ optional: true })) active?: boolean,
-    @Query('timestamp') timestamp?: string,
+    @Query('timestamp', new AssertIso8601Pipe({ optional: true }))
+    timestamp?: string,
   ): Promise<EventResponseDto[]> {
     const viewTime = timestamp ? new Date(timestamp) : new Date();
     return this.eventsService.getEvents({ viewTime, active, countryCodeIso3 });
