@@ -6,12 +6,13 @@ from pipelines.flood.determine_exposure import (
     clip_flood_depth_to_admin_areas,
     determine_spatial_extent,
 )
+from pipelines.flood.forecast import validate_alert_config_place_codes
 from pipelines.infra.data_types.admin_area_types import (
     AdminArea,
     AdminAreaProperties,
     AdminAreasSet,
 )
-from pipelines.infra.data_types.loaded_data_types import RasterData
+from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.exposure import (
     aggregate_population_exposed,
@@ -68,6 +69,50 @@ def _build_partial_admin_areas() -> AdminAreasSet:
             )
         },
     )
+
+
+def test_validate_alert_config_place_codes_accepts_known_place_codes():
+    # Arrange
+    alert_configs = [
+        AlertConfig(
+            spatial_extent_name="station-1",
+            spatial_extent_place_codes=["PC001"],
+            temporal_extents=[],
+        )
+    ]
+
+    # Act
+    errors = validate_alert_config_place_codes(
+        alert_configs,
+        _build_admin_areas(),
+        "TST",
+    )
+
+    # Assert
+    assert errors == []
+
+
+def test_validate_alert_config_place_codes_rejects_unknown_place_codes():
+    # Arrange
+    alert_configs = [
+        AlertConfig(
+            spatial_extent_name="station-1",
+            spatial_extent_place_codes=["PC001", "PC002", "PC003"],
+            temporal_extents=[],
+        )
+    ]
+
+    # Act
+    errors = validate_alert_config_place_codes(
+        alert_configs,
+        _build_admin_areas(),
+        "TST",
+    )
+
+    # Assert
+    assert errors == [
+        "TST flood alert config 'station-1' references 2 place code(s) not present in target admin areas: PC002, PC003"
+    ]
 
 
 def test_compute_population_exposed_sums_only_flooded_pixels():
