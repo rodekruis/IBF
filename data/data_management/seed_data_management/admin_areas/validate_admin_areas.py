@@ -12,6 +12,7 @@ from data_management.seed_data_management.admin_areas.admin_area_source_config i
     AdminAreaSource,
 )
 from data_management.utils.admin_area_geojson import AdminAreaProperties
+from shapely.errors import ShapelyError
 from shapely.geometry import shape
 from shared.data_helpers import get_seed_data_repo_path
 
@@ -79,7 +80,7 @@ def get_population_total(features: list[dict]) -> int | float:
         population
         for feature in features
         if isinstance(
-            (population := feature["properties"].get("POPULATION")), int | float
+            (population := feature["properties"].get("POPULATION")), (int, float)
         )
         and not isinstance(population, bool)
         and math.isfinite(population)
@@ -199,7 +200,7 @@ def validate_country(country: str, levels: list[int]) -> list[str]:
                 missing_population_count += 1
             elif (
                 isinstance(population, bool)
-                or not isinstance(population, int | float)
+                or not isinstance(population, (int, float))
                 or not math.isfinite(population)
                 or population < 0
             ):
@@ -221,7 +222,11 @@ def validate_country(country: str, levels: list[int]) -> list[str]:
             if not isinstance(geometry_data, dict):
                 invalid_geometry_count += 1
                 continue
-            geometry = shape(geometry_data)
+            try:
+                geometry = shape(geometry_data)
+            except ShapelyError:
+                invalid_geometry_count += 1
+                continue
             if not geometry.is_valid:
                 invalid_geometry_count += 1
             if geometry.geom_type != "MultiPolygon":
@@ -317,11 +322,12 @@ def main() -> None:
                 processed_features = load_feature_collection(processed_path)
             except (json.JSONDecodeError, TypeError, ValueError):
                 continue
-            source_count = (
-                str(len(load_feature_collection(source_path)))
-                if source_path.exists()
-                else "not stored"
-            )
+            source_count = "not stored"
+            if source_path.exists():
+                try:
+                    source_count = str(len(load_feature_collection(source_path)))
+                except (json.JSONDecodeError, TypeError, ValueError):
+                    source_count = "invalid"
             populated_properties = "<br>".join(
                 count_populated_properties(processed_features, level)
             )
