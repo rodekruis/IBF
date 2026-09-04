@@ -182,14 +182,18 @@ def calculate_tropical_cyclone_forecasts(
         track_member_paths, country_bounds, country_config.forecast_source
     )
     if not storm_tracks:
-        logger.info(
-            f"No tropical-cyclone tracked within the monitoring box for '{country}'"
+        nrw_logger.log_info(
+            logger,
+            nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
+            f"No tropical-cyclone tracked within the monitoring box for '{country}'",
         )
         return
 
-    logger.info(
+    nrw_logger.log_info(
+        logger,
+        nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
         f"Tracking {len(storm_tracks)} tropical cyclone(s) near '{country}': "
-        f"{', '.join(storm.storm_identifier for storm in storm_tracks)}"
+        f"{', '.join(storm.storm_identifier for storm in storm_tracks)}",
     )
 
     ### Step 6 - Loop over alert configs (spatial extents) and their temporal extents ###
@@ -252,11 +256,13 @@ def calculate_tropical_cyclone_forecasts(
                 # a storm passing well clear of the country is a normal outcome, and a single
                 # add_error would drop every other storm's alert for this country too.
                 if not storm_place_codes:
-                    logger.info(
+                    nrw_logger.log_info(
+                        logger,
+                        nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
                         f"No tropical-cyclone alert for '{country}' from storm "
                         f"'{storm_track.storm_identifier}' "
                         f"({alert_config.spatial_extent_name}): its track stays more than "
-                        f"{MONITORING_BOX_BUFFER_KM}km from every admin area"
+                        f"{MONITORING_BOX_BUFFER_KM}km from every admin area",
                     )
                     continue
 
@@ -270,11 +276,13 @@ def calculate_tropical_cyclone_forecasts(
                 # If no time bucket clears MIN_SEVERITY_MS, this storm raises no alert for this
                 # spatial/temporal extent.
                 if not time_interval_severities:
-                    logger.info(
+                    nrw_logger.log_info(
+                        logger,
+                        nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
                         f"No tropical-cyclone alert for '{country}' from storm "
                         f"'{storm_track.storm_identifier}' "
                         f"({alert_config.spatial_extent_name}): no bucket cleared "
-                        f"MIN_SEVERITY_MS={MIN_SEVERITY_MS}"
+                        f"MIN_SEVERITY_MS={MIN_SEVERITY_MS}",
                     )
                     continue
 
@@ -287,11 +295,13 @@ def calculate_tropical_cyclone_forecasts(
                     target_admin_areas,
                 )
                 if centroid is None:
-                    logger.info(
+                    nrw_logger.log_info(
+                        logger,
+                        nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
                         f"No tropical-cyclone alert for '{country}' from storm "
                         f"'{storm_track.storm_identifier}' "
                         f"({alert_config.spatial_extent_name}): the peak wind bucket falls "
-                        f"outside that storm's own tracked window"
+                        f"outside that storm's own tracked window",
                     )
                     continue
 
@@ -464,5 +474,9 @@ def _most_recent_cycle_files(root: Path, date_dir_glob: str) -> list[str]:
         return []
 
     most_recent_cycle_dir = cycle_dirs[-1]
-    logger.info(f"Using local test fixtures from {most_recent_cycle_dir}")
+    nrw_logger.log_info(
+        logger,
+        nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
+        f"Using local test fixtures from {most_recent_cycle_dir}",
+    )
     return [str(path) for path in most_recent_cycle_dir.rglob("*") if path.is_file()]
