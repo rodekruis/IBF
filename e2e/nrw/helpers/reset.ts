@@ -1,27 +1,23 @@
 import { env } from '@ibf-e2e/env';
+import { apiRequest } from '@ibf-e2e/nrw/helpers/api-request';
+import { HttpMethod } from '@ibf-e2e/nrw/helpers/enums';
 
 export async function resetDb(
   countryCodes: string[] = ['MWI'],
   resetIdentifier = 'e2e',
 ): Promise<void> {
-  const url = new URL(`${env.API_SERVICE_URL}/api/reset`);
+  const searchParams = new URLSearchParams();
   for (const code of countryCodes) {
-    url.searchParams.append('countryCodes', code);
+    searchParams.append('countryCodes', code);
   }
-  url.searchParams.set('resetIdentifier', resetIdentifier);
+  searchParams.set('resetIdentifier', resetIdentifier);
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: env.RESET_SECRET }),
+  await apiRequest({
+    method: HttpMethod.post,
+    path: '/api/reset',
+    searchParams,
+    action: 'Failed to reset api-service database',
   });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(
-      `Failed to reset api-service database (${String(response.status)}): ${body}`,
-    );
-  }
 
   await waitForResetComplete();
 }
