@@ -137,6 +137,13 @@ jobs:
           FONTAWESOME_API_KEY: ${{ secrets.FONTAWESOME_API_KEY }}
         run: pnpm install --frozen-lockfile
 
+      - name: Prefetch the frontend server package
+        # Downloads/caches "serve" in the background while the (slow) build below
+        # runs, so the "Serve the frontend" step below doesn't stall waiting on the
+        # npm registry right before the time-boxed "Wait for the frontend" step.
+        run: |
+          npx --yes serve@14.2.6 --version > /dev/null 2>&1 &
+
       - name: Build go-web-app
         working-directory: ${{ env.goWebAppPath }}
         env:
@@ -155,7 +162,7 @@ jobs:
       - name: Serve the frontend
         working-directory: ${{ env.goWebAppPath }}
         run: |
-          npx serve build/ --listen tcp://0.0.0.0:5173 --single > frontend-logs.txt 2>&1 &
+          npx --yes serve@14.2.6 build/ --listen tcp://0.0.0.0:5173 --single > frontend-logs.txt 2>&1 &
 
       - name: Install E2E-Tests runtime-dependencies
         working-directory: ${{ env.e2eTestsPath }}
@@ -164,7 +171,7 @@ jobs:
 
       - name: Wait for the frontend
         run: |
-          timeout 180s sh -c 'until curl ${{ env.frontendUrl }} -I; do echo "Waiting for the frontend to be running..."; sleep 2; done'
+          timeout 240s sh -c 'until curl ${{ env.frontendUrl }} -I; do echo "Waiting for the frontend to be running..."; sleep 2; done'
 
       - name: Run E2E-Tests with Playwright
         working-directory: ${{ env.e2eTestsPath }}
