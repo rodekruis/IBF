@@ -37,7 +37,12 @@ class RasterAdminAreaClipper:
             or raster.transform != self.reference_transform
             or raster.crs != self.reference_crs
         ):
-            raise ValueError("Raster does not match clipper reference grid")
+            raise ValueError(
+                "Raster does not match clipper reference grid; "
+                f"expected shape={self.reference_shape}, transform={self.reference_transform}, "
+                f"crs={self.reference_crs}; got shape={raster.array.shape}, "
+                f"transform={raster.transform}, crs={raster.crs}"
+            )
 
         cropped_array = raster.array[
             self.row_offset : self.row_end, self.column_offset : self.column_end
@@ -254,7 +259,7 @@ def create_raster_admin_area_clipper(
         row_end - row_off,
     )
 
-    geometries = [mapping(geometry) for geometry in shapely_geometries]
+    geometries = [mapping(combined_geom)]
     mask_array = geometry_mask(
         geometries,
         out_shape=cropped_array.shape,

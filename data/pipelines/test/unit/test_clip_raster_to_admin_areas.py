@@ -115,7 +115,10 @@ def test_reusable_clipper_matches_single_clip():
     clipper = create_raster_admin_area_clipper(["PC001"], admin_areas, raster)
 
     assert clipper is not None
-    np.testing.assert_array_equal(
-        clipper.clip(raster).array,
-        clip_raster_to_admin_areas(["PC001"], admin_areas, raster).array,
-    )
+    reusable = clipper.clip(raster)
+    single = clip_raster_to_admin_areas(["PC001"], admin_areas, raster)
+
+    np.testing.assert_array_equal(reusable.array, single.array)
+    assert reusable.transform == single.transform
+    assert reusable.crs == single.crs
+    assert reusable.nodata == single.nodata

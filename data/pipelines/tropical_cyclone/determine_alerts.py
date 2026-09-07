@@ -54,7 +54,11 @@ def determine_severities(
     )
     clipper = (
         create_raster_admin_area_clipper(
-            place_codes, admin_areas, reference_raster, all_touched=True
+            place_codes=place_codes,
+            admin_areas=admin_areas,
+            raster=reference_raster,
+            label=storm_identifier,
+            all_touched=True,
         )
         if reference_raster is not None
         else None
