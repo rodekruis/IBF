@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 
 import numpy as np
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
@@ -12,9 +13,43 @@ from rasterio.transform import Affine, from_bounds
 from rasterio.warp import reproject
 from rasterio.windows import from_bounds as window_from_bounds
 from rasterstats import zonal_stats
+from shapely.geometry import mapping
 from shapely.ops import unary_union
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class RasterAdminAreaClipper:
+    reference_shape: tuple[int, int]
+    reference_transform: Affine
+    reference_crs: str
+    row_offset: int
+    row_end: int
+    column_offset: int
+    column_end: int
+    cropped_transform: Affine
+    mask_array: np.ndarray
+
+    def clip(self, raster: RasterData) -> RasterData:
+        if (
+            raster.array.shape != self.reference_shape
+            or raster.transform != self.reference_transform
+            or raster.crs != self.reference_crs
+        ):
+            raise ValueError("Raster does not match clipper reference grid")
+
+        cropped_array = raster.array[
+            self.row_offset : self.row_end, self.column_offset : self.column_end
+        ]
+        clipped = np.where(self.mask_array, cropped_array, raster.nodata)
+
+        return RasterData(
+            array=clipped.astype(np.float32),
+            transform=self.cropped_transform,
+            crs=raster.crs,
+            nodata=raster.nodata,
+        )
 
 
 def aggregate_population_exposed(
@@ -165,25 +200,40 @@ def clip_raster_to_admin_areas(
     sub-cell areas (small islands) survive at the cost of including cells that are mostly
     outside them.
     """
-    geometries, _ = get_admin_area_geometries(
+    clipper = create_raster_admin_area_clipper(
         place_codes=place_codes,
         admin_areas=admin_areas,
+        raster=raster,
+        label=label,
+        all_touched=all_touched,
     )
-
-    if not geometries:
-        log_warning(
-            logger,
-            LogTag.INFRA,
-            f"No admin area geometries to clip{f' for {label}' if label else ''}; using full raster",
-        )
+    if clipper is None:
         return raster
+    return clipper.clip(raster)
 
-    # unary_union: much faster than a sequential .union() loop for large place_codes lists
+
+def create_raster_admin_area_clipper(
+    place_codes: list[str],
+    admin_areas: AdminAreasSet,
+    raster: RasterData,
+    label: str = "",
+    all_touched: bool = False,
+) -> RasterAdminAreaClipper | None:
     shapely_geometries = [
         admin_areas.admin_areas[pcode].to_geometry()
         for pcode in place_codes
         if pcode in admin_areas.admin_areas
     ]
+
+    if not shapely_geometries:
+        log_warning(
+            logger,
+            LogTag.INFRA,
+            f"No admin area geometries to clip{f' for {label}' if label else ''}; using full raster",
+        )
+        return None
+
+    # unary_union: much faster than a sequential .union() loop for large place_codes lists
     combined_geom = unary_union(shapely_geometries)
 
     minx, miny, maxx, maxy = combined_geom.bounds
@@ -204,6 +254,7 @@ def clip_raster_to_admin_areas(
         row_end - row_off,
     )
 
+    geometries = [mapping(geometry) for geometry in shapely_geometries]
     mask_array = geometry_mask(
         geometries,
         out_shape=cropped_array.shape,
@@ -212,14 +263,16 @@ def clip_raster_to_admin_areas(
         all_touched=all_touched,
     )
 
-    nodata = raster.nodata
-    clipped = np.where(mask_array, cropped_array, nodata)
-
-    return RasterData(
-        array=clipped.astype(np.float32),
-        transform=cropped_transform,
-        crs=raster.crs,
-        nodata=nodata,
+    return RasterAdminAreaClipper(
+        reference_shape=raster.array.shape,
+        reference_transform=raster.transform,
+        reference_crs=raster.crs,
+        row_offset=row_off,
+        row_end=row_end,
+        column_offset=col_off,
+        column_end=col_end,
+        cropped_transform=cropped_transform,
+        mask_array=mask_array,
     )
 
 

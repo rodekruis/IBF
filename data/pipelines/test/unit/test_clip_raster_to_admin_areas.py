@@ -9,7 +9,10 @@ from pipelines.infra.data_types.admin_area_types import (
     AdminAreasSet,
 )
 from pipelines.infra.data_types.loaded_data_types import RasterData
-from pipelines.infra.utils.exposure import clip_raster_to_admin_areas
+from pipelines.infra.utils.exposure import (
+    clip_raster_to_admin_areas,
+    create_raster_admin_area_clipper,
+)
 
 _CRS = "EPSG:4326"
 
@@ -104,3 +107,15 @@ def test_all_touched_keeps_areas_smaller_than_a_cell():
 
     assert (clipped.array != clipped.nodata).any()
     assert clipped.array[clipped.array != clipped.nodata].max() == 1.0
+
+
+def test_reusable_clipper_matches_single_clip():
+    admin_areas = _build_admin_areas()
+    raster = _make_raster()
+    clipper = create_raster_admin_area_clipper(["PC001"], admin_areas, raster)
+
+    assert clipper is not None
+    np.testing.assert_array_equal(
+        clipper.clip(raster).array,
+        clip_raster_to_admin_areas(["PC001"], admin_areas, raster).array,
+    )

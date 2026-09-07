@@ -8,7 +8,7 @@ import numpy as np
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.infra.utils import nrw_logger
-from pipelines.infra.utils.exposure import clip_raster_to_admin_areas
+from pipelines.infra.utils.exposure import create_raster_admin_area_clipper
 from pipelines.tropical_cyclone.constants import MIN_SEVERITY_MS
 from pipelines.tropical_cyclone.extract_forecast import TimeIntervalWindSpeed
 
@@ -44,12 +44,25 @@ def determine_severities(
     them), which silently removes them from the severity gate.
     """
     severities: list[TimeIntervalWindSpeedSeverity] = []
+    reference_raster = next(
+        (
+            raster
+            for bucket in wind_speeds
+            for raster in bucket.ensemble_wind_speed_rasters
+        ),
+        None,
+    )
+    clipper = (
+        create_raster_admin_area_clipper(
+            place_codes, admin_areas, reference_raster, all_touched=True
+        )
+        if reference_raster is not None
+        else None
+    )
 
     for bucket in wind_speeds:
         clipped_rasters = [
-            clip_raster_to_admin_areas(
-                place_codes, admin_areas, raster, all_touched=True
-            )
+            clipper.clip(raster) if clipper is not None else raster
             for raster in bucket.ensemble_wind_speed_rasters
         ]
         land_masked_maxes = [
