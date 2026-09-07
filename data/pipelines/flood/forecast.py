@@ -198,13 +198,29 @@ def calculate_flood_forecasts(
                     longitude=station.lon,
                 ),
             )
+            peak_return_period = max(
+                severity.median_return_period for severity in time_interval_severities
+            )
             log_info(
                 logger,
                 LogTag.ALERT_GENERATION,
                 f"Alert generated for event '{event_name}' (station {station_code}): "
                 f"{len(time_interval_severities)} time intervals passed, peak return period "
-                f"{max(severity.median_return_period for severity in time_interval_severities):g}yr",
+                f"{peak_return_period:g}yr",
             )
+
+            # Until email notifications are properly set up,
+            # make a log to trigger an email notification for any flood with a return period of 5 or more.
+            PLACEHOLDER_NOTIFICATION_RETURN_PERIOD = 5
+
+            if peak_return_period >= PLACEHOLDER_NOTIFICATION_RETURN_PERIOD:
+                log_info(
+                    logger,
+                    LogTag.PLACEHOLDER_EMAIL_ALERT,
+                    f"Event expected for '{event_name}' (station {station_code}): "
+                    f"peak return period {peak_return_period:g}yr reaches event threshold "
+                    f"{PLACEHOLDER_NOTIFICATION_RETURN_PERIOD:g}yr",
+                )
 
             for severity in time_interval_severities:
                 for i in range(len(severity.ensemble_return_periods)):
