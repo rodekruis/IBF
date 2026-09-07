@@ -63,8 +63,19 @@ SYNTHETIC_PARENT_PCODES: dict[str, dict[int, set[str]]] = {
     "SSD": {1: {"SS00"}},
 }
 
-PROCESSED_FILE_SIMPLIFICATION_THRESHOLD_BYTES = 95_000_000
-GEOMETRY_SIMPLIFICATION_TOLERANCE = 0.0001
+# - For adm1 and adm2 we apply additional simplification here using mapshaper, thereby preserving shared borders (unlike pg_featureserv can)
+# - adm0 is simplified by pg_featureserv for frontend requests, so not simplified here
+# - adm3 areas are relatively small, and need their detail at the zoom levels
+# - we simplify based an 90th-percentile thresholds, to focus only on edge cases, while leaving isolated outliers be.
+# - for adm2 we use a sharper threshold, and less aggressive simplification then for adm1, because the detail is needed
+MAPSHAPER_SIMPLIFICATION_P90_THRESHOLDS_BYTES: dict[int, int] = {
+    1: 500_000,
+    2: 250_000,
+}
+MAPSHAPER_SIMPLIFICATION_PERCENTAGES: dict[int, str] = {
+    1: "25%",
+    2: "50%",
+}
 
 
 def get_countries_for_source(source: AdminAreaSource) -> dict[str, list[int]]:

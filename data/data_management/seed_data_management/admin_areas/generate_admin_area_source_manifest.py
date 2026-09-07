@@ -9,9 +9,9 @@ from data_management.seed_data_management.admin_areas.admin_area_source_config i
     ADMIN_AREA_SOURCES,
     AdminAreaSource,
     GADM_VERSION,
-    GEOMETRY_SIMPLIFICATION_TOLERANCE,
     HDX_DATASET_IDS,
-    PROCESSED_FILE_SIMPLIFICATION_THRESHOLD_BYTES,
+    MAPSHAPER_SIMPLIFICATION_P90_THRESHOLDS_BYTES,
+    MAPSHAPER_SIMPLIFICATION_PERCENTAGES,
     SYNTHETIC_PARENT_PCODES,
 )
 from shared.data_helpers import get_seed_data_repo_path
@@ -67,9 +67,9 @@ def build_manifest() -> dict:
         "processing": {
             "rawHdxSources": "local-cache-only",
             "geometrySimplification": {
-                "method": "shapely.simplify(preserve_topology=True)",
-                "processedFileThresholdBytes": PROCESSED_FILE_SIMPLIFICATION_THRESHOLD_BYTES,
-                "tolerance": GEOMETRY_SIMPLIFICATION_TOLERANCE,
+                "mapshaperPercentages": MAPSHAPER_SIMPLIFICATION_PERCENTAGES,
+                "mapshaperP90ThresholdBytes": MAPSHAPER_SIMPLIFICATION_P90_THRESHOLDS_BYTES,
+                "method": "mapshaper simplify(keep-shapes)",
             },
             "geometryValidation": "valid MultiPolygon geometries required",
             "population": "WorldPop-derived raster zonal statistics, calculated independently per admin level",
