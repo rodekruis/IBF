@@ -8,6 +8,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 import requests
+from pipelines.infra.utils.nrw_logger import log_error, log_info, LogTag
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,11 @@ def download_object(url: str) -> bytes | None:
     attempt = 0
     while attempt < max_retries:
         attempt += 1
-        logger.info(f"Download '{url}' (attempt {attempt}/{max_retries})")
+        log_info(
+            logger,
+            LogTag.INFRA,
+            f"Download '{url}' (attempt {attempt}/{max_retries})",
+        )
         try:
             if url.startswith("ftp://"):
                 with urlopen(url, timeout=60) as response:
@@ -35,12 +40,14 @@ def download_object(url: str) -> bytes | None:
                 if hasattr(exc, "response")
                 else "N/A"
             )
-            logger.error(
+            log_error(
+                logger,
+                LogTag.INFRA,
                 f"Attempt {attempt}/{max_retries} failed for '{url}'. "
-                f"Status: {status_code}, error: {exc}"
+                f"Status: {status_code}, error: {exc}",
             )
 
-    logger.error(f"All {max_retries} attempts failed for '{url}'")
+    log_error(logger, LogTag.INFRA, f"All {max_retries} attempts failed for '{url}'")
     return None
 
 
@@ -54,7 +61,9 @@ def download_json_source(url: str, check_count: bool = True):
     try:
         data = json.loads(content)
     except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse JSON from '{url}' - Error: {e}")
+        log_error(
+            logger, LogTag.INFRA, f"Failed to parse JSON from '{url}' - Error: {e}"
+        )
         return None
 
     # Check count vs actual items
@@ -63,14 +72,22 @@ def download_json_source(url: str, check_count: bool = True):
             expected_count = data["count"]
             actual_count = len(data["results"])
             if actual_count != expected_count:
-                print(
-                    f"Error: '{url}' count mismatch. Expected: {expected_count}, Got: {actual_count}"
+                log_error(
+                    logger,
+                    LogTag.INFRA,
+                    f"'{url}' count mismatch. Expected: {expected_count}, Got: {actual_count}",
                 )
             else:
-                print(f"  -- {actual_count} out of {expected_count} items parsed.")
+                log_info(
+                    logger,
+                    LogTag.INFRA,
+                    f"{actual_count} out of {expected_count} items parsed.",
+                )
         else:
-            print(
-                f"Error: '{url}' returned no results or did not contain keys 'count' and 'results'."
+            log_error(
+                logger,
+                LogTag.INFRA,
+                f"'{url}' returned no results or did not contain keys 'count' and 'results'.",
             )
 
     return data

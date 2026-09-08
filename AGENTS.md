@@ -4,8 +4,9 @@
 
 NRW is a web app to visualize hazard forecasts. This repository contains:
 
-- `services/api-service/` — NestJS backend API (TypeScript, Prisma, PostgreSQL)
-- `data/` — Python code for both hazard forecast pipelines and data management scripts
+- `services/api-service/` — NestJS backend API (TypeScript, Prisma, PostgreSQL) > [AGENTS.md](./services/api-service/AGENTS.md)
+- `data/` — Python code for both hazard forecast pipelines and data management scripts > [AGENTS.md](./data/AGENTS.md)
+- `e2e/` — Playwright end-to-end tests > [AGENTS.md](./e2e/AGENTS.md)
 
 React frontend code is hosted in the separate `go-web-app` repo.
 
