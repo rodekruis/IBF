@@ -21,6 +21,8 @@ Azure Batch deployment for the NRW forecast pipeline.
 - **Application Insights** `nrw-batch-scheduler` — workspace-based component (in this RG) backed by the shared `nrw-app-law` workspace.
 - **Action group** `nrw-batch-scheduler-task-fail` — email receiver for task failures.
 - **Metric alert** `nrwbatchpoc-task-fail-event` — fires on `TaskFailEvent` > 0 on the Batch account (5 min window).
+- **Action group** `nrw-batch-scheduler-event-created` — email receivers for expected events (placeholder, see below).
+- **Scheduled query alert** `nrw-batch-scheduler-event-created` — hourly query on the pipeline traces for the `placeholder_email_alert` tag. TODO: remove once event notifications are handled by the backend/app.
 
 #### Resource group `NRW`
 
