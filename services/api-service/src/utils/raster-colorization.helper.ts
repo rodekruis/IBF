@@ -41,9 +41,9 @@ const POPULATION_CONFIG: ColorizationConfig = {
   colorHigh: [255, 0, 0, 255], // Unused since a palette is provided
   zeroIsTransparent: true,
   steps: 5,
-  useLogScale: false,
+  useLogScale: true,
   palette: [
-    [224, 224, 224, 165],
+    [224, 224, 224, 165], // Grey 30
     [198, 198, 198, 165], // Grey 40
     [168, 168, 168, 165], // Grey 50
     [141, 141, 141, 165], // Grey 60
