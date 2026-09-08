@@ -2,7 +2,7 @@
 
 ## Spatial migration
 
-`migrate_glofas_station_area_mapping.py` transfers the existing station mappings from an old admin-area dataset to a new admin-area dataset. It does this, instead of creating a new mapping based on river analysis, in order to (1) minimize effort, while the basin-refactor is coming up anyway and (2) minimize data-differences compared to v1, while IBF and NRW run side-by-side, and again, while the basin-refactor is comping up anyway.
+`migrate_glofas_station_area_mapping.py` transfers the existing station mappings from an old admin-area dataset to a new admin-area dataset. It does this, instead of creating a new mapping based on river analysis, in order to (1) minimize effort, while the basin-refactor is coming up anyway and (2) minimize data-differences compared to v1, while IBF and NRW run side-by-side, and again, while the basin-refactor is coming up anyway.
 
 For each station, the script:
 
