@@ -247,7 +247,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
 
     it('should exclude events where endAt <= view-timestamp', async () => {
       const viewTimestamp = '2026-03-24T12:00:00Z';
-      const laterViewTimestamp = '2026-03-25T12:00:00Z';
+      const endViewTimestamp = '2026-03-25T00:00:00Z';
 
       const endedAlert = buildAlert({
         eventName: 'station-ended',
@@ -286,7 +286,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       const responseAfterEnd = await getActiveEvents({
         accessToken,
         countryCodeIso3,
-        timestamp: laterViewTimestamp,
+        timestamp: endViewTimestamp,
       });
       expect(responseAfterEnd.status).toBe(HttpStatus.OK);
       expect(responseAfterEnd.body).toHaveLength(0);
