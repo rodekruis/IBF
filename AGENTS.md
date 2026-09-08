@@ -18,8 +18,6 @@ The handover design file for NRW is the "🗺️ NRW official" Figma file. Use i
 - **Handover page node-id**: `1:49`
 - **URL**: https://www.figma.com/design/D40NF5GTFhJkRRTKuSzs43/%F0%9F%97%BA%EF%B8%8F-NRW-official?node-id=1-49
 
-When inspecting the design via the Figma MCP tools, pass the `fileKey` above and the relevant `node-id` (note: URLs use `1-49`, the MCP tools expect `1:49`).
-
 ---
 
 ## General Conventions (all languages)
