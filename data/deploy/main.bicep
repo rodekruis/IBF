@@ -12,6 +12,8 @@
 //     template creates no role assignments and the deploying principal does not
 //     need RBAC-write rights.
 //   - Action group + TaskFailEvent metric alert on the Batch account.
+//   - Action group + scheduled log-query alert that emails the team when the
+//     flood pipeline logs an expected event ('placeholder_email_alert' tag).
 //   - App settings that let Batch tasks persist stdout/stderr under the
 //     task-logs/ prefix of the nrw-data-cache container on completion; the
 //     upload runs as the pool node identity, so no SAS or secret is needed.
@@ -67,6 +69,11 @@ param dataCacheDir string = '/mnt/batch/tasks/fsmounts/nrw-data-cache'
 
 @description('Email address that receives TaskFailEvent alerts.')
 param alertEmail string = 'ehill@redcross.nl'
+
+@description('Email addresses notified when the pipeline logs an expected event (PLACEHOLDER_EMAIL_ALERT).')
+param eventAlertEmails array = [
+  'ehill@redcross.nl'
+]
 
 @description('Existing shared Log Analytics workspace that also backs the NRW backend Application Insights.')
 param logAnalyticsWorkspaceName string = 'nrw-app-law'
@@ -278,6 +285,62 @@ resource taskFailAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
         actionGroupId: taskFailActionGroup.id
       }
     ]
+  }
+}
+
+resource eventCreatedActionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
+  name: '${functionAppName}-event-created'
+  location: 'global'
+  properties: {
+    groupShortName: 'nrwevent'
+    enabled: true
+    emailReceivers: [
+      for email in eventAlertEmails: {
+        name: replace(email, '@', '-at-')
+        emailAddress: email
+        useCommonAlertSchema: true
+      }
+    ]
+  }
+}
+
+// Log-query alert on the pipeline telemetry: fires when the flood pipeline logs
+// an expected event (return period >= the event threshold). Placeholder until
+// the in-app notification feature is added; being a few hours late is fine, so
+// it evaluates hourly over a non-overlapping one-hour window.
+resource eventCreatedAlert 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = {
+  name: '${functionAppName}-event-created'
+  location: location
+  properties: {
+    displayName: 'NRW pipeline expected event'
+    description: 'Fires when the flood pipeline logs an expected event (placeholder_email_alert tag).'
+    severity: 2
+    enabled: true
+    evaluationFrequency: 'PT1H'
+    windowSize: 'PT1H'
+    scopes: [
+      applicationInsights.id
+    ]
+    criteria: {
+      allOf: [
+        {
+          query: 'traces\n| where message contains "tag_placeholder_email_alert"'
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    autoMitigate: false
+    actions: {
+      actionGroups: [
+        eventCreatedActionGroup.id
+      ]
+    }
   }
 }
 
