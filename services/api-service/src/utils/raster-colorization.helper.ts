@@ -29,14 +29,26 @@ interface ColorizationConfig {
   // true: compresses high dynamic range, revealing detail in low values.
   // false: linear mapping (uniform spread from min to max).
   useLogScale: boolean;
+
+  // Optional explicit list of discrete colors (RGBA, each 0–255).
+  // When set, non-zero values are mapped to these exact colors instead of
+  // interpolating between colorLow and colorHigh; `steps` is ignored.
+  palette?: Rgba[];
 }
 
 const POPULATION_CONFIG: ColorizationConfig = {
-  colorLow: [0, 200, 0, 0],
-  colorHigh: [100, 100, 255, 255],
+  colorLow: [0, 0, 0, 0], // Unused since a palette is provided
+  colorHigh: [255, 0, 0, 255], // Unused since a palette is provided
   zeroIsTransparent: true,
-  steps: 6,
-  useLogScale: true,
+  steps: 5,
+  useLogScale: false,
+  palette: [
+    [224, 224, 224, 165],
+    [198, 198, 198, 165], // Grey 40
+    [168, 168, 168, 165], // Grey 50
+    [141, 141, 141, 165], // Grey 60
+    [111, 111, 111, 165], // Grey 70
+  ],
 };
 
 const POPULATION_DOWNSAMPLE_FACTOR = 10;
@@ -223,7 +235,14 @@ function colorizeRgbaEncodedPng({
   config: ColorizationConfig;
   downsampleFactor?: number;
 }): string {
-  const { colorLow, colorHigh, zeroIsTransparent, steps, useLogScale } = config;
+  const {
+    colorLow,
+    colorHigh,
+    zeroIsTransparent,
+    steps,
+    useLogScale,
+    palette,
+  } = config;
 
   const png = PNG.sync.read(inputBuffer);
   const { width, height, data } = png;
@@ -293,21 +312,34 @@ function colorizeRgbaEncodedPng({
       outputPng.data[idx + 3] = 0;
     } else {
       const normalized = v / max;
-      const stepIndex = Math.round(normalized * steps);
-      const n = Math.min(stepIndex, steps) / steps;
 
-      outputPng.data[idx] = Math.round(
-        colorLow[0] * (1 - n) + colorHigh[0] * n,
-      );
-      outputPng.data[idx + 1] = Math.round(
-        colorLow[1] * (1 - n) + colorHigh[1] * n,
-      );
-      outputPng.data[idx + 2] = Math.round(
-        colorLow[2] * (1 - n) + colorHigh[2] * n,
-      );
-      outputPng.data[idx + 3] = Math.round(
-        colorLow[3] * (1 - n) + colorHigh[3] * n,
-      );
+      if (palette) {
+        const band = Math.min(
+          Math.floor(normalized * palette.length),
+          palette.length - 1,
+        );
+        const color = palette[band];
+        outputPng.data[idx] = color[0];
+        outputPng.data[idx + 1] = color[1];
+        outputPng.data[idx + 2] = color[2];
+        outputPng.data[idx + 3] = color[3];
+      } else {
+        const stepIndex = Math.round(normalized * steps);
+        const n = Math.min(stepIndex, steps) / steps;
+
+        outputPng.data[idx] = Math.round(
+          colorLow[0] * (1 - n) + colorHigh[0] * n,
+        );
+        outputPng.data[idx + 1] = Math.round(
+          colorLow[1] * (1 - n) + colorHigh[1] * n,
+        );
+        outputPng.data[idx + 2] = Math.round(
+          colorLow[2] * (1 - n) + colorHigh[2] * n,
+        );
+        outputPng.data[idx + 3] = Math.round(
+          colorLow[3] * (1 - n) + colorHigh[3] * n,
+        );
+      }
     }
   }
 
