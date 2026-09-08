@@ -211,9 +211,15 @@ def calculate_flood_forecasts(
 
             # Until email notifications are properly set up,
             # make a log to trigger an email notification for any flood with a return period of 5 or more.
+            # Mock runs (--mock) load discharge from the seed repo instead of the GloFAS FTP,
+            # so the presence of the FTP source identifies a live run.
+            is_live_run = DataSource.GLOFAS_DISCHARGE_FTP in data_provider.loaded_data
             PLACEHOLDER_NOTIFICATION_RETURN_PERIOD = 5
 
-            if peak_return_period >= PLACEHOLDER_NOTIFICATION_RETURN_PERIOD:
+            if (
+                is_live_run
+                and peak_return_period >= PLACEHOLDER_NOTIFICATION_RETURN_PERIOD
+            ):
                 log_info(
                     logger,
                     LogTag.PLACEHOLDER_EMAIL_ALERT,
