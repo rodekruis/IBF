@@ -30,17 +30,16 @@ interface ColorizationConfig {
   // false: linear mapping (uniform spread from min to max).
   useLogScale: boolean;
 
-  // Optional explicit list of discrete colors (RGBA, each 0–255).
-  // When set, non-zero values are mapped to these exact colors instead of
-  // interpolating between colorLow and colorHigh; `steps` is ignored.
+  // Optional list of discrete colors to use instead of the
+  // steps and colorLow/colorHigh values.
   palette?: Rgba[];
 }
 
 const POPULATION_CONFIG: ColorizationConfig = {
   colorLow: [0, 0, 0, 0], // Unused since a palette is provided
-  colorHigh: [255, 0, 0, 255], // Unused since a palette is provided
+  colorHigh: [0, 0, 0, 0], // Unused since a palette is provided
   zeroIsTransparent: true,
-  steps: 5,
+  steps: 0, // Unused since a palette is provided
   useLogScale: true,
   palette: [
     [224, 224, 224, 165], // Grey 30
