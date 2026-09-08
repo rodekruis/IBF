@@ -188,14 +188,16 @@ NOAA data is not yet integrated into the pipeline; retention rules for NOAA will
 
 ### To do or evaluate after first prototype is running
 
-- **Additional environments**: Only `test` (`IBF_ENVIRONMENT=test`) is used for the prototype.
-- **Logging and retention**: Re-eval retention periods for logs and files.
-- **"no run" Alerts**: Consider alerts if there were no runs
-- **Test Batch account**: Should we limit mock data runs to a specific account/env?
-- **CI/CD image builds**: Use Github actions to build and push to ACR.
-- Re-evaluate the pool autoscale formula
+- **Additional environments**: Only `test` (`IBF_ENVIRONMENT=test`) is used for the prototype. Adjust scripts so they correctly handle other environments. ([Task 44420](https://dev.azure.com/redcrossnl/National%20Risk%20Watch/_workitems/edit/44420))
+- **Logging and retention**: Re-eval retention periods for logs and files. ([Task 44421](https://dev.azure.com/redcrossnl/National%20Risk%20Watch/_workitems/edit/44421))
+- **"no run" Alerts**: Set up alerts if there were no runs ([Task 44422](https://dev.azure.com/redcrossnl/National%20Risk%20Watch/_workitems/edit/44422))
+- **Test Batch account**: Limit mock data runs to a specific account/env to prevent mock runs ever being done on PROD or with non-mock accounts. ([Task 44423](https://dev.azure.com/redcrossnl/National%20Risk%20Watch/_workitems/edit/44423))
+- **CI/CD image builds**: Use Github actions to build and push to ACR. ([Task 44424](https://dev.azure.com/redcrossnl/National%20Risk%20Watch/_workitems/edit/44424))
+- Re-evaluate the pool autoscale formula ([Task 44425](https://dev.azure.com/redcrossnl/National%20Risk%20Watch/_workitems/edit/44425))
 
 ### Specs to evaluate
+
+Tracked in [Task 44426](https://dev.azure.com/redcrossnl/National%20Risk%20Watch/_workitems/edit/44426).
 
 - Be sure the nrw-batch-scheduler runs are safely within the `working memory` limit of 1.5 GB, which can be seen on the [nrw-pipelines-test-rg resource page.](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-pipelines-test-rg/metrics)
 - Check the memory and cpu usage of the backend to make sure the pipeline is not causing usage spikes. For example, you can see this [here for nrw-test.](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.Web/serverfarms/nrw-test/metrics)
