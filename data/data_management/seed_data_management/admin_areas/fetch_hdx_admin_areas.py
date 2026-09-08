@@ -6,6 +6,7 @@ Downloads GeoJSON or SHP zip archives and extracts per-level files into
 the sources/hdx/ directory in the seed-data repo.
 """
 
+import argparse
 import io
 import json
 import shutil
@@ -128,9 +129,18 @@ def extract_shp_levels(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--country",
+        choices=sorted(get_countries_for_source(AdminAreaSource.HDX)),
+        help="Fetch only one configured HDX country.",
+    )
+    arguments = parser.parse_args()
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     hdx_countries = get_countries_for_source(AdminAreaSource.HDX)
+    if arguments.country:
+        hdx_countries = {arguments.country: hdx_countries[arguments.country]}
     for country, levels in hdx_countries.items():
         dataset_id = HDX_DATASET_IDS.get(country)
         if not dataset_id:

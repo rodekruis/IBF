@@ -1,14 +1,15 @@
 from data_management.seed_data_management.flood.update_glofas_station_area_mapping import (
-    FLOOD_ADMIN_AREA_LEVELS,
+    FLOOD_DEEPEST_ADMIN_LEVELS,
     get_station_pcodes,
     load_station_thresholds,
 )
 from shapely.geometry import Point
 
 
-def test_flood_admin_area_levels_match_flood_pipeline_configuration():
-    assert FLOOD_ADMIN_AREA_LEVELS["MWI"] == [2, 3]
-    assert FLOOD_ADMIN_AREA_LEVELS["UGA"] == [2, 3, 4]
+def test_flood_deepest_admin_levels_match_flood_pipeline_configuration():
+    assert FLOOD_DEEPEST_ADMIN_LEVELS["MWI"] == 3
+    assert FLOOD_DEEPEST_ADMIN_LEVELS["UGA"] == 4
+    assert FLOOD_DEEPEST_ADMIN_LEVELS["ZMB"] == 4
 
 
 def test_load_station_thresholds_deduplicates_station_records(tmp_path):

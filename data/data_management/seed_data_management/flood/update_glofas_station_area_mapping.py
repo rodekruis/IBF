@@ -18,14 +18,14 @@ from shared.data_helpers import get_seed_data_repo_path
 LOGGER = logging.getLogger(__name__)
 RIVERS_URL = "https://510ibfsystem.blob.core.windows.net/ibfdatapipelines/river-flood/rivers/rivers.gpkg"
 FLOOD_COUNTRIES = ("ETH", "KEN", "MWI", "PHL", "SSD", "UGA", "ZMB")
-FLOOD_ADMIN_AREA_LEVELS = {
-    "ETH": [2, 3],
-    "KEN": [2, 3],
-    "MWI": [2, 3],
-    "PHL": [2, 3],
-    "SSD": [2, 3],
-    "UGA": [2, 3, 4],
-    "ZMB": [2, 3],
+FLOOD_DEEPEST_ADMIN_LEVELS = {
+    "ETH": 3,
+    "KEN": 3,
+    "MWI": 3,
+    "PHL": 3,
+    "SSD": 3,
+    "UGA": 4,
+    "ZMB": 4,
 }
 STATION_THRESHOLDS_DIRECTORY = Path("hazard/flood/glofas-stations")
 ADMIN_AREAS_DIRECTORY = Path("admin-areas/processed")
@@ -184,7 +184,7 @@ def update_country(
         raise FileNotFoundError(thresholds_filepath)
 
     stations = load_station_thresholds(thresholds_filepath)
-    levels = FLOOD_ADMIN_AREA_LEVELS[country]
+    levels = [FLOOD_DEEPEST_ADMIN_LEVELS[country]]
     admin_areas_by_level = {
         level: load_admin_areas(seed_repo_path, country, level) for level in levels
     }
