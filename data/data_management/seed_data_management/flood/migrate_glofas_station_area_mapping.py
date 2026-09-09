@@ -2,16 +2,23 @@
 
 import argparse
 import json
-import subprocess
 from dataclasses import asdict, dataclass
 from datetime import datetime, UTC
 from pathlib import Path
 from typing import cast
 
-from shapely.geometry import shape
+from data_management.seed_data_management.admin_areas.admin_area_migration import (
+    ADMIN_AREAS_DIRECTORY,
+    DEFAULT_SEED_REPOSITORY_URL,
+    get_feature_geometry,
+    get_git_revision,
+    get_pcode,
+    load_admin_features,
+    load_json,
+    union_geometries,
+)
 from shapely.geometry.base import BaseGeometry
 from shapely.strtree import STRtree
-from shapely.validation import make_valid
 
 FLOOD_DEEPEST_ADMIN_LEVELS = {
     "ETH": 3,
@@ -32,8 +39,6 @@ OLD_STATION_MAPPING_LEVELS = {
     "ZMB": 3,  # only difference with above atm: old adm3 is more comparable to new adm4
 }
 STATION_THRESHOLDS_DIRECTORY = Path("hazard/flood/glofas-stations")
-ADMIN_AREAS_DIRECTORY = Path("admin-areas/processed")
-DEFAULT_SEED_REPOSITORY_URL = "https://github.com/rodekruis/IBF-seed-data.git"
 DEFAULT_MINIMUM_NEW_AREA_OVERLAP = 0.25
 DEFAULT_MINIMUM_OLD_FOOTPRINT_COVERAGE = 0.9
 
@@ -46,39 +51,11 @@ class AreaOverlap:
     overlap_of_old_footprint: float
 
 
-def load_json(filepath: Path) -> dict | list:
-    with filepath.open(encoding="utf-8") as file:
-        return json.load(file)
-
-
 def load_unique_stations(filepath: Path) -> dict[str, dict]:
     stations: dict[str, dict] = {}
     for entry in cast(list[dict], load_json(filepath)):
         stations.setdefault(entry["station_code"], entry)
     return stations
-
-
-def load_admin_features(seed_repo_path: Path, country: str, level: int) -> list[dict]:
-    filepath = seed_repo_path / ADMIN_AREAS_DIRECTORY / f"{country}_adm{level}.json"
-    return cast(dict, load_json(filepath))["features"]
-
-
-def get_feature_geometry(feature: dict) -> BaseGeometry:
-    return make_valid(shape(feature["geometry"]))
-
-
-def get_pcode(feature: dict, level: int) -> str:
-    return feature["properties"][f"ADM{level}_PCODE"]
-
-
-def get_git_revision(repository_path: Path) -> str | None:
-    try:
-        return subprocess.check_output(
-            ["git", "-C", str(repository_path), "rev-parse", "HEAD"],
-            text=True,
-        ).strip()
-    except subprocess.CalledProcessError:
-        return None
 
 
 def find_overlapping_new_areas(
@@ -130,18 +107,23 @@ def migrate_country(
     old_features_by_pcode = {
         get_pcode(feature, old_level): feature for feature in old_features
     }
+    new_features_by_pcode = {
+        get_pcode(feature, new_level): feature for feature in new_features
+    }
     old_stations = load_unique_stations(old_station_path)
     migrated_stations: list[dict] = []
     report: list[dict] = []
 
     for station_code, station in sorted(old_stations.items()):
         old_pcodes = station.get("pcodes", {}).get(str(old_level), [])
-        old_geometries = [
-            get_feature_geometry(old_features_by_pcode[pcode])
-            for pcode in old_pcodes
-            if pcode in old_features_by_pcode
-        ]
-        if not old_geometries:
+        old_footprint = union_geometries(
+            [
+                get_feature_geometry(old_features_by_pcode[pcode])
+                for pcode in old_pcodes
+                if pcode in old_features_by_pcode
+            ]
+        )
+        if old_footprint is None:
             migrated_station = dict(station)
             migrated_station["pcodes"] = {str(new_level): []}
             migrated_stations.append(migrated_station)
@@ -160,9 +142,6 @@ def migrate_country(
                 }
             )
             continue
-        old_footprint = old_geometries[0]
-        for geometry in old_geometries[1:]:
-            old_footprint = old_footprint.union(geometry)
 
         overlaps = find_overlapping_new_areas(
             old_footprint,
@@ -171,18 +150,9 @@ def migrate_country(
             minimum_new_area_overlap,
         )
         new_pcodes = [overlap.pcode for overlap in overlaps]
-        new_footprint = None
-        for pcode in new_pcodes:
-            geometry = get_feature_geometry(
-                next(
-                    feature
-                    for feature in new_features
-                    if get_pcode(feature, new_level) == pcode
-                )
-            )
-            new_footprint = (
-                geometry if new_footprint is None else new_footprint.union(geometry)
-            )
+        new_footprint = union_geometries(
+            [get_feature_geometry(new_features_by_pcode[pcode]) for pcode in new_pcodes]
+        )
         migrated_station = dict(station)
         migrated_station["pcodes"] = {str(new_level): new_pcodes}
         migrated_stations.append(migrated_station)
@@ -216,6 +186,8 @@ def migrate_country(
             }
         )
 
+    add_shared_new_pcodes(report, new_level)
+
     output_directory.mkdir(parents=True, exist_ok=True)
     (output_directory / f"{country}_station_thresholds.json").write_text(
         json.dumps(migrated_stations, indent=2) + "\n", encoding="utf-8"
@@ -224,6 +196,35 @@ def migrate_country(
         json.dumps(report, indent=2) + "\n", encoding="utf-8"
     )
     return report
+
+
+# Each deepest-level area should drain to a single station, but the per-station
+# overlap above cannot see the other stations' claims.
+def add_shared_new_pcodes(report: list[dict], new_level: int) -> None:
+    stations_by_pcode: dict[str, list[str]] = {}
+    for entry in report:
+        for pcode in entry["new_pcodes"]:
+            stations_by_pcode.setdefault(pcode, []).append(entry["station_code"])
+
+    for entry in report:
+        shared = {
+            pcode: [
+                station_code
+                for station_code in stations_by_pcode[pcode]
+                if station_code != entry["station_code"]
+            ]
+            for pcode in entry["new_pcodes"]
+            if len(stations_by_pcode[pcode]) > 1
+        }
+        entry["shared_new_pcodes"] = shared
+        if not shared:
+            continue
+        shared_review = (
+            f"{len(shared)} adm{new_level} areas are also claimed by another station."
+        )
+        entry["review"] = (
+            f"{entry['review']} {shared_review}" if entry["review"] else shared_review
+        )
 
 
 def write_manifest(

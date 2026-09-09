@@ -2604,7 +2604,7 @@
           },
           "spatialExtentPlaceCodes": {
             "example": [
-              "KE030"
+              "KEN.10_1"
             ],
             "type": "array",
             "items": {

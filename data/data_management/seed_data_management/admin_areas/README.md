@@ -4,6 +4,14 @@ This directory contains the scripts that retrieve, process, enrich, and validate
 
 The active configuration is defined in `admin_area_source_config.py`. Each country uses one source for all configured admin levels. Most countries currently use HDX COD-AB data; Kenya uses GADM to keep adm0-3 source-consistent.
 
+> [!WARNING]
+>
+> **Updating admin areas is never a self-contained change.**
+>
+> Admin areas are referenced by PCODE from other datasets, and those references break
+> silently: a stale PCODE simply stops matching, so an alert config covers the wrong
+> area or a newly created district is covered by nothing at all. Nothing fails loudly.
+
 ## Prerequisites
 
 - The `data/.env` file must define `SEED_DATA_REPO_ROOT` for the local `IBF-seed-data` checkout.
@@ -24,6 +32,7 @@ python -m data_management.seed_data_management.admin_areas.process_admin_area_ge
 python -m data_management.seed_data_management.admin_areas.add_population_to_admin_areas
 python -m data_management.seed_data_management.admin_areas.generate_admin_area_source_manifest
 python -m data_management.seed_data_management.admin_areas.validate_admin_areas
+python -m data_management.seed_data_management.validate_admin_area_dependents
 ```
 
 The stages perform the following work:
@@ -37,6 +46,7 @@ The stages perform the following work:
 7. Compute independent zonal population totals for every configured processed feature.
 8. Generate `admin_area_sources.json` in the seed-data repo to record source and processing metadata.
 9. Validate processed completeness, stored source files where applicable, canonical schema, hierarchy, geometries, and population values. A successful validation regenerates `admin_area_validation_report.md`.
+10. Report any file in either repository that still references a PCODE the update retired.
 
 ## Generated Metadata
 
