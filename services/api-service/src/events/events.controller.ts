@@ -10,8 +10,8 @@ import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
 import { EventsService } from '@api-service/src/events/events.service';
-import { getNormalizedStringList } from '@api-service/src/utils/normalize-string-list.helper';
 import { AssertIso8601Pipe } from '@api-service/src/pipes/assert-iso8601.pipe';
+import { getNormalizedStringList } from '@api-service/src/utils/normalize-string-list.helper';
 
 @ApiTags('events')
 @Controller('events')
