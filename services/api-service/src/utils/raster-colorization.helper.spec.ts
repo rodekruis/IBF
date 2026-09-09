@@ -583,31 +583,41 @@ describe('raster-colorization.helper', () => {
     }
 
     it('should leave rows in place for a bbox straddling the equator', () => {
+      // Act
       const result = reprojectPng4326To3857({
         base64Png: input,
         ymin: -10,
         ymax: 10,
       });
 
+      // Assert
       expect(readRows(result)).toEqual([10, 20, 30, 40]);
     });
 
     it('should pull rows towards the pole for a high-latitude bbox', () => {
+      // Act
       const result = reprojectPng4326To3857({
         base64Png: input,
         ymin: 0,
         ymax: 80,
       });
 
+      // Assert
       // Mercator stretches high latitudes, so the northernmost row spans two
       // output rows and one southern row is dropped.
       expect(readRows(result)).toEqual([10, 10, 20, 40]);
     });
 
     it('should return the input unchanged for a degenerate extent', () => {
-      expect(
-        reprojectPng4326To3857({ base64Png: input, ymin: 5, ymax: 5 }),
-      ).toBe(input);
+      // Act
+      const result = reprojectPng4326To3857({
+        base64Png: input,
+        ymin: 5,
+        ymax: 5,
+      });
+
+      // Assert
+      expect(result).toBe(input);
     });
   });
 });
