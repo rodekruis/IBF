@@ -9,21 +9,11 @@ type Rgba = [number, number, number, number];
 // These parameters control how grayscale raster values are mapped to colors.
 // Adjust these to change the visual output without altering the algorithm.
 
-interface ColorizationConfig {
-  // Color+alpha for the lowest non-zero values (RGBA, each 0–255).
-  colorLow: Rgba;
-
-  // Color+alpha for the highest values (RGBA, each 0–255).
-  colorHigh: Rgba;
-
+interface ColorizationConfigBase {
   // Whether zero-value pixels are fully transparent.
   // true: zero pixels are invisible (typical for flood depth rasters on a map).
-  // false: zero pixels are rendered using colorLow.
+  // false: zero pixels are rendered using the lowest color.
   zeroIsTransparent: boolean;
-
-  // Number of discrete color bands between colorLow and colorHigh.
-  // Higher = smoother gradient; lower = more banded/posterized appearance.
-  steps: number;
 
   // Whether to apply log1p scaling before normalizing.
   // true: compresses high dynamic range, revealing detail in low values.
@@ -31,17 +21,47 @@ interface ColorizationConfig {
   useLogScale: boolean;
 }
 
+interface GradientColorizationConfig extends ColorizationConfigBase {
+  mode: 'gradient';
+
+  // Color+alpha for the lowest non-zero values (RGBA, each 0–255).
+  colorLow: Rgba;
+
+  // Color+alpha for the highest values (RGBA, each 0–255).
+  colorHigh: Rgba;
+
+  // Number of discrete color bands between colorLow and colorHigh.
+  // Higher = smoother gradient; lower = more banded/posterized appearance.
+  steps: number;
+}
+
+interface PaletteColorizationConfig extends ColorizationConfigBase {
+  mode: 'palette';
+
+  // Color palette for the color steps, in order of lowest step color to highest
+  palette: Rgba[];
+}
+
+type ColorizationConfig =
+  GradientColorizationConfig | PaletteColorizationConfig;
+
 const POPULATION_CONFIG: ColorizationConfig = {
-  colorLow: [0, 200, 0, 0],
-  colorHigh: [100, 100, 255, 255],
+  mode: 'palette',
   zeroIsTransparent: true,
-  steps: 6,
   useLogScale: true,
+  palette: [
+    [0, 0, 0, 20], // Grey 30 — ~8% black
+    [0, 0, 0, 37], // Grey 40 — ~14.5% black
+    [0, 0, 0, 56], // Grey 50 — ~22% black
+    [0, 0, 0, 74], // Grey 60 — ~29% black
+    [0, 0, 0, 94], // Grey 70 — ~37% black
+  ],
 };
 
 const POPULATION_DOWNSAMPLE_FACTOR = 10;
 
 const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
+  mode: 'gradient',
   colorLow: [173, 216, 230, 179],
   colorHigh: [0, 0, 139, 179],
   zeroIsTransparent: true,
@@ -50,6 +70,7 @@ const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
 };
 
 const WIND_SPEED_CONFIG: ColorizationConfig = {
+  mode: 'gradient',
   colorLow: [255, 237, 160, 179],
   colorHigh: [189, 0, 38, 179],
   zeroIsTransparent: true,
@@ -71,6 +92,37 @@ export function getColorizationConfig(
 }
 // ──────────────────────────────────────────────────────────────────────────────
 
+function resolveColor({
+  config,
+  normalized,
+}: {
+  config: ColorizationConfig;
+  normalized: number;
+}): Rgba {
+  if (config.mode === 'palette') {
+    if (config.palette.length === 0) {
+      throw new Error('Colorization palette must contain at least one color');
+    }
+
+    const band = Math.min(
+      Math.floor(normalized * config.palette.length),
+      config.palette.length - 1,
+    );
+    return config.palette[band];
+  }
+
+  const { colorLow, colorHigh, steps } = config;
+  const stepIndex = Math.round(normalized * steps);
+  const n = Math.min(stepIndex, steps) / steps;
+
+  return [
+    Math.round(colorLow[0] * (1 - n) + colorHigh[0] * n),
+    Math.round(colorLow[1] * (1 - n) + colorHigh[1] * n),
+    Math.round(colorLow[2] * (1 - n) + colorHigh[2] * n),
+    Math.round(colorLow[3] * (1 - n) + colorHigh[3] * n),
+  ];
+}
+
 export function colorizeGrayscalePng({
   base64Grayscale,
   config,
@@ -82,7 +134,7 @@ export function colorizeGrayscalePng({
     return '';
   }
 
-  const { colorLow, colorHigh, zeroIsTransparent, steps, useLogScale } = config;
+  const { zeroIsTransparent, useLogScale } = config;
 
   const inputBuffer = Buffer.from(base64Grayscale, 'base64');
   const grayscalePng = PNG.sync.read(inputBuffer);
@@ -118,21 +170,12 @@ export function colorizeGrayscalePng({
     } else {
       const scaled = useLogScale ? Math.log1p(raw) : raw;
       const normalized = scaled / max;
-      const stepIndex = Math.round(normalized * steps);
-      const n = Math.min(stepIndex, steps) / steps;
+      const color = resolveColor({ config, normalized });
 
-      outputPng.data[idx] = Math.round(
-        colorLow[0] * (1 - n) + colorHigh[0] * n,
-      );
-      outputPng.data[idx + 1] = Math.round(
-        colorLow[1] * (1 - n) + colorHigh[1] * n,
-      );
-      outputPng.data[idx + 2] = Math.round(
-        colorLow[2] * (1 - n) + colorHigh[2] * n,
-      );
-      outputPng.data[idx + 3] = Math.round(
-        colorLow[3] * (1 - n) + colorHigh[3] * n,
-      );
+      outputPng.data[idx] = color[0];
+      outputPng.data[idx + 1] = color[1];
+      outputPng.data[idx + 2] = color[2];
+      outputPng.data[idx + 3] = color[3];
     }
   }
 
@@ -223,7 +266,7 @@ function colorizeRgbaEncodedPng({
   config: ColorizationConfig;
   downsampleFactor?: number;
 }): string {
-  const { colorLow, colorHigh, zeroIsTransparent, steps, useLogScale } = config;
+  const { zeroIsTransparent, useLogScale } = config;
 
   const png = PNG.sync.read(inputBuffer);
   const { width, height, data } = png;
@@ -293,21 +336,12 @@ function colorizeRgbaEncodedPng({
       outputPng.data[idx + 3] = 0;
     } else {
       const normalized = v / max;
-      const stepIndex = Math.round(normalized * steps);
-      const n = Math.min(stepIndex, steps) / steps;
+      const color = resolveColor({ config, normalized });
 
-      outputPng.data[idx] = Math.round(
-        colorLow[0] * (1 - n) + colorHigh[0] * n,
-      );
-      outputPng.data[idx + 1] = Math.round(
-        colorLow[1] * (1 - n) + colorHigh[1] * n,
-      );
-      outputPng.data[idx + 2] = Math.round(
-        colorLow[2] * (1 - n) + colorHigh[2] * n,
-      );
-      outputPng.data[idx + 3] = Math.round(
-        colorLow[3] * (1 - n) + colorHigh[3] * n,
-      );
+      outputPng.data[idx] = color[0];
+      outputPng.data[idx + 1] = color[1];
+      outputPng.data[idx + 2] = color[2];
+      outputPng.data[idx + 3] = color[3];
     }
   }
 

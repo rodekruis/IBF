@@ -52,7 +52,7 @@ function readOutputPixel({
 }
 
 describe('raster-colorization.helper', () => {
-  describe('colorizeGrayscalePng', () => {
+  describe('colorizeGrayscalePng (gradient/steps mode)', () => {
     it('should return empty string for empty input', () => {
       expect(
         colorizeGrayscalePng({
@@ -95,6 +95,7 @@ describe('raster-colorization.helper', () => {
 
     it('should render zero pixels with colorLow when zeroIsTransparent is false', () => {
       const config = {
+        mode: 'gradient' as const,
         colorLow: [255, 0, 0, 255] as [number, number, number, number],
         colorHigh: [0, 0, 255, 255] as [number, number, number, number],
         zeroIsTransparent: false,
@@ -113,6 +114,7 @@ describe('raster-colorization.helper', () => {
 
     it('should map max value pixel to colorHigh', () => {
       const config = {
+        mode: 'gradient' as const,
         colorLow: [255, 0, 0, 255] as [number, number, number, number],
         colorHigh: [0, 0, 255, 255] as [number, number, number, number],
         zeroIsTransparent: true,
@@ -134,6 +136,7 @@ describe('raster-colorization.helper', () => {
 
     it('should produce intermediate colors for mid-range values', () => {
       const config = {
+        mode: 'gradient' as const,
         colorLow: [0, 0, 0, 255] as [number, number, number, number],
         colorHigh: [255, 255, 255, 255] as [number, number, number, number],
         zeroIsTransparent: true,
@@ -155,6 +158,7 @@ describe('raster-colorization.helper', () => {
 
     it('should apply log scale when useLogScale is true', () => {
       const configLinear = {
+        mode: 'gradient' as const,
         colorLow: [0, 0, 0, 255] as [number, number, number, number],
         colorHigh: [255, 255, 255, 255] as [number, number, number, number],
         zeroIsTransparent: true,
@@ -189,6 +193,7 @@ describe('raster-colorization.helper', () => {
 
     it('should produce banded output with fewer steps', () => {
       const config = {
+        mode: 'gradient' as const,
         colorLow: [0, 0, 0, 255] as [number, number, number, number],
         colorHigh: [255, 255, 255, 255] as [number, number, number, number],
         zeroIsTransparent: true,
@@ -228,6 +233,7 @@ describe('raster-colorization.helper', () => {
 
     it('should handle uniform non-zero image', () => {
       const config = {
+        mode: 'gradient' as const,
         colorLow: [100, 100, 100, 204] as [number, number, number, number],
         colorHigh: [200, 200, 200, 204] as [number, number, number, number],
         zeroIsTransparent: true,
@@ -247,6 +253,59 @@ describe('raster-colorization.helper', () => {
       expect(pixel0.g).toBe(pixel3.g);
       expect(pixel0.b).toBe(pixel3.b);
       expect(pixel0.a).toBe(204);
+    });
+  });
+
+  describe('colorizeGrayscalePng (palette mode)', () => {
+    it('should map lowest non-zero value to first palette color and max to last', () => {
+      // Arrange
+      const config = {
+        mode: 'palette' as const,
+        zeroIsTransparent: true,
+        useLogScale: false,
+        palette: [
+          [10, 0, 0, 10],
+          [20, 0, 0, 20],
+          [30, 0, 0, 30],
+        ] as [number, number, number, number][],
+      };
+      const input = createGrayscalePng({
+        width: 1,
+        height: 3,
+        values: [0, 1, 100],
+      });
+
+      // Act
+      const result = colorizeGrayscalePng({ base64Grayscale: input, config });
+
+      // Assert
+      const pixelLow = readOutputPixel({ base64: result, pixelIndex: 1 });
+      expect(pixelLow).toEqual({ r: 10, g: 0, b: 0, a: 10 });
+
+      const pixelHigh = readOutputPixel({ base64: result, pixelIndex: 2 });
+      expect(pixelHigh).toEqual({ r: 30, g: 0, b: 0, a: 30 });
+    });
+
+    it('should clamp normalized value of 1 to the last palette band', () => {
+      // Arrange
+      const config = {
+        mode: 'palette' as const,
+        zeroIsTransparent: true,
+        useLogScale: false,
+        palette: [
+          [10, 0, 0, 10],
+          [20, 0, 0, 20],
+          [30, 0, 0, 30],
+        ] as [number, number, number, number][],
+      };
+      const input = createGrayscalePng({ width: 1, height: 1, values: [200] });
+
+      // Act
+      const result = colorizeGrayscalePng({ base64Grayscale: input, config });
+
+      // Assert
+      const pixel = readOutputPixel({ base64: result, pixelIndex: 0 });
+      expect(pixel).toEqual({ r: 30, g: 0, b: 0, a: 30 });
     });
   });
 
@@ -320,6 +379,27 @@ describe('raster-colorization.helper', () => {
         png.data[idx + 1] = 128;
         png.data[idx + 2] = 128;
         png.data[idx + 3] = 255;
+      }
+      return PNG.sync.write(png);
+    }
+
+    function createEncodedPngBuffer({
+      width,
+      height,
+      values,
+    }: {
+      width: number;
+      height: number;
+      values: number[];
+    }): Buffer {
+      const png = new PNG({ width, height });
+      for (let i = 0; i < width * height; i++) {
+        const scaled = Math.round((values[i] ?? 0) * 1000);
+        const idx = i * 4;
+        png.data[idx] = (scaled >> 24) & 0xff;
+        png.data[idx + 1] = (scaled >> 16) & 0xff;
+        png.data[idx + 2] = (scaled >> 8) & 0xff;
+        png.data[idx + 3] = scaled & 0xff;
       }
       return PNG.sync.write(png);
     }
@@ -447,6 +527,45 @@ describe('raster-colorization.helper', () => {
       const outputPng = PNG.sync.read(decoded);
       expect(outputPng.width).toBe(4);
       expect(outputPng.height).toBe(4);
+    });
+
+    it('should decode RGBA-encoded population values into palette bands', () => {
+      // Arrange
+      const pngBuffer = createEncodedPngBuffer({
+        width: 3,
+        height: 1,
+        values: [0, 1.0, 4.0],
+      });
+
+      // Act
+      const result = processPopulationRaster({
+        dataPngBuffer: pngBuffer,
+        metadata: {
+          transform: [1, 0, 0, 0, -1, 1],
+          crs: EPSG.WebMercator,
+        },
+      });
+
+      // Assert
+      const pixelZero = readOutputPixel({
+        base64: result.colouredBase64,
+        pixelIndex: 0,
+      });
+      expect(pixelZero.a).toBe(0);
+
+      // log1p(1.0) / log1p(4.0) ≈ 0.43 -> third palette band
+      const pixelMid = readOutputPixel({
+        base64: result.colouredBase64,
+        pixelIndex: 1,
+      });
+      expect(pixelMid.a).toBe(56);
+
+      // max value -> last palette band
+      const pixelHigh = readOutputPixel({
+        base64: result.colouredBase64,
+        pixelIndex: 2,
+      });
+      expect(pixelHigh.a).toBe(94);
     });
   });
 });
