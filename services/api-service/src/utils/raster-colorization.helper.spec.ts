@@ -7,6 +7,7 @@ import {
   getColorizationConfig,
   processPopulationRaster,
   reproject4326To3857,
+  reprojectPng4326To3857,
 } from '@api-service/src/utils/raster-colorization.helper';
 
 const FLOOD_DEPTH_CONFIG = getColorizationConfig(LayerName.floodDepth);
@@ -564,6 +565,49 @@ describe('raster-colorization.helper', () => {
         pixelIndex: 2,
       });
       expect(pixelHigh.a).toBe(94);
+    });
+  });
+
+  describe('reprojectPng4326To3857', () => {
+    // A single-pixel-wide column, so each pixel index is a row.
+    const input = createGrayscalePng({
+      width: 1,
+      height: 4,
+      values: [10, 20, 30, 40],
+    });
+
+    function readRows(base64: string): number[] {
+      return [0, 1, 2, 3].map(
+        (pixelIndex) => readOutputPixel({ base64, pixelIndex }).r,
+      );
+    }
+
+    it('should leave rows in place for a bbox straddling the equator', () => {
+      const result = reprojectPng4326To3857({
+        base64Png: input,
+        ymin: -10,
+        ymax: 10,
+      });
+
+      expect(readRows(result)).toEqual([10, 20, 30, 40]);
+    });
+
+    it('should pull rows towards the pole for a high-latitude bbox', () => {
+      const result = reprojectPng4326To3857({
+        base64Png: input,
+        ymin: 0,
+        ymax: 80,
+      });
+
+      // Mercator stretches high latitudes, so the northernmost row spans two
+      // output rows and one southern row is dropped.
+      expect(readRows(result)).toEqual([10, 10, 20, 40]);
+    });
+
+    it('should return the input unchanged for a degenerate extent', () => {
+      expect(
+        reprojectPng4326To3857({ base64Png: input, ymin: 5, ymax: 5 }),
+      ).toBe(input);
     });
   });
 });
