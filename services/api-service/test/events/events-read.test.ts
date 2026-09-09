@@ -1,5 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
+import { EventStatus } from '@api-service/src/shared-enums';
 import {
   buildAlert,
   buildForecast,
@@ -44,8 +45,8 @@ describe('GET /events', () => {
       }),
     });
 
-    const expiredAlert = buildAlert({
-      eventName: 'station-expired',
+    const endedAlert = buildAlert({
+      eventName: 'station-ended',
       severity: buildSeverityData({
         start: new Date('2026-03-24T00:00:00Z'),
         end: new Date('2026-03-25T00:00:00Z'),
@@ -64,7 +65,7 @@ describe('GET /events', () => {
     });
     await createAlerts({
       forecast: buildForecast({
-        alerts: [ongoingAlert, expiredAlert],
+        alerts: [ongoingAlert, endedAlert],
         overrides: {
           issuedAt: new Date('2026-03-24T12:00:00Z'),
         },
@@ -92,7 +93,7 @@ describe('GET /events', () => {
         response.body
           .map((event: { eventName: string }) => event.eventName)
           .sort(),
-      ).toEqual(['station-closed', 'station-expired', 'station-ongoing']);
+      ).toEqual(['station-closed', 'station-ended', 'station-ongoing']);
     });
 
     it('should return only ongoing open events when active is true', async () => {
@@ -110,11 +111,11 @@ describe('GET /events', () => {
       expect(response.body[0]).toMatchObject({
         eventName: 'station-ongoing',
         eventLabel: 'station-ongoing',
-        isOngoing: true,
+        eventStatus: EventStatus.ongoing,
       });
     });
 
-    it('should return closed or expired events when active is false', async () => {
+    it('should return closed or ended events when active is false', async () => {
       const response = await readEvents({
         accessToken,
         countryCodeIso3: 'MWI',
@@ -130,17 +131,17 @@ describe('GET /events', () => {
         response.body
           .map((event: { eventName: string }) => event.eventName)
           .sort(),
-      ).toEqual(['station-closed', 'station-expired']);
+      ).toEqual(['station-closed', 'station-ended']);
 
       const closedEvent = response.body.find(
         (event: { eventName: string }) => event.eventName === 'station-closed',
       );
-      const expiredEvent = response.body.find(
-        (event: { eventName: string }) => event.eventName === 'station-expired',
+      const endedEvent = response.body.find(
+        (event: { eventName: string }) => event.eventName === 'station-ended',
       );
 
-      expect(closedEvent.isOngoing).toBe(false);
-      expect(expiredEvent.isOngoing).toBe(false);
+      expect(closedEvent.eventStatus).toBe(EventStatus.ended);
+      expect(endedEvent.eventStatus).toBe(EventStatus.ended);
     });
   });
 
