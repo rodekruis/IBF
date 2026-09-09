@@ -18,16 +18,16 @@ export class EventsService {
   public async getEvents({
     viewTime,
     active,
-    countryCodeIso3,
+    countryCodesIso3,
   }: {
     viewTime: Date;
     active?: boolean;
-    countryCodeIso3?: string;
+    countryCodesIso3?: string[];
   }): Promise<EventResponseDto[]> {
     const events = await this.eventsRepository.getEvents({
       viewTime,
       active,
-      countryCodeIso3,
+      countryCodesIso3,
     });
     const eventIds = events.map((event) => event.id);
     const exposedAdminAreasByEventId =

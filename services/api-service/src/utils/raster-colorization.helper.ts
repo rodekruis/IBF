@@ -100,6 +100,10 @@ function resolveColor({
   normalized: number;
 }): Rgba {
   if (config.mode === 'palette') {
+    if (config.palette.length === 0) {
+      throw new Error('Colorization palette must contain at least one color');
+    }
+
     const band = Math.min(
       Math.floor(normalized * config.palette.length),
       config.palette.length - 1,

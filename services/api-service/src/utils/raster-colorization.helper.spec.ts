@@ -53,7 +53,7 @@ function readOutputPixel({
 }
 
 describe('raster-colorization.helper', () => {
-  describe('colorizeGrayscalePng', () => {
+  describe('colorizeGrayscalePng (gradient/steps mode)', () => {
     it('should return empty string for empty input', () => {
       expect(
         colorizeGrayscalePng({
@@ -215,6 +215,49 @@ describe('raster-colorization.helper', () => {
       expect(colors.size).toBeLessThanOrEqual(3);
     });
 
+    it('should handle all-zero image', () => {
+      const input = createGrayscalePng({
+        width: 2,
+        height: 2,
+        values: [0, 0, 0, 0],
+      });
+      const result = colorizeGrayscalePng({
+        base64Grayscale: input,
+        config: FLOOD_DEPTH_CONFIG,
+      });
+
+      for (let i = 0; i < 4; i++) {
+        const pixel = readOutputPixel({ base64: result, pixelIndex: i });
+        expect(pixel.a).toBe(0);
+      }
+    });
+
+    it('should handle uniform non-zero image', () => {
+      const config = {
+        mode: 'gradient' as const,
+        colorLow: [100, 100, 100, 204] as [number, number, number, number],
+        colorHigh: [200, 200, 200, 204] as [number, number, number, number],
+        zeroIsTransparent: true,
+        steps: 6,
+        useLogScale: false,
+      };
+      const input = createGrayscalePng({
+        width: 2,
+        height: 2,
+        values: [50, 50, 50, 50],
+      });
+      const result = colorizeGrayscalePng({ base64Grayscale: input, config });
+
+      const pixel0 = readOutputPixel({ base64: result, pixelIndex: 0 });
+      const pixel3 = readOutputPixel({ base64: result, pixelIndex: 3 });
+      expect(pixel0.r).toBe(pixel3.r);
+      expect(pixel0.g).toBe(pixel3.g);
+      expect(pixel0.b).toBe(pixel3.b);
+      expect(pixel0.a).toBe(204);
+    });
+  });
+
+  describe('colorizeGrayscalePng (palette mode)', () => {
     it('should map lowest non-zero value to first palette color and max to last', () => {
       // Arrange
       const config = {
@@ -264,47 +307,6 @@ describe('raster-colorization.helper', () => {
       // Assert
       const pixel = readOutputPixel({ base64: result, pixelIndex: 0 });
       expect(pixel).toEqual({ r: 30, g: 0, b: 0, a: 30 });
-    });
-
-    it('should handle all-zero image', () => {
-      const input = createGrayscalePng({
-        width: 2,
-        height: 2,
-        values: [0, 0, 0, 0],
-      });
-      const result = colorizeGrayscalePng({
-        base64Grayscale: input,
-        config: FLOOD_DEPTH_CONFIG,
-      });
-
-      for (let i = 0; i < 4; i++) {
-        const pixel = readOutputPixel({ base64: result, pixelIndex: i });
-        expect(pixel.a).toBe(0);
-      }
-    });
-
-    it('should handle uniform non-zero image', () => {
-      const config = {
-        mode: 'gradient' as const,
-        colorLow: [100, 100, 100, 204] as [number, number, number, number],
-        colorHigh: [200, 200, 200, 204] as [number, number, number, number],
-        zeroIsTransparent: true,
-        steps: 6,
-        useLogScale: false,
-      };
-      const input = createGrayscalePng({
-        width: 2,
-        height: 2,
-        values: [50, 50, 50, 50],
-      });
-      const result = colorizeGrayscalePng({ base64Grayscale: input, config });
-
-      const pixel0 = readOutputPixel({ base64: result, pixelIndex: 0 });
-      const pixel3 = readOutputPixel({ base64: result, pixelIndex: 3 });
-      expect(pixel0.r).toBe(pixel3.r);
-      expect(pixel0.g).toBe(pixel3.g);
-      expect(pixel0.b).toBe(pixel3.b);
-      expect(pixel0.a).toBe(204);
     });
   });
 
