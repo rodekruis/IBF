@@ -1,9 +1,8 @@
 """Report references to admin-area PCODEs that an admin-area update retired.
 
-Rather than checking a hand-maintained list of dependent datasets, this sweeps the
-repository and the seed-data repository for any PCODE that existed in the old
-admin-area dataset and is gone from the new one. That way datasets nobody remembered
-are covered too.
+Rather than checking a hand-maintained list of dependent datasets, this scans
+selected directories in this repository and the seed-data repository for quoted
+TS/Python/JSON literals that match PCODEs retired by the update.
 """
 
 import argparse
@@ -47,7 +46,7 @@ EXCLUDED_DIRECTORY_NAMES = {
 MINIMUM_PLACE_CODE_LENGTH = 4
 
 MAXIMUM_REPORTED_PLACE_CODES = 10
-QUOTED_TOKEN_PATTERN = re.compile(r"['\"]([A-Za-z0-9]{2,20})['\"]")
+QUOTED_TOKEN_PATTERN = re.compile(r"['\"]([A-Za-z0-9][A-Za-z0-9._-]{1,49})['\"]")
 
 AdminAreaReader = Callable[[str, int], list[dict]]
 

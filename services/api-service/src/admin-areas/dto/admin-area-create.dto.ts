@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsInt, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class AdminAreaCreateDto {
-  @ApiProperty({ example: 'KE030' })
+  @ApiProperty({ example: 'KEN.10_1' })
   @IsString()
   public readonly placeCode: string;
 
@@ -18,22 +18,22 @@ export class AdminAreaCreateDto {
   @IsString()
   public readonly countryCodeIso3: string;
 
-  @ApiPropertyOptional({ example: 'KE010', nullable: true })
+  @ApiPropertyOptional({ example: 'KEN.10_1', nullable: true })
   @IsOptional()
   @IsString()
   public readonly placeCodeLevel1?: string | null;
 
-  @ApiPropertyOptional({ example: 'KE010222', nullable: true })
+  @ApiPropertyOptional({ example: 'KEN.10.1_1', nullable: true })
   @IsOptional()
   @IsString()
   public readonly placeCodeLevel2?: string | null;
 
-  @ApiPropertyOptional({ example: 'KE010222333', nullable: true })
+  @ApiPropertyOptional({ example: 'KEN.10.1.1_1', nullable: true })
   @IsOptional()
   @IsString()
   public readonly placeCodeLevel3?: string | null;
 
-  @ApiPropertyOptional({ example: 'KE010222333444', nullable: true })
+  @ApiPropertyOptional({ example: 'KEN.10.1.1.1_1', nullable: true })
   @IsOptional()
   @IsString()
   public readonly placeCodeLevel4?: string | null;
