@@ -12,10 +12,6 @@ For each station, the script:
 4. Includes a new area when at least the configured fraction of the new area is covered by the old footprint.
 5. Writes proposed station-threshold JSON and a detailed per-station overlap report.
 
-The old and new levels can differ. In particular, ZMB uses old adm3 station
-mappings and migrates them onto new adm4 admin areas; the other configured
-countries currently use the same deepest level on both sides.
-
 The default per-area threshold is `0.25`: a new area must have at least 25%
 of its area covered by the old footprint. The report also calculates combined
 coverage using the union of all accepted new areas, avoiding double-counting
@@ -23,6 +19,13 @@ overlapping polygons. A station is flagged for review when combined coverage of
 the old footprint is below the default `0.9` threshold. This allows new areas
 to be larger than their old counterparts while preserving the old footprint as
 the primary requirement. Source repositories are never modified.
+
+Each deepest-level area should drain to a single station, but step 3 runs per
+station and cannot see the other stations' claims. The report therefore lists
+`shared_new_pcodes` per station: any proposed area that another station also
+claims, with the competing station codes. This is expected to be empty, and is
+flagged in `review` when it is not. Shallower levels are not checked, because a
+parent area legitimately contains sub-areas draining to different stations.
 
 ### Example
 
