@@ -99,13 +99,17 @@ function resolveColor({
   config: ColorizationConfig;
   normalized: number;
 }): Rgba {
-  if (config.mode === 'palette') {
-    const band = Math.min(
-      Math.floor(normalized * config.palette.length),
-      config.palette.length - 1,
-    );
-    return config.palette[band];
+if (config.mode === 'palette') {
+  if (config.palette.length === 0) {
+    throw new Error('Colorization palette must contain at least one color');
   }
+
+  const band = Math.min(
+    Math.floor(normalized * config.palette.length),
+    config.palette.length - 1,
+  );
+  return config.palette[band];
+}
 
   const { colorLow, colorHigh, steps } = config;
   const stepIndex = Math.round(normalized * steps);
