@@ -56,6 +56,7 @@ def extract_geojson_levels(
     needed_levels: list[int],
 ) -> None:
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+        matching_files: dict[int, str] = {}
         for level in needed_levels:
             level_patterns = (f"adm{level}", f"admin{level}")
             matching = [
@@ -69,12 +70,12 @@ def extract_geojson_levels(
             ]
 
             if not matching:
-                print(
-                    f"  WARNING: No adm{level} GeoJSON found in archive for {country}"
+                raise RuntimeError(
+                    f"No adm{level} GeoJSON found in archive for {country}"
                 )
-                continue
+            matching_files[level] = matching[0]
 
-            filename = matching[0]
+        for level, filename in matching_files.items():
             output_file = DATA_DIR / f"{country}_adm{level}.json"
             temporary_file = output_file.with_suffix(".json.part")
             with zf.open(filename) as source, open(temporary_file, "wb") as destination:
@@ -95,6 +96,7 @@ def extract_shp_levels(
         with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
             zf.extractall(tmppath)
 
+        matching_files: dict[int, Path] = {}
         for level in needed_levels:
             level_patterns = (f"adm{level}", f"admin{level}")
             shp_files = [
@@ -106,10 +108,10 @@ def extract_shp_levels(
             ]
 
             if not shp_files:
-                print(f"  WARNING: No adm{level} SHP found in archive for {country}")
-                continue
+                raise RuntimeError(f"No adm{level} SHP found in archive for {country}")
+            matching_files[level] = shp_files[0]
 
-            shp_path = shp_files[0]
+        for level, shp_path in matching_files.items():
             features = []
             with fiona.open(shp_path) as src:
                 for feat in src:

@@ -16,6 +16,7 @@ The active configuration is defined in `admin_area_source_config.py`. Each count
 
 - The `data/.env` file must define `SEED_DATA_REPO_ROOT` for the local `IBF-seed-data` checkout.
 - Run commands from the `data/` directory with the project virtual environment active.
+- Run `npm ci` from the `data/` directory before geometry processing to install the local Mapshaper dependency.
 - The configured WorldPop population PNG and metadata files must be present in `IBF-seed-data/exposure/population/data-png/` before population enrichment.
 
 ## Active Pipeline
