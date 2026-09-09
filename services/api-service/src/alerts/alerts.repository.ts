@@ -14,7 +14,7 @@ import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 import {
   colorizeGrayscalePng,
   getColorizationConfig,
-  reproject4326To3857,
+  reprojectExtents4326To3857,
 } from '@api-service/src/utils/raster-colorization.helper';
 
 const alertInclude = {
@@ -155,7 +155,7 @@ export class AlertsRepository {
                     nodata: 0,
                   },
                   coloured: {
-                    extent: reproject4326To3857(entry.extent),
+                    extent: reprojectExtents4326To3857(entry.extent),
                     crs: EPSG.WebMercator,
                   },
                 },

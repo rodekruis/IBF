@@ -216,7 +216,7 @@ function computeRasterMetadata({
 
   const extent = { xmin, ymin, xmax, ymax };
   const colouredExtent =
-    metadata.crs === EPSG.WGS84 ? reproject4326To3857(extent) : extent;
+    metadata.crs === EPSG.WGS84 ? reprojectExtents4326To3857(extent) : extent;
   const colouredCrs =
     metadata.crs === EPSG.WGS84 ? EPSG.WebMercator : metadata.crs;
 
@@ -374,7 +374,8 @@ function mercatorYToLatitude(mercatorY: number): number {
   return ((2 * Math.atan(Math.exp(rad)) - Math.PI / 2) * 180) / Math.PI;
 }
 
-export function reproject4326To3857(extent: {
+// Reprojects the extents (corners) of a rectangle from EPSG:4326 to EPSG:3857
+export function reprojectExtents4326To3857(extent: {
   xmin: number;
   ymin: number;
   xmax: number;
@@ -388,10 +389,7 @@ export function reproject4326To3857(extent: {
   };
 }
 
-// Reprojects a PNG from EPSG:4326 to EPSG:3857. Rows of a geographic raster are evenly
-// spaced in latitude, but map renderers space them evenly in Mercator Y, so each output
-// row is resampled from the source row at its latitude. Columns are untouched because
-// Mercator X is linear in longitude. Nearest-neighbour keeps nodata edges crisp.
+// Reprojects all pixels in a PNG from EPSG:4326 to EPSG:3857
 export function reprojectPng4326To3857({
   base64Png,
   ymin,

@@ -6,7 +6,7 @@ import {
   colorizeGrayscalePng,
   getColorizationConfig,
   processPopulationRaster,
-  reproject4326To3857,
+  reprojectExtents4326To3857,
   reprojectPng4326To3857,
 } from '@api-service/src/utils/raster-colorization.helper';
 
@@ -326,7 +326,7 @@ describe('raster-colorization.helper', () => {
 
   describe('reproject4326To3857', () => {
     it('should convert (0,0) to (0,0)', () => {
-      const result = reproject4326To3857({
+      const result = reprojectExtents4326To3857({
         xmin: 0,
         ymin: 0,
         xmax: 0,
@@ -339,7 +339,7 @@ describe('raster-colorization.helper', () => {
     });
 
     it('should convert known coordinates correctly', () => {
-      const result = reproject4326To3857({
+      const result = reprojectExtents4326To3857({
         xmin: -180,
         ymin: -85,
         xmax: 180,
@@ -352,7 +352,7 @@ describe('raster-colorization.helper', () => {
     });
 
     it('should produce symmetric results for symmetric input', () => {
-      const result = reproject4326To3857({
+      const result = reprojectExtents4326To3857({
         xmin: -10,
         ymin: -10,
         xmax: 10,
