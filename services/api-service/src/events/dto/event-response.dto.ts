@@ -4,6 +4,7 @@ import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-a
 import { EventLayerDto } from '@api-service/src/layers/dto/event-layer.dto';
 import {
   AlertClass,
+  EventStatus,
   ForecastSource,
   HazardType,
 } from '@api-service/src/shared-enums';
@@ -51,8 +52,8 @@ export class EventResponseDto {
   @ApiProperty({ example: '2026-03-20T23:59:59Z' })
   public readonly lastUpdatedAt: string;
 
-  @ApiProperty()
-  public readonly isOngoing: boolean;
+  @ApiProperty({ enum: EventStatus })
+  public readonly eventStatus: EventStatus;
 
   @ApiProperty({
     description:
