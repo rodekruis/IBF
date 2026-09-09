@@ -8,6 +8,7 @@ import {
 import { EventsService } from '@api-service/src/events/events.service';
 import {
   AlertClass,
+  EventStatus,
   HazardType,
   LayerName,
 } from '@api-service/src/shared-enums';
@@ -182,6 +183,19 @@ describe('EventsService', () => {
           },
         ],
       });
+    });
+
+    it('should return eventStatus ended when endAt equals the view time', async () => {
+      repository.getEvents.mockResolvedValue([buildEvent()]);
+      repository.getExposedAdminAreasForLatestAlerts.mockResolvedValue(
+        new Map(),
+      );
+
+      const result = await service.getEvents({
+        viewTime: new Date('2026-03-26T00:00:00Z'),
+      });
+
+      expect(result[0].eventStatus).toBe(EventStatus.ended);
     });
   });
 });
