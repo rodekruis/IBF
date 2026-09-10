@@ -237,6 +237,9 @@ export function processPopulationRaster({
   dataPngBuffer: Buffer;
   metadata: { transform: number[]; crs: EPSG };
 }): PopulationRasterResult {
+  if (metadata.crs !== EPSG.WGS84) {
+    throw new Error('Only WGS84 population rasters are supported');
+  }
   const rasterMetadata = computeRasterMetadata({ dataPngBuffer, metadata });
   const colouredBase64 = colorizeRgbaEncodedPng({
     inputBuffer: dataPngBuffer,
