@@ -463,20 +463,22 @@ describe('raster-colorization.helper', () => {
       );
     });
 
-    it('should keep coloured extent unchanged when input is not EPSG:4326', () => {
+    it('should throw when input is not EPSG:4326', () => {
+      // Arrange
       const pngBuffer = createTestPngBuffer({ width: 4, height: 4 });
-      const result = processPopulationRaster({
-        dataPngBuffer: pngBuffer,
-        metadata: {
-          transform: [1000, 0, 500000, 0, -1000, 600000],
-          crs: EPSG.WebMercator,
-        },
-      });
 
-      expect(result.metadata.coloured.crs).toBe(EPSG.WebMercator);
-      expect(result.metadata.coloured.extent).toEqual(
-        result.metadata.data.extent,
-      );
+      // Act
+      const act = () =>
+        processPopulationRaster({
+          dataPngBuffer: pngBuffer,
+          metadata: {
+            transform: [1000, 0, 500000, 0, -1000, 600000],
+            crs: EPSG.WebMercator,
+          },
+        });
+
+      // Assert
+      expect(act).toThrow('Only WGS84 population rasters are supported');
     });
 
     it('should return a valid base64 coloured PNG', () => {
@@ -543,7 +545,7 @@ describe('raster-colorization.helper', () => {
         dataPngBuffer: pngBuffer,
         metadata: {
           transform: [1, 0, 0, 0, -1, 1],
-          crs: EPSG.WebMercator,
+          crs: EPSG.WGS84,
         },
       });
 
