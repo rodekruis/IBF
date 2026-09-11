@@ -1,0 +1,44 @@
+{
+  "id": "nrwbatchpoc",
+  "vmSize": "standard_e2as_v4",
+  "virtualMachineConfiguration": {
+    "imageReference": {
+      "publisher": "microsoft-dsvm",
+      "offer": "ubuntu-hpc",
+      "sku": "2404",
+      "version": "latest"
+    },
+    "nodeAgentSKUId": "batch.node.ubuntu 24.04",
+    "containerConfiguration": {
+      "type": "dockerCompatible",
+      "containerImageNames": ["nrwdockerregistry.azurecr.io/pipelines:latest"],
+      "containerRegistries": [
+        {
+          "registryServer": "nrwdockerregistry.azurecr.io",
+          "identityReference": {
+            "resourceId": "/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourcegroups/nrw-batch-poc/providers/Microsoft.ManagedIdentity/userAssignedIdentities/nrw-batch-poc"
+          }
+        }
+      ]
+    }
+  },
+  "networkConfiguration": {
+    "subnetId": "/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.Network/virtualNetworks/nrw-vnet-test/subnets/batch"
+  },
+  "enableAutoScale": true,
+  "autoScaleFormula": "$samples = $ActiveTasks.GetSamplePercent(TimeInterval_Minute * 15);\n$tasks = $samples < 70 ? max(0, $ActiveTasks.GetSample(1)) : max($ActiveTasks.GetSample(1), avg($ActiveTasks.GetSample(TimeInterval_Minute * 15)));\n$targetVMs = $tasks > 0 ? $tasks : 0;\ncappedPoolSize = 2;\n$TargetDedicatedNodes = max(0, min($targetVMs, cappedPoolSize));\n$NodeDeallocationOption = taskcompletion;",
+  "autoScaleEvaluationInterval": "PT5M",
+  "mountConfiguration": [
+    {
+      "azureBlobFileSystemConfiguration": {
+        "accountName": "nrwbatchpoc",
+        "containerName": "nrw-data-cache",
+        "relativeMountPath": "nrw-data-cache",
+        "identityReference": {
+          "resourceId": "/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourcegroups/nrw-batch-poc/providers/Microsoft.ManagedIdentity/userAssignedIdentities/nrw-batch-poc"
+        },
+        "blobfuseOptions": "-o allow_other -o uid=1000 -o gid=1000"
+      }
+    }
+  ]
+}
