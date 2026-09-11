@@ -29,7 +29,7 @@ export class AlertConfigCreateDto {
   @IsString()
   public readonly spatialExtentName: string;
 
-  @ApiProperty({ type: [String], example: ['KE030'] })
+  @ApiProperty({ type: [String], example: ['KEN.10_1'] })
   @IsArray()
   @IsString({ each: true })
   public readonly spatialExtentPlaceCodes: string[];

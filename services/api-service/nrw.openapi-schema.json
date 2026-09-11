@@ -2598,7 +2598,7 @@
           },
           "spatialExtentPlaceCodes": {
             "example": [
-              "KE030"
+              "KEN.10_1"
             ],
             "type": "array",
             "items": {
@@ -2752,7 +2752,7 @@
           "id": {
             "type": "object",
             "description": "Feature identifier",
-            "example": "KE030"
+            "example": "KEN.10_1"
           },
           "properties": {
             "type": "object",
@@ -2808,22 +2808,22 @@
           },
           "placeCodeLevel1": {
             "type": "object",
-            "example": "KE010",
+            "example": "KEN.10_1",
             "nullable": true
           },
           "placeCodeLevel2": {
             "type": "object",
-            "example": "KE010222",
+            "example": "KEN.10.1_1",
             "nullable": true
           },
           "placeCodeLevel3": {
             "type": "object",
-            "example": "KE010222333",
+            "example": "KEN.10.1.1_1",
             "nullable": true
           },
           "placeCodeLevel4": {
             "type": "object",
-            "example": "KE010222333444",
+            "example": "KEN.10.1.1.1_1",
             "nullable": true
           },
           "attributes": {

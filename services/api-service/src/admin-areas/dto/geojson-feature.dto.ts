@@ -12,7 +12,7 @@ export class GeoJsonFeatureDto implements Feature<Geometry | null> {
 
   @ApiPropertyOptional({
     description: 'Feature identifier',
-    example: 'KE030',
+    example: 'KEN.10_1',
   })
   public readonly id?: string | number;
 

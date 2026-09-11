@@ -35,6 +35,8 @@ def load_feature_collection(filepath: Path) -> list[dict]:
     features = data.get("features")
     if not isinstance(features, list):
         raise TypeError(f"Expected features list in: {filepath}")
+    if not features:
+        raise ValueError(f"Expected non-empty features list in: {filepath}")
 
     return features
 
