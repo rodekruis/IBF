@@ -1,4 +1,4 @@
-"""Migrate station mappings from old admin geometries to new admin geometries."""
+"""Transfer station mappings from source admin geometries to target geometries."""
 
 import argparse
 import json
@@ -7,7 +7,7 @@ from datetime import datetime, UTC
 from pathlib import Path
 from typing import cast
 
-from data_management.seed_data_management.admin_areas.admin_area_migration import (
+from data_management.seed_data_management.admin_areas.admin_area_dataset_helpers import (
     ADMIN_AREAS_DIRECTORY,
     DEFAULT_SEED_REPOSITORY_URL,
     get_feature_geometry,
@@ -36,7 +36,7 @@ OLD_STATION_MAPPING_LEVELS = {
     "PHL": 3,
     "SSD": 3,
     "UGA": 4,
-    "ZMB": 3,  # only difference with above atm: old adm3 is more comparable to new adm4
+    "ZMB": 3,  # Set this different from the target level if applicable. In the latest implementation, ZMB was the only example of this.
 }
 STATION_THRESHOLDS_DIRECTORY = Path("hazard/flood/glofas-stations")
 DEFAULT_MINIMUM_NEW_AREA_OVERLAP = 0.25
@@ -138,7 +138,7 @@ def migrate_country(
                     "new_overlap_area": 0,
                     "old_footprint_coverage": 0,
                     "overlaps": [],
-                    "review": "No old deepest-level footprint was available.",
+                    "review": "No source deepest-level footprint was available.",
                 }
             )
             continue
@@ -177,8 +177,8 @@ def migrate_country(
                 "meets_old_footprint_coverage": old_footprint_coverage
                 >= minimum_old_footprint_coverage,
                 "review": (
-                    f"Combined new footprint covers only "
-                    f"{old_footprint_coverage:.1%} of the old footprint."
+                    f"Combined target footprint covers only "
+                    f"{old_footprint_coverage:.1%} of the source footprint."
                     if old_footprint_coverage < minimum_old_footprint_coverage
                     else None
                 ),
@@ -242,7 +242,7 @@ def write_manifest(
     manifest = {
         "schemaVersion": 1,
         "generatedAt": datetime.now(UTC).isoformat(),
-        "method": "spatial-old-footprint-to-new-admin-area-overlap",
+        "method": "spatial-source-footprint-to-target-admin-area-overlap",
         "minimumNewAreaOverlap": minimum_new_area_overlap,
         "minimumOldFootprintCoverage": minimum_old_footprint_coverage,
         "oldSource": {
@@ -292,13 +292,13 @@ def main() -> None:
         "--minimum-new-area-overlap",
         type=float,
         default=DEFAULT_MINIMUM_NEW_AREA_OVERLAP,
-        help="Minimum fraction of a new area covered by the old footprint.",
+        help="Minimum fraction of a target area covered by the source footprint.",
     )
     parser.add_argument(
         "--minimum-old-footprint-coverage",
         type=float,
         default=DEFAULT_MINIMUM_OLD_FOOTPRINT_COVERAGE,
-        help="Minimum combined coverage of the old station footprint.",
+        help="Minimum combined coverage of the source station footprint.",
     )
     arguments = parser.parse_args()
     new_seed_revision = arguments.new_seed_revision or get_git_revision(

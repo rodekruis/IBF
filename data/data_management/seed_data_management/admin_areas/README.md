@@ -1,6 +1,6 @@
 # Admin Areas
 
-This directory contains the scripts that retrieve, process, enrich, and validate administrative-area data in the sibling `IBF-seed-data` repository.
+This directory contains the repeatable, manually orchestrated workflow for updating administrative-area data in the sibling `IBF-seed-data` repository and updating datasets that reference its PCODEs. When admin-area data changes, the workflow processes and validates the target admin-area dataset, then translates dependent mapping data from the source admin-area version so it references the target areas. A single command to orchestrate all stages is a possible follow-up.
 
 The active configuration is defined in `admin_area_source_config.py`. Each country uses one source for all configured admin levels. Most countries currently use HDX COD-AB data; Kenya uses GADM to keep adm0-3 source-consistent.
 
@@ -19,9 +19,9 @@ The active configuration is defined in `admin_area_source_config.py`. Each count
 - Run `npm ci` from the `data/` directory before geometry processing to install the local Mapshaper dependency.
 - The configured WorldPop population PNG and metadata files must be present in `IBF-seed-data/exposure/population/data-png/` before population enrichment.
 
-## Active Pipeline
+## Update Workflow
 
-Run stages in this order. Each stage writes to the local `IBF-seed-data` repository.
+Run stages in this order. The commands are currently run manually, and each stage writes to the local `IBF-seed-data` repository.
 
 ```bash
 python -m data_management.seed_data_management.admin_areas.fetch_gadm_admin_areas
@@ -47,7 +47,14 @@ The stages perform the following work:
 7. Compute independent zonal population totals for every configured processed feature.
 8. Generate `admin_area_sources.json` in the seed-data repo to record source and processing metadata.
 9. Validate processed completeness, stored source files where applicable, canonical schema, hierarchy, geometries, and population values. A successful validation regenerates `admin_area_validation_report.md`.
-10. Report any file in either repository that still references a PCODE the update retired.
+10. Report any file in either repository that references a PCODE present in the source dataset but absent from the target dataset.
+
+## Dependent Mapping Data
+
+The warning above applies in particular to these mapping updates. After the target admin-area files pass validation, run the relevant migration-style script when the corresponding dataset maps areas by PCODE. These scripts use the previous mapping data together with the source and target admin-area datasets; they do not generate a new mapping from source data.
+
+- [Flood GloFAS station mappings](../flood/README.md): review the overlap reports, then copy the proposed station-threshold files and manifests into the seed-data repository.
+- [Drought region mappings](../drought/README.md): review the reports, then apply the proposed region mappings to `seed-alert-configs.const.ts` and retain the manifests with the change.
 
 ## Generated Metadata
 
