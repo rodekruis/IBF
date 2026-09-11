@@ -1,8 +1,8 @@
-"""Report references to admin-area PCODEs that an admin-area update retired.
+"""Report references to PCODEs present in a source dataset but absent from a target dataset.
 
 Rather than checking a hand-maintained list of dependent datasets, this scans
 selected directories in this repository and the seed-data repository for quoted
-TS/Python/JSON literals that match PCODEs retired by the update.
+TS/Python/JSON literals that match PCODEs removed between the two datasets.
 """
 
 import argparse
@@ -58,7 +58,7 @@ def main() -> None:
         new_seed_repo_path, arguments.old_seed_revision
     )
     print(
-        f"{len(retired_place_codes)} place codes were retired since "
+        f"{len(retired_place_codes)} source place codes are absent from the target dataset since "
         f"{arguments.old_seed_revision}"
     )
 
@@ -68,9 +68,11 @@ def main() -> None:
         print(f"ERROR: {error}")
 
     if errors:
-        print(f"\n{len(errors)} file(s) reference retired place codes.")
+        print(
+            f"\n{len(errors)} file(s) reference place codes absent from the target dataset."
+        )
         sys.exit(1)
-    print("\nNo retired place codes referenced.")
+    print("\nNo source place codes absent from the target dataset were referenced.")
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -78,7 +80,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--old-seed-revision",
         default=DEFAULT_OLD_SEED_REVISION,
-        help="Seed-data revision from before the admin-area update.",
+        help="Source seed-data revision to compare with the target repository.",
     )
     parser.add_argument(
         "--new-seed-repo",
@@ -125,8 +127,8 @@ def read_admin_area_file(seed_repo_path: Path, country: str, level: int) -> list
         return json.load(file)["features"]
 
 
-# The pre-update files are still in the seed repository's history, so no separate
-# checkout of the old dataset is needed.
+# The source files are read from the seed repository's history, so no separate
+# checkout of the source dataset is needed.
 def read_old_admin_area_file(
     seed_repo_path: Path, revision: str, country: str, level: int
 ) -> list[dict]:

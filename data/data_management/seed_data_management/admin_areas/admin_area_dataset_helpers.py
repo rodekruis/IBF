@@ -1,4 +1,4 @@
-"""Shared helpers for migrating admin-area-keyed seed data onto a new admin-area dataset."""
+"""Shared helpers for translating admin-area-keyed data between dataset versions."""
 
 import json
 import subprocess

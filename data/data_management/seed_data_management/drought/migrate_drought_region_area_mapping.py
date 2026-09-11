@@ -1,4 +1,4 @@
-"""Migrate drought climate-region mappings from old admin geometries to new admin geometries."""
+"""Transfer drought region mappings from source admin geometries to target geometries."""
 
 import argparse
 import json
@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, UTC
 from pathlib import Path
 
-from data_management.seed_data_management.admin_areas.admin_area_migration import (
+from data_management.seed_data_management.admin_areas.admin_area_dataset_helpers import (
     ADMIN_AREAS_DIRECTORY,
     DEFAULT_SEED_REPOSITORY_URL,
     get_area_name,
@@ -246,7 +246,7 @@ def build_region_report(
             "newOverlapArea": 0,
             "oldFootprintCoverage": 0,
             "meetsOldFootprintCoverage": False,
-            "review": "No old footprint was available for this region.",
+            "review": "No source footprint was available for this region.",
         }
     new_footprint = union_geometries(
         [new_geometries_by_pcode[place_code] for place_code in new_place_codes]
@@ -270,8 +270,8 @@ def build_region_report(
         "meetsOldFootprintCoverage": old_footprint_coverage
         >= minimum_old_footprint_coverage,
         "review": (
-            f"Combined new footprint covers only "
-            f"{old_footprint_coverage:.1%} of the old footprint."
+            f"Combined target footprint covers only "
+            f"{old_footprint_coverage:.1%} of the source footprint."
             if old_footprint_coverage < minimum_old_footprint_coverage
             else None
         ),
@@ -312,7 +312,7 @@ def write_manifest(
     manifest = {
         "schemaVersion": 1,
         "generatedAt": datetime.now(UTC).isoformat(),
-        "method": "spatial-old-region-footprint-to-new-admin-area-overlap",
+        "method": "spatial-source-region-footprint-to-target-admin-area-overlap",
         "minimumNewAreaOverlap": minimum_new_area_overlap,
         "minimumOldFootprintCoverage": minimum_old_footprint_coverage,
         "oldSource": {
@@ -363,13 +363,13 @@ def main() -> None:
         "--minimum-new-area-overlap",
         type=float,
         default=DEFAULT_MINIMUM_NEW_AREA_OVERLAP,
-        help="Minimum fraction of a new area covered by an old region footprint.",
+        help="Minimum fraction of a target area covered by a source region footprint.",
     )
     parser.add_argument(
         "--minimum-old-footprint-coverage",
         type=float,
         default=DEFAULT_MINIMUM_OLD_FOOTPRINT_COVERAGE,
-        help="Minimum combined coverage of the old region footprint.",
+        help="Minimum combined coverage of the source region footprint.",
     )
     arguments = parser.parse_args()
     new_seed_revision = arguments.new_seed_revision or get_git_revision(

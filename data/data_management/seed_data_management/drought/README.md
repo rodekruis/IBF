@@ -1,18 +1,15 @@
 # Drought climate-region area mapping
 
-`migrate_drought_region_area_mapping.py` moves the drought climate regions in
-[seed-alert-configs.const.ts](../../../../services/api-service/src/seed/seed-data/seed-alert-configs.const.ts)
-onto a new admin-area dataset, by overlaying each region's old footprint on the new
-areas. It is a near-copy of the flood [station-area migration](../flood/README.md),
-which is why it lives here even though its output is not seed-repo data. That also
-means the result has no seed-repo revision to trace back to; accepted for now, since
-the previous PCODEs stay in Git history and drought is still provisional.
+`migrate_drought_region_area_mapping.py` transfers the drought climate regions (currently maintained in
+[seed-alert-configs.const.ts](../../../../services/api-service/src/seed/seed-data/seed-alert-configs.const.ts)) from a source admin-area dataset onto a target dataset by overlaying each region's
+source footprint on the target areas. It is a reusable step in the admin-area update
+workflow. It takes existing region mappings tied to a source admin-area dataset and
+produces mappings tied to a target admin-area dataset. It is rerunnable with different
+source and target inputs. Its output updates application seed data rather than the
+seed-data repository, so its manifest records the source and target inputs used for
+each run.
 
-Only ETH and UGA are configured. The other drought countries use an empty
-`placeCodes` array, meaning national scope, so boundary changes do not affect them.
-
-Unlike stations, region footprints are large and adjacent, so new areas can straddle
-two of them. Each new area is assigned to the region overlapping it most.
+Some countries use an empty `placeCodes` array, meaning national scope, so boundary changes do not affect them.
 
 ```bash
 cd data
