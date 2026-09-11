@@ -73,7 +73,7 @@ The code for the pipelines lives in the `IBF` repository under `/data`. See the 
 
 #### Seed data (`ibf-seed-data`)
 
-This is under construction. There are currently some seeding scripts in `data/data_management/data_upload` for dev use. See the [data/ folder readme](/data/README.md) for more information.
+The backend reset endpoint seeds static data from the `IBF-seed-data` repository, including admin areas, population rasters, and other reference data. Use the mock endpoint after a reset to create test forecast events for local portal testing.
 
 ## Troubleshooting
 

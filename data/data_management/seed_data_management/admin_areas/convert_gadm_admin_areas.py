@@ -3,10 +3,8 @@ This script converts GADM admin files to the shared admin area format.
 First fetch the GADM data using the admin boundary fetcher script,
 then run this.
 
-Set the target admin levels to specify which levels you want to convert.
-
 Program steps:
-1. Grab list of GADM admin area files with the target admin levels.
+1. Grab list of GADM admin area files for countries/levels configured to use GADM.
 2. For each file:
     a) parse the data and reformat to match the expected format
     b) alert if any data is missing (depends on admin level).
@@ -18,12 +16,15 @@ Program steps:
 
 """
 
-import glob
 import json
 import os
 from dataclasses import asdict
 from pathlib import Path
 
+from data_management.seed_data_management.admin_areas.admin_area_source_config import (
+    AdminAreaSource,
+    get_countries_for_source,
+)
 from data_management.utils.admin_area_geojson import (
     AdminAreaFeatureCollection,
     AdminAreaProperties,
@@ -33,22 +34,22 @@ from data_management.utils.admin_area_geojson import (
 from shared.country_data import CountryCodeIso2, CountryCodeIso3
 from shared.data_helpers import get_seed_data_repo_path
 
-# Input/Output dirs
 BASE_SEED_REPO_DIR = get_seed_data_repo_path()
 INPUT_DIR = Path(BASE_SEED_REPO_DIR) / "admin-areas" / "sources" / "gadm"
 OUTPUT_DIR = Path(BASE_SEED_REPO_DIR) / "admin-areas" / "processed"
 
-# Set this to any level you want to convert (e.g. [0, 1, 2, 3])
-TARGET_ADMIN_LEVELS = [0]
-
 
 def get_input_files() -> list[Path]:
-    """Get all GADM files matching the target admin levels."""
+    gadm_countries = get_countries_for_source(AdminAreaSource.GADM)
     files = []
-    for level in TARGET_ADMIN_LEVELS:
-        pattern = str(INPUT_DIR / f"*_adm{level}.json")
-        files.extend(Path(f) for f in sorted(glob.glob(pattern)))
-    return files
+    for country, levels in gadm_countries.items():
+        for level in levels:
+            filepath = INPUT_DIR / f"{country}_adm{level}.json"
+            if filepath.exists():
+                files.append(filepath)
+            else:
+                print(f"  WARNING: Expected file not found: {filepath}")
+    return sorted(files)
 
 
 def parse_admin_level(filename: str) -> int:
@@ -79,8 +80,6 @@ def convert_feature(
         POPULATION=None,
         ADM0_EN=gadm_properties.get("COUNTRY"),
         ADM0_PCODE=iso_a2,
-        ADM0_ISO_A2=iso_a2,
-        ADM0_ISO_A3=iso_a3,
     )
 
     if admin_level >= 1:

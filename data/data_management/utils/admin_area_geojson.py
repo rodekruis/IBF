@@ -19,11 +19,7 @@ class AdminAreaProperties:
 
     # Admin level 0
     ADM0_EN: str | None = None
-    # write ISO_A2 to here for backward compatibility
-    # we can remove this later
     ADM0_PCODE: str | None = None
-    ADM0_ISO_A2: str | None = None
-    ADM0_ISO_A3: str | None = None
 
     # Admin level 1
     ADM1_EN: str | None = None
@@ -36,12 +32,10 @@ class AdminAreaProperties:
     # Admin level 3
     ADM3_EN: str | None = None
     ADM3_PCODE: str | None = None
-    ADM3_REF: str | None = None
 
     # Admin level 4
     ADM4_EN: str | None = None
     ADM4_PCODE: str | None = None
-    ADM4_REF: str | None = None
 
 
 # Vector point data, along with the shape type

@@ -14,10 +14,6 @@ For specific notes on the data being used, see the [seed data repo readme](https
 
 ## Directories
 
-### data_upload/
-
-Dev scripts for uploading data. See comments in the files for more details. There is a chance the schema or data structure in these files is out-of-date, so be sure to update them before use. More details are in the files.
-
 ### seed_data_management/
 
 The scripts here are for fetching and processing data, with the end goal of storing it in the seed data repo (or other locations as needed).
@@ -30,31 +26,4 @@ Shared util files
 
 ## Admin areas update process
 
-(June 2026) This process is still under development. The scripts here are used for development/prototyping purposes until this can be streamlined (See [Task 42632](https://dev.azure.com/redcrossnl/National%20Risk%20Watch/_workitems/edit/42632)). See the summaries in each file for additional notes. The current steps are the following:
-
-#### 1. Process IBF v1 admin area data
-
-IBF v1 admin area files are used as the base. These are processed via `populate_ibf_v1_admin_area_parents.py` and written into `admin-areas/processed` in your local copy of the seed repo.
-
-#### 2. Process other admin area data
-
-We need higher resolution admin areas than the IBF v1 files, and we also need admin areas not present in IBF v1. The best source is GADM. This is fetched with `fetch_gadm_admin_areas.py` and then parsed with `convert_gadm_admin_areas.py` and written into `admin-areas/processed` in your local copy of the seed repo.
-
-We will need to get more sources though and set up a processing flow. See [PBI 41181](https://dev.azure.com/redcrossnl/IBF/_workitems/edit/41181) for more info.
-
-#### 3. Clean again, and assure parents are added.
-
-Any remaining formatting issues that were not picked up in previous steps are cleaned with `clean_all_processed_admin_areas.py`. This processes directly on files in `admin-areas/processed` in your local copy of the seed repo.
-
-#### 4. Add population data
-
-The population changes are operated directly on admin area data files in `admin-areas/processed` in your local copy of the seed repo.
-
-The process may simplify in the future, but the steps are:
-
-1. If you need new population rasters that are not already in the seed repo, fetch and preprocess them with `seed_data_management/fetch_population_raster.py`
-2. Apply these fetched rasters to the admin areas with `seed_data_management/add_population_to_admin_areas.py`
-
-#### 5. Check in seed repo changes
-
-To save your data changes, commit them to the seed repo.
+Admin-area source retrieval, processing, population enrichment, and validation are documented in [seed_data_management/admin_areas/README.md](seed_data_management/admin_areas/README.md).
