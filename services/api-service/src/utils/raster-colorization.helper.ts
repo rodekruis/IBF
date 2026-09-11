@@ -220,7 +220,7 @@ function computeRasterMetadata({
 
   const extent = { xmin, ymin, xmax, ymax };
   const colouredExtent =
-    metadata.crs === EPSG.WGS84 ? reproject4326To3857(extent) : extent;
+    metadata.crs === EPSG.WGS84 ? reprojectExtents4326To3857(extent) : extent;
   const colouredCrs =
     metadata.crs === EPSG.WGS84 ? EPSG.WebMercator : metadata.crs;
 
@@ -237,15 +237,23 @@ export function processPopulationRaster({
   dataPngBuffer: Buffer;
   metadata: { transform: number[]; crs: EPSG };
 }): PopulationRasterResult {
+  if (metadata.crs !== EPSG.WGS84) {
+    throw new Error('Only WGS84 population rasters are supported');
+  }
   const rasterMetadata = computeRasterMetadata({ dataPngBuffer, metadata });
   const colouredBase64 = colorizeRgbaEncodedPng({
     inputBuffer: dataPngBuffer,
     config: POPULATION_CONFIG,
     downsampleFactor: POPULATION_DOWNSAMPLE_FACTOR,
   });
+  const { ymin, ymax } = rasterMetadata.data.extent;
 
   return {
-    colouredBase64,
+    colouredBase64: reprojectPng4326To3857({
+      base64Png: colouredBase64,
+      ymin,
+      ymax,
+    }),
     metadata: rasterMetadata,
   };
 }
@@ -349,23 +357,84 @@ function colorizeRgbaEncodedPng({
   return outputBuffer.toString('base64');
 }
 
-export function reproject4326To3857(extent: {
+const MERCATOR_WORLD_EXTENT_METRES = 20037508.34;
+const MAX_MERCATOR_LATITUDE = 85.05112878; // Web Mercator formula is undefined at the poles
+
+function longitudeToMercatorX(longitude: number): number {
+  return (longitude * MERCATOR_WORLD_EXTENT_METRES) / 180;
+}
+
+function latitudeToMercatorY(latitude: number): number {
+  const clampedLatitude = Math.max(
+    -MAX_MERCATOR_LATITUDE,
+    Math.min(MAX_MERCATOR_LATITUDE, latitude),
+  );
+  const rad = (clampedLatitude * Math.PI) / 180;
+  return (
+    (Math.log(Math.tan(Math.PI / 4 + rad / 2)) / Math.PI) *
+    MERCATOR_WORLD_EXTENT_METRES
+  );
+}
+
+function mercatorYToLatitude(mercatorY: number): number {
+  const rad = (mercatorY / MERCATOR_WORLD_EXTENT_METRES) * Math.PI;
+  return ((2 * Math.atan(Math.exp(rad)) - Math.PI / 2) * 180) / Math.PI;
+}
+
+// Reprojects the extents (corners) of a rectangle from EPSG:4326 to EPSG:3857
+export function reprojectExtents4326To3857(extent: {
   xmin: number;
   ymin: number;
   xmax: number;
   ymax: number;
 }): { xmin: number; ymin: number; xmax: number; ymax: number } {
-  const toMercatorX = (lon: number): number => (lon * 20037508.34) / 180;
-  const toMercatorY = (lat: number): number => {
-    const clampedLat = Math.max(-85.05112878, Math.min(85.05112878, lat)); // Web Mercator formula is undefined at the poles
-    const rad = (clampedLat * Math.PI) / 180;
-    return (Math.log(Math.tan(Math.PI / 4 + rad / 2)) / Math.PI) * 20037508.34;
-  };
-
   return {
-    xmin: toMercatorX(extent.xmin),
-    ymin: toMercatorY(extent.ymin),
-    xmax: toMercatorX(extent.xmax),
-    ymax: toMercatorY(extent.ymax),
+    xmin: longitudeToMercatorX(extent.xmin),
+    ymin: latitudeToMercatorY(extent.ymin),
+    xmax: longitudeToMercatorX(extent.xmax),
+    ymax: latitudeToMercatorY(extent.ymax),
   };
+}
+
+// Reprojects all pixels in a PNG from EPSG:4326 to EPSG:3857
+export function reprojectPng4326To3857({
+  base64Png,
+  ymin,
+  ymax,
+}: {
+  base64Png: string;
+  ymin: number;
+  ymax: number;
+}): string {
+  if (ymax <= ymin) {
+    return base64Png;
+  }
+
+  const png = PNG.sync.read(Buffer.from(base64Png, 'base64'));
+  const { width, height, data } = png;
+
+  const mercatorTop = latitudeToMercatorY(ymax);
+  const mercatorBottom = latitudeToMercatorY(ymin);
+  const outputPng = new PNG({ width, height });
+  const rowBytes = width * 4;
+
+  for (let outputRow = 0; outputRow < height; outputRow++) {
+    const mercatorY =
+      mercatorTop +
+      ((outputRow + 0.5) / height) * (mercatorBottom - mercatorTop);
+    const latitude = mercatorYToLatitude(mercatorY);
+    const sourceRow = Math.min(
+      height - 1,
+      Math.max(0, Math.floor(((ymax - latitude) / (ymax - ymin)) * height)),
+    );
+
+    data.copy(
+      outputPng.data,
+      outputRow * rowBytes,
+      sourceRow * rowBytes,
+      sourceRow * rowBytes + rowBytes,
+    );
+  }
+
+  return PNG.sync.write(outputPng).toString('base64');
 }
