@@ -1,16 +1,18 @@
 # Admin Areas
 
-This directory contains the repeatable, manually orchestrated workflow for updating administrative-area data in the sibling `IBF-seed-data` repository and updating datasets that reference its PCODEs. When admin-area data changes, the workflow processes and validates the target admin-area dataset, then translates dependent mapping data from the source admin-area version so it references the target areas. A single command to orchestrate all stages is a possible follow-up.
+This directory contains the repeatable, manually orchestrated workflow for updating administrative-area data in the sibling `IBF-seed-data` repository. When admin-area data changes, the workflow processes and validates the target admin-area dataset, then translates dependent mapping data from the source admin-area version so it references the target areas. A single command to orchestrate all stages is a possible follow-up.
 
-The active configuration is defined in `admin_area_source_config.py`. Each country uses one source for all configured admin levels. Most countries currently use HDX COD-AB data; Kenya uses GADM to keep adm0-3 source-consistent.
+The active configuration is defined in `admin_area_source_config.py`. Each country uses one source for all configured admin levels.
 
 > [!WARNING]
 >
 > **Updating admin areas is never a self-contained change.**
 >
 > Admin areas are referenced by PCODE from other datasets, and those references break
-> silently: a stale PCODE simply stops matching, so an alert config covers the wrong
-> area or a newly created district is covered by nothing at all. Nothing fails loudly.
+> silently. Review at least the GloFAS station-area mappings, drought-region
+> `placeCodes`, alert configurations, and mock or test data that contain PCODEs. A
+> stale PCODE simply stops matching, so an alert config covers the wrong area or a
+> newly created district is covered by nothing at all. Nothing fails loudly.
 
 ## Prerequisites
 
@@ -33,7 +35,6 @@ python -m data_management.seed_data_management.admin_areas.process_admin_area_ge
 python -m data_management.seed_data_management.admin_areas.add_population_to_admin_areas
 python -m data_management.seed_data_management.admin_areas.generate_admin_area_source_manifest
 python -m data_management.seed_data_management.admin_areas.validate_admin_areas
-python -m data_management.seed_data_management.validate_admin_area_dependents
 ```
 
 The stages perform the following work:
@@ -47,14 +48,6 @@ The stages perform the following work:
 7. Compute independent zonal population totals for every configured processed feature.
 8. Generate `admin_area_sources.json` in the seed-data repo to record source and processing metadata.
 9. Validate processed completeness, stored source files where applicable, canonical schema, hierarchy, geometries, and population values. A successful validation regenerates `admin_area_validation_report.md`.
-10. Report any file in either repository that references a PCODE present in the source dataset but absent from the target dataset.
-
-## Dependent Mapping Data
-
-The warning above applies in particular to these mapping updates. After the target admin-area files pass validation, run the relevant migration-style script when the corresponding dataset maps areas by PCODE. These scripts use the previous mapping data together with the source and target admin-area datasets; they do not generate a new mapping from source data.
-
-- [Flood GloFAS station mappings](../flood/README.md): review the overlap reports, then copy the proposed station-threshold files and manifests into the seed-data repository.
-- [Drought region mappings](../drought/README.md): review the reports, then apply the proposed region mappings to `seed-alert-configs.const.ts` and retain the manifests with the change.
 
 ## Generated Metadata
 
