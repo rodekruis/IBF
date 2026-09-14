@@ -144,13 +144,14 @@ export class AdminAreasRepository {
     const BATCH_SIZE = 100;
     try {
       // Uses raw SQL because Prisma's client API cannot call PostGIS functions (ST_GeomFromGeoJSON) inline
-      await this.prisma.$transaction(async (tx) => {
-        for (let i = 0; i < dtos.length; i += BATCH_SIZE) {
-          const batch = dtos.slice(i, i + BATCH_SIZE);
-          const values = batch.map((dto) => {
-            const geojson = JSON.stringify(dto.geometry);
-            const attrs = JSON.stringify(dto.attributes ?? {});
-            return Prisma.sql`(
+      await this.prisma.$transaction(
+        async (tx) => {
+          for (let i = 0; i < dtos.length; i += BATCH_SIZE) {
+            const batch = dtos.slice(i, i + BATCH_SIZE);
+            const values = batch.map((dto) => {
+              const geojson = JSON.stringify(dto.geometry);
+              const attrs = JSON.stringify(dto.attributes ?? {});
+              return Prisma.sql`(
               ${dto.placeCode},
               ${dto.adminLevel},
               ${dto.nameEn},
@@ -164,13 +165,15 @@ export class AdminAreasRepository {
               NOW(),
               public.ST_Force2D(public.ST_GeomFromGeoJSON(${geojson}))
             )`;
-          });
-          await tx.$executeRaw`
+            });
+            await tx.$executeRaw`
             INSERT INTO "api-service"."admin-area"
               ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", "placeCodeLevel1", "placeCodeLevel2", "placeCodeLevel3", "placeCodeLevel4", attributes, created, updated, geometry)
             VALUES ${Prisma.join(values)}`;
-        }
-      });
+          }
+        },
+        { timeout: 60_000 },
+      );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2010') {
