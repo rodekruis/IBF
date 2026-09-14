@@ -19,7 +19,7 @@
 # Prerequisites:
 #   - Azure CLI logged in (`az login`) with the grants listed above.
 #   - uv installed (provides azure-batch/azure-identity via `uv run --with`).
-#   - data/.env populated with IBF_API_URL (same source as create-local-settings.sh).
+#   - data/.env populated with IBF_API_URL.
 #
 # Expects DATA_DIR to be set by the calling script.
 
@@ -72,8 +72,7 @@ IBF_PIPELINE_API_KEY="$(read_secret ibf-pipeline-api-key)"
 GLOFAS_FTP_USER="$(read_secret glofas-ftp-user)"
 GLOFAS_FTP_PASSWORD="$(read_secret glofas-ftp-password)"
 
-# Fixed prototype values, mirroring the Function App settings in main.bicep /
-# create-local-settings.sh.
+# Fixed prototype values, mirroring the Function App settings in main.bicep
 export BATCH_ACCOUNT_URL="https://nrwbatchpoc.westeurope.batch.azure.com"
 export BATCH_POOL_ID="nrwbatchpoc"
 export IBF_ENVIRONMENT="test"
