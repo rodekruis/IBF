@@ -38,5 +38,5 @@ countries:
     target_admin_level: 4
     data_sources: *data_sources
   - iso_3_code: ZMB
-    target_admin_level: 3
+    target_admin_level: 4
     data_sources: *data_sources

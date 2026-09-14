@@ -1,0 +1,337 @@
+"""Migrate station mappings from old admin geometries to new admin geometries."""
+
+import argparse
+import json
+import subprocess
+from dataclasses import asdict, dataclass
+from datetime import datetime, UTC
+from pathlib import Path
+from typing import cast
+
+from shapely.geometry import shape
+from shapely.geometry.base import BaseGeometry
+from shapely.strtree import STRtree
+from shapely.validation import make_valid
+
+FLOOD_DEEPEST_ADMIN_LEVELS = {
+    "ETH": 3,
+    "KEN": 3,
+    "MWI": 3,
+    "PHL": 3,
+    "SSD": 3,
+    "UGA": 4,
+    "ZMB": 4,
+}
+OLD_STATION_MAPPING_LEVELS = {
+    "ETH": 3,
+    "KEN": 3,
+    "MWI": 3,
+    "PHL": 3,
+    "SSD": 3,
+    "UGA": 4,
+    "ZMB": 3,  # only difference with above atm: old adm3 is more comparable to new adm4
+}
+STATION_THRESHOLDS_DIRECTORY = Path("hazard/flood/glofas-stations")
+ADMIN_AREAS_DIRECTORY = Path("admin-areas/processed")
+DEFAULT_SEED_REPOSITORY_URL = "https://github.com/rodekruis/IBF-seed-data.git"
+DEFAULT_MINIMUM_NEW_AREA_OVERLAP = 0.25
+DEFAULT_MINIMUM_OLD_FOOTPRINT_COVERAGE = 0.9
+
+
+@dataclass(frozen=True)
+class AreaOverlap:
+    pcode: str
+    overlap_area: float
+    overlap_of_new_area: float
+    overlap_of_old_footprint: float
+
+
+def load_json(filepath: Path) -> dict | list:
+    with filepath.open(encoding="utf-8") as file:
+        return json.load(file)
+
+
+def load_unique_stations(filepath: Path) -> dict[str, dict]:
+    stations: dict[str, dict] = {}
+    for entry in cast(list[dict], load_json(filepath)):
+        stations.setdefault(entry["station_code"], entry)
+    return stations
+
+
+def load_admin_features(seed_repo_path: Path, country: str, level: int) -> list[dict]:
+    filepath = seed_repo_path / ADMIN_AREAS_DIRECTORY / f"{country}_adm{level}.json"
+    return cast(dict, load_json(filepath))["features"]
+
+
+def get_feature_geometry(feature: dict) -> BaseGeometry:
+    return make_valid(shape(feature["geometry"]))
+
+
+def get_pcode(feature: dict, level: int) -> str:
+    return feature["properties"][f"ADM{level}_PCODE"]
+
+
+def get_git_revision(repository_path: Path) -> str | None:
+    try:
+        return subprocess.check_output(
+            ["git", "-C", str(repository_path), "rev-parse", "HEAD"],
+            text=True,
+        ).strip()
+    except subprocess.CalledProcessError:
+        return None
+
+
+def find_overlapping_new_areas(
+    old_footprint: BaseGeometry,
+    new_features: list[dict],
+    deepest_level: int,
+    minimum_new_area_overlap: float,
+) -> list[AreaOverlap]:
+    old_area = old_footprint.area
+    geometries = [get_feature_geometry(feature) for feature in new_features]
+    tree = STRtree(geometries)
+    overlaps: list[AreaOverlap] = []
+    for index in tree.query(old_footprint):
+        new_geometry = geometries[int(index)]
+        if new_geometry.area == 0:
+            continue
+        overlap_area = old_footprint.intersection(new_geometry).area
+        overlap_of_new_area = overlap_area / new_geometry.area
+        if overlap_area == 0 or overlap_of_new_area < minimum_new_area_overlap:
+            continue
+        overlaps.append(
+            AreaOverlap(
+                pcode=get_pcode(new_features[int(index)], deepest_level),
+                overlap_area=overlap_area,
+                overlap_of_new_area=overlap_of_new_area,
+                overlap_of_old_footprint=(overlap_area / old_area if old_area else 0),
+            )
+        )
+    return sorted(overlaps, key=lambda overlap: overlap.pcode)
+
+
+def migrate_country(
+    old_seed_repo_path: Path,
+    new_seed_repo_path: Path,
+    output_directory: Path,
+    country: str,
+    minimum_new_area_overlap: float,
+    minimum_old_footprint_coverage: float,
+) -> list[dict]:
+    old_level = OLD_STATION_MAPPING_LEVELS[country]
+    new_level = FLOOD_DEEPEST_ADMIN_LEVELS[country]
+    old_station_path = (
+        old_seed_repo_path
+        / STATION_THRESHOLDS_DIRECTORY
+        / f"{country}_station_thresholds.json"
+    )
+    old_features = load_admin_features(old_seed_repo_path, country, old_level)
+    new_features = load_admin_features(new_seed_repo_path, country, new_level)
+    old_features_by_pcode = {
+        get_pcode(feature, old_level): feature for feature in old_features
+    }
+    old_stations = load_unique_stations(old_station_path)
+    migrated_stations: list[dict] = []
+    report: list[dict] = []
+
+    for station_code, station in sorted(old_stations.items()):
+        old_pcodes = station.get("pcodes", {}).get(str(old_level), [])
+        old_geometries = [
+            get_feature_geometry(old_features_by_pcode[pcode])
+            for pcode in old_pcodes
+            if pcode in old_features_by_pcode
+        ]
+        if not old_geometries:
+            migrated_station = dict(station)
+            migrated_station["pcodes"] = {str(new_level): []}
+            migrated_stations.append(migrated_station)
+            report.append(
+                {
+                    "station_code": station_code,
+                    "old_admin_level": old_level,
+                    "new_admin_level": new_level,
+                    "old_pcodes": old_pcodes,
+                    "new_pcodes": [],
+                    "old_footprint_area": 0,
+                    "new_overlap_area": 0,
+                    "old_footprint_coverage": 0,
+                    "overlaps": [],
+                    "review": "No old deepest-level footprint was available.",
+                }
+            )
+            continue
+        old_footprint = old_geometries[0]
+        for geometry in old_geometries[1:]:
+            old_footprint = old_footprint.union(geometry)
+
+        overlaps = find_overlapping_new_areas(
+            old_footprint,
+            new_features,
+            new_level,
+            minimum_new_area_overlap,
+        )
+        new_pcodes = [overlap.pcode for overlap in overlaps]
+        new_footprint = None
+        for pcode in new_pcodes:
+            geometry = get_feature_geometry(
+                next(
+                    feature
+                    for feature in new_features
+                    if get_pcode(feature, new_level) == pcode
+                )
+            )
+            new_footprint = (
+                geometry if new_footprint is None else new_footprint.union(geometry)
+            )
+        migrated_station = dict(station)
+        migrated_station["pcodes"] = {str(new_level): new_pcodes}
+        migrated_stations.append(migrated_station)
+        overlap_area = (
+            old_footprint.intersection(new_footprint).area
+            if new_footprint is not None
+            else 0
+        )
+        old_footprint_coverage = (
+            overlap_area / old_footprint.area if old_footprint.area else 0
+        )
+        report.append(
+            {
+                "station_code": station_code,
+                "old_admin_level": old_level,
+                "new_admin_level": new_level,
+                "old_pcodes": old_pcodes,
+                "new_pcodes": new_pcodes,
+                "old_footprint_area": old_footprint.area,
+                "new_overlap_area": overlap_area,
+                "old_footprint_coverage": old_footprint_coverage,
+                "meets_old_footprint_coverage": old_footprint_coverage
+                >= minimum_old_footprint_coverage,
+                "review": (
+                    f"Combined new footprint covers only "
+                    f"{old_footprint_coverage:.1%} of the old footprint."
+                    if old_footprint_coverage < minimum_old_footprint_coverage
+                    else None
+                ),
+                "overlaps": [asdict(overlap) for overlap in overlaps],
+            }
+        )
+
+    output_directory.mkdir(parents=True, exist_ok=True)
+    (output_directory / f"{country}_station_thresholds.json").write_text(
+        json.dumps(migrated_stations, indent=2) + "\n", encoding="utf-8"
+    )
+    (output_directory / f"{country}_station_area_migration.json").write_text(
+        json.dumps(report, indent=2) + "\n", encoding="utf-8"
+    )
+    return report
+
+
+def write_manifest(
+    output_directory: Path,
+    old_seed_repository_url: str,
+    old_seed_revision: str,
+    new_seed_repository_url: str,
+    new_seed_revision: str,
+    minimum_new_area_overlap: float,
+    minimum_old_footprint_coverage: float,
+    country: str,
+) -> None:
+    old_level = OLD_STATION_MAPPING_LEVELS[country]
+    new_level = FLOOD_DEEPEST_ADMIN_LEVELS[country]
+    manifest = {
+        "schemaVersion": 1,
+        "generatedAt": datetime.now(UTC).isoformat(),
+        "method": "spatial-old-footprint-to-new-admin-area-overlap",
+        "minimumNewAreaOverlap": minimum_new_area_overlap,
+        "minimumOldFootprintCoverage": minimum_old_footprint_coverage,
+        "oldSource": {
+            "repository": old_seed_repository_url,
+            "revision": old_seed_revision,
+            "stationThresholdPath": str(
+                STATION_THRESHOLDS_DIRECTORY / f"{country}_station_thresholds.json"
+            ),
+            "adminAreaPath": str(
+                ADMIN_AREAS_DIRECTORY / f"{country}_adm{old_level}.json"
+            ),
+        },
+        "newSource": {
+            "repository": new_seed_repository_url,
+            "revision": new_seed_revision,
+            "adminAreaPath": str(
+                ADMIN_AREAS_DIRECTORY / f"{country}_adm{new_level}.json"
+            ),
+        },
+        "output": {
+            "stationThresholdPath": f"{country}_station_thresholds.json",
+            "reportPath": f"{country}_station_area_migration.json",
+        },
+    }
+    (output_directory / f"{country}_migration_manifest.json").write_text(
+        json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+    )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--old-seed-repo", type=Path, required=True)
+    parser.add_argument("--new-seed-repo", type=Path, required=True)
+    parser.add_argument("--output-directory", type=Path, required=True)
+    parser.add_argument(
+        "--old-seed-repository-url", default=DEFAULT_SEED_REPOSITORY_URL
+    )
+    parser.add_argument("--old-seed-revision", required=True)
+    parser.add_argument(
+        "--new-seed-repository-url", default=DEFAULT_SEED_REPOSITORY_URL
+    )
+    parser.add_argument("--new-seed-revision")
+    parser.add_argument(
+        "--country", choices=[*FLOOD_DEEPEST_ADMIN_LEVELS, "all"], default="all"
+    )
+    parser.add_argument(
+        "--minimum-new-area-overlap",
+        type=float,
+        default=DEFAULT_MINIMUM_NEW_AREA_OVERLAP,
+        help="Minimum fraction of a new area covered by the old footprint.",
+    )
+    parser.add_argument(
+        "--minimum-old-footprint-coverage",
+        type=float,
+        default=DEFAULT_MINIMUM_OLD_FOOTPRINT_COVERAGE,
+        help="Minimum combined coverage of the old station footprint.",
+    )
+    arguments = parser.parse_args()
+    new_seed_revision = arguments.new_seed_revision or get_git_revision(
+        arguments.new_seed_repo
+    )
+    if not new_seed_revision:
+        parser.error(
+            "--new-seed-revision is required when --new-seed-repo is not a Git checkout"
+        )
+    countries = (
+        FLOOD_DEEPEST_ADMIN_LEVELS
+        if arguments.country == "all"
+        else {arguments.country: FLOOD_DEEPEST_ADMIN_LEVELS[arguments.country]}
+    )
+    for country in countries:
+        migrate_country(
+            arguments.old_seed_repo,
+            arguments.new_seed_repo,
+            arguments.output_directory,
+            country,
+            arguments.minimum_new_area_overlap,
+            arguments.minimum_old_footprint_coverage,
+        )
+        write_manifest(
+            arguments.output_directory,
+            arguments.old_seed_repository_url,
+            arguments.old_seed_revision,
+            arguments.new_seed_repository_url,
+            new_seed_revision,
+            arguments.minimum_new_area_overlap,
+            arguments.minimum_old_footprint_coverage,
+            country,
+        )
+
+
+if __name__ == "__main__":
+    main()

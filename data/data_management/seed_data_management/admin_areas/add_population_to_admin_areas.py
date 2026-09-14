@@ -12,11 +12,12 @@ match the parent admin area population.
 """
 
 import json
-import re
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
+from data_management.seed_data_management.admin_areas.admin_area_source_config import (
+    ADMIN_AREA_LEVELS,
+)
 from rasterio.transform import Affine
 from rasterstats import zonal_stats
 from shared.data_helpers import get_seed_data_repo_path
@@ -31,7 +32,6 @@ DATA_PNG_OUTPUT_DIR = Path(BASE_SEED_REPO_DIR) / "exposure/population/data-png/"
 
 POPULATION_PNG_SUFFIX = "_population.png"
 POPULATION_METADATA_SUFFIX = "_population_metadata.json"
-ADMIN_AREA_FILE_PATTERN = re.compile(r"^(?P<country>[A-Z]{3})_adm(?P<level>\d+)\.json$")
 
 
 def get_population_countries() -> set[str]:
@@ -39,23 +39,6 @@ def get_population_countries() -> set[str]:
     return {
         path.name.removesuffix(POPULATION_PNG_SUFFIX)
         for path in DATA_PNG_OUTPUT_DIR.glob(f"*{POPULATION_PNG_SUFFIX}")
-    }
-
-
-def get_admin_area_files_by_country() -> dict[str, list[Path]]:
-    """Return admin-area file paths grouped by country, sorted by admin level."""
-    files_by_country: dict[str, list[tuple[int, Path]]] = defaultdict(list)
-    for path in ADMIN_AREAS_DIR.glob("*_adm*.json"):
-        match = ADMIN_AREA_FILE_PATTERN.match(path.name)
-        if not match:
-            continue
-        country = match.group("country")
-        level = int(match.group("level"))
-        files_by_country[country].append((level, path))
-
-    return {
-        country: [path for _, path in sorted(entries, key=lambda item: item[0])]
-        for country, entries in files_by_country.items()
     }
 
 
@@ -108,11 +91,11 @@ def add_population_to_admin_file(
     )
 
     # Assign the population value to the admin area property.
-    # Round the population to an int, or set to None if no data.
+    # Round the population to an int, or set to zero if no data.
     for feature, stat in zip(features, stats):
         total = stat.get("sum") if stat is not None else None
         feature.setdefault("properties", {})["POPULATION"] = (
-            round(total) if total is not None else None
+            round(total) if total is not None else 0
         )
 
     with open(admin_file, "w", encoding="utf-8") as f:
@@ -122,29 +105,28 @@ def add_population_to_admin_file(
 
 
 def process_all() -> None:
-    # Get files
     population_countries = get_population_countries()
-    admin_files_by_country = get_admin_area_files_by_country()
-    admin_countries = set(admin_files_by_country.keys())
 
-    # Check if there are missing countries from either set
-    # Print errors for these
-    only_population = sorted(population_countries - admin_countries)
-    only_admin = sorted(admin_countries - population_countries)
-    for country in only_population:
-        print(f"ERROR: Country '{country}' has population data but no admin area files")
-    for country in only_admin:
-        print(f"ERROR: Country '{country}' has admin area files but no population data")
+    for country, levels in ADMIN_AREA_LEVELS.items():
+        if country not in population_countries:
+            print(f"ERROR: Country '{country}' has no population data")
+            continue
 
-    # Only process countries with both population and admin area data
-    common_countries = sorted(population_countries & admin_countries)
-    print(f"Processing {len(common_countries)} countries with both data sets")
+        admin_files = [
+            ADMIN_AREAS_DIR / f"{country}_adm{level}.json" for level in levels
+        ]
+        missing_files = [
+            admin_file for admin_file in admin_files if not admin_file.exists()
+        ]
+        if missing_files:
+            print(
+                f"ERROR: Country '{country}' has missing admin area files: {missing_files}"
+            )
+            continue
 
-    # Process all
-    for country in common_countries:
         print(f"Processing {country}...")
         population_array, affine = load_population_raster(country)
-        for admin_file in admin_files_by_country[country]:
+        for admin_file in admin_files:
             add_population_to_admin_file(admin_file, population_array, affine)
 
 
