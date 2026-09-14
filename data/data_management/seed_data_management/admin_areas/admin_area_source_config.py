@@ -56,10 +56,9 @@ COUNTRY_NAMES: dict[str, str] = {
     "SSD": "South Sudan",
 }
 
-# Synthetic parent PCODES are used to explicitly define parent administrative areas
-# that are not provided by the upstream data source. This allows for the creation
-# of higher-level administrative areas by aggregating child features when necessary.
-SYNTHETIC_PARENT_PCODES: dict[str, dict[int, set[str]]] = {
+# Derived parent PCODES identify parent administrative areas that are missing from
+# the upstream data source and are created by aggregating their child geometries.
+DERIVED_PARENT_PCODES: dict[str, dict[int, set[str]]] = {
     "SSD": {1: {"SS00"}},
 }
 

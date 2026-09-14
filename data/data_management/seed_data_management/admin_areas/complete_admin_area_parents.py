@@ -5,7 +5,7 @@ from dataclasses import fields
 from pathlib import Path
 
 from data_management.seed_data_management.admin_areas.admin_area_source_config import (
-    SYNTHETIC_PARENT_PCODES,
+    DERIVED_PARENT_PCODES,
 )
 from data_management.utils.admin_area_geojson import AdminAreaProperties
 from shapely.geometry import mapping, shape
@@ -104,7 +104,7 @@ def complete_country(country: str, configured_levels: dict[int, set[str]]) -> No
 
 
 def main() -> None:
-    for country, configured_levels in SYNTHETIC_PARENT_PCODES.items():
+    for country, configured_levels in DERIVED_PARENT_PCODES.items():
         complete_country(country, configured_levels)
 
 

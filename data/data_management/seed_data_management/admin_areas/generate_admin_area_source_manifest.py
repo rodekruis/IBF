@@ -8,11 +8,11 @@ from data_management.seed_data_management.admin_areas.admin_area_source_config i
     ADMIN_AREA_LEVELS,
     ADMIN_AREA_SOURCES,
     AdminAreaSource,
+    DERIVED_PARENT_PCODES,
     GADM_VERSION,
     HDX_DATASET_IDS,
     MAPSHAPER_SIMPLIFICATION_P90_THRESHOLDS_BYTES,
     MAPSHAPER_SIMPLIFICATION_PERCENTAGES,
-    SYNTHETIC_PARENT_PCODES,
 )
 from shared.data_helpers import get_seed_data_repo_path
 
@@ -45,10 +45,10 @@ def get_country_manifest(country: str) -> dict:
             }
         )
 
-    synthetic_parents = SYNTHETIC_PARENT_PCODES.get(country)
-    if synthetic_parents:
-        source_metadata["syntheticParentPcodes"] = {
-            f"adm{level}": sorted(pcodes) for level, pcodes in synthetic_parents.items()
+    derived_parents = DERIVED_PARENT_PCODES.get(country)
+    if derived_parents:
+        source_metadata["derivedParentPcodes"] = {
+            f"adm{level}": sorted(pcodes) for level, pcodes in derived_parents.items()
         }
 
     if country == "KEN":

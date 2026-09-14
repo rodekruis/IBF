@@ -40,6 +40,6 @@ The stages perform the following work:
 
 ## Generated Metadata
 
-`generate_admin_area_source_manifest.py` writes `admin-areas/admin_area_sources.json` in the seed-data repo. This records source datasets, configured levels, raw-source storage policy, and processing rules such as mapshaper simplification and synthetic parent areas.
+`generate_admin_area_source_manifest.py` writes `admin-areas/admin_area_sources.json` in the seed-data repo. This records source datasets, configured levels, raw-source storage policy, and processing rules such as mapshaper simplification and derived parent areas.
 
 `validate_admin_areas.py` writes `admin_area_validation_report.md` only after a zero-error validation result. Commit the updated manifest and report with the matching processed seed data so reviewers can inspect source decisions and processed counts without rerunning the pipeline.

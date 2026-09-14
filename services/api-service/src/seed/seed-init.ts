@@ -50,9 +50,8 @@ interface StationThresholdEntry {
   readonly thresholds: { return_period: number; threshold_value: number }[];
 }
 
-// ##TODO this uses a feature-branch of an unmerged seed-repo PR. Change to main before merging this code.
 const SEED_REPO_RAW_BASE_URL =
-  'https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/chore.update-admin-areas';
+  'https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main';
 
 const ADMIN_AREAS_PATH = '/admin-areas/processed';
 const STATION_THRESHOLDS_PATH = '/hazard/flood/glofas-stations';
