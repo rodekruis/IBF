@@ -22,10 +22,12 @@ from pipelines.infra.data_types.dtos import (
     Severity,
     SeverityKey,
     TimeInterval,
+    WaterDischargeTimeSeriesEntry,
 )
 from pipelines.infra.utils.alert_integrity_checks import (
     check_admin_area_integrity,
     check_centroid,
+    check_geo_feature_integrity,
     check_raster_integrity,
     check_severity_integrity,
 )
@@ -133,7 +135,9 @@ class DataSubmitter:
         event_name: str,
         geo_feature_id: str,
         layer: LayerName,
-        attributes: dict[str, bool | str | int | float],
+        attributes: dict[
+            str, bool | str | int | float | list[WaterDischargeTimeSeriesEntry]
+        ],
     ) -> None:
         alert = self._get_alert(event_name, "add_geo_feature_exposure")
         if alert is None:
@@ -258,5 +262,6 @@ class DataSubmitter:
             errors.extend(check_severity_integrity(event_name, alert))
             errors.extend(check_admin_area_integrity(event_name, alert))
             errors.extend(check_raster_integrity(event_name, alert))
+            errors.extend(check_geo_feature_integrity(event_name, alert))
 
         return errors

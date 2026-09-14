@@ -3,12 +3,14 @@ from __future__ import annotations
 import base64
 import binascii
 from datetime import datetime
+from typing import cast
 
 from pipelines.infra.data_types.dtos import (
     Alert,
     Centroid,
     EnsembleMemberType,
     LayerName,
+    WaterDischargeTimeSeriesEntry,
 )
 
 
@@ -129,4 +131,40 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
                         f"Alert '{event_name}' raster '{raster.layer}': "
                         f"value_greyscale is not a valid PNG"
                     )
+    return errors
+
+
+def check_geo_feature_integrity(event_name: str, alert: Alert) -> list[str]:
+    # Only validates the 'waterDischarge' attribute key; other keys pass through unvalidated.
+    errors: list[str] = []
+    for geo_feature in alert.exposure.geo_features:
+        water_discharge = geo_feature.attributes.get("waterDischarge")
+        if water_discharge is None:
+            continue
+        time_series = cast(list[WaterDischargeTimeSeriesEntry], water_discharge)
+
+        if not time_series:
+            errors.append(
+                f"Alert '{event_name}' geo-feature '{geo_feature.geo_feature_id}': "
+                f"waterDischarge has no time series entries"
+            )
+            continue
+
+        for entry in time_series:
+            start, end = entry["start"], entry["end"]
+            if datetime.fromisoformat(start) >= datetime.fromisoformat(end):
+                errors.append(
+                    f"Alert '{event_name}' geo-feature '{geo_feature.geo_feature_id}': "
+                    f"waterDischarge time interval {start}\u2013{end}: start must be before end"
+                )
+            if entry["low"] > entry["median"] or entry["median"] > entry["high"]:
+                errors.append(
+                    f"Alert '{event_name}' geo-feature '{geo_feature.geo_feature_id}': "
+                    f"waterDischarge time interval {start}\u2013{end}: expected low <= median <= high"
+                )
+            elif entry["low"] < 0:
+                errors.append(
+                    f"Alert '{event_name}' geo-feature '{geo_feature.geo_feature_id}': "
+                    f"waterDischarge time interval {start}\u2013{end}: discharge values must be non-negative"
+                )
     return errors

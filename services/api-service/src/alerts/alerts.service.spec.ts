@@ -608,6 +608,144 @@ describe('AlertsService', () => {
     });
   });
 
+  describe('createAlerts – geoFeature validation', () => {
+    function createMockAlertWithWaterDischarge(
+      waterDischarge: unknown,
+    ): AlertCreateDto {
+      return createMockValidAlert({
+        exposure: {
+          adminAreas: [
+            {
+              placeCode: 'A',
+              adminLevel: 3,
+              layer: LayerName.populationExposed,
+              value: 1,
+            },
+          ],
+          geoFeatures: [
+            {
+              geoFeatureId: 'G1',
+              layer: LayerName.glofasStations,
+              attributes: { waterDischarge },
+            },
+          ],
+        },
+      });
+    }
+
+    it('should accept a well-formed waterDischarge time series', async () => {
+      const alerts = [
+        createMockAlertWithWaterDischarge([
+          {
+            start: '2026-03-20T00:00:00Z',
+            end: '2026-03-20T23:59:59Z',
+            median: 100,
+            low: 80,
+            high: 120,
+          },
+        ]),
+      ];
+      await service.createAlerts(createMockValidForecast({ alerts }));
+      expect(repository.createAlerts).toHaveBeenCalledWith(
+        expect.objectContaining({ alertCreateDtos: alerts }),
+      );
+    });
+
+    it('should reject an empty waterDischarge time series', async () => {
+      const alerts = [createMockAlertWithWaterDischarge([])];
+      const error = await service
+        .createAlerts(createMockValidForecast({ alerts }))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('no time series entries'),
+        ]),
+      );
+    });
+
+    it('should reject a time interval where start >= end', async () => {
+      const alerts = [
+        createMockAlertWithWaterDischarge([
+          {
+            start: '2026-03-21T00:00:00Z',
+            end: '2026-03-20T00:00:00Z',
+            median: 100,
+            low: 80,
+            high: 120,
+          },
+        ]),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast({ alerts }))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('start must be before end'),
+        ]),
+      );
+    });
+
+    it('should reject a median outside the low/high range', async () => {
+      const alerts = [
+        createMockAlertWithWaterDischarge([
+          {
+            start: '2026-03-20T00:00:00Z',
+            end: '2026-03-20T23:59:59Z',
+            median: 200,
+            low: 80,
+            high: 120,
+          },
+        ]),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast({ alerts }))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('expected low <= median <= high'),
+        ]),
+      );
+    });
+
+    it('should reject a negative low value', async () => {
+      const alerts = [
+        createMockAlertWithWaterDischarge([
+          {
+            start: '2026-03-20T00:00:00Z',
+            end: '2026-03-20T23:59:59Z',
+            median: 0,
+            low: -10,
+            high: 10,
+          },
+        ]),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast({ alerts }))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('must be non-negative'),
+        ]),
+      );
+    });
+  });
+
   describe('createAlerts – error response format', () => {
     it('should return BAD_REQUEST with message and errors array', async () => {
       const alerts = [

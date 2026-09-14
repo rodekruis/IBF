@@ -3,6 +3,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { AlertReadDto } from '@api-service/src/alerts/dto/alert-read.dto';
+import { WaterDischargeTimeSeriesEntry } from '@api-service/src/alerts/dto/exposure-geo-feature.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
 import { EnsembleMemberType, LayerName } from '@api-service/src/shared-enums';
@@ -83,6 +84,7 @@ export class AlertsService {
       errors.push(...this.checkSeverity(alert));
       errors.push(...this.checkExposureAdminAreas(alert));
       errors.push(...this.checkExposureRasters(alert));
+      errors.push(...this.checkExposureGeoFeatures(alert));
     }
     return errors;
   }
@@ -141,6 +143,45 @@ export class AlertsService {
         errors.push(
           `Alert '${alert.eventName}' time interval ${start}\u2013${end}: expected at least 1 ensemble-run record, found 0`,
         );
+      }
+    }
+
+    return errors;
+  }
+
+  // Only validates the 'waterDischarge' attribute key; other keys pass through unvalidated.
+  private checkExposureGeoFeatures(alert: AlertCreateDto): string[] {
+    const errors: string[] = [];
+
+    for (const geoFeature of alert.exposure.geoFeatures ?? []) {
+      const waterDischarge = geoFeature.attributes.waterDischarge as
+        WaterDischargeTimeSeriesEntry[] | undefined;
+      if (waterDischarge === undefined) {
+        continue;
+      }
+
+      if (waterDischarge.length === 0) {
+        errors.push(
+          `Alert '${alert.eventName}' geo-feature '${geoFeature.geoFeatureId}': waterDischarge has no time series entries`,
+        );
+        continue;
+      }
+
+      for (const entry of waterDischarge) {
+        if (new Date(entry.start) >= new Date(entry.end)) {
+          errors.push(
+            `Alert '${alert.eventName}' geo-feature '${geoFeature.geoFeatureId}': waterDischarge time interval ${entry.start}\u2013${entry.end}: start must be before end`,
+          );
+        }
+        if (entry.low > entry.median || entry.median > entry.high) {
+          errors.push(
+            `Alert '${alert.eventName}' geo-feature '${geoFeature.geoFeatureId}': waterDischarge time interval ${entry.start}\u2013${entry.end}: expected low <= median <= high`,
+          );
+        } else if (entry.low < 0) {
+          errors.push(
+            `Alert '${alert.eventName}' geo-feature '${geoFeature.geoFeatureId}': waterDischarge time interval ${entry.start}\u2013${entry.end}: discharge values must be non-negative`,
+          );
+        }
       }
     }
 

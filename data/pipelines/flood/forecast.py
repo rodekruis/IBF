@@ -10,7 +10,10 @@ from pipelines.flood.determine_alerts import (
     ReturnPeriodThresholdValue,
 )
 from pipelines.flood.determine_exposure import determine_spatial_extent
-from pipelines.flood.extract_forecast import extract_discharge_glofas_station
+from pipelines.flood.extract_forecast import (
+    build_water_discharge_time_series,
+    extract_discharge_glofas_station,
+)
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
@@ -243,13 +246,17 @@ def calculate_flood_forecasts(
                 values_by_place_code=population_exposed,
             )
 
-            # TODO: use this in the future to (A) add water-discharge/return-period for glofas-station-popup and (B) add exposure status of points/roads/buildings.
-            # data_submitter.add_geo_feature_exposure(
-            #     event_name=event_name,
-            #     geo_feature_id=station_code,
-            #     layer=LayerName.GLOFAS_STATIONS,
-            #     attributes={"river_discharge": 0},
-            # )
+            # TODO: also add exposure status of points/roads/buildings here in the future.
+            data_submitter.add_geo_feature_exposure(
+                event_name=event_name,
+                geo_feature_id=station_code,
+                layer=LayerName.GLOFAS_STATIONS,
+                attributes={
+                    "waterDischarge": build_water_discharge_time_series(
+                        discharges.get(station_code, [])
+                    ),
+                },
+            )
 
             data_submitter.add_raster_exposure(
                 event_name=event_name,

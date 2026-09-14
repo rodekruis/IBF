@@ -16,5 +16,14 @@ export class ExposureGeoFeatureDto {
 
   @ApiProperty({ example: { triggered: true, severity: 0.8 } })
   @IsObject()
-  public readonly attributes: Record<string, string | number | boolean>;
+  public readonly attributes: Record<string, unknown>;
+}
+
+// Example shape of the `waterDischarge` key in `ExposureGeoFeatureDto.attributes` above (m3/s).
+export interface WaterDischargeTimeSeriesEntry {
+  readonly start: string;
+  readonly end: string;
+  readonly median: number;
+  readonly low: number;
+  readonly high: number;
 }

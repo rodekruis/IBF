@@ -11,6 +11,7 @@ from pipelines.infra.data_types.dtos import (
     HazardType,
     LayerName,
     SeverityKey,
+    WaterDischargeTimeSeriesEntry,
 )
 from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
 
@@ -281,6 +282,131 @@ def test_negative_population_exposed_is_rejected(
         admin_level=3,
         layer=LayerName.POPULATION_EXPOSED,
         values_by_place_code={"PC002": -100},
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("must be non-negative" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_valid_is_accepted(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A well-formed waterDischarge time series produces no integrity errors."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={
+            "waterDischarge": [
+                WaterDischargeTimeSeriesEntry(
+                    start="2026-03-20T00:00:00Z",
+                    end="2026-03-20T23:59:59Z",
+                    median=100.0,
+                    low=80.0,
+                    high=120.0,
+                )
+            ]
+        },
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert errors == []
+    assert (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_empty_time_series_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge attribute with no time series entries is rejected."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={"waterDischarge": []},
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("no time series entries" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_start_after_end_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge entry whose start is after its end is rejected."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={
+            "waterDischarge": [
+                WaterDischargeTimeSeriesEntry(
+                    start="2026-03-21T00:00:00Z",
+                    end="2026-03-20T00:00:00Z",
+                    median=100.0,
+                    low=80.0,
+                    high=120.0,
+                )
+            ]
+        },
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("start must be before end" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_median_outside_low_high_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge entry whose median falls outside [low, high] is rejected."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={
+            "waterDischarge": [
+                WaterDischargeTimeSeriesEntry(
+                    start="2026-03-20T00:00:00Z",
+                    end="2026-03-20T23:59:59Z",
+                    median=200.0,
+                    low=80.0,
+                    high=120.0,
+                )
+            ]
+        },
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("expected low <= median <= high" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_negative_low_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge entry with a negative 'low' value is rejected."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={
+            "waterDischarge": [
+                WaterDischargeTimeSeriesEntry(
+                    start="2026-03-20T00:00:00Z",
+                    end="2026-03-20T23:59:59Z",
+                    median=0.0,
+                    low=-10.0,
+                    high=10.0,
+                )
+            ]
+        },
     )
 
     errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
