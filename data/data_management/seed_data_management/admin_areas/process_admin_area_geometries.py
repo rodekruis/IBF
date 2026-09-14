@@ -76,6 +76,13 @@ def to_multipolygon(geometry: dict) -> dict:
 def merge_duplicate_place_codes(
     features: list[dict], level: int
 ) -> tuple[list[dict], int]:
+    """Combine multipart source features that represent the same admin area.
+
+    A duplicate p-code is only merged when all properties are identical, which
+    allows one admin area to be represented by multiple disconnected polygons
+    without hiding conflicting names or parent assignments. Conflicting
+    duplicates raise an error instead of being combined.
+    """
     pcode_key = f"ADM{level}_PCODE"
     features_by_pcode: dict[str, list[dict]] = {}
     features_without_pcode: list[dict] = []

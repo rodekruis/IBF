@@ -58,12 +58,14 @@ def extract_geojson_levels(
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
         for level in needed_levels:
             level_patterns = (f"adm{level}", f"admin{level}")
+            # HDX archives can contain boundary, metadata, line, and optional point layers with similar names.
             matching = [
                 name
                 for name in zf.namelist()
                 if any(pattern in name.lower() for pattern in level_patterns)
                 and name.endswith(".geojson")
-                and "_em" not in name.lower()
+                and "_em"
+                not in name.lower()  # auxiliary filename suffix not relevant for us
                 and "lines" not in name.lower()
                 and "points" not in name.lower()
             ]
@@ -97,6 +99,7 @@ def extract_shp_levels(
 
         for level in needed_levels:
             level_patterns = (f"adm{level}", f"admin{level}")
+            # Select polygon boundary layers rather than metadata, line, or optional point layers.
             shp_files = [
                 p
                 for p in tmppath.glob("**/*.shp")

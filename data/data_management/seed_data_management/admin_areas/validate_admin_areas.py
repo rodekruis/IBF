@@ -21,7 +21,9 @@ SOURCES_DIR = Path(BASE_SEED_REPO_DIR) / "admin-areas" / "sources"
 PROCESSED_DIR = Path(BASE_SEED_REPO_DIR) / "admin-areas" / "processed"
 VALIDATION_REPORT_PATH = Path(__file__).with_name("admin_area_validation_report.md")
 GITHUB_FILE_SIZE_LIMIT_BYTES = 100_000_000
-POPULATION_TOTAL_DIFFERENCE_THRESHOLD = 0.01
+POPULATION_TOTAL_DIFFERENCE_THRESHOLD = (
+    0.01  # Allow small rounding and source-data differences between admin levels.
+)
 CANONICAL_PROPERTY_NAMES = {field.name for field in fields(AdminAreaProperties)}
 
 
@@ -96,12 +98,13 @@ def validate_population_totals(
 
     adm0_total = get_population_total(level_data[0])
     if adm0_total == 0:
-        return []
+        return [f"{country} adm0: population total is 0"]
 
     errors = []
     for level, features in level_data.items():
         population_total = get_population_total(features)
         difference = abs(population_total - adm0_total) / adm0_total
+        # Population totals at every level should remain within the configured tolerance of ADM0.
         if difference > POPULATION_TOTAL_DIFFERENCE_THRESHOLD:
             errors.append(
                 f"{country} adm{level}: population total {population_total} differs "
@@ -296,7 +299,7 @@ def get_validation_summary() -> list[str]:
         "- Geometry validity and MultiPolygon normalization: passed",
         f"- Processed file size below GitHub limit ({GITHUB_FILE_SIZE_LIMIT_BYTES:,} bytes): passed",
         "- Population presence and numeric validity: passed",
-        f"- Population totals within {POPULATION_TOTAL_DIFFERENCE_THRESHOLD:.0%} of adm0: passed",
+        f"- Population totals within {POPULATION_TOTAL_DIFFERENCE_THRESHOLD:.2%} of adm0: passed",
         "",
     ]
 

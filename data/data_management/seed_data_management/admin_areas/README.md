@@ -8,7 +8,7 @@ The active configuration is defined in `admin_area_source_config.py`. Each count
 
 - The `data/.env` file must define `SEED_DATA_REPO_ROOT` for the local `IBF-seed-data` checkout.
 - Run commands from the `data/` directory with the project virtual environment active.
-- The configured WorldPop population PNG and metadata files must be present in `IBF-seed-data/exposure/population/data-png/` before population enrichment.
+- The configured WorldPop population PNG and metadata files must be present in `IBF-seed-data/exposure/population/data-png/` before running the script to add population to the admin-area data.
 
 ## Active Pipeline
 
@@ -33,13 +33,13 @@ The stages perform the following work:
 3. Convert GADM source files into the common admin-area GeoJSON schema in `admin-areas/processed/`.
 4. Convert HDX property variants into the common admin-area GeoJSON schema in `admin-areas/processed/`.
 5. Add explicitly configured missing parent areas, currently South Sudan's `SS00` Abyei Region.
-6. Repair geometries, normalize them to `MultiPolygon`, and merge safe multipart duplicate-pcode features.
+6. Repair geometries, normalize them to `MultiPolygon`, simplify oversized ADM1 and ADM2 files with mapshaper while preserving shared borders, and merge safe multipart duplicate-pcode features.
 7. Compute independent zonal population totals for every configured processed feature.
 8. Generate `admin_area_sources.json` in the seed-data repo to record source and processing metadata.
 9. Validate processed completeness, stored source files where applicable, canonical schema, hierarchy, geometries, and population values. A successful validation regenerates `admin_area_validation_report.md`.
 
 ## Generated Metadata
 
-`generate_admin_area_source_manifest.py` writes `admin-areas/admin_area_sources.json` in the seed-data repo. This records source datasets, configured levels, raw-source storage policy, and processing rules such as simplification and synthetic parent areas.
+`generate_admin_area_source_manifest.py` writes `admin-areas/admin_area_sources.json` in the seed-data repo. This records source datasets, configured levels, raw-source storage policy, and processing rules such as mapshaper simplification and synthetic parent areas.
 
 `validate_admin_areas.py` writes `admin_area_validation_report.md` only after a zero-error validation result. Commit the updated manifest and report with the matching processed seed data so reviewers can inspect source decisions and processed counts without rerunning the pipeline.

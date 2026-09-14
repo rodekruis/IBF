@@ -2,7 +2,7 @@
 
 ## Spatial migration
 
-`migrate_glofas_station_area_mapping.py` transfers the existing station mappings from an old admin-area dataset to a new admin-area dataset. It does this, instead of creating a new mapping based on river analysis, in order to (1) minimize effort, while the basin-refactor is coming up anyway and (2) minimize data-differences compared to v1, while IBF and NRW run side-by-side, and again, while the basin-refactor is coming up anyway.
+`migrate_glofas_station_area_mapping.py` transfers the existing station mappings from an old admin-area dataset to a new admin-area dataset. It does this, instead of creating a new mapping based on river analysis, in order to (1) minimize effort, while the basin-refactor is coming up anyway and (2) minimize data-differences compared to v1, while IBF and NRW run side-by-side, and again, while the basin-refactor (AB#42674) is coming up anyway.
 
 For each station, the script:
 
@@ -44,7 +44,7 @@ uv run python -m data_management.seed_data_management.flood.migrate_glofas_stati
   --minimum-old-footprint-coverage 0.9
 ```
 
-The old data is reproducible from the immutable Git revision passed in
+The old data is reproducible from the set Git revision passed in
 `--old-seed-revision`; the temporary extracted directory is only a working
 copy. The output contains one proposed `*_station_thresholds.json` file, one
 `*_station_area_migration.json` report, and one
