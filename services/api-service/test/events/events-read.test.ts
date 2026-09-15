@@ -1,5 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
+import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { EventStatus } from '@api-service/src/shared-enums';
 import {
   buildAlert,
@@ -148,6 +149,113 @@ describe('GET /events', () => {
 
       expect(closedEvent.eventStatus).toBe(EventStatus.ended);
       expect(endedEvent.eventStatus).toBe(EventStatus.ended);
+    });
+  });
+
+  describe('order', () => {
+    const forecastIssuedAt = new Date('2026-03-24T12:00:00Z');
+
+    function buildEventAlert({
+      eventName,
+      start,
+      end,
+    }: {
+      eventName: string;
+      start: string;
+      end: string;
+    }): AlertCreateDto {
+      return buildAlert({
+        eventName,
+        severity: buildSeverityData({
+          start: new Date(start),
+          end: new Date(end),
+          medianValue: 10,
+          runValues: [10, 10, 10],
+        }),
+      });
+    }
+
+    beforeEach(async () => {
+      await resetDB({
+        countryCodes: ['MWI', 'UGA'],
+        resetIdentifier: __filename,
+      });
+
+      // Arrange: insert out of start order so the response order cannot come from insertion order
+      await createAlerts({
+        forecast: buildForecast({
+          alerts: [
+            buildEventAlert({
+              eventName: 'station-imminent-far',
+              start: '2026-03-28T00:00:00Z',
+              end: '2026-03-29T00:00:00Z',
+            }),
+            buildEventAlert({
+              eventName: 'station-ongoing-later',
+              start: '2026-03-25T06:00:00Z',
+              end: '2026-03-26T00:00:00Z',
+            }),
+            buildEventAlert({
+              eventName: 'station-imminent-near',
+              start: '2026-03-26T00:00:00Z',
+              end: '2026-03-27T00:00:00Z',
+            }),
+            buildEventAlert({
+              eventName: 'station-ongoing-earlier',
+              start: '2026-03-24T18:00:00Z',
+              end: '2026-03-30T00:00:00Z',
+            }),
+          ],
+          overrides: { issuedAt: forecastIssuedAt },
+        }),
+      });
+    });
+
+    it('should return ongoing events first and then imminent events by start date', async () => {
+      // Act
+      const response = await readEvents({
+        accessToken,
+        countryCodesIso3: ['MWI'],
+        query: {
+          active: true,
+          timestamp: viewTimestamp,
+        },
+      });
+
+      // Assert
+      expect(response.status).toBe(HttpStatus.OK);
+      expect(
+        response.body.map(
+          (event: { eventName: string; eventStatus: EventStatus }) => [
+            event.eventName,
+            event.eventStatus,
+          ],
+        ),
+      ).toEqual([
+        ['station-ongoing-earlier', EventStatus.ongoing],
+        ['station-ongoing-later', EventStatus.ongoing],
+        ['station-imminent-near', EventStatus.imminent],
+        ['station-imminent-far', EventStatus.imminent],
+      ]);
+    });
+
+    it('should return all events by start date when active is omitted', async () => {
+      // Act
+      const response = await readEvents({
+        accessToken,
+        countryCodesIso3: ['MWI'],
+        query: {
+          timestamp: viewTimestamp,
+        },
+      });
+
+      // Assert
+      expect(response.status).toBe(HttpStatus.OK);
+      const startDates = response.body.map(
+        (event: { startAt: string }) => event.startAt,
+      );
+      expect(startDates).toHaveLength(4);
+      expect(startDates).toEqual([...startDates].sort());
     });
   });
 
