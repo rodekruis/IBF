@@ -144,7 +144,7 @@ export class AdminAreasRepository {
     const BATCH_SIZE = 100;
     try {
       // Uses raw SQL because Prisma's client API cannot call PostGIS functions (ST_GeomFromGeoJSON) inline
-      const queries: Prisma.PrismaPromise<number>[] = [];
+      // No wrapping transaction: Prisma aborts transactions after 5s, which large imports exceed
       for (let i = 0; i < dtos.length; i += BATCH_SIZE) {
         const batch = dtos.slice(i, i + BATCH_SIZE);
         const values = batch.map((dto) => {
@@ -165,12 +165,11 @@ export class AdminAreasRepository {
               public.ST_Force2D(public.ST_GeomFromGeoJSON(${geojson}))
             )`;
         });
-        queries.push(this.prisma.$executeRaw`
+        await this.prisma.$executeRaw`
           INSERT INTO "api-service"."admin-area"
             ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", "placeCodeLevel1", "placeCodeLevel2", "placeCodeLevel3", "placeCodeLevel4", attributes, created, updated, geometry)
-          VALUES ${Prisma.join(values)}`);
+          VALUES ${Prisma.join(values)}`;
       }
-      await this.prisma.$transaction(queries);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2010') {
