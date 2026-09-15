@@ -13,6 +13,10 @@ class LogTag(StrEnum):
     # to track creation and if it passes related thresholds
     ALERT_GENERATION = "alert_generation"
 
+    # Until email notifications are properly set up,
+    # use this tag to trigger an email notification for any flood with a return period of 5 or more.
+    PLACEHOLDER_EMAIL_ALERT = "placeholder_email_alert"
+
     # Tag related to when alert data is sent to the backend
     INFRA_SEND = "infra_send"
 
