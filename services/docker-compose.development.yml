@@ -21,6 +21,10 @@ services:
       - '9229:9229'
       - '9231:9231'
     volumes:
-      - './api-service:/home/node/app'
+      - './api-service:/home/node/app:cached'
+      - 'api_node_modules:/home/node/app/node_modules'
     command: 'npm run start:dev${COVERAGE_DEV_STARTUP_SUFFIX}'
     restart: unless-stopped
+
+volumes:
+  api_node_modules:
