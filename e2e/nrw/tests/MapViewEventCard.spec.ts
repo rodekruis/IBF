@@ -46,7 +46,6 @@ test.describe('event card', () => {
     await expect(nrwMapPage.layersButton).toBeVisible();
     await expect(page).toHaveScreenshot(
       'single-country-event-card-expanded.png',
-      { maxDiffPixelRatio: 0.01 },
     );
   });
 
@@ -160,7 +159,6 @@ test.describe('event card', () => {
     await expect(populationLayerToggle).toBeChecked();
     await expect(page).toHaveScreenshot(
       'single-country-event-population-layer-visible.png',
-      { maxDiffPixelRatio: 0.01 },
     );
   });
 });

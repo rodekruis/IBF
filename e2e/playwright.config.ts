@@ -13,6 +13,11 @@ export default defineConfig({
   workers: 1,
   outputDir: './test-results',
   timeout: 60_000,
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.01,
+    },
+  },
   use: {
     baseURL: env.BASE_URL,
     video: 'on-first-retry',
