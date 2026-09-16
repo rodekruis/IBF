@@ -1,6 +1,7 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
+import { EventHazardTypeDetailsDto } from '@api-service/src/events/dto/event-hazard-type-details.dto';
 import { EventLayerDto } from '@api-service/src/layers/dto/event-layer.dto';
 import {
   AlertClass,
@@ -70,4 +71,7 @@ export class EventResponseDto {
 
   @ApiProperty({ type: [EventLayerDto] })
   public readonly availableLayers: EventLayerDto[];
+
+  @ApiProperty({ type: EventHazardTypeDetailsDto })
+  public readonly hazardTypeDetails: EventHazardTypeDetailsDto;
 }

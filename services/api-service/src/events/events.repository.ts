@@ -37,6 +37,27 @@ export interface ExposedAdminAreaRecord {
   }[];
 }
 
+export interface LatestAlertGeoFeatureRecord {
+  readonly geoFeatureId: string;
+  readonly attributes: Prisma.JsonValue;
+}
+
+export interface LatestAlertSeverityRecord {
+  readonly timeInterval: { start: string; end: string };
+  readonly ensembleMemberType: EnsembleMemberType;
+  readonly severityValue: number;
+}
+
+export interface LatestAlertGeoFeatureData {
+  readonly geoFeatures: LatestAlertGeoFeatureRecord[];
+  readonly severity: LatestAlertSeverityRecord[];
+}
+
+export interface GloFasStationDetails {
+  readonly name: string;
+  readonly thresholds: { return_period: number; threshold_value: number }[];
+}
+
 // Ongoing events first, then imminent events by how soon they start.
 const eventsOrderBy: Prisma.EventOrderByWithRelationInput[] = [
   { startAt: 'asc' },
@@ -232,6 +253,87 @@ export class EventsRepository {
       result.set(alert.eventId, entries);
     }
 
+    return result;
+  }
+
+  public async getGeoFeatureExposureForLatestAlerts(
+    eventIds: number[],
+  ): Promise<Map<number, LatestAlertGeoFeatureData>> {
+    const result = new Map<number, LatestAlertGeoFeatureData>();
+    if (eventIds.length === 0) {
+      return result;
+    }
+
+    const latestAlerts = await this.prisma.alert.findMany({
+      where: { eventId: { in: eventIds } },
+      orderBy: [{ eventId: 'asc' }, { issuedAt: 'desc' }],
+      distinct: ['eventId'],
+      select: {
+        eventId: true,
+        exposureGeoFeature: {
+          select: { geoFeatureId: true, attributes: true },
+        },
+        severity: {
+          where: { severityKey: SeverityKey.returnPeriod },
+          select: {
+            timeInterval: true,
+            ensembleMemberType: true,
+            severityValue: true,
+          },
+        },
+      },
+    });
+
+    for (const alert of latestAlerts) {
+      if (alert.eventId === null) {
+        continue;
+      }
+      result.set(alert.eventId, {
+        geoFeatures: alert.exposureGeoFeature,
+        severity: alert.severity.map((entry) => ({
+          timeInterval: entry.timeInterval as { start: string; end: string },
+          ensembleMemberType: entry.ensembleMemberType,
+          severityValue: entry.severityValue,
+        })),
+      });
+    }
+
+    return result;
+  }
+
+  public async getGloFasStationDetails(
+    references: { countryCodeIso3: string; referenceId: string }[],
+  ): Promise<Map<string, GloFasStationDetails>> {
+    const result = new Map<string, GloFasStationDetails>();
+    if (references.length === 0) {
+      return result;
+    }
+
+    const rows = await this.prisma.geoFeature.findMany({
+      where: {
+        layerName: LayerName.glofasStations,
+        OR: references.map((ref) => ({
+          countryCodeIso3: ref.countryCodeIso3,
+          referenceId: ref.referenceId,
+        })),
+      },
+      select: {
+        countryCodeIso3: true,
+        referenceId: true,
+        attributes: true,
+      },
+    });
+
+    for (const row of rows) {
+      const attributes = row.attributes as {
+        name?: string;
+        thresholds?: { return_period: number; threshold_value: number }[];
+      };
+      result.set(`${row.countryCodeIso3}::${row.referenceId}`, {
+        name: attributes.name ?? row.referenceId,
+        thresholds: attributes.thresholds ?? [],
+      });
+    }
     return result;
   }
 
