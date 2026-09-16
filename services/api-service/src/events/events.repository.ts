@@ -40,6 +40,7 @@ export interface ExposedAdminAreaRecord {
 // Ongoing events first, then imminent events by how soon they start.
 const eventsOrderBy: Prisma.EventOrderByWithRelationInput[] = [
   { startAt: 'asc' },
+  { firstIssuedAt: 'asc' },
   { id: 'asc' },
 ];
 
