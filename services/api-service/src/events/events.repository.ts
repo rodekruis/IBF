@@ -37,6 +37,13 @@ export interface ExposedAdminAreaRecord {
   }[];
 }
 
+// Ongoing events first, then imminent events by how soon they start.
+const eventsOrderBy: Prisma.EventOrderByWithRelationInput[] = [
+  { startAt: 'asc' },
+  { firstIssuedAt: 'asc' },
+  { id: 'asc' },
+];
+
 @Injectable()
 export class EventsRepository {
   public constructor(private readonly prisma: PrismaService) {}
@@ -56,7 +63,10 @@ export class EventsRepository {
         : {};
 
     if (active === undefined) {
-      return await this.prisma.event.findMany({ where: countryFilter });
+      return await this.prisma.event.findMany({
+        where: countryFilter,
+        orderBy: eventsOrderBy,
+      });
     }
 
     const where = active
@@ -70,7 +80,7 @@ export class EventsRepository {
           OR: [{ closedAt: { not: null } }, { endAt: { lte: viewTime } }],
         };
 
-    return await this.prisma.event.findMany({ where });
+    return await this.prisma.event.findMany({ where, orderBy: eventsOrderBy });
   }
 
   public async getOpenEventByName(eventName: string): Promise<Event | null> {

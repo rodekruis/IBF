@@ -46,7 +46,7 @@ export class EventsController {
   @ApiResponse({
     status: HttpStatus.OK,
     description:
-      'Returns events based on the active-status and request-timestamp',
+      'Returns events based on the active-status and request-timestamp, ordered by start date (earliest first)',
     type: [EventResponseDto],
   })
   public async getEvents(
