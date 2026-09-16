@@ -667,6 +667,48 @@ describe('AlertsService', () => {
       );
     });
 
+    it('should reject a waterDischarge that is not an array', async () => {
+      const alerts = [createMockAlertWithWaterDischarge(null)];
+      const error = await service
+        .createAlerts(createMockValidForecast({ alerts }))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([expect.stringContaining('must be an array')]),
+      );
+    });
+
+    it('should reject a malformed waterDischarge entry', async () => {
+      const alerts = [
+        createMockAlertWithWaterDischarge([
+          {
+            start: '2026-03-20T00:00:00Z',
+            end: '2026-03-20T23:59:59Z',
+            median: '100',
+            low: 80,
+            high: 120,
+          },
+        ]),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast({ alerts }))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining(
+            'must have string start/end and numeric low/median/high',
+          ),
+        ]),
+      );
+    });
+
     it('should reject a time interval where start >= end', async () => {
       const alerts = [
         createMockAlertWithWaterDischarge([

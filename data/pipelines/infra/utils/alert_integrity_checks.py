@@ -3,7 +3,6 @@ from __future__ import annotations
 import base64
 import binascii
 from datetime import datetime
-from typing import cast
 
 from pipelines.infra.data_types.dtos import (
     Alert,
@@ -141,30 +140,61 @@ def check_geo_feature_integrity(event_name: str, alert: Alert) -> list[str]:
         water_discharge = geo_feature.attributes.get("waterDischarge")
         if water_discharge is None:
             continue
-        time_series = cast(list[WaterDischargeTimeSeriesEntry], water_discharge)
-
-        if not time_series:
-            errors.append(
-                f"Alert '{event_name}' geo-feature '{geo_feature.geo_feature_id}': "
-                f"waterDischarge has no time series entries"
-            )
+        error_prefix = (
+            f"Alert '{event_name}' geo-feature '{geo_feature.geo_feature_id}': "
+            f"waterDischarge"
+        )
+        if not isinstance(water_discharge, list):
+            errors.append(f"{error_prefix} must be a list of time series entries")
             continue
+        if not water_discharge:
+            errors.append(f"{error_prefix} has no time series entries")
+            continue
+        for entry in water_discharge:
+            errors.extend(_check_water_discharge_entry(error_prefix, entry))
+    return errors
 
-        for entry in time_series:
-            start, end = entry["start"], entry["end"]
-            if datetime.fromisoformat(start) >= datetime.fromisoformat(end):
-                errors.append(
-                    f"Alert '{event_name}' geo-feature '{geo_feature.geo_feature_id}': "
-                    f"waterDischarge time interval {start}\u2013{end}: start must be before end"
-                )
-            if entry["low"] > entry["median"] or entry["median"] > entry["high"]:
-                errors.append(
-                    f"Alert '{event_name}' geo-feature '{geo_feature.geo_feature_id}': "
-                    f"waterDischarge time interval {start}\u2013{end}: expected low <= median <= high"
-                )
-            elif entry["low"] < 0:
-                errors.append(
-                    f"Alert '{event_name}' geo-feature '{geo_feature.geo_feature_id}': "
-                    f"waterDischarge time interval {start}\u2013{end}: discharge values must be non-negative"
-                )
+
+def _check_water_discharge_entry(prefix: str, entry: object) -> list[str]:
+    if not isinstance(entry, dict):
+        return [f"{prefix} entry must be an object"]
+    missing_keys = sorted(
+        WaterDischargeTimeSeriesEntry.__required_keys__ - entry.keys()
+    )
+    if missing_keys:
+        return [f"{prefix} entry is missing keys: {', '.join(missing_keys)}"]
+    start, end = entry["start"], entry["end"]
+    try:
+        start_at = datetime.fromisoformat(start)
+        end_at = datetime.fromisoformat(end)
+    except (TypeError, ValueError):
+        return [
+            (
+                f"{prefix} time interval {start}\u2013{end}: "
+                "start/end must be ISO 8601 timestamps"
+            )
+        ]
+    errors: list[str] = []
+    if start_at >= end_at:
+        errors.append(
+            f"{prefix} time interval {start}\u2013{end}: start must be before end"
+        )
+    values = [entry["low"], entry["median"], entry["high"]]
+    if not all(
+        isinstance(value, (int, float)) and not isinstance(value, bool)
+        for value in values
+    ):
+        errors.append(
+            f"{prefix} time interval {start}\u2013{end}: "
+            f"low/median/high must be numeric"
+        )
+    elif entry["low"] > entry["median"] or entry["median"] > entry["high"]:
+        errors.append(
+            f"{prefix} time interval {start}\u2013{end}: expected low <= median <= high"
+        )
+    elif entry["low"] < 0:
+        errors.append(
+            f"{prefix} time interval {start}\u2013{end}: "
+            f"discharge values must be non-negative"
+        )
     return errors

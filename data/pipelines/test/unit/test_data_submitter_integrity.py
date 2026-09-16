@@ -413,3 +413,66 @@ def test_water_discharge_negative_low_is_rejected(
 
     assert any("must be non-negative" in e for e in errors)
     assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_non_list_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge attribute that is not a list is rejected instead of raising."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={"waterDischarge": "not-a-list"},
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("must be a list" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_entry_missing_keys_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge entry missing required keys is rejected instead of raising."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={
+            "waterDischarge": [{"start": "2026-03-20T00:00:00Z", "median": 100.0}]
+        },
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("missing keys: end, high, low" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_non_iso_timestamps_are_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge entry with unparseable timestamps is rejected instead of raising."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={
+            "waterDischarge": [
+                WaterDischargeTimeSeriesEntry(
+                    start="tomorrow",
+                    end="2026-03-20T23:59:59Z",
+                    median=100.0,
+                    low=80.0,
+                    high=120.0,
+                )
+            ]
+        },
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("must be ISO 8601 timestamps" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()

@@ -3,7 +3,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { AlertsRepository } from '@api-service/src/alerts/alerts.repository';
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { AlertReadDto } from '@api-service/src/alerts/dto/alert-read.dto';
-import { WaterDischargeTimeSeriesEntry } from '@api-service/src/alerts/dto/exposure-geo-feature.dto';
+import { WaterDischargeTimeSeriesEntryDto } from '@api-service/src/alerts/dto/exposure-geo-feature.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
 import { EnsembleMemberType, LayerName } from '@api-service/src/shared-enums';
@@ -149,14 +149,20 @@ export class AlertsService {
     return errors;
   }
 
-  // Only validates the 'waterDischarge' attribute key; other keys pass through unvalidated.
+  // Only validates the 'waterDischarge' attribute key; other future keys pass through unvalidated.
   private checkExposureGeoFeatures(alert: AlertCreateDto): string[] {
     const errors: string[] = [];
 
     for (const geoFeature of alert.exposure.geoFeatures ?? []) {
-      const waterDischarge = geoFeature.attributes.waterDischarge as
-        WaterDischargeTimeSeriesEntry[] | undefined;
+      const waterDischarge = geoFeature.attributes.waterDischarge;
       if (waterDischarge === undefined) {
+        continue;
+      }
+
+      if (!Array.isArray(waterDischarge)) {
+        errors.push(
+          `Alert '${alert.eventName}' geo-feature '${geoFeature.geoFeatureId}': waterDischarge must be an array of time series entries`,
+        );
         continue;
       }
 
@@ -168,6 +174,12 @@ export class AlertsService {
       }
 
       for (const entry of waterDischarge) {
+        if (!this.isWaterDischargeTimeSeriesEntry(entry)) {
+          errors.push(
+            `Alert '${alert.eventName}' geo-feature '${geoFeature.geoFeatureId}': waterDischarge entry must have string start/end and numeric low/median/high`,
+          );
+          continue;
+        }
         if (new Date(entry.start) >= new Date(entry.end)) {
           errors.push(
             `Alert '${alert.eventName}' geo-feature '${geoFeature.geoFeatureId}': waterDischarge time interval ${entry.start}\u2013${entry.end}: start must be before end`,
@@ -186,6 +198,22 @@ export class AlertsService {
     }
 
     return errors;
+  }
+
+  private isWaterDischargeTimeSeriesEntry(
+    value: unknown,
+  ): value is WaterDischargeTimeSeriesEntryDto {
+    if (typeof value !== 'object' || value === null) {
+      return false;
+    }
+    const entry = value as Record<string, unknown>;
+    return (
+      typeof entry.start === 'string' &&
+      typeof entry.end === 'string' &&
+      typeof entry.low === 'number' &&
+      typeof entry.median === 'number' &&
+      typeof entry.high === 'number'
+    );
   }
 
   private checkExposureAdminAreas(alert: AlertCreateDto): string[] {

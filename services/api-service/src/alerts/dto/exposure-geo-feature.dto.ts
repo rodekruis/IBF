@@ -20,10 +20,20 @@ export class ExposureGeoFeatureDto {
 }
 
 // Example shape of the `waterDischarge` key in `ExposureGeoFeatureDto.attributes` above (m3/s).
-export interface WaterDischargeTimeSeriesEntry {
-  readonly start: string;
-  readonly end: string;
-  readonly median: number;
-  readonly low: number;
-  readonly high: number;
+// Also reused as the typed response shape in events/dto/event-geo-feature.dto.ts.
+export class WaterDischargeTimeSeriesEntryDto {
+  @ApiProperty({ example: '2026-03-20T00:00:00Z' })
+  public readonly start: string;
+
+  @ApiProperty({ example: '2026-03-20T23:59:59Z' })
+  public readonly end: string;
+
+  @ApiProperty({ example: 120 })
+  public readonly median: number;
+
+  @ApiProperty({ example: 90 })
+  public readonly low: number;
+
+  @ApiProperty({ example: 150 })
+  public readonly high: number;
 }
