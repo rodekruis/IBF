@@ -1,5 +1,6 @@
 from datetime import datetime, UTC
 from pathlib import Path
+from typing import cast
 from unittest.mock import MagicMock
 
 from pipelines.infra.data_submitter import DataSubmitter
@@ -441,7 +442,10 @@ def test_water_discharge_entry_missing_keys_is_rejected(
         geo_feature_id="G1",
         layer=LayerName.GLOFAS_STATIONS,
         attributes={
-            "waterDischarge": [{"start": "2026-03-20T00:00:00Z", "median": 100.0}]
+            "waterDischarge": cast(
+                list[WaterDischargeTimeSeriesEntry],
+                [{"start": "2026-03-20T00:00:00Z", "median": 100.0}],
+            )
         },
     )
 
