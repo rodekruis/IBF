@@ -529,7 +529,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns events based on the active-status and request-timestamp",
+            "description": "Returns events based on the active-status and request-timestamp, ordered by start date (earliest first)",
             "content": {
               "application/json": {
                 "schema": {
