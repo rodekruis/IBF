@@ -17,6 +17,7 @@ dependencies = [
     "cfgrib",
     "click",
     "eccodes",
+    "fiona",
     "netCDF4",
     "numpy",
     "pillow",

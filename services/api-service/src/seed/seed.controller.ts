@@ -26,6 +26,7 @@ import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import { SeedService } from '@api-service/src/seed/seed.service';
 import { SUPPORTED_MOCK_COUNTRIES } from '@api-service/src/seed/seed-data/mock-events.helper';
 import { HazardType } from '@api-service/src/shared-enums';
+import { getNormalizedStringList } from '@api-service/src/utils/normalize-string-list.helper';
 
 class SecretDto {
   @ApiProperty({ example: 'fill_in_secret' })
@@ -114,7 +115,7 @@ export class SeedController {
 
     this.seedService.startReset({
       resetIdentifier,
-      countryCodes: countryCodes?.map((code) => code.trim()),
+      countryCodes: getNormalizedStringList(countryCodes),
       skipStaticRasters: skipStaticRasters ?? false,
     });
 
@@ -195,9 +196,7 @@ export class SeedController {
       throw new ForbiddenException('Not allowed');
     }
 
-    const resolvedCountryCodes = countryCodes
-      ? Array.from(new Set(countryCodes.map((code) => code.trim())))
-      : undefined;
+    const resolvedCountryCodes = getNormalizedStringList(countryCodes);
 
     if (resolvedCountryCodes) {
       const unsupported = resolvedCountryCodes.filter(
@@ -224,9 +223,8 @@ export class SeedController {
       );
     }
 
-    const resolvedHazardTypes = hazardTypes
-      ? (Array.from(new Set(hazardTypes.map((h) => h.trim()))) as HazardType[])
-      : undefined;
+    const resolvedHazardTypes = getNormalizedStringList(hazardTypes) as
+      HazardType[] | undefined;
 
     if (resolvedHazardTypes) {
       const validHazardTypes = Object.values(HazardType) as string[];

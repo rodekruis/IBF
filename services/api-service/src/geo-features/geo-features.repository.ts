@@ -119,13 +119,13 @@ export class GeoFeaturesRepository {
     const BATCH_SIZE = 100;
     try {
       // Uses raw SQL because Prisma's client API cannot call PostGIS functions (ST_GeomFromGeoJSON) inline
-      await this.prisma.$transaction(async (tx) => {
-        for (let i = 0; i < dtos.length; i += BATCH_SIZE) {
-          const batch = dtos.slice(i, i + BATCH_SIZE);
-          const values = batch.map((dto) => {
-            const geojson = JSON.stringify(dto.geometry);
-            const attrs = JSON.stringify(dto.attributes ?? {});
-            return Prisma.sql`(
+      // No wrapping transaction: Prisma aborts transactions after 5s, which large imports exceed
+      for (let i = 0; i < dtos.length; i += BATCH_SIZE) {
+        const batch = dtos.slice(i, i + BATCH_SIZE);
+        const values = batch.map((dto) => {
+          const geojson = JSON.stringify(dto.geometry);
+          const attrs = JSON.stringify(dto.attributes ?? {});
+          return Prisma.sql`(
               ${dto.countryCodeIso3},
               ${dto.featureType},
               ${dto.layer}::"api-service"."LayerName",
@@ -134,14 +134,13 @@ export class GeoFeaturesRepository {
               ${attrs}::jsonb,
               NOW()
             )`;
-          });
-          await tx.$executeRaw`
-            INSERT INTO "api-service"."geo-feature"
-              ("countryCodeIso3", "featureType", "layerName", "referenceId", "geometry", "attributes", "updated")
-            VALUES ${Prisma.join(values)}
-            ON CONFLICT ("countryCodeIso3", "layerName", "referenceId") DO NOTHING`;
-        }
-      });
+        });
+        await this.prisma.$executeRaw`
+          INSERT INTO "api-service"."geo-feature"
+            ("countryCodeIso3", "featureType", "layerName", "referenceId", "geometry", "attributes", "updated")
+          VALUES ${Prisma.join(values)}
+          ON CONFLICT ("countryCodeIso3", "layerName", "referenceId") DO NOTHING`;
+      }
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2010') {

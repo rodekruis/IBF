@@ -9,7 +9,7 @@ import {
   ExposedAdminAreaRecord,
 } from '@api-service/src/events/events.repository';
 import { EventLayerDto } from '@api-service/src/layers/dto/event-layer.dto';
-import { LayerType } from '@api-service/src/shared-enums';
+import { EventStatus, LayerType } from '@api-service/src/shared-enums';
 
 @Injectable()
 export class EventsService {
@@ -18,16 +18,16 @@ export class EventsService {
   public async getEvents({
     viewTime,
     active,
-    countryCodeIso3,
+    countryCodesIso3,
   }: {
     viewTime: Date;
     active?: boolean;
-    countryCodeIso3?: string;
+    countryCodesIso3?: string[];
   }): Promise<EventResponseDto[]> {
     const events = await this.eventsRepository.getEvents({
       viewTime,
       active,
-      countryCodeIso3,
+      countryCodesIso3,
     });
     const eventIds = events.map((event) => event.id);
     const exposedAdminAreasByEventId =
@@ -70,13 +70,26 @@ export class EventsService {
       endAt: event.endAt.toISOString(),
       firstIssuedAt: event.firstIssuedAt.toISOString(),
       lastUpdatedAt: event.lastUpdatedAt.toISOString(),
-      isOngoing:
-        event.startAt <= viewTime &&
-        event.endAt > viewTime &&
-        event.closedAt === null,
+      eventStatus: this.getEventStatus({ event, viewTime }),
       exposedAdminAreas: this.mapExposedAdminAreas(exposedAdminAreas),
       availableLayers: this.mapAvailableLayers(rasters),
     };
+  }
+
+  private getEventStatus({
+    event,
+    viewTime,
+  }: {
+    event: Event;
+    viewTime: Date;
+  }): EventStatus {
+    if (event.closedAt !== null || event.endAt <= viewTime) {
+      return EventStatus.ended;
+    }
+    if (event.startAt > viewTime) {
+      return EventStatus.imminent;
+    }
+    return EventStatus.ongoing;
   }
 
   private mapExposedAdminAreas(

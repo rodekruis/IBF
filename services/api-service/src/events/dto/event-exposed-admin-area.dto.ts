@@ -9,7 +9,7 @@ class AdminAreaExposureDto {
   })
   public readonly layerName: LayerName;
 
-  @ApiProperty({ example: 20_000 })
+  @ApiProperty({ example: 20_000, type: Number, nullable: true })
   public readonly total: number | null; // TODO, make non-nullable again when possible.
 
   @ApiProperty({ example: 5_000 })

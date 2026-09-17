@@ -42,7 +42,7 @@ export const SEED_COUNTRIES: SeedCountry[] = [
     countryCodeIso3: 'ZMB',
     countryCodeIso2: 'ZM',
     countryName: 'Zambia',
-    deepestAdminLevel: 3,
+    deepestAdminLevel: 4,
     hazardTypes: [HazardType.floods, HazardType.drought],
   },
   {

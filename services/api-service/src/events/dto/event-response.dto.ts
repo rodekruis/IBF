@@ -1,13 +1,15 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
 import { EventLayerDto } from '@api-service/src/layers/dto/event-layer.dto';
 import {
   AlertClass,
+  EventStatus,
   ForecastSource,
   HazardType,
 } from '@api-service/src/shared-enums';
 
+@ApiExtraModels(ExposedAdminAreaDto)
 export class EventResponseDto {
   @ApiProperty()
   public readonly eventId: number;
@@ -51,12 +53,17 @@ export class EventResponseDto {
   @ApiProperty({ example: '2026-03-20T23:59:59Z' })
   public readonly lastUpdatedAt: string;
 
-  @ApiProperty()
-  public readonly isOngoing: boolean;
+  @ApiProperty({ enum: EventStatus })
+  public readonly eventStatus: EventStatus;
 
   @ApiProperty({
     description:
       'A mapping of admin level (as a string key) to the exposed admin areas for that level',
+    type: 'object',
+    additionalProperties: {
+      type: 'array',
+      items: { $ref: getSchemaPath(ExposedAdminAreaDto) },
+    },
     example: { '0': [], '1': [] },
   })
   public readonly exposedAdminAreas: Record<string, ExposedAdminAreaDto[]>;

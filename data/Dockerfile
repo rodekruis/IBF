@@ -4,7 +4,8 @@ FROM ghcr.io/astral-sh/uv:0.9.27-python3.12-bookworm-slim AS base
 # Runtime system libraries:
 # - libeccodes0: used by the `eccodes`/`cfgrib` packages to read GRIB files
 # - libgdal32: runtime linkage for `fiona` when it is compiled from source (see below)
-RUN apt-get update && apt-get install -y --no-install-recommends libeccodes0 libgdal32 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends libeccodes0 libgdal32 nodejs npm && rm -rf /var/lib/apt/lists/*
+RUN npm install --global mapshaper@0.7.59
 
 # Non-root user, so that file permissions behave the same as on the host
 # (e.g. read-only test fixtures) and deployed containers do not run as root

@@ -55,7 +55,7 @@ describe('POST /mock', () => {
     it('should create events for the country', async () => {
       const response = await readEvents({
         accessToken,
-        countryCodeIso3: COUNTRY_1,
+        countryCodesIso3: [COUNTRY_1],
         query: {
           active: true,
         },
@@ -77,7 +77,7 @@ describe('POST /mock', () => {
 
       const response = await readEvents({
         accessToken,
-        countryCodeIso3: COUNTRY_1,
+        countryCodesIso3: [COUNTRY_1],
         query: {
           active: true,
         },
@@ -101,7 +101,7 @@ describe('POST /mock', () => {
 
       const response = await readEvents({
         accessToken,
-        countryCodeIso3: COUNTRY_1,
+        countryCodesIso3: [COUNTRY_1],
         query: {
           active: true,
         },
@@ -123,7 +123,7 @@ describe('POST /mock', () => {
 
       const response = await readEvents({
         accessToken,
-        countryCodeIso3: COUNTRY_1,
+        countryCodesIso3: [COUNTRY_1],
       });
 
       expect(response.status).toBe(HttpStatus.OK);
@@ -171,14 +171,14 @@ describe('POST /mock', () => {
 
       const country1Response = await readEvents({
         accessToken,
-        countryCodeIso3: COUNTRY_1,
+        countryCodesIso3: [COUNTRY_1],
         query: {
           active: true,
         },
       });
       const country2Response = await readEvents({
         accessToken,
-        countryCodeIso3: COUNTRY_2,
+        countryCodesIso3: [COUNTRY_2],
         query: {
           active: true,
         },
@@ -203,14 +203,14 @@ describe('POST /mock', () => {
 
       const country1Response = await readEvents({
         accessToken,
-        countryCodeIso3: COUNTRY_1,
+        countryCodesIso3: [COUNTRY_1],
         query: {
           active: true,
         },
       });
       const country2Response = await readEvents({
         accessToken,
-        countryCodeIso3: COUNTRY_2,
+        countryCodesIso3: [COUNTRY_2],
         query: {
           active: true,
         },
@@ -238,7 +238,7 @@ describe('POST /mock', () => {
 
       const country2Response = await readEvents({
         accessToken,
-        countryCodeIso3: COUNTRY_2,
+        countryCodesIso3: [COUNTRY_2],
         query: {
           active: true,
         },
@@ -267,14 +267,14 @@ describe('POST /mock', () => {
 
       const country1Response = await readEvents({
         accessToken,
-        countryCodeIso3: COUNTRY_1,
+        countryCodesIso3: [COUNTRY_1],
         query: {
           active: true,
         },
       });
       const country2Response = await readEvents({
         accessToken,
-        countryCodeIso3: COUNTRY_2,
+        countryCodesIso3: [COUNTRY_2],
         query: {
           active: true,
         },

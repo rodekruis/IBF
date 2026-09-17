@@ -59,6 +59,14 @@ enum AlertClassificationLevel {
   @@schema("api-service")
 }
 
+enum EventStatus {
+  ongoing
+  imminent
+  ended
+
+  @@schema("api-service")
+}
+
 enum LayerName {
   population
   populationExposed
