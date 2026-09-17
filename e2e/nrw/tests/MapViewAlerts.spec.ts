@@ -28,8 +28,6 @@ test.describe('alerts', () => {
 
     // Assert
     await expect(nrwMapPage.eventMarkers.first()).toBeVisible();
-    await expect(page).toHaveScreenshot('single-country-alert.png', {
-      maxDiffPixelRatio: 0.01,
-    });
+    await expect(page).toHaveScreenshot('single-country-alert.png');
   });
 });

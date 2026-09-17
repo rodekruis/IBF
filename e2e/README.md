@@ -36,6 +36,8 @@ separately (see the [root README](../README.md)):
    - `FONTAWESOME_API_KEY` — required for `pnpm install`
    - `APP_MAPBOX_ACCESS_TOKEN` — required for the map to render
    - `APP_NRW_STANDALONE` - make sure this stays on `true`
+   - `APP_ENVIRONMENT` - set to `testing` to match the reference screenshots
+     from CI (the environment banner text is part of the screenshots)
 
    Then install and serve:
 
