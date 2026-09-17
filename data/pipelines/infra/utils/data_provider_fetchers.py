@@ -190,7 +190,7 @@ def _load_ibf_api_population_data(
 ):
     container.data_type = DataType.RASTER_DATA
 
-    layer_name = LayerName.POPULATION
+    layer_name = LayerName.POPULATION_DENSITY
     raster_info = api_client.get_static_raster_metadata(
         config.country_code_iso_3, layer_name
     )

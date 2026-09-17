@@ -11,7 +11,7 @@ export class StaticRasterUploadDto {
   @IsNotEmpty()
   public readonly countryCodeIso3: string;
 
-  @ApiProperty({ enum: LayerName, example: LayerName.population })
+  @ApiProperty({ enum: LayerName, example: LayerName.populationDensity })
   @IsEnum(LayerName)
   public readonly layer: LayerName;
 

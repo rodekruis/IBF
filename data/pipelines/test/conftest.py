@@ -57,7 +57,7 @@ def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
     submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
         admin_level=3,
-        layer=LayerName.POPULATION_EXPOSED,
+        layer=LayerName.EXPOSED_POPULATION,
         values_by_place_code={"PC001": 0},
     )
     submitter.add_raster_exposure(

@@ -505,7 +505,7 @@ export class SeedInit {
 
     await this.rastersService.upsertStaticRaster({
       countryCodeIso3,
-      layer: LayerName.population,
+      layer: LayerName.populationDensity,
       valueData: dataPngBuffer.toString('base64'),
       valueColoured: colouredBase64,
       metadata: rasterMetadata,

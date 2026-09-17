@@ -68,8 +68,8 @@ enum EventStatus {
 }
 
 enum LayerName {
-  population
-  populationExposed
+  populationDensity
+  exposedPopulation
   redCrossBranches
   clinics
   floodDepth
