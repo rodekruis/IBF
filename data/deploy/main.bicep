@@ -67,12 +67,16 @@ param glofasFtpHost string = 'aux.ecmwf.int'
 @description('Blob mount path used as the pipeline data cache on Batch nodes.')
 param dataCacheDir string = '/mnt/batch/tasks/fsmounts/nrw-data-cache'
 
-@description('Email address that receives TaskFailEvent alerts.')
-param alertEmail string = 'ehill@redcross.nl'
+@description('Email addresses that receive TaskFailEvent alerts.')
+param alertEmails array = [
+  'ehill@redcross.nl'
+  'ibf-devops@redcross.nl'
+]
 
 @description('Email addresses notified when the pipeline logs an expected event (PLACEHOLDER_EMAIL_ALERT).')
 param eventAlertEmails array = [
   'ehill@redcross.nl'
+  'ibf-devops@redcross.nl'
 ]
 
 @description('Existing shared Log Analytics workspace that also backs the NRW backend Application Insights.')
@@ -245,9 +249,9 @@ resource taskFailActionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
     groupShortName: 'nrwbatchfail'
     enabled: true
     emailReceivers: [
-      {
-        name: 'primary'
-        emailAddress: alertEmail
+      for email in alertEmails: {
+        name: replace(email, '@', '-at-')
+        emailAddress: email
         useCommonAlertSchema: true
       }
     ]

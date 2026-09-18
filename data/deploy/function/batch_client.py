@@ -34,7 +34,6 @@ from azure.batch.models import (
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
 
-BATCH_TOKEN_SCOPE = "https://batch.core.windows.net/.default"
 CONTAINER_IMAGE = "nrwdockerregistry.azurecr.io/pipelines:latest"
 TASK_MAX_WALL_CLOCK_TIME = timedelta(hours=10)
 TASK_MAX_RETRY_COUNT = 0
