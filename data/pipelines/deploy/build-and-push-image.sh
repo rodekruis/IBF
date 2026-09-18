@@ -5,10 +5,10 @@
 # Deploy step. Rerun on every image change (dependency, config or pipeline code
 # change). Replaced by CI/CD later.
 #
-# Builds from data/Dockerfile with the data/ directory as build context and
-# pushes to nrwdockerregistry.azurecr.io/pipelines:latest. The YAML configs
-# under pipelines/infra/configs/ are baked into the image, so adding a country
-# or changing data sources requires a new build+push.
+# Builds from data/pipelines/deploy/Dockerfile with the data/ directory as build
+# context and pushes to nrwdockerregistry.azurecr.io/pipelines:latest. The YAML
+# configs under pipelines/infra/configs/ are baked into the image, so adding a
+# country or changing data sources requires a new build+push.
 #
 # Prerequisites:
 #   - Azure CLI logged in (`az login`) with rights to push to the ACR.
@@ -22,7 +22,7 @@ set -euo pipefail
 ACR_NAME="nrwdockerregistry"
 IMAGE="nrwdockerregistry.azurecr.io/pipelines:latest"
 BUILD_CONTEXT="$(cd "$(dirname "$0")/../.." && pwd)"
-DOCKERFILE="${BUILD_CONTEXT}/Dockerfile"
+DOCKERFILE="$(cd "$(dirname "$0")" && pwd)/Dockerfile"
 
 if [[ ! -f "${DOCKERFILE}" ]]; then
   echo "Dockerfile not found: ${DOCKERFILE}" >&2

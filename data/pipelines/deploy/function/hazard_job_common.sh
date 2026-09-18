@@ -34,23 +34,8 @@ fi
 
 az account set --subscription "${SUBSCRIPTION_ID}"
 
-# Read a single KEY=value from the env file, stripping surrounding quotes.
-read_env_var() {
-  local var_name="$1"
-  local line
-  line="$(grep -E "^[[:space:]]*${var_name}=" "${ENV_FILE}" | tail -n 1)"
-  if [[ -z "${line}" ]]; then
-    return 1
-  fi
-  local value="${line#*=}"
-  # Strip CR first from end of line
-  value="${value%$'\r'}"
-  value="${value%\"}"
-  value="${value#\"}"
-  value="${value%\'}"
-  value="${value#\'}"
-  printf '%s' "${value}"
-}
+# shellcheck source=../env_helpers.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../env_helpers.sh"
 
 # Read a secret value from Key Vault. The value is captured into a variable
 # and never echoed to stdout.
