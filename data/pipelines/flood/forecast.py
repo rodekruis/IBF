@@ -212,12 +212,15 @@ def calculate_flood_forecasts(
                     longitude=station.lon,
                 ),
             )
+            peak_return_period = max(
+                severity.median_return_period for severity in time_interval_severities
+            )
             log_info(
                 logger,
                 LogTag.ALERT_GENERATION,
                 f"Alert generated for event '{event_name}' (station {station_code}): "
                 f"{len(time_interval_severities)} time intervals passed, peak return period "
-                f"{max(severity.median_return_period for severity in time_interval_severities):g}yr",
+                f"{peak_return_period:g}yr",
             )
 
             for severity in time_interval_severities:
