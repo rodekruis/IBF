@@ -121,6 +121,16 @@ const MOCK_BUILDERS: Record<string, MockHazardConfig[]> = {
 
 export const SUPPORTED_MOCK_COUNTRIES = Object.keys(MOCK_BUILDERS);
 
+export function getMockCountriesForHazards(
+  hazardTypes: HazardType[],
+): string[] {
+  return SUPPORTED_MOCK_COUNTRIES.filter((countryCodeIso3) =>
+    MOCK_BUILDERS[countryCodeIso3].some((c) =>
+      hazardTypes.includes(c.hazardType),
+    ),
+  );
+}
+
 // Every flood event carries a basic waterDischarge time series on its GloFAS station.
 // Values are basic (same per day), but real station-threshold-based.
 // Individual events may override with richer, hand-crafted data (see 'Gambella' below).
