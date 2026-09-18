@@ -209,16 +209,12 @@ export class SeedInit {
       return;
     }
 
-    const adminAreas = geojson.features
-      .map((feature) =>
-        this.parseAdminAreaFeature({
-          feature,
-          file: { countryCodeIso3, adminLevel },
-        }),
-      )
-      .filter(
-        (area): area is NonNullable<typeof area> => area !== undefined,
-      ) satisfies AdminAreaCreateDto[];
+    const adminAreas = geojson.features.map((feature) =>
+      this.parseAdminAreaFeature({
+        feature,
+        file: { countryCodeIso3, adminLevel },
+      }),
+    ) satisfies AdminAreaCreateDto[];
 
     if (adminAreas.length === 0) {
       return;
@@ -235,7 +231,7 @@ export class SeedInit {
   }: {
     feature: GeoJsonFeature;
     file: { countryCodeIso3: string; adminLevel: number };
-  }): AdminAreaCreateDto | undefined {
+  }): AdminAreaCreateDto {
     const props = feature.properties;
 
     const placeCode =
@@ -254,11 +250,10 @@ export class SeedInit {
       props.ADM1_EN ??
       props.ADM0_EN;
 
-    if (!placeCode || !nameEn) {
-      this.logger.warn(
-        `Skipping feature with missing placeCode or name in ${file.countryCodeIso3} adm${file.adminLevel}`,
+    if (!placeCode || !nameEn || !props.ADM0_PCODE) {
+      throw new Error(
+        `Missing placeCode, name or ADM0_PCODE in ${file.countryCodeIso3} adm${file.adminLevel}`,
       );
-      return undefined;
     }
 
     const attributes: Record<string, unknown> = {
@@ -270,6 +265,7 @@ export class SeedInit {
       adminLevel: file.adminLevel,
       nameEn,
       countryCodeIso3: file.countryCodeIso3,
+      placeCodeLevel0: props.ADM0_PCODE,
       placeCodeLevel1: props.ADM1_PCODE ?? null,
       placeCodeLevel2: props.ADM2_PCODE ?? null,
       placeCodeLevel3: props.ADM3_PCODE ?? null,
