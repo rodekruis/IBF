@@ -1,5 +1,6 @@
 from datetime import datetime, UTC
 from pathlib import Path
+from typing import cast
 from unittest.mock import MagicMock
 
 from pipelines.infra.data_submitter import DataSubmitter
@@ -11,6 +12,7 @@ from pipelines.infra.data_types.dtos import (
     HazardType,
     LayerName,
     SeverityKey,
+    WaterDischargeTimeSeriesEntry,
 )
 from pipelines.infra.utils.raster import PLACEHOLDER_RASTER_BASE64
 
@@ -286,4 +288,195 @@ def test_negative_population_exposed_is_rejected(
     errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
     assert any("must be non-negative" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_valid_is_accepted(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A well-formed waterDischarge time series produces no integrity errors."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={
+            "waterDischarge": [
+                WaterDischargeTimeSeriesEntry(
+                    start="2026-03-20T00:00:00Z",
+                    end="2026-03-20T23:59:59Z",
+                    median=100.0,
+                    low=80.0,
+                    high=120.0,
+                )
+            ]
+        },
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert errors == []
+    assert (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_empty_time_series_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge attribute with no time series entries is rejected."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={"waterDischarge": []},
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("no time series entries" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_start_after_end_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge entry whose start is after its end is rejected."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={
+            "waterDischarge": [
+                WaterDischargeTimeSeriesEntry(
+                    start="2026-03-21T00:00:00Z",
+                    end="2026-03-20T00:00:00Z",
+                    median=100.0,
+                    low=80.0,
+                    high=120.0,
+                )
+            ]
+        },
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("start must be before end" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_median_outside_low_high_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge entry whose median falls outside [low, high] is rejected."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={
+            "waterDischarge": [
+                WaterDischargeTimeSeriesEntry(
+                    start="2026-03-20T00:00:00Z",
+                    end="2026-03-20T23:59:59Z",
+                    median=200.0,
+                    low=80.0,
+                    high=120.0,
+                )
+            ]
+        },
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("expected low <= median <= high" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_negative_low_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge entry with a negative 'low' value is rejected."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={
+            "waterDischarge": [
+                WaterDischargeTimeSeriesEntry(
+                    start="2026-03-20T00:00:00Z",
+                    end="2026-03-20T23:59:59Z",
+                    median=0.0,
+                    low=-10.0,
+                    high=10.0,
+                )
+            ]
+        },
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("must be non-negative" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_non_list_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A non-list waterDischarge is caught by the integrity check (would otherwise raise TypeError)."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={"waterDischarge": "not-a-list"},
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("must be a list" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_entry_missing_keys_is_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge entry missing required keys is caught by the integrity check (would otherwise raise KeyError)."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={
+            "waterDischarge": cast(
+                list[WaterDischargeTimeSeriesEntry],
+                [{"start": "2026-03-20T00:00:00Z", "median": 100.0}],
+            )
+        },
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("missing keys: end, high, low" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_water_discharge_non_iso_timestamps_are_rejected(
+    valid_submitter: DataSubmitter, tmp_output: Path
+):
+    """A waterDischarge entry with unparseable timestamps is caught by the integrity check (would otherwise raise ValueError)."""
+    valid_submitter.add_geo_feature_exposure(
+        event_name=EVENT_NAME,
+        geo_feature_id="G1",
+        layer=LayerName.GLOFAS_STATIONS,
+        attributes={
+            "waterDischarge": [
+                WaterDischargeTimeSeriesEntry(
+                    start="tomorrow",
+                    end="2026-03-20T23:59:59Z",
+                    median=100.0,
+                    low=80.0,
+                    high=120.0,
+                )
+            ]
+        },
+    )
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("must be ISO 8601 timestamps" in e for e in errors)
     assert not (tmp_output / "forecast.json").exists()

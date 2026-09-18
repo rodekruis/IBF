@@ -6,8 +6,14 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, UTC
 
+import numpy as np
 import rasterio
 
+from pipelines.flood.constants import (
+    WATER_DISCHARGE_HIGH_PERCENTILE,
+    WATER_DISCHARGE_LOW_PERCENTILE,
+)
+from pipelines.infra.data_types.dtos import WaterDischargeTimeSeriesEntry
 from pipelines.infra.data_types.location_point import LocationPoint
 from pipelines.infra.utils.nrw_logger import log_info, log_warning, LogTag
 
@@ -87,6 +93,35 @@ def extract_discharge_glofas_station(
                 )
 
     return discharges
+
+
+def build_water_discharge_time_series(
+    time_interval_discharges: list[TimeIntervalDischarge],
+) -> list[WaterDischargeTimeSeriesEntry]:
+    """Build the raw discharge time series (median + low/high range, m3/s) for the full lead-time spectrum."""
+    time_series: list[WaterDischargeTimeSeriesEntry] = []
+    for time_interval_discharge in time_interval_discharges:
+        ensemble_array = np.asarray(
+            time_interval_discharge.ensemble_discharges,
+            dtype=float,
+        )
+        # Skip intervals with no data; a fully-empty series is caught by alert integrity checks later.
+        if ensemble_array.size == 0 or np.isnan(ensemble_array).all():
+            continue
+        time_series.append(
+            WaterDischargeTimeSeriesEntry(
+                start=time_interval_discharge.time_interval_start,
+                end=time_interval_discharge.time_interval_end,
+                median=float(np.nanmedian(ensemble_array)),
+                low=float(
+                    np.nanpercentile(ensemble_array, WATER_DISCHARGE_LOW_PERCENTILE)
+                ),
+                high=float(
+                    np.nanpercentile(ensemble_array, WATER_DISCHARGE_HIGH_PERCENTILE)
+                ),
+            )
+        )
+    return time_series
 
 
 def _parse_lead_time_range(temporal_extent: dict[str, list]) -> tuple[int, int]:

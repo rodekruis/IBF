@@ -9,7 +9,15 @@ from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
     LayerName,
+    WATER_DISCHARGE_ATTRIBUTE,
+    WaterDischargeTimeSeriesEntry,
 )
+
+ENTRY_START = "start"
+ENTRY_END = "end"
+LOW = "low"
+MEDIAN = "median"
+HIGH = "high"
 
 
 def check_centroid(event_name: str, centroid: Centroid) -> list[str]:
@@ -129,4 +137,78 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
                         f"Alert '{event_name}' raster '{raster.layer}': "
                         f"value_greyscale is not a valid PNG"
                     )
+    return errors
+
+
+def check_geo_feature_integrity(event_name: str, alert: Alert) -> list[str]:
+    # TODO: only validates the 'waterDischarge' attribute key; extend to other keys.
+    errors: list[str] = []
+    for geo_feature in alert.exposure.geo_features:
+        water_discharge = geo_feature.attributes.get(WATER_DISCHARGE_ATTRIBUTE)
+        if water_discharge is None:
+            continue
+        error_prefix = (
+            f"Alert '{event_name}' geo-feature '{geo_feature.geo_feature_id}': "
+            f"{WATER_DISCHARGE_ATTRIBUTE}"
+        )
+        if not isinstance(water_discharge, list):
+            errors.append(f"{error_prefix} must be a list of time series entries")
+            continue
+        if not water_discharge:
+            errors.append(f"{error_prefix} has no time series entries")
+            continue
+        for entry in water_discharge:
+            errors.extend(_check_water_discharge_entry(error_prefix, entry))
+    return errors
+
+
+START = "start"
+END = "end"
+LOW = "low"
+MEDIAN = "median"
+HIGH = "high"
+
+
+def _check_water_discharge_entry(prefix: str, entry: object) -> list[str]:
+    if not isinstance(entry, dict):
+        return [f"{prefix} entry must be an object"]
+    missing_keys = sorted(
+        WaterDischargeTimeSeriesEntry.__required_keys__ - entry.keys()
+    )
+    if missing_keys:
+        return [f"{prefix} entry is missing keys: {', '.join(missing_keys)}"]
+    start, end = entry[START], entry[END]
+    try:
+        start_at = datetime.fromisoformat(start)
+        end_at = datetime.fromisoformat(end)
+    except (TypeError, ValueError):
+        return [
+            (
+                f"{prefix} time interval {start}\u2013{end}: "
+                "start/end must be ISO 8601 timestamps"
+            )
+        ]
+    errors: list[str] = []
+    if start_at >= end_at:
+        errors.append(
+            f"{prefix} time interval {start}\u2013{end}: start must be before end"
+        )
+    values = [entry[LOW], entry[MEDIAN], entry[HIGH]]
+    if not all(
+        isinstance(value, (int, float)) and not isinstance(value, bool)
+        for value in values
+    ):
+        errors.append(
+            f"{prefix} time interval {start}\u2013{end}: "
+            f"low/median/high must be numeric"
+        )
+    elif entry[LOW] > entry[MEDIAN] or entry[MEDIAN] > entry[HIGH]:
+        errors.append(
+            f"{prefix} time interval {start}\u2013{end}: expected low <= median <= high"
+        )
+    elif entry[LOW] < 0:
+        errors.append(
+            f"{prefix} time interval {start}\u2013{end}: "
+            f"discharge values must be non-negative"
+        )
     return errors

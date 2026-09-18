@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import TypedDict
 
 from pipelines.infra.data_types.enums import (
     EnsembleMemberType,
@@ -22,6 +23,7 @@ from pipelines.infra.data_types.enums import (
 JsonDict = dict[str, object]
 
 __all__ = [
+    "WATER_DISCHARGE_ATTRIBUTE",
     "Alert",
     "Centroid",
     "Exposure",
@@ -32,6 +34,7 @@ __all__ = [
     "RasterExtent",
     "Severity",
     "TimeInterval",
+    "WaterDischargeTimeSeriesEntry",
 ]
 
 
@@ -99,11 +102,25 @@ class ExposureAdminArea:
 
 
 # Source: services/api-service/src/alerts/dto/exposure-geo-feature.dto.ts
+class WaterDischargeTimeSeriesEntry(TypedDict):
+    start: str
+    end: str
+    median: float
+    low: float
+    high: float
+
+
+WATER_DISCHARGE_ATTRIBUTE = "waterDischarge"
+
+
+# Source: services/api-service/src/alerts/dto/exposure-geo-feature.dto.ts
 @dataclass
 class ExposureGeoFeature:
     geo_feature_id: str
     layer: LayerName
-    attributes: dict[str, bool | str | int | float]
+    attributes: dict[
+        str, bool | str | int | float | list[WaterDischargeTimeSeriesEntry]
+    ]
 
     def to_dict(self) -> JsonDict:
         return {
