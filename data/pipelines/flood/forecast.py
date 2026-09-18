@@ -223,25 +223,6 @@ def calculate_flood_forecasts(
                 f"{peak_return_period:g}yr",
             )
 
-            # Until email notifications are properly set up,
-            # make a log to trigger an email notification for any flood with a return period of 5 or more.
-            # Mock runs (--mock) load discharge from the seed repo instead of the GloFAS FTP,
-            # so the presence of the FTP source identifies a live run.
-            is_live_run = DataSource.GLOFAS_DISCHARGE_FTP in data_provider.loaded_data
-            PLACEHOLDER_NOTIFICATION_RETURN_PERIOD = 5
-
-            if (
-                is_live_run
-                and peak_return_period >= PLACEHOLDER_NOTIFICATION_RETURN_PERIOD
-            ):
-                log_info(
-                    logger,
-                    LogTag.PLACEHOLDER_EMAIL_ALERT,
-                    f"Event expected for '{event_name}' (station {station_code}): "
-                    f"peak return period {peak_return_period:g}yr reaches event threshold "
-                    f"{PLACEHOLDER_NOTIFICATION_RETURN_PERIOD:g}yr",
-                )
-
             for severity in time_interval_severities:
                 for i in range(len(severity.ensemble_return_periods)):
                     data_submitter.add_severity_data(

@@ -76,7 +76,10 @@ def _run_country(
     if not load_success:
         return load_errors
 
-    data_submitter = DataSubmitter(api_client)
+    # Determine if this is a live run based on the GloFAS data source.
+    # Only live runs load GloFAS data from the FTP server.
+    is_live_run = DataSource.GLOFAS_DISCHARGE_FTP in data_provider.loaded_data
+    data_submitter = DataSubmitter(api_client, is_live_run=is_live_run)
 
     # --- Set forecast metadata based on hazard type ---
     forecast_sources = FORECAST_SOURCES[hazard_type]
