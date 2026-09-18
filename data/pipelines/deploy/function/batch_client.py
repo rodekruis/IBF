@@ -59,7 +59,7 @@ TASK_ENVIRONMENT_VARIABLES = (
 )
 
 
-# HazardConfig fields are interpolated into a shell-executed Batch task
+# PipelineConfig fields are interpolated into a shell-executed Batch task
 # command line, so reject anything outside a conservative allowlist of characters.
 HAZARD_TYPE_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 CONFIG_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_./-]+$")
@@ -67,7 +67,7 @@ EXTRA_ARG_PATTERN = re.compile(r"^[A-Za-z0-9_./:,=+-]+$")
 
 
 @dataclass(frozen=True)
-class HazardConfig:
+class PipelineConfig:
     """A pipeline YAML config baked into the pipeline container image.
 
     extra_args carries extra pipeline flags (see pipelines/infra/run_forecasts.py)
@@ -95,13 +95,13 @@ class HazardConfig:
             raise ValueError("extra_args requires --mock to be set.")
 
 
-def submit_hazard_job(
+def submit_pipeline_job(
     batch_client: BatchClient,
-    hazard_config: HazardConfig,
+    pipeline_config: PipelineConfig,
     run_started_at: datetime,
 ) -> str:
     """Create one Batch job with a single container task for the given hazard."""
-    job_id = build_job_id(hazard_config, run_started_at)
+    job_id = build_job_id(pipeline_config, run_started_at)
     batch_client.create_job(
         BatchJobCreateOptions(
             id=job_id,
@@ -109,7 +109,7 @@ def submit_hazard_job(
             all_tasks_complete_mode=BatchAllTasksCompleteMode.TERMINATE_JOB,
         )
     )
-    batch_client.create_task(job_id, build_container_task(hazard_config, job_id))
+    batch_client.create_task(job_id, build_container_task(pipeline_config, job_id))
     return job_id
 
 
@@ -121,18 +121,18 @@ def create_batch_client() -> BatchClient:
     )
 
 
-def build_job_id(hazard_config: HazardConfig, run_started_at: datetime) -> str:
+def build_job_id(pipeline_config: PipelineConfig, run_started_at: datetime) -> str:
     """Deterministic prefix plus hazard and timestamp, unique per run."""
-    return f"nrw-{hazard_config.hazard_type}-{run_started_at:%Y%m%d-%H%M%S}"
+    return f"nrw-{pipeline_config.hazard_type}-{run_started_at:%Y%m%d-%H%M%S}"
 
 
 def build_container_task(
-    hazard_config: HazardConfig, job_id: str
+    pipeline_config: PipelineConfig, job_id: str
 ) -> BatchTaskCreateOptions:
     """Container task mirroring local invocation: `pipeline --config <path>`."""
     return BatchTaskCreateOptions(
-        id=f"{hazard_config.hazard_type}-task",
-        command_line=build_command_line(hazard_config),
+        id=f"{pipeline_config.hazard_type}-task",
+        command_line=build_command_line(pipeline_config),
         container_settings=BatchTaskContainerSettings(
             image_name=CONTAINER_IMAGE,
             # Use the image WORKDIR (/home/pipelines/app) so the relative config
@@ -144,17 +144,17 @@ def build_container_task(
             max_wall_clock_time=TASK_MAX_WALL_CLOCK_TIME,
             max_task_retry_count=TASK_MAX_RETRY_COUNT,
         ),
-        output_files=task_output_files(hazard_config, job_id),
+        output_files=task_output_files(pipeline_config, job_id),
     )
 
 
-def build_command_line(hazard_config: HazardConfig) -> str:
+def build_command_line(pipeline_config: PipelineConfig) -> str:
     """Render the pipeline CLI invocation, e.g. `pipeline --config <path> --mock 0 --country PHL`."""
     parts = [
         "pipeline",
         "--config",
-        hazard_config.config_path,
-        *hazard_config.extra_args,
+        pipeline_config.config_path,
+        *pipeline_config.extra_args,
     ]
     return " ".join(parts)
 
@@ -168,7 +168,7 @@ def task_environment_settings() -> list[EnvironmentSetting]:
 
 
 def task_output_files(
-    hazard_config: HazardConfig, job_id: str
+    pipeline_config: PipelineConfig, job_id: str
 ) -> list[OutputFile] | None:
     """Write the Batch stdout.txt/stderr.txt files to blob storage"""
     container_url = os.environ.get("BATCH_TASK_LOGS_CONTAINER_URL")
@@ -181,7 +181,7 @@ def task_output_files(
             destination=OutputFileDestination(
                 container=OutputFileBlobContainerDestination(
                     container_url=container_url,
-                    path=f"task-logs/{hazard_config.hazard_type}/{job_id}",
+                    path=f"task-logs/{pipeline_config.hazard_type}/{job_id}",
                     identity_reference=BatchNodeIdentityReference(
                         resource_id=node_identity_resource_id
                     ),

@@ -1,7 +1,7 @@
 """Daily Timer Trigger that submits one Azure Batch job per hazard pipeline.
 
 Fires daily at set time in UTC and creates
-one Batch job per entry in HAZARD_CONFIGS. Only floods is scheduled for the
+one Batch job per entry in PIPELINE_CONFIGS. Only floods is scheduled for the
 prototype; drought is a dummy pipeline and tropicalCyclone is not ready yet.
 """
 
@@ -9,14 +9,14 @@ import logging
 from datetime import datetime, UTC
 
 import azure.functions as func
-from batch_client import create_batch_client, HazardConfig, submit_hazard_job
+from batch_client import create_batch_client, PipelineConfig, submit_pipeline_job
 
 logger = logging.getLogger(__name__)
 
 # One Batch job is created per entry. Only floods is scheduled for the
 # prototype; add drought and tropicalCyclone once they are ready.
-HAZARD_CONFIGS = (
-    HazardConfig(
+PIPELINE_CONFIGS = (
+    PipelineConfig(
         hazard_type="floods",
         config_path="pipelines/infra/configs/floods.yaml",
     ),
@@ -32,10 +32,10 @@ def daily_pipeline_scheduler(timer: func.TimerRequest) -> None:
     logger.info("Pipeline scheduler fired at %s.", run_started_at.isoformat())
 
     batch_client = create_batch_client()
-    for hazard_config in HAZARD_CONFIGS:
-        job_id = submit_hazard_job(batch_client, hazard_config, run_started_at)
+    for pipeline_config in PIPELINE_CONFIGS:
+        job_id = submit_pipeline_job(batch_client, pipeline_config, run_started_at)
         logger.info(
             "Submitted Batch job '%s' for hazard '%s'.",
             job_id,
-            hazard_config.hazard_type,
+            pipeline_config.hazard_type,
         )

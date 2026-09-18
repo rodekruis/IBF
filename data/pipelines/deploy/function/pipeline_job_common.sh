@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# hazard_job_common.sh — Shared setup for run_hazard_job.sh and
-# mock_run_hazard_job.sh. Sourced by those scripts, not run directly.
+# pipeline_job_common.sh — Shared setup for run_pipeline_job.sh and
+# mock_run_pipeline_job.sh. Sourced by those scripts, not run directly.
 #
 # Reads the pipeline secrets from the nrw-batch-poc Key Vault (never from the
 # command line) and exports the same environment the Function App provides, so
 # manually submitted jobs stay identical to the scheduled daily runs.
-# Submission goes through function/submit_hazard_job.py, which reuses
+# Submission goes through function/submit_pipeline_job.py, which reuses
 # function/batch_client.py.
 #
 # Auth: the Batch account is AAD-only, so the job is submitted as the
@@ -81,12 +81,12 @@ export APPLICATIONINSIGHTS_CONNECTION_STRING="$(az monitor app-insights componen
 # DefaultAzureCredential.
 unset AZURE_CLIENT_ID
 
-# Submit one Batch job, passing the arguments through to submit_hazard_job.py.
+# Submit one Batch job, passing the arguments through to submit_pipeline_job.py.
 submit_job() {
   (
     cd "${DATA_DIR}"
     uv run --with "azure-batch>=15,<16" --with azure-identity \
-      python pipelines/deploy/function/submit_hazard_job.py "$@"
+      python pipelines/deploy/function/submit_pipeline_job.py "$@"
   )
   unset IBF_PIPELINE_API_KEY GLOFAS_FTP_USER GLOFAS_FTP_PASSWORD
 }

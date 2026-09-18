@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 #
-# run_hazard_job.sh — Manually kick off a hazard pipeline run for a given
+# run_pipeline_job.sh — Manually kick off a hazard pipeline run for a given
 # hazard.
 #
 # Helper job, run on demand — not part of the normal deploy flow. Submits the
 # same job and parameters as a standard scheduled run of the hazard. For a
-# mock-data run, use mock_run_hazard_job.sh instead.
+# mock-data run, use mock_run_pipeline_job.sh instead.
 #
 # Usage:
-#   ./run_hazard_job.sh <hazard-type>
-#   ./run_hazard_job.sh floods
+#   ./run_pipeline_job.sh <hazard-type>
+#   ./run_pipeline_job.sh floods
 
 set -euo pipefail
 
@@ -30,8 +30,8 @@ if [[ ! "${HAZARD_TYPE}" =~ ^[A-Za-z_-]+$ ]]; then
   exit 1
 fi
 
-# shellcheck source=hazard_job_common.sh
-source "${SCRIPT_DIR}/hazard_job_common.sh"
+# shellcheck source=pipeline_job_common.sh
+source "${SCRIPT_DIR}/pipeline_job_common.sh"
 
 echo "Submitting job for hazard '${HAZARD_TYPE}'."
 submit_job "${HAZARD_TYPE}"

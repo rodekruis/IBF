@@ -98,7 +98,7 @@ User accounts:
   - Role: `Key Vault Secrets Officer`; Scope: Key Vault `nrw-batch-poc`
 - **To run `func start`**
   - Role: `Azure Batch Job Submitter`; Scope: Batch account `nrwbatchpoc`; Why: local job submission uses the operator's own `az login` identity, not the scheduler UAMI.
-- **To run `function/run_hazard_job.sh` or `function/mock_run_hazard_job.sh`**
+- **To run `function/run_pipeline_job.sh` or `function/mock_run_pipeline_job.sh`**
   - Role: `Key Vault Secrets User`; Scope: Key Vault `nrw-batch-poc`
   - Role: `Azure Batch Job Submitter`; Scope: Batch account `nrwbatchpoc`
 - **To run `create-pool.sh`**
@@ -129,8 +129,8 @@ Run these in order the first time, but after that, you can just run the ones tha
 
 ### Helper jobs
 
-- `run_hazard_job.sh` (`function/run_hazard_job.sh`): Manually kick off a hazard pipeline run for a given hazard. Example: `./function/run_hazard_job.sh floods`. This is the same job and parameters as a standard scheduled run of the hazard.
-- `mock_run_hazard_job.sh` (`function/mock_run_hazard_job.sh`): Run the pipeline with mock data; `--mock` is required and all other arguments are passed through unchanged. See the [pipelines readme](../pipelines/README.md) for possible flags. `./function/mock_run_hazard_job.sh floods --mock 1 --country KEN`
+- `run_pipeline_job.sh` (`function/run_pipeline_job.sh`): Manually kick off a hazard pipeline run for a given hazard. Example: `./function/run_pipeline_job.sh floods`. This is the same job and parameters as a standard scheduled run of the hazard.
+- `mock_run_pipeline_job.sh` (`function/mock_run_pipeline_job.sh`): Run the pipeline with mock data; `--mock` is required and all other arguments are passed through unchanged. See the [pipelines readme](../pipelines/README.md) for possible flags. `./function/mock_run_pipeline_job.sh floods --mock 1 --country KEN`
 
 ## Azure Resource Configurations
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# mock_run_hazard_job.sh — Manually run a hazard pipeline with mock data.
+# mock_run_pipeline_job.sh — Manually run a hazard pipeline with mock data.
 #
 # Helper job, run on demand
 # The arguments are passed through, but they must
@@ -8,8 +8,8 @@
 # See data/pipelines/README.md for the possible flags.
 #
 # Usage:
-#   ./mock_run_hazard_job.sh <hazard-type> --mock N [flags]
-#   ./mock_run_hazard_job.sh floods --mock 1 --country KEN
+#   ./mock_run_pipeline_job.sh <hazard-type> --mock N [flags]
+#   ./mock_run_pipeline_job.sh floods --mock 1 --country KEN
 
 set -euo pipefail
 
@@ -29,8 +29,8 @@ if [[ "${HAS_MOCK}" != true ]]; then
   exit 1
 fi
 
-# shellcheck source=hazard_job_common.sh
-source "${SCRIPT_DIR}/hazard_job_common.sh"
+# shellcheck source=pipeline_job_common.sh
+source "${SCRIPT_DIR}/pipeline_job_common.sh"
 
 echo "Submitting mock-data job with arguments: $*"
 submit_job "$@"
