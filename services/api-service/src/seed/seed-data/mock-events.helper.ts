@@ -106,6 +106,16 @@ const MOCK_BUILDERS: Record<string, MockHazardConfig[]> = {
 
 export const SUPPORTED_MOCK_COUNTRIES = Object.keys(MOCK_BUILDERS);
 
+export function getMockCountriesForHazards(
+  hazardTypes: HazardType[],
+): string[] {
+  return SUPPORTED_MOCK_COUNTRIES.filter((countryCodeIso3) =>
+    MOCK_BUILDERS[countryCodeIso3].some((c) =>
+      hazardTypes.includes(c.hazardType),
+    ),
+  );
+}
+
 function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
