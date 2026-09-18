@@ -2,16 +2,14 @@
 
 The general requirements this plan implements are in [readme-requirements.md](readme-requirements.md); this document is the practical implementation overview.
 
-## Overview
+For usage, such as deploying changes or kicking off a deployed pipeline run from the CLI, see `Deployment steps and scripts`.
 
-Azure Batch deployment for the NRW forecast pipeline.
+## Azure resources
 
-### Azure resources
+### Resource group `nrw-batch-poc`
 
-#### Resource group `nrw-batch-poc`
-
-- **Batch account** `nrwbatchpoc` — AAD-only authentication, Key Vault-based node pool credential management.
-  - **Batch pool** `nrwbatchpoc` — container-enabled VM Configuration pool; `Standard_E2as_v4`, Ubuntu HPC 24.04, blobfuse mount of `nrw-data-cache`, autoscale (max 2 nodes, evaluated every 5 min).
+- **Batch account** `nrwbatchpoc` — AAD-only authentication, Key Vault-based node pool credential management. Treated as a **permanent resource** rather than deployed on-the-fly, to avoid single points of failure.
+  - **Batch pool** `nrwbatchpoc` — container-enabled VM Configuration pool (container support must be enabled at pool creation); `Standard_E2as_v4`, Ubuntu HPC 24.04 (`publisher: microsoft-dsvm`, `offer: ubuntu-hpc`, `sku: 2404`, `version: latest`), blobfuse mount of `nrw-data-cache`, autoscale (max 2 nodes, evaluated every 5 min). Jobs use the `nrw-batch-poc` UAMI on every node to authenticate to Azure resources; the pipeline itself only talks to the NRW backend API, so no direct database access from the nodes is needed.
 - **Key Vault** `nrw-batch-poc` — RBAC permission model; holds `ibf-pipeline-api-key`, `glofas-ftp-user`, `glofas-ftp-password`.
 - **Storage account** `nrwbatchpoc` — general-purpose V2; Blob container `nrw-data-cache` (mounted as `DATA_CACHE_DIR`, lifecycle policy from `blob-lifecycle-policy.json`, receives Batch task stdout/stderr under `task-logs/`); also reused as Function App runtime storage (`AzureWebJobsStorage`).
 - **User-assigned managed identity** `nrw-batch-poc` — pool node identity (restricted to Batch providers).
@@ -24,13 +22,13 @@ Azure Batch deployment for the NRW forecast pipeline.
 - **Action group** `nrw-batch-scheduler-event-created` — email receivers for expected events (placeholder, see below).
 - **Scheduled query alert** `nrw-batch-scheduler-event-created` — hourly query on the pipeline traces for the `placeholder_email_alert` tag. TODO: remove once event notifications are handled by the backend/app.
 
-#### Resource group `NRW`
+### Resource group `NRW`
 
-- **Container registry** `nrwdockerregistry` — hosts `nrwdockerregistry.azurecr.io/pipelines:latest`.
-- **Virtual network** `nrw-vnet-test` — subnet `snet-batch-poc` (no delegation), NSG `nrw-NSG-test`; `nrw-vnet-prod` also exists.
+- **Container registry** `nrwdockerregistry` (login server `nrwdockerregistry.azurecr.io`) — hosts the pipeline image `nrwdockerregistry.azurecr.io/pipelines:latest` (build context: repo root `/data`; also hosts the featureserv image). The Batch pool is attached to the registry and prefetches `pipelines:latest` so tasks start quickly.
+- **Virtual network** `nrw-vnet-test` — subnet `snet-batch-poc`, NSG `nrw-NSG-test`; `nrw-vnet-prod` also exists. The subnet must **not** have any subnet delegation: a VM Configuration pool deploys a VM Scale Set into the subnet, and a delegation (e.g. to `Microsoft.Batch/batchAccounts`, which only applies to the deprecated Cloud Services Configuration pool type) reserves the subnet for that service and makes node allocation fail with `AllocationFailed` / "subnet has delegation to external resources". Remove it with `az network vnet subnet update --resource-group NRW --vnet-name nrw-vnet-test --name snet-batch-poc --remove delegations`. Pool tasks reach the NRW backend API privately (exact connectivity — private endpoint, VNet peering, service endpoint, or public routing — depends on how the API is deployed).
 - **Log Analytics workspace** `nrw-app-law` — shared with the NRW backend; backs the Application Insights component.
 
-#### Deployment diagram
+## Deployment diagram
 
 ```mermaid
 flowchart LR
@@ -124,7 +122,7 @@ These run once on first setup (and only again on rotation/policy changes).
 Run these in order the first time, but after that, you can just run the ones that are updated.
 
 1. `build-and-push-image.sh` — build & push the pipeline Docker image to ACR. Note that YAML configs (`pipelines/infra/configs/*.yaml`) are baked into the image, so adding a country or changing data sources requires a new build+push.
-2. `deploy.sh` (`main.bicep`, `parameters.dev.json`) — deploy the Function App + monitoring (Bicep).
+2. `deploy.sh` (`main.bicep`, `parameters.dev.json`) — deploy the Function App + monitoring (Bicep). Be sure to set the correct `.env` variables before running this, such as `IBF_API_URL`.
 3. `publish-function.sh` (`function/`) — deploy the Azure Function code and it's dependencies (from data/pipelines/deploy/function/).
 
 ### Helper jobs
@@ -132,42 +130,13 @@ Run these in order the first time, but after that, you can just run the ones tha
 - `run_pipeline_job.sh` (`function/run_pipeline_job.sh`): Manually kick off a hazard pipeline run for a given hazard. Example: `./function/run_pipeline_job.sh floods`. This is the same job and parameters as a standard scheduled run of the hazard.
 - `mock_run_pipeline_job.sh` (`function/mock_run_pipeline_job.sh`): Run the pipeline with mock data; `--mock` is required and all other arguments are passed through unchanged. See the [pipelines readme](../pipelines/README.md) for possible flags. `./function/mock_run_pipeline_job.sh floods --mock 1 --country KEN`
 
-## Azure Resource Configurations
-
-- **Azure Batch** account with a container-enabled pool.
-- Treat the Batch account as a **permanent resource** rather than deploying it on-the-fly, to avoid single points of failure.
-- Initial VM SKU: `Standard_E2as_v4`
-- Docker image is pulled from the existing **NRW Azure Container Registry (ACR)**
-  - Registry resource group: `NRW`
-  - Registry name: `nrwdockerregistry`
-  - Login server: `nrwdockerregistry.azurecr.io`
-  - Build context: repo root `/data`
-  - Image: `nrwdockerregistry.azurecr.io/pipelines:latest`
-  - ACR integration: the pool is already attached to `nrwdockerregistry` and configured to prefetch `nrwdockerregistry.azurecr.io/pipelines:latest` so tasks start quickly
-- Integrate the pool into the NRW Azure VNETs so tasks can reach the NRW backend API and other Azure resources privately (exact connectivity — private endpoint, VNet peering, service endpoint, or public routing — depends on how the API is deployed). The pool subnet is `snet-batch-poc` in `nrw-vnet-test` (`NRW` resource group, `westeurope`), secured by NSG `nrw-NSG-test`. The subnet must **not** have any subnet delegation: a Virtual Machine Configuration pool deploys a VM Scale Set into the subnet, and a delegation (e.g. to `Microsoft.Batch/batchAccounts`, which only applies to the deprecated Cloud Services Configuration pool type) reserves the subnet for that service and makes node allocation fail with `AllocationFailed` / "subnet has delegation to external resources". Remove it with `az network vnet subnet update --resource-group NRW --vnet-name nrw-vnet-test --name snet-batch-poc --remove delegations`.
-- Provision the pool with a **user-assigned managed identity** (`nrw-batch-poc`) attached to every node; jobs use it to authenticate to Azure resources such as Storage and Key Vault. The pipeline itself only communicates with the NRW backend API, so no direct database access from the nodes is needed.
-- Use the **Ubuntu HPC 24.04** image (`publisher: microsoft-dsvm`, `offer: ubuntu-hpc`, `sku: 2404`, `version: latest`). The pool must be created with container support enabled from the start.
-
-### Azure Batch account setup
-
-- **Resource group** — `nrw-batch-poc`: holds all Batch-related resources.
-- **Batch account** — `nrwbatchpoc`: created with Key Vault-based node pool credential management.
-- **Key Vault** — `nrw-batch-poc`: RBAC permission model; VM/ARM & ADE enabled; holds pipeline secrets.
-- **Storage account** — `nrwbatchpoc`: general-purpose V2; Blob container `nrw-data-cache` mounted as `DATA_CACHE_DIR`.
-- **User-assigned managed identity** — `nrw-batch-poc`: assigned to pool nodes.
-- **VNet / subnet** — `nrw-vnet-test` / `snet-batch-poc`: subnet `snet-batch-poc` in `nrw-vnet-test` (`NRW` RG, `westeurope`) with **no** subnet delegation (a delegation makes VM Configuration pool allocation fail). NSG: `nrw-NSG-test`. (`nrw-vnet-prod` also exists in `NRW`.)
-- **Batch pool ID** — `nrwbatchpoc`: single pool in the Batch account.
-- **ACR** — `nrwdockerregistry` (`NRW` RG, login server `nrwdockerregistry.azurecr.io`): reuse the ACR that hosts the featureserv image.
-
 ## Storage
 
 - **Azure Blob Storage**: GloFAS global downloads (~600 MB per file, ~30 GB total for a daily set of ~50 files), country split outputs, debug/dev data, and large result payloads. Only one GloFAS file is loaded at a time, so peak working storage is ~600 MB–1 GB. All downloaded GloFAS files are written to Blob Storage.
 
-- **Blob storage retention**: `glofas/raw` has the limit set in `data/pipelines/deploy/blob-lifecycle-policy.json`. For `glofas/country_split` and `glofas/country_split_alert`, they are not shown in that file since we want them to be indefinite at first, and the default setting is an indefinite period.
-
 ### Blob storage retention
 
-The pipeline already writes to subdirectories under `DATA_CACHE_DIR` as defined in `pipelines/infra/utils/storage_helpers.py`. Configure Azure Blob lifecycle management policies per prefix:
+The pipeline writes to subdirectories under `DATA_CACHE_DIR` as defined in `pipelines/infra/utils/storage_helpers.py`. Azure Blob lifecycle policies apply per prefix; finite retentions are enforced by `data/pipelines/deploy/blob-lifecycle-policy.json`, while indefinite retentions rely on the default (no rule in that file). NOAA data is not yet integrated into the pipeline, so it is not referenced here yet.
 
 - `glofas/raw/{forecast_date}/`
   - Content: global GloFAS downloads
@@ -182,7 +151,37 @@ The pipeline already writes to subdirectories under `DATA_CACHE_DIR` as defined 
   - Content: Batch task stdout/stderr files
   - Retention: 90 days
 
-NOAA data is not yet integrated into the pipeline; retention rules for NOAA will be added when that data source is introduced.
+## Logging
+
+Logging uses a workspace-based **Application Insights** component (`nrw-batch-scheduler`) backed by the shared **`nrw-app-law`** Log Analytics workspace in the `NRW` resource group
+
+## Network requirements
+
+- Batch nodes must reach the App Insights ingestion endpoint (HTTPS 443 to `dc.services.visualstudio.com`, covered by the `AzureMonitor` service tag).
+
+Connectivity notes for the pool subnet (`snet-batch-poc`):
+
+- **Private endpoints / DNS** — if the NRW API or ACR uses a private endpoint, link the corresponding **Private DNS Zone** (e.g. `privatelink.azurewebsites.net`) to `nrw-vnet-test` so DNS resolves correctly.
+- **Blob Storage** — the blobfuse mount works over HTTPS (443); add a service endpoint or private endpoint for `Microsoft.Storage` on the subnet if public access is restricted.
+
+#### NSG / firewall rules
+
+The subnet's NSG is `nrw-NSG-test`. It currently has no custom outbound rules, so Azure defaults allow the required outbound traffic. If the NSG is later locked down, explicitly allow:
+
+- HTTPS (443) to the ACR (`nrwdockerregistry.azurecr.io`) and Blob Storage (`nrwbatchpoc.blob.core.windows.net`).
+- FTP control (port 21) and passive data ports (1024–65535) to `aux.ecmwf.int`.
+
+## Environment variables and secrets
+
+### Env vars
+
+Set these in `data/.env`. See `data/.env.example` for which need to be set and which don't for production.
+
+### Key Vault secrets
+
+- `ibf-pipeline-api-key` — API key for the NRW backend (`IBF_PIPELINE_API_KEY`).
+- `glofas-ftp-user` — ECMWF GloFAS FTP username (`GLOFAS_FTP_USER`).
+- `glofas-ftp-password` — ECMWF GloFAS FTP password (`GLOFAS_FTP_PASSWORD`).
 
 ## Out of scope for first prototype
 
@@ -205,39 +204,3 @@ Tracked in [Task 44426](https://dev.azure.com/redcrossnl/National%20Risk%20Watch
 ### Handle after MVP or as need arises
 
 - **Data caching**: There are two types of data we could cache: PostGis DB data (admin areas, roads, buildings) and static data (population source image). For now, it is pulled from the backend.
-
-## Logging
-
-Logging uses a workspace-based **Application Insights** component (`nrw-batch-scheduler`) backed by the shared **`nrw-app-law`** Log Analytics workspace in the `NRW` resource group
-
-## Network requirements
-
-- Batch nodes must reach the App Insights ingestion endpoint (HTTPS 443 to `dc.services.visualstudio.com`, covered by the `AzureMonitor` service tag).
-
-- The pool is in subnet `snet-batch-poc` of `nrw-vnet-test` (`NRW` RG). Nodes must reach:
-
-  - **NRW API** — over a private endpoint, VNet peering, or public routing. If the API uses a Private Endpoint, link the corresponding **Private DNS Zone** (e.g. `privatelink.azurewebsites.net`) to `nrw-vnet-test` so DNS resolves correctly.
-  - **ACR** — `nrwdockerregistry.azurecr.io`. If the registry uses a private endpoint, link its DNS zone to `nrw-vnet-test`; otherwise the subnet must allow outbound HTTPS (443) to the registry's public endpoint. The UAMI `nrw-batch-poc` is used for image pull authentication.
-  - **Blob Storage** — `nrwbatchpoc.blob.core.windows.net`. The Blob mount works over HTTPS (443); add a service endpoint or private endpoint for `Microsoft.Storage` on the `snet-batch-poc` subnet if public access is restricted.
-  - **GloFAS FTP** — `aux.ecmwf.int` on port 21 + passive high ports (1024–65535).
-
-#### NSG / firewall rules
-
-The subnet's NSG is `nrw-NSG-test`. It currently has no custom outbound rules, so Azure defaults allow the required outbound traffic. If the NSG is later locked down, explicitly allow:
-
-- HTTPS (443) to the ACR (`nrwdockerregistry.azurecr.io`) and Blob Storage (`nrwbatchpoc.blob.core.windows.net`).
-- FTP control (port 21) and passive data ports (1024–65535) to `aux.ecmwf.int`.
-
-## Environment variables and secrets
-
-### Env vars
-
-Set these in `data/.env`. See `data/.env.example` for which need to be set and which don't for production.
-
-### Key Vault secrets
-
-Note: The vault uses the RBAC permission model.
-
-- `ibf-pipeline-api-key` — API key for the NRW backend (`IBF_PIPELINE_API_KEY`).
-- `glofas-ftp-user` — ECMWF GloFAS FTP username (`GLOFAS_FTP_USER`).
-- `glofas-ftp-password` — ECMWF GloFAS FTP password (`GLOFAS_FTP_PASSWORD`).
