@@ -27,7 +27,7 @@ Azure Batch deployment for the NRW forecast pipeline.
 #### Resource group `NRW`
 
 - **Container registry** `nrwdockerregistry` — hosts `nrwdockerregistry.azurecr.io/pipelines:latest`.
-- **Virtual network** `nrw-vnet-test` — subnet `batch` (no delegation), NSG `nrw-NSG-test`; `nrw-vnet-prod` also exists.
+- **Virtual network** `nrw-vnet-test` — subnet `nrw-poc-batch-pool` (no delegation), NSG `nrw-NSG-test`; `nrw-vnet-prod` also exists.
 - **Log Analytics workspace** `nrw-app-law` — shared with the NRW backend; backs the Application Insights component.
 
 #### Deployment diagram
@@ -43,7 +43,7 @@ flowchart LR
     subgraph NRW[Resource group NRW]
         acr[ACR nrwdockerregistry<br/>pipelines:latest]
         law[Log Analytics<br/>nrw-app-law]
-        subgraph vnet[VNet nrw-vnet-test / subnet batch]
+        subgraph vnet[VNet nrw-vnet-test / subnet nrw-poc-batch-pool]
             nodes[Batch pool nodes<br/>Standard_E2as_v4]
         end
     end
@@ -144,7 +144,7 @@ Run these in order the first time, but after that, you can just run the ones tha
   - Build context: repo root `/data`
   - Image: `nrwdockerregistry.azurecr.io/pipelines:latest`
   - ACR integration: the pool is already attached to `nrwdockerregistry` and configured to prefetch `nrwdockerregistry.azurecr.io/pipelines:latest` so tasks start quickly
-- Integrate the pool into the NRW Azure VNETs so tasks can reach the NRW backend API and other Azure resources privately (exact connectivity — private endpoint, VNet peering, service endpoint, or public routing — depends on how the API is deployed). The pool subnet is `batch` in `nrw-vnet-test` (`NRW` resource group, `westeurope`), secured by NSG `nrw-NSG-test`. The subnet must **not** have any subnet delegation: a Virtual Machine Configuration pool deploys a VM Scale Set into the subnet, and a delegation (e.g. to `Microsoft.Batch/batchAccounts`, which only applies to the deprecated Cloud Services Configuration pool type) reserves the subnet for that service and makes node allocation fail with `AllocationFailed` / "subnet has delegation to external resources". Remove it with `az network vnet subnet update --resource-group NRW --vnet-name nrw-vnet-test --name batch --remove delegations`.
+- Integrate the pool into the NRW Azure VNETs so tasks can reach the NRW backend API and other Azure resources privately (exact connectivity — private endpoint, VNet peering, service endpoint, or public routing — depends on how the API is deployed). The pool subnet is `nrw-poc-batch-pool` in `nrw-vnet-test` (`NRW` resource group, `westeurope`), secured by NSG `nrw-NSG-test`. The subnet must **not** have any subnet delegation: a Virtual Machine Configuration pool deploys a VM Scale Set into the subnet, and a delegation (e.g. to `Microsoft.Batch/batchAccounts`, which only applies to the deprecated Cloud Services Configuration pool type) reserves the subnet for that service and makes node allocation fail with `AllocationFailed` / "subnet has delegation to external resources". Remove it with `az network vnet subnet update --resource-group NRW --vnet-name nrw-vnet-test --name nrw-poc-batch-pool --remove delegations`.
 - Provision the pool with a **user-assigned managed identity** (`nrw-batch-poc`) attached to every node; jobs use it to authenticate to Azure resources such as Storage and Key Vault. The pipeline itself only communicates with the NRW backend API, so no direct database access from the nodes is needed.
 - Use the **Ubuntu HPC 24.04** image (`publisher: microsoft-dsvm`, `offer: ubuntu-hpc`, `sku: 2404`, `version: latest`). The pool must be created with container support enabled from the start.
 
@@ -155,7 +155,7 @@ Run these in order the first time, but after that, you can just run the ones tha
 - **Key Vault** — `nrw-batch-poc`: RBAC permission model; VM/ARM & ADE enabled; holds pipeline secrets.
 - **Storage account** — `nrwbatchpoc`: general-purpose V2; Blob container `nrw-data-cache` mounted as `DATA_CACHE_DIR`.
 - **User-assigned managed identity** — `nrw-batch-poc`: assigned to pool nodes.
-- **VNet / subnet** — `nrw-vnet-test` / `batch`: subnet `batch` in `nrw-vnet-test` (`NRW` RG, `westeurope`) with **no** subnet delegation (a delegation makes VM Configuration pool allocation fail). NSG: `nrw-NSG-test`. (`nrw-vnet-prod` also exists in `NRW`.)
+- **VNet / subnet** — `nrw-vnet-test` / `nrw-poc-batch-pool`: subnet `nrw-poc-batch-pool` in `nrw-vnet-test` (`NRW` RG, `westeurope`) with **no** subnet delegation (a delegation makes VM Configuration pool allocation fail). NSG: `nrw-NSG-test`. (`nrw-vnet-prod` also exists in `NRW`.)
 - **Batch pool ID** — `nrwbatchpoc`: single pool in the Batch account.
 - **ACR** — `nrwdockerregistry` (`NRW` RG, login server `nrwdockerregistry.azurecr.io`): reuse the ACR that hosts the featureserv image.
 
@@ -214,11 +214,11 @@ Logging uses a workspace-based **Application Insights** component (`nrw-batch-sc
 
 - Batch nodes must reach the App Insights ingestion endpoint (HTTPS 443 to `dc.services.visualstudio.com`, covered by the `AzureMonitor` service tag).
 
-- The pool is in subnet `batch` of `nrw-vnet-test` (`NRW` RG). Nodes must reach:
+- The pool is in subnet `nrw-poc-batch-pool` of `nrw-vnet-test` (`NRW` RG). Nodes must reach:
 
   - **NRW API** — over a private endpoint, VNet peering, or public routing. If the API uses a Private Endpoint, link the corresponding **Private DNS Zone** (e.g. `privatelink.azurewebsites.net`) to `nrw-vnet-test` so DNS resolves correctly.
   - **ACR** — `nrwdockerregistry.azurecr.io`. If the registry uses a private endpoint, link its DNS zone to `nrw-vnet-test`; otherwise the subnet must allow outbound HTTPS (443) to the registry's public endpoint. The UAMI `nrw-batch-poc` is used for image pull authentication.
-  - **Blob Storage** — `nrwbatchpoc.blob.core.windows.net`. The Blob mount works over HTTPS (443); add a service endpoint or private endpoint for `Microsoft.Storage` on the `batch` subnet if public access is restricted.
+  - **Blob Storage** — `nrwbatchpoc.blob.core.windows.net`. The Blob mount works over HTTPS (443); add a service endpoint or private endpoint for `Microsoft.Storage` on the `nrw-poc-batch-pool` subnet if public access is restricted.
   - **GloFAS FTP** — `aux.ecmwf.int` on port 21 + passive high ports (1024–65535).
 
 #### NSG / firewall rules

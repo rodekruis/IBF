@@ -2,7 +2,9 @@
 
 These are the general requirements. See [readme-requirements.md](readme-requirements.md) for the current actual implementation overview.
 
-## Basic flow (MVP)
+## Basic flow (MVP) for floods
+
+**Note:** This basic flow will be extended to other hazard types.
 
 1. A single python pipeline job runs, does the downloads needed, and processes data for each country. No extra orchestration is needed there. There is one job run per hazard, once per day.
 2. Data is loaded from GloFAS for the whole world (30GB).
