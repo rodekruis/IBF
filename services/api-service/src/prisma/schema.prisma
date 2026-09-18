@@ -285,6 +285,7 @@ model AdminArea {
   nameEn            String
   countryCodeIso3   String
   country           Country  @relation(fields: [countryCodeIso3], references: [countryCodeIso3])
+  placeCodeLevel0   String?
   placeCodeLevel1   String?
   placeCodeLevel2   String?
   placeCodeLevel3   String?

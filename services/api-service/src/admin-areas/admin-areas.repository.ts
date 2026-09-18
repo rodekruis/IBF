@@ -87,6 +87,7 @@ export class AdminAreasRepository {
             adminLevel: adminAreaUpdateDto.adminLevel,
             nameEn: adminAreaUpdateDto.nameEn,
             countryCodeIso3: adminAreaUpdateDto.countryCodeIso3,
+            placeCodeLevel0: adminAreaUpdateDto.placeCodeLevel0,
             placeCodeLevel1: adminAreaUpdateDto.placeCodeLevel1,
             placeCodeLevel2: adminAreaUpdateDto.placeCodeLevel2,
             placeCodeLevel3: adminAreaUpdateDto.placeCodeLevel3,
@@ -155,6 +156,7 @@ export class AdminAreasRepository {
               ${dto.adminLevel},
               ${dto.nameEn},
               ${dto.countryCodeIso3},
+              ${dto.placeCodeLevel0 ?? null},
               ${dto.placeCodeLevel1 ?? null},
               ${dto.placeCodeLevel2 ?? null},
               ${dto.placeCodeLevel3 ?? null},
@@ -167,7 +169,7 @@ export class AdminAreasRepository {
         });
         await this.prisma.$executeRaw`
           INSERT INTO "api-service"."admin-area"
-            ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", "placeCodeLevel1", "placeCodeLevel2", "placeCodeLevel3", "placeCodeLevel4", attributes, created, updated, geometry)
+            ("placeCode", "adminLevel", "nameEn", "countryCodeIso3", "placeCodeLevel0", "placeCodeLevel1", "placeCodeLevel2", "placeCodeLevel3", "placeCodeLevel4", attributes, created, updated, geometry)
           VALUES ${Prisma.join(values)}`;
       }
     } catch (error) {

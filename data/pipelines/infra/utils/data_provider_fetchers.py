@@ -153,14 +153,14 @@ def _validate_parent_pcodes(
     admin_areas_set: AdminAreasSet, country_code_iso_3: str
 ) -> None:
     """
-    Every admin area at level N (N > 1) must have parent place codes for all
-    levels 1..N-1. Missing parents indicate broken data and would silently
+    Every admin area at level N (N > 0) must have parent place codes for all
+    levels 0..N-1. Missing parents indicate broken data and would silently
     break downstream aggregation.
     """
     missing: list[str] = []
     for pcode, area in admin_areas_set.admin_areas.items():
         level = area.properties.admin_level
-        for parent_level in range(1, level):
+        for parent_level in range(level):
             if not area.properties.parent_pcodes.get(parent_level):
                 missing.append(
                     f"{pcode} (level {level}) missing placeCodeLevel{parent_level}"

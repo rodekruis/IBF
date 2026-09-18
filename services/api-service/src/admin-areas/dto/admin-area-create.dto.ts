@@ -18,6 +18,11 @@ export class AdminAreaCreateDto {
   @IsString()
   public readonly countryCodeIso3: string;
 
+  @ApiPropertyOptional({ example: 'KE', nullable: true })
+  @IsOptional()
+  @IsString()
+  public readonly placeCodeLevel0?: string | null;
+
   @ApiPropertyOptional({ example: 'KEN.10_1', nullable: true })
   @IsOptional()
   @IsString()

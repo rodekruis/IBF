@@ -270,6 +270,7 @@ export class SeedInit {
       adminLevel: file.adminLevel,
       nameEn,
       countryCodeIso3: file.countryCodeIso3,
+      placeCodeLevel0: props.ADM0_PCODE ?? null,
       placeCodeLevel1: props.ADM1_PCODE ?? null,
       placeCodeLevel2: props.ADM2_PCODE ?? null,
       placeCodeLevel3: props.ADM3_PCODE ?? null,

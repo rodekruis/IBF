@@ -12,7 +12,7 @@ class AdminAreaProperties:
     """
     The code and name (in English) of an admin area, its admin level, its country code,
     and a dict of all parent place codes keyed by admin level.
-    Adm0 has no parents; Adm3 would have parents at levels 0, 1, and 2.
+    Adm1 has parents at level 0; Adm3 would have parents at levels 0, 1, and 2.
     """
 
     pcode: str
@@ -58,7 +58,7 @@ class AdminAreasSet:
             geom = feature.get("geometry") or {}
 
             parent_pcodes: dict[int, str] = {}
-            for level in range(1, 5):
+            for level in range(5):
                 value = props.get(f"placeCodeLevel{level}")
                 if value:
                     parent_pcodes[level] = str(value)
