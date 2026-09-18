@@ -153,6 +153,7 @@ export default [
     },
     rules: {
       ...jest.configs.recommended.rules,
+      'custom-rules/prefer-object-params': 'off',
     },
   },
 ];

@@ -2,6 +2,10 @@ import { Test } from '@nestjs/testing';
 import { Event } from '@prisma/client';
 
 import {
+  EventFloodsDataService,
+  FloodsSpecificData,
+} from '@api-service/src/events/event-floods-data.service';
+import {
   EventsRepository,
   ExposedAdminAreaRecord,
 } from '@api-service/src/events/events.repository';
@@ -38,6 +42,7 @@ function buildEvent(overrides: Partial<Event> = {}): Event {
 describe('EventsService', () => {
   let service: EventsService;
   let repository: jest.Mocked<EventsRepository>;
+  let floodsDataService: jest.Mocked<EventFloodsDataService>;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -51,12 +56,24 @@ describe('EventsService', () => {
             getRasterIdsForLatestAlerts: jest.fn(),
           },
         },
+        {
+          provide: EventFloodsDataService,
+          useValue: {
+            buildContext: jest.fn(),
+            buildDetails: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get(EventsService);
     repository = module.get(EventsRepository);
+    floodsDataService = module.get(EventFloodsDataService);
     repository.getRasterIdsForLatestAlerts.mockResolvedValue(new Map());
+    floodsDataService.buildContext.mockResolvedValue(
+      {} as unknown as FloodsSpecificData,
+    );
+    floodsDataService.buildDetails.mockReturnValue(null);
   });
 
   describe('getEvents', () => {
@@ -196,6 +213,57 @@ describe('EventsService', () => {
       });
 
       expect(result[0].eventStatus).toBe(EventStatus.ended);
+    });
+  });
+
+  describe('getEvents – hazardDetails dispatch', () => {
+    beforeEach(() => {
+      repository.getExposedAdminAreasForLatestAlerts.mockResolvedValue(
+        new Map(),
+      );
+    });
+
+    it('should delegate flood events to EventFloodsDataService and surface the result on hazardTypeDetails.floods', async () => {
+      repository.getEvents.mockResolvedValue([
+        buildEvent({ id: 42, hazardType: HazardType.floods }),
+      ]);
+      const stubDetails = { geoFeatureId: 'G1' } as never;
+      floodsDataService.buildDetails.mockReturnValue(stubDetails);
+
+      const result = await service.getEvents({
+        viewTime: new Date('2026-03-25T12:00:00Z'),
+      });
+
+      expect(floodsDataService.buildContext).toHaveBeenCalledTimes(1);
+      expect(floodsDataService.buildDetails).toHaveBeenCalledTimes(1);
+      expect(result[0].hazardTypeDetails.floods).toBe(stubDetails);
+    });
+
+    it('should omit floods key when EventFloodsDataService returns null', async () => {
+      repository.getEvents.mockResolvedValue([
+        buildEvent({ id: 42, hazardType: HazardType.floods }),
+      ]);
+      floodsDataService.buildDetails.mockReturnValue(null);
+
+      const result = await service.getEvents({
+        viewTime: new Date('2026-03-25T12:00:00Z'),
+      });
+
+      expect(result[0].hazardTypeDetails).toEqual({});
+    });
+
+    it('should skip the flood context build when there are no flood events', async () => {
+      repository.getEvents.mockResolvedValue([
+        buildEvent({ id: 42, hazardType: HazardType.drought }),
+      ]);
+
+      const result = await service.getEvents({
+        viewTime: new Date('2026-03-25T12:00:00Z'),
+      });
+
+      expect(floodsDataService.buildContext).not.toHaveBeenCalled();
+      expect(floodsDataService.buildDetails).not.toHaveBeenCalled();
+      expect(result[0].hazardTypeDetails).toEqual({});
     });
   });
 });
