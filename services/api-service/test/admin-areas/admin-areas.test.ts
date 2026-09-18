@@ -19,6 +19,7 @@ describe('/ Admin Areas', () => {
     adminLevel: 1,
     nameEn: 'Test Admin Area',
     countryCodeIso3: 'MWI',
+    placeCodeLevel0: 'MW',
     geometry: {
       type: 'MultiPolygon',
       coordinates: [
