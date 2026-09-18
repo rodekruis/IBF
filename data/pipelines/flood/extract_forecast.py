@@ -105,6 +105,7 @@ def build_water_discharge_time_series(
             time_interval_discharge.ensemble_discharges,
             dtype=float,
         )
+        # Skip intervals with no data; a fully-empty series is caught by alert integrity checks later.
         if ensemble_array.size == 0 or np.isnan(ensemble_array).all():
             continue
         time_series.append(

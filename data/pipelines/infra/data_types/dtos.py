@@ -23,6 +23,7 @@ from pipelines.infra.data_types.enums import (
 JsonDict = dict[str, object]
 
 __all__ = [
+    "WATER_DISCHARGE_ATTRIBUTE",
     "Alert",
     "Centroid",
     "Exposure",
@@ -107,6 +108,9 @@ class WaterDischargeTimeSeriesEntry(TypedDict):
     median: float
     low: float
     high: float
+
+
+WATER_DISCHARGE_ATTRIBUTE = "waterDischarge"
 
 
 # Source: services/api-service/src/alerts/dto/exposure-geo-feature.dto.ts

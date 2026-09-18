@@ -9,8 +9,15 @@ from pipelines.infra.data_types.dtos import (
     Centroid,
     EnsembleMemberType,
     LayerName,
+    WATER_DISCHARGE_ATTRIBUTE,
     WaterDischargeTimeSeriesEntry,
 )
+
+ENTRY_START = "start"
+ENTRY_END = "end"
+LOW = "low"
+MEDIAN = "median"
+HIGH = "high"
 
 
 def check_centroid(event_name: str, centroid: Centroid) -> list[str]:
@@ -134,15 +141,15 @@ def check_raster_integrity(event_name: str, alert: Alert) -> list[str]:
 
 
 def check_geo_feature_integrity(event_name: str, alert: Alert) -> list[str]:
-    # Only validates the 'waterDischarge' attribute key; other keys pass through unvalidated.
+    # TODO: only validates the 'waterDischarge' attribute key; extend to other keys.
     errors: list[str] = []
     for geo_feature in alert.exposure.geo_features:
-        water_discharge = geo_feature.attributes.get("waterDischarge")
+        water_discharge = geo_feature.attributes.get(WATER_DISCHARGE_ATTRIBUTE)
         if water_discharge is None:
             continue
         error_prefix = (
             f"Alert '{event_name}' geo-feature '{geo_feature.geo_feature_id}': "
-            f"waterDischarge"
+            f"{WATER_DISCHARGE_ATTRIBUTE}"
         )
         if not isinstance(water_discharge, list):
             errors.append(f"{error_prefix} must be a list of time series entries")
@@ -155,6 +162,13 @@ def check_geo_feature_integrity(event_name: str, alert: Alert) -> list[str]:
     return errors
 
 
+START = "start"
+END = "end"
+LOW = "low"
+MEDIAN = "median"
+HIGH = "high"
+
+
 def _check_water_discharge_entry(prefix: str, entry: object) -> list[str]:
     if not isinstance(entry, dict):
         return [f"{prefix} entry must be an object"]
@@ -163,7 +177,7 @@ def _check_water_discharge_entry(prefix: str, entry: object) -> list[str]:
     )
     if missing_keys:
         return [f"{prefix} entry is missing keys: {', '.join(missing_keys)}"]
-    start, end = entry["start"], entry["end"]
+    start, end = entry[START], entry[END]
     try:
         start_at = datetime.fromisoformat(start)
         end_at = datetime.fromisoformat(end)
@@ -179,7 +193,7 @@ def _check_water_discharge_entry(prefix: str, entry: object) -> list[str]:
         errors.append(
             f"{prefix} time interval {start}\u2013{end}: start must be before end"
         )
-    values = [entry["low"], entry["median"], entry["high"]]
+    values = [entry[LOW], entry[MEDIAN], entry[HIGH]]
     if not all(
         isinstance(value, (int, float)) and not isinstance(value, bool)
         for value in values
@@ -188,11 +202,11 @@ def _check_water_discharge_entry(prefix: str, entry: object) -> list[str]:
             f"{prefix} time interval {start}\u2013{end}: "
             f"low/median/high must be numeric"
         )
-    elif entry["low"] > entry["median"] or entry["median"] > entry["high"]:
+    elif entry[LOW] > entry[MEDIAN] or entry[MEDIAN] > entry[HIGH]:
         errors.append(
             f"{prefix} time interval {start}\u2013{end}: expected low <= median <= high"
         )
-    elif entry["low"] < 0:
+    elif entry[LOW] < 0:
         errors.append(
             f"{prefix} time interval {start}\u2013{end}: "
             f"discharge values must be non-negative"

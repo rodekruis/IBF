@@ -419,7 +419,7 @@ def test_water_discharge_negative_low_is_rejected(
 def test_water_discharge_non_list_is_rejected(
     valid_submitter: DataSubmitter, tmp_output: Path
 ):
-    """A waterDischarge attribute that is not a list is rejected instead of raising."""
+    """A non-list waterDischarge is caught by the integrity check (would otherwise raise TypeError)."""
     valid_submitter.add_geo_feature_exposure(
         event_name=EVENT_NAME,
         geo_feature_id="G1",
@@ -436,7 +436,7 @@ def test_water_discharge_non_list_is_rejected(
 def test_water_discharge_entry_missing_keys_is_rejected(
     valid_submitter: DataSubmitter, tmp_output: Path
 ):
-    """A waterDischarge entry missing required keys is rejected instead of raising."""
+    """A waterDischarge entry missing required keys is caught by the integrity check (would otherwise raise KeyError)."""
     valid_submitter.add_geo_feature_exposure(
         event_name=EVENT_NAME,
         geo_feature_id="G1",
@@ -458,7 +458,7 @@ def test_water_discharge_entry_missing_keys_is_rejected(
 def test_water_discharge_non_iso_timestamps_are_rejected(
     valid_submitter: DataSubmitter, tmp_output: Path
 ):
-    """A waterDischarge entry with unparseable timestamps is rejected instead of raising."""
+    """A waterDischarge entry with unparseable timestamps is caught by the integrity check (would otherwise raise ValueError)."""
     valid_submitter.add_geo_feature_exposure(
         event_name=EVENT_NAME,
         geo_feature_id="G1",

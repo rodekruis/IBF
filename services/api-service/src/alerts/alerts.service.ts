@@ -149,7 +149,7 @@ export class AlertsService {
     return errors;
   }
 
-  // Only validates the 'waterDischarge' attribute key; other future keys pass through unvalidated.
+  // TODO: only validates the 'waterDischarge' attribute key; extend to other keys.
   private checkExposureGeoFeatures(alert: AlertCreateDto): string[] {
     const errors: string[] = [];
 

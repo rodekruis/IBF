@@ -18,7 +18,7 @@ from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
-from pipelines.infra.data_types.dtos import Centroid
+from pipelines.infra.data_types.dtos import Centroid, WATER_DISCHARGE_ATTRIBUTE
 from pipelines.infra.data_types.enums import EnsembleMemberType, LayerName, SeverityKey
 from pipelines.infra.data_types.flood_depth_provider import FloodDepthProvider
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
@@ -252,7 +252,7 @@ def calculate_flood_forecasts(
                 geo_feature_id=station_code,
                 layer=LayerName.GLOFAS_STATIONS,
                 attributes={
-                    "waterDischarge": build_water_discharge_time_series(
+                    WATER_DISCHARGE_ATTRIBUTE: build_water_discharge_time_series(
                         discharges.get(station_code, [])
                     ),
                 },
