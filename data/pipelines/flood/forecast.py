@@ -242,7 +242,7 @@ def calculate_flood_forecasts(
             data_submitter.add_admin_area_exposure(
                 event_name=event_name,
                 admin_level=target_admin_level,
-                layer=LayerName.POPULATION_EXPOSED,
+                layer=LayerName.EXPOSED_POPULATION,
                 values_by_place_code=population_exposed,
             )
 

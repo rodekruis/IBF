@@ -241,7 +241,7 @@ export class AlertsService {
       }
     }
 
-    const requiredLayers = [LayerName.populationExposed];
+    const requiredLayers = [LayerName.exposedPopulation];
     for (const [level, layerCounts] of [...levels.entries()].sort(
       (a, b) => a[0] - b[0],
     )) {

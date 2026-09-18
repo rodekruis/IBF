@@ -28,9 +28,7 @@ test.describe('no alerts', () => {
 
     // Assert
     await expect(nrwMapPage.eventMarkers).toHaveCount(0);
-    await expect(page).toHaveScreenshot('single-country-no-alert.png', {
-      maxDiffPixelRatio: 0.01,
-    });
+    await expect(page).toHaveScreenshot('single-country-no-alert.png');
   });
 
   test('multi-country: shows map zoomed to countries without event markers', async ({
@@ -45,8 +43,6 @@ test.describe('no alerts', () => {
 
     // Assert
     await expect(nrwMapPage.eventMarkers).toHaveCount(0);
-    await expect(page).toHaveScreenshot('multi-country-no-alert.png', {
-      maxDiffPixelRatio: 0.01,
-    });
+    await expect(page).toHaveScreenshot('multi-country-no-alert.png');
   });
 });

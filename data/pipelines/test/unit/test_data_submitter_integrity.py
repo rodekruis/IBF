@@ -128,7 +128,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
         admin_level=3,
-        layer=LayerName.POPULATION_EXPOSED,
+        layer=LayerName.EXPOSED_POPULATION,
         values_by_place_code={"PC001": 0},
     )
     submitter.add_raster_exposure(
@@ -281,7 +281,7 @@ def test_negative_population_exposed_is_rejected(
     valid_submitter.add_admin_area_exposure(
         event_name=EVENT_NAME,
         admin_level=3,
-        layer=LayerName.POPULATION_EXPOSED,
+        layer=LayerName.EXPOSED_POPULATION,
         values_by_place_code={"PC002": -100},
     )
 

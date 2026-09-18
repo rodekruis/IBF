@@ -5,7 +5,7 @@ import { LayerName } from '@api-service/src/shared-enums';
 class AdminAreaExposureDto {
   @ApiProperty({
     enum: LayerName,
-    example: LayerName.populationExposed,
+    example: LayerName.exposedPopulation,
   })
   public readonly layerName: LayerName;
 

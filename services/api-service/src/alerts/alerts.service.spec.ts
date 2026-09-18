@@ -66,7 +66,7 @@ function createMockValidAlert(
         {
           placeCode: 'ETH_01_001',
           adminLevel: 3,
-          layer: LayerName.populationExposed,
+          layer: LayerName.exposedPopulation,
           value: 1,
         },
       ],
@@ -318,7 +318,7 @@ describe('AlertsService', () => {
       );
     });
 
-    it('should reject admin-area missing required populationExposed layer', async () => {
+    it('should reject admin-area missing required exposedPopulation layer', async () => {
       const alerts = [
         createMockValidAlert({
           exposure: {
@@ -349,7 +349,7 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining("missing required layer 'populationExposed'"),
+          expect.stringContaining("missing required layer 'exposedPopulation'"),
         ]),
       );
     });
@@ -368,13 +368,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 100,
               },
               {
                 placeCode: 'B',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 200,
               },
             ],
@@ -414,7 +414,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 1,
               },
             ],
@@ -448,7 +448,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 1,
               },
             ],
@@ -484,7 +484,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 1,
               },
             ],
@@ -523,7 +523,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 1,
               },
             ],
@@ -559,7 +559,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 1,
               },
             ],
@@ -592,7 +592,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 1,
               },
             ],

@@ -86,7 +86,7 @@ def check_admin_area_integrity(event_name: str, alert: Alert) -> list[str]:
                 f"layer '{entry.layer}' must be non-negative, got {entry.value}"
             )
 
-    admin_area_required = (LayerName.POPULATION_EXPOSED,)
+    admin_area_required = (LayerName.EXPOSED_POPULATION,)
     for level, layer_counts in sorted(levels.items()):
         for required in admin_area_required:
             if required not in layer_counts:
