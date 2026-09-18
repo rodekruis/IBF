@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { Event } from '@prisma/client';
 
 import { AlertConfigsService } from '@api-service/src/alert-configs/alert-configs.service';
+import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
 import { EventFloodsDataService } from '@api-service/src/events/event-floods-data.service';
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import {
@@ -43,6 +44,7 @@ describe('EventFloodsDataService', () => {
     const module = await Test.createTestingModule({
       providers: [
         EventFloodsDataService,
+        AlertClassificationService,
         {
           provide: EventsRepository,
           useValue: {
@@ -323,6 +325,24 @@ describe('EventFloodsDataService', () => {
           ],
         ]),
       );
+      alertConfigsService.getAlertConfigs.mockResolvedValue([
+        {
+          id: 1,
+          created: new Date(),
+          updated: new Date(),
+          countryCodeIso3: 'ETH',
+          hazardType: HazardType.floods,
+          spatialExtentName: 'G1',
+          spatialExtentPlaceCodes: [],
+          temporalExtents: [],
+          severityClassLevels: [
+            { label: AlertClassificationLevel.low, threshold: 2 },
+          ],
+          probabilityClassLevels: [],
+          triggerAlertClass: null,
+          triggerLeadTimeDuration: null,
+        },
+      ]);
 
       // Act
       const floodsContext = await service.buildContext({
@@ -335,6 +355,76 @@ describe('EventFloodsDataService', () => {
       expect(details?.alertDetails.peakDay).toBe('2026-03-25T00:00:00Z');
       expect(details?.alertDetails.returnPeriod).toBe(3);
       expect(details?.alertDetails.probabilityOfExceedance).toBe(1);
+    });
+
+    it('should compute probability against the resolved severity-class threshold', async () => {
+      // Arrange
+      const event = buildEvent();
+      const timeInterval = {
+        start: '2026-03-25T00:00:00Z',
+        end: '2026-03-25T23:59:59Z',
+      };
+      repository.getGeoFeatureExposureForLatestAlerts.mockResolvedValue(
+        new Map([
+          [
+            event.id,
+            {
+              geoFeatures: [
+                {
+                  geoFeatureId: 'G1',
+                  attributes: {
+                    waterDischarge: [
+                      { ...timeInterval, median: 100, low: 80, high: 120 },
+                    ],
+                  },
+                },
+              ],
+              severity: [
+                {
+                  timeInterval,
+                  ensembleMemberType: EnsembleMemberType.median,
+                  severityValue: 10,
+                },
+                ...[11, 6, 4, 2].map((severityValue) => ({
+                  timeInterval,
+                  ensembleMemberType: EnsembleMemberType.run,
+                  severityValue,
+                })),
+              ],
+            },
+          ],
+        ]),
+      );
+      alertConfigsService.getAlertConfigs.mockResolvedValue([
+        {
+          id: 1,
+          created: new Date(),
+          updated: new Date(),
+          countryCodeIso3: 'ETH',
+          hazardType: HazardType.floods,
+          spatialExtentName: 'G1',
+          spatialExtentPlaceCodes: [],
+          temporalExtents: [],
+          severityClassLevels: [
+            { label: AlertClassificationLevel.low, threshold: 2 },
+            { label: AlertClassificationLevel.high, threshold: 5 },
+          ],
+          probabilityClassLevels: [],
+          triggerAlertClass: null,
+          triggerLeadTimeDuration: null,
+        },
+      ]);
+
+      // Act
+      const floodsContext = await service.buildContext({
+        events: [event],
+        eventIds: [event.id],
+      });
+      const details = service.buildDetails({ event, floodsContext });
+
+      // Assert
+      // Median 10 resolves to 'high' (threshold 5): 2 of 4 runs >= 5.
+      expect(details?.alertDetails.probabilityOfExceedance).toBe(0.5);
     });
 
     it('should log an error and return empty returnPeriodThresholds when static station details are missing', async () => {
@@ -472,7 +562,7 @@ describe('EventFloodsDataService', () => {
 
       expect(
         details?.returnPeriodThresholds.map((t) => t.returnPeriod),
-      ).toEqual([2, 5, 10, 20]);
+      ).toEqual([2, 10, 20]);
     });
   });
 });

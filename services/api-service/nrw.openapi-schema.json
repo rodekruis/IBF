@@ -2544,12 +2544,12 @@
             "example": 150
           },
           "returnPeriod": {
-            "type": "object",
+            "type": "number",
             "example": 10,
             "nullable": true
           },
           "probabilityOfExceedance": {
-            "type": "object",
+            "type": "number",
             "example": 0.62,
             "nullable": true
           }
@@ -2600,7 +2600,7 @@
             "example": "G5142"
           },
           "stationName": {
-            "type": "object",
+            "type": "string",
             "example": "ATHI MUNYU (3DA02)",
             "nullable": true
           },

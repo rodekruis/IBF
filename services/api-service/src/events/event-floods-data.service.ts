@@ -4,6 +4,7 @@ import { Event } from '@prisma/client';
 import { AlertConfigsService } from '@api-service/src/alert-configs/alert-configs.service';
 import { ClassLevelDto } from '@api-service/src/alert-configs/dto/class-level.dto';
 import { WaterDischargeTimeSeriesEntryDto } from '@api-service/src/alerts/dto/exposure-geo-feature.dto';
+import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
 import {
   EventFloodsDetailsDto,
   ReturnPeriodThresholdDto,
@@ -54,6 +55,7 @@ export class EventFloodsDataService {
   public constructor(
     private readonly eventsRepository: EventsRepository,
     private readonly alertConfigsService: AlertConfigsService,
+    private readonly alertClassificationService: AlertClassificationService,
   ) {}
 
   public async buildContext({
@@ -209,6 +211,14 @@ export class EventFloodsDataService {
       severity,
       timeIntervalStart: new Date(peakEntry.start),
     });
+    const probabilityOfExceedance =
+      atPeak.medianValue === null
+        ? null
+        : this.alertClassificationService.computeExceedanceProbability({
+            medianValue: atPeak.medianValue,
+            runValues: atPeak.runValues,
+            severityLevels,
+          });
     if (!stationDetails) {
       this.logger.error(
         `No static station details found for '${geoFeature.geoFeatureId}'`,
@@ -224,7 +234,7 @@ export class EventFloodsDataService {
         peakDay: peakEntry.start,
         peakValue: peakEntry.median,
         returnPeriod: atPeak.medianValue,
-        probabilityOfExceedance: atPeak.probability,
+        probabilityOfExceedance,
       },
       returnPeriodThresholds: this.buildReturnPeriodThresholds({
         stationDetails,
@@ -275,7 +285,7 @@ export class EventFloodsDataService {
   }: {
     severity: LatestAlertSeverityRecord[];
     timeIntervalStart: Date;
-  }): { medianValue: number | null; probability: number | null } {
+  }): { medianValue: number | null; runValues: number[] } {
     const targetTime = timeIntervalStart.getTime();
     const atInterval = severity.filter(
       (entry) => new Date(entry.timeInterval.start).getTime() === targetTime,
@@ -283,27 +293,18 @@ export class EventFloodsDataService {
     const medianEntry = atInterval.find(
       (entry) => entry.ensembleMemberType === EnsembleMemberType.median,
     );
-    const runEntries = atInterval.filter(
-      (entry) => entry.ensembleMemberType === EnsembleMemberType.run,
-    );
-    if (!medianEntry) {
-      return { medianValue: null, probability: null };
-    }
-    if (runEntries.length === 0) {
-      return { medianValue: medianEntry.severityValue, probability: null };
-    }
-    const exceedingCount = runEntries.filter(
-      (entry) => entry.severityValue >= medianEntry.severityValue,
-    ).length;
+    const runValues = atInterval
+      .filter((entry) => entry.ensembleMemberType === EnsembleMemberType.run)
+      .map((entry) => entry.severityValue);
     return {
-      medianValue: medianEntry.severityValue,
-      probability: exceedingCount / runEntries.length,
+      medianValue: medianEntry ? medianEntry.severityValue : null,
+      runValues,
     };
   }
 
-  // Includes return periods that (a) match a severity-class threshold or fall between the
-  // min and max severity threshold, or (b) sit above the max severity threshold and are
-  // reached by peakReturnPeriod. Keeps the chart legend focused on what matters.
+  // Includes return periods that (a) match a severity-class threshold, or (b) sit above
+  // the max severity threshold and are reached by peakReturnPeriod. Keeps the chart
+  // legend focused on what matters.
   private buildReturnPeriodThresholds({
     stationDetails,
     severityLevels,
@@ -317,7 +318,6 @@ export class EventFloodsDataService {
       return [];
     }
     const severityThresholds = severityLevels.map((level) => level.threshold);
-    const minSeverityThreshold = Math.min(...severityThresholds);
     const maxSeverityThreshold = Math.max(...severityThresholds);
     const sortedDescending = [...severityLevels].sort(
       (a, b) => b.threshold - a.threshold,
@@ -325,10 +325,7 @@ export class EventFloodsDataService {
     return stationDetails.thresholds
       .filter((threshold) => {
         const returnPeriod = threshold.return_period;
-        if (
-          returnPeriod >= minSeverityThreshold &&
-          returnPeriod <= maxSeverityThreshold
-        ) {
+        if (severityThresholds.includes(returnPeriod)) {
           return true;
         }
         if (

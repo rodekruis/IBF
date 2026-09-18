@@ -31,10 +31,10 @@ export class EventFloodsAlertDetailsDto {
   @ApiProperty({ example: 150 })
   public readonly peakValue: number;
 
-  @ApiProperty({ example: 10, nullable: true })
+  @ApiProperty({ example: 10, type: Number, nullable: true })
   public readonly returnPeriod: number | null;
 
-  @ApiProperty({ example: 0.62, nullable: true })
+  @ApiProperty({ example: 0.62, type: Number, nullable: true })
   public readonly probabilityOfExceedance: number | null;
 }
 
@@ -42,7 +42,7 @@ export class EventFloodsDetailsDto {
   @ApiProperty({ example: 'G5142' })
   public readonly stationCode: string;
 
-  @ApiProperty({ example: 'ATHI MUNYU (3DA02)', nullable: true })
+  @ApiProperty({ example: 'ATHI MUNYU (3DA02)', type: String, nullable: true })
   public readonly stationName: string | null;
 
   @ApiProperty({ type: EventFloodsAlertDetailsDto })
