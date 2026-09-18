@@ -50,10 +50,7 @@ export class EventsService {
       await this.eventsRepository.getExposedAdminAreasForLatestAlerts(eventIds);
     const rastersByEventId =
       await this.eventsRepository.getRasterIdsForLatestAlerts(eventIds);
-    const hazardDetailsContext = await this.buildHazardDetailsContext({
-      events,
-      eventIds,
-    });
+    const hazardDetailsContext = await this.buildHazardDetailsContext(events);
 
     return events.map((event) =>
       this.mapEventToResponse({
@@ -66,24 +63,18 @@ export class EventsService {
     );
   }
 
-  private async buildHazardDetailsContext({
-    events,
-    eventIds,
-  }: {
-    events: Event[];
-    eventIds: number[];
-  }): Promise<HazardTypeSpecificData> {
-    const hasFloodEvent = events.some(
+  private async buildHazardDetailsContext(
+    events: Event[],
+  ): Promise<HazardTypeSpecificData> {
+    const floodEvents = events.filter(
       (event) => event.hazardType === HazardType.floods,
     );
-    if (!hasFloodEvent) {
+    if (floodEvents.length === 0) {
       return {};
     }
     return {
-      [HazardType.floods]: await this.eventFloodsDataService.buildContext({
-        events,
-        eventIds,
-      }),
+      [HazardType.floods]:
+        await this.eventFloodsDataService.buildContext(floodEvents),
     };
   }
 

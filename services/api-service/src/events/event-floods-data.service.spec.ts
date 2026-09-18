@@ -74,10 +74,7 @@ describe('EventFloodsDataService', () => {
   describe('buildDetails', () => {
     it('should return null for a flood event when there is no geo-feature exposure data', async () => {
       const event = buildEvent();
-      const floodsContext = await service.buildContext({
-        events: [event],
-        eventIds: [event.id],
-      });
+      const floodsContext = await service.buildContext([event]);
 
       expect(service.buildDetails({ event, floodsContext })).toBeNull();
     });
@@ -184,10 +181,7 @@ describe('EventFloodsDataService', () => {
         },
       ]);
 
-      const floodsContext = await service.buildContext({
-        events: [event],
-        eventIds: [event.id],
-      });
+      const floodsContext = await service.buildContext([event]);
 
       expect(service.buildDetails({ event, floodsContext })).toEqual({
         stationCode: 'G1',
@@ -235,6 +229,54 @@ describe('EventFloodsDataService', () => {
       });
     });
 
+    it('should sort an unsorted waterDischarge time series and derive current from the earliest entry', async () => {
+      // Arrange
+      const event = buildEvent();
+      const entryForDay = (day: number, median: number) => ({
+        start: `2026-03-2${day}T00:00:00Z`,
+        end: `2026-03-2${day}T23:59:59Z`,
+        median,
+        low: median - 20,
+        high: median + 20,
+      });
+      repository.getGeoFeatureExposureForLatestAlerts.mockResolvedValue(
+        new Map([
+          [
+            event.id,
+            {
+              geoFeatures: [
+                {
+                  geoFeatureId: 'G1',
+                  attributes: {
+                    waterDischarge: [
+                      entryForDay(5, 200),
+                      entryForDay(4, 100),
+                      entryForDay(6, 150),
+                    ],
+                  },
+                },
+              ],
+              severity: [],
+            },
+          ],
+        ]),
+      );
+
+      // Act
+      const floodsContext = await service.buildContext([event]);
+      const details = service.buildDetails({ event, floodsContext });
+
+      // Assert
+      expect(
+        details?.alertDetails.timeSeries.map((entry) => entry.start),
+      ).toEqual([
+        '2026-03-24T00:00:00Z',
+        '2026-03-25T00:00:00Z',
+        '2026-03-26T00:00:00Z',
+      ]);
+      expect(details?.alertDetails.current).toBe(100);
+    });
+
     it('should return null stationName for the no-name placeholder', async () => {
       // Arrange
       const event = buildEvent();
@@ -269,10 +311,7 @@ describe('EventFloodsDataService', () => {
       );
 
       // Act
-      const floodsContext = await service.buildContext({
-        events: [event],
-        eventIds: [event.id],
-      });
+      const floodsContext = await service.buildContext([event]);
       const details = service.buildDetails({ event, floodsContext });
 
       // Assert
@@ -345,10 +384,7 @@ describe('EventFloodsDataService', () => {
       ]);
 
       // Act
-      const floodsContext = await service.buildContext({
-        events: [event],
-        eventIds: [event.id],
-      });
+      const floodsContext = await service.buildContext([event]);
       const details = service.buildDetails({ event, floodsContext });
 
       // Assert
@@ -416,10 +452,7 @@ describe('EventFloodsDataService', () => {
       ]);
 
       // Act
-      const floodsContext = await service.buildContext({
-        events: [event],
-        eventIds: [event.id],
-      });
+      const floodsContext = await service.buildContext([event]);
       const details = service.buildDetails({ event, floodsContext });
 
       // Assert
@@ -459,10 +492,7 @@ describe('EventFloodsDataService', () => {
         .spyOn(Logger.prototype, 'error')
         .mockImplementation(() => undefined);
 
-      const floodsContext = await service.buildContext({
-        events: [event],
-        eventIds: [event.id],
-      });
+      const floodsContext = await service.buildContext([event]);
       const details = service.buildDetails({ event, floodsContext });
 
       expect(details?.returnPeriodThresholds).toEqual([]);
@@ -554,10 +584,7 @@ describe('EventFloodsDataService', () => {
         },
       ]);
 
-      const floodsContext = await service.buildContext({
-        events: [event],
-        eventIds: [event.id],
-      });
+      const floodsContext = await service.buildContext([event]);
       const details = service.buildDetails({ event, floodsContext });
 
       expect(

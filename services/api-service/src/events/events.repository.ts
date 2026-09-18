@@ -54,7 +54,7 @@ export interface LatestAlertGeoFeatureData {
 }
 
 export interface GloFasStationDetails {
-  readonly name: string;
+  readonly name: string | null;
   readonly thresholds: { return_period: number; threshold_value: number }[];
 }
 
@@ -330,7 +330,7 @@ export class EventsRepository {
         thresholds?: { return_period: number; threshold_value: number }[];
       };
       result.set(`${row.countryCodeIso3}::${row.referenceId}`, {
-        name: attributes.name ?? row.referenceId,
+        name: attributes.name ?? null,
         thresholds: attributes.thresholds ?? [],
       });
     }
