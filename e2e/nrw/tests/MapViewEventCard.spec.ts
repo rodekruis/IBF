@@ -149,7 +149,7 @@ test.describe('event card', () => {
       'aria-expanded',
       'true',
     );
-    const populationLayerToggle = nrwMapPage.layerToggle('Population');
+    const populationLayerToggle = nrwMapPage.layerToggle('Population density');
 
     // Act
     // Do not assume the layer's default state: only click when it is hidden.

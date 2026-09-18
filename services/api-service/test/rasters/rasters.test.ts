@@ -95,7 +95,7 @@ describe('/rasters', () => {
 
 describe('/rasters/static', () => {
   const country = 'MWI';
-  const layer = LayerName.population;
+  const layer = LayerName.populationDensity;
   let accessToken: string;
 
   beforeAll(async () => {
@@ -115,7 +115,7 @@ describe('/rasters/static', () => {
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(response.body.id).toEqual(expect.any(Number));
-      expect(response.body.layer).toBe(LayerName.population);
+      expect(response.body.layer).toBe(LayerName.populationDensity);
       expect(response.body.metadata.data.extent).toEqual(
         expect.objectContaining({
           xmin: expect.any(Number),

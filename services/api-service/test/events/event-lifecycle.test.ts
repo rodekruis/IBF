@@ -106,7 +106,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
             name: 'MW31001',
             adminLevel: 3,
             exposure: [
-              { layerName: 'populationExposed', exposed: 1000, total: null },
+              { layerName: 'exposedPopulation', exposed: 1000, total: null },
             ],
           },
         ],
@@ -143,7 +143,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
             name: 'MW31001',
             adminLevel: 3,
             exposure: [
-              { layerName: 'populationExposed', exposed: 1000, total: null },
+              { layerName: 'exposedPopulation', exposed: 1000, total: null },
             ],
           },
         ],

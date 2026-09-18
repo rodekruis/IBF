@@ -87,7 +87,7 @@ export function buildAlert(
         {
           placeCode: 'MW31001',
           adminLevel: 3,
-          layer: LayerName.populationExposed,
+          layer: LayerName.exposedPopulation,
           value: 1000,
         },
       ],

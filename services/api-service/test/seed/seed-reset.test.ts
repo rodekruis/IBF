@@ -118,11 +118,11 @@ describe('POST /reset', () => {
   describe('Population raster', () => {
     it('should have a population raster with metadata', async () => {
       const response = await getServer().get(
-        `/rasters/static/${countryCodeIso3}/${LayerName.population}`,
+        `/rasters/static/${countryCodeIso3}/${LayerName.populationDensity}`,
       );
 
       expect(response.status).toBe(HttpStatus.OK);
-      expect(response.body.layer).toBe(LayerName.population);
+      expect(response.body.layer).toBe(LayerName.populationDensity);
       expect(response.body.metadata.data.extent).toEqual(
         expect.objectContaining({
           xmin: expect.any(Number),

@@ -190,7 +190,7 @@ export class EventsRepository {
       select: {
         eventId: true,
         exposureAdminArea: {
-          where: { layerName: LayerName.populationExposed },
+          where: { layerName: LayerName.exposedPopulation },
           select: {
             placeCode: true,
             adminLevel: true,

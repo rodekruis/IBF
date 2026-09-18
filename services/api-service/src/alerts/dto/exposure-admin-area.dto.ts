@@ -17,7 +17,7 @@ export class ExposureAdminAreaDto {
 
   @ApiProperty({
     enum: LayerName,
-    example: LayerName.populationExposed,
+    example: LayerName.exposedPopulation,
   })
   @IsEnum(LayerName)
   public readonly layer: LayerName;

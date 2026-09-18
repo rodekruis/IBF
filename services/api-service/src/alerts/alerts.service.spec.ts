@@ -66,7 +66,7 @@ function createMockValidAlert(
         {
           placeCode: 'ETH_01_001',
           adminLevel: 3,
-          layer: LayerName.populationExposed,
+          layer: LayerName.exposedPopulation,
           value: 1,
         },
       ],
@@ -318,7 +318,7 @@ describe('AlertsService', () => {
       );
     });
 
-    it('should reject admin-area missing required populationExposed layer', async () => {
+    it('should reject admin-area missing required exposedPopulation layer', async () => {
       const alerts = [
         createMockValidAlert({
           exposure: {
@@ -349,7 +349,7 @@ describe('AlertsService', () => {
       };
       expect(response.errors).toEqual(
         expect.arrayContaining([
-          expect.stringContaining("missing required layer 'populationExposed'"),
+          expect.stringContaining("missing required layer 'exposedPopulation'"),
         ]),
       );
     });
@@ -368,13 +368,13 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 100,
               },
               {
                 placeCode: 'B',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 200,
               },
             ],
@@ -414,7 +414,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 1,
               },
             ],
@@ -448,7 +448,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 1,
               },
             ],
@@ -484,7 +484,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 1,
               },
             ],
@@ -523,7 +523,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 1,
               },
             ],
@@ -559,7 +559,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 1,
               },
             ],
@@ -592,7 +592,7 @@ describe('AlertsService', () => {
               {
                 placeCode: 'A',
                 adminLevel: 3,
-                layer: LayerName.populationExposed,
+                layer: LayerName.exposedPopulation,
                 value: 1,
               },
             ],
@@ -604,6 +604,186 @@ describe('AlertsService', () => {
         expect.objectContaining({
           alertCreateDtos: alerts,
         }),
+      );
+    });
+  });
+
+  describe('createAlerts – geoFeature validation', () => {
+    function createMockAlertWithWaterDischarge(
+      waterDischarge: unknown,
+    ): AlertCreateDto {
+      return createMockValidAlert({
+        exposure: {
+          adminAreas: [
+            {
+              placeCode: 'A',
+              adminLevel: 3,
+              layer: LayerName.exposedPopulation,
+              value: 1,
+            },
+          ],
+          geoFeatures: [
+            {
+              geoFeatureId: 'G1',
+              layer: LayerName.glofasStations,
+              attributes: { waterDischarge },
+            },
+          ],
+        },
+      });
+    }
+
+    it('should accept a well-formed waterDischarge time series', async () => {
+      const alerts = [
+        createMockAlertWithWaterDischarge([
+          {
+            start: '2026-03-20T00:00:00Z',
+            end: '2026-03-20T23:59:59Z',
+            median: 100,
+            low: 80,
+            high: 120,
+          },
+        ]),
+      ];
+      await service.createAlerts(createMockValidForecast({ alerts }));
+      expect(repository.createAlerts).toHaveBeenCalledWith(
+        expect.objectContaining({ alertCreateDtos: alerts }),
+      );
+    });
+
+    it('should reject an empty waterDischarge time series', async () => {
+      const alerts = [createMockAlertWithWaterDischarge([])];
+      const error = await service
+        .createAlerts(createMockValidForecast({ alerts }))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('no time series entries'),
+        ]),
+      );
+    });
+
+    it('should reject a waterDischarge that is not an array', async () => {
+      const alerts = [createMockAlertWithWaterDischarge(null)];
+      const error = await service
+        .createAlerts(createMockValidForecast({ alerts }))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([expect.stringContaining('must be an array')]),
+      );
+    });
+
+    it('should reject a malformed waterDischarge entry', async () => {
+      const alerts = [
+        createMockAlertWithWaterDischarge([
+          {
+            start: '2026-03-20T00:00:00Z',
+            end: '2026-03-20T23:59:59Z',
+            median: '100',
+            low: 80,
+            high: 120,
+          },
+        ]),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast({ alerts }))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining(
+            'must have string start/end and numeric low/median/high',
+          ),
+        ]),
+      );
+    });
+
+    it('should reject a time interval where start >= end', async () => {
+      const alerts = [
+        createMockAlertWithWaterDischarge([
+          {
+            start: '2026-03-21T00:00:00Z',
+            end: '2026-03-20T00:00:00Z',
+            median: 100,
+            low: 80,
+            high: 120,
+          },
+        ]),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast({ alerts }))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('start must be before end'),
+        ]),
+      );
+    });
+
+    it('should reject a median outside the low/high range', async () => {
+      const alerts = [
+        createMockAlertWithWaterDischarge([
+          {
+            start: '2026-03-20T00:00:00Z',
+            end: '2026-03-20T23:59:59Z',
+            median: 200,
+            low: 80,
+            high: 120,
+          },
+        ]),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast({ alerts }))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('expected low <= median <= high'),
+        ]),
+      );
+    });
+
+    it('should reject a negative low value', async () => {
+      const alerts = [
+        createMockAlertWithWaterDischarge([
+          {
+            start: '2026-03-20T00:00:00Z',
+            end: '2026-03-20T23:59:59Z',
+            median: 0,
+            low: -10,
+            high: 10,
+          },
+        ]),
+      ];
+      const error = await service
+        .createAlerts(createMockValidForecast({ alerts }))
+        .catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(HttpException);
+      const response = (error as HttpException).getResponse() as {
+        errors: string[];
+      };
+      expect(response.errors).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('must be non-negative'),
+        ]),
       );
     });
   });

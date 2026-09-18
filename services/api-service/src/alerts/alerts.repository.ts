@@ -133,10 +133,7 @@ export class AlertsRepository {
               create: (alertCreateDto.exposure.geoFeatures ?? []).map(
                 (entry) => ({
                   geoFeatureId: entry.geoFeatureId,
-                  attributes: entry.attributes as Record<
-                    string,
-                    string | number | boolean
-                  >,
+                  attributes: entry.attributes as Prisma.InputJsonValue,
                 }),
               ),
             },

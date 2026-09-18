@@ -14,14 +14,14 @@ export interface SeedLayer {
 
 export const SEED_LAYERS: SeedLayer[] = [
   {
-    name: LayerName.population,
-    label: LayerLabel.population,
+    name: LayerName.populationDensity,
+    label: LayerLabel.populationDensity,
     type: LayerType.raster,
     hazardType: null,
   },
   {
-    name: LayerName.populationExposed,
-    label: LayerLabel.populationExposed,
+    name: LayerName.exposedPopulation,
+    label: LayerLabel.exposedPopulation,
     type: LayerType.shape,
     hazardType: null,
   },
