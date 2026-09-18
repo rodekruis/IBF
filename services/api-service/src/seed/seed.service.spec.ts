@@ -141,14 +141,18 @@ describe('SeedService', () => {
   describe('mockEvents', () => {
     let createAlertsMock: jest.Mock;
     let deleteEventsMock: jest.Mock;
+    let getCountriesMock: jest.Mock;
+
+    const issuedAt = new Date('2026-08-25T12:00:00Z');
 
     beforeEach(() => {
       createAlertsMock = jest.fn().mockResolvedValue(undefined);
       deleteEventsMock = jest.fn().mockResolvedValue(undefined);
+      getCountriesMock = jest.fn().mockResolvedValue([]);
 
       const seedInit = { run: jest.fn().mockResolvedValue(undefined) } as never;
       const alertsService = { createAlerts: createAlertsMock } as never;
-      const countriesService = {} as never;
+      const countriesService = { getCountries: getCountriesMock } as never;
       const eventsService = {
         deleteEventsByCountry: deleteEventsMock,
       } as never;
@@ -161,43 +165,153 @@ describe('SeedService', () => {
       );
     });
 
-    it('should throw BadRequestException for unconfigured hazard type', async () => {
-      // Arrange
-      const params = {
-        countryCodes: ['PHL'],
-        scenario: MockScenario.events,
-        clearEvents: false,
-        issuedAt: new Date('2026-08-25T12:00:00Z'),
-        hazardTypes: [HazardType.drought],
-      };
+    describe('with specific countryCodes', () => {
+      describe('and specific hazardTypes', () => {
+        it('should create forecasts when country supports the hazard', async () => {
+          // Arrange
+          const params = {
+            countryCodes: ['PHL'],
+            scenario: MockScenario.events,
+            clearEvents: false,
+            issuedAt,
+            hazardTypes: [HazardType.tropicalCyclone],
+          };
 
-      // Act & Assert
-      await expect(service.mockEvents(params)).rejects.toThrow(
-        BadRequestException,
-      );
+          // Act
+          await service.mockEvents(params);
+
+          // Assert
+          expect(createAlertsMock).toHaveBeenCalledTimes(1);
+          expect(createAlertsMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+              hazardType: HazardType.tropicalCyclone,
+              countryCodeIso3: 'PHL',
+            }),
+          );
+        });
+
+        it('should throw BadRequestException when country does not support the hazard', async () => {
+          // Arrange
+          const params = {
+            countryCodes: ['PHL'],
+            scenario: MockScenario.events,
+            clearEvents: false,
+            issuedAt,
+            hazardTypes: [HazardType.drought],
+          };
+
+          // Act & Assert
+          await expect(service.mockEvents(params)).rejects.toThrow(
+            BadRequestException,
+          );
+        });
+      });
+
+      describe('and no hazardTypes', () => {
+        it('should create forecasts for every hazard configured for the country', async () => {
+          // Arrange
+          const params = {
+            countryCodes: ['PHL'],
+            scenario: MockScenario.events,
+            clearEvents: false,
+            issuedAt,
+          };
+
+          // Act
+          await service.mockEvents(params);
+
+          // Assert
+          expect(createAlertsMock).toHaveBeenCalledTimes(2);
+          const hazardTypesCalled = createAlertsMock.mock.calls.map(
+            (call) => (call[0] as { hazardType: HazardType }).hazardType,
+          );
+          expect(hazardTypesCalled).toEqual(
+            expect.arrayContaining([
+              HazardType.floods,
+              HazardType.tropicalCyclone,
+            ]),
+          );
+        });
+      });
     });
 
-    it('should create forecasts for valid hazard type filter', async () => {
-      // Arrange
-      const params = {
-        countryCodes: ['PHL'],
-        scenario: MockScenario.events,
-        clearEvents: false,
-        issuedAt: new Date('2026-08-25T12:00:00Z'),
-        hazardTypes: [HazardType.tropicalCyclone],
-      };
+    describe('with no countryCodes (all seeded)', () => {
+      beforeEach(() => {
+        getCountriesMock.mockResolvedValue([
+          { countryCodeIso3: 'ETH' },
+          { countryCodeIso3: 'PHL' },
+          { countryCodeIso3: 'MWI' },
+        ]);
+      });
 
-      // Act
-      await service.mockEvents(params);
+      describe('and specific hazardTypes', () => {
+        it('should skip seeded countries without matching hazard', async () => {
+          // Arrange
+          const params = {
+            scenario: MockScenario.events,
+            clearEvents: false,
+            issuedAt,
+            hazardTypes: [HazardType.tropicalCyclone],
+          };
 
-      // Assert
-      expect(createAlertsMock).toHaveBeenCalledTimes(1);
-      expect(createAlertsMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          hazardType: HazardType.tropicalCyclone,
-          countryCodeIso3: 'PHL',
-        }),
-      );
+          // Act
+          await service.mockEvents(params);
+
+          // Assert
+          expect(createAlertsMock).toHaveBeenCalledTimes(1);
+          expect(createAlertsMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+              hazardType: HazardType.tropicalCyclone,
+              countryCodeIso3: 'PHL',
+            }),
+          );
+        });
+      });
+
+      describe('and no hazardTypes', () => {
+        it('should create forecasts for every seeded country and every configured hazard', async () => {
+          // Arrange
+          const params = {
+            scenario: MockScenario.events,
+            clearEvents: false,
+            issuedAt,
+          };
+
+          // Act
+          await service.mockEvents(params);
+
+          // Assert
+          // ETH: floods, PHL: floods + tropicalCyclone, MWI: floods
+          expect(createAlertsMock).toHaveBeenCalledTimes(4);
+          const callArgs = createAlertsMock.mock.calls.map(
+            (call) =>
+              call[0] as {
+                countryCodeIso3: string;
+                hazardType: HazardType;
+              },
+          );
+          expect(callArgs).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                countryCodeIso3: 'ETH',
+                hazardType: HazardType.floods,
+              }),
+              expect.objectContaining({
+                countryCodeIso3: 'PHL',
+                hazardType: HazardType.floods,
+              }),
+              expect.objectContaining({
+                countryCodeIso3: 'PHL',
+                hazardType: HazardType.tropicalCyclone,
+              }),
+              expect.objectContaining({
+                countryCodeIso3: 'MWI',
+                hazardType: HazardType.floods,
+              }),
+            ]),
+          );
+        });
+      });
     });
   });
 });
