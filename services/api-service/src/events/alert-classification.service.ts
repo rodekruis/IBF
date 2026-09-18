@@ -272,6 +272,33 @@ export class AlertClassificationService {
     return exceedCount / runValues.length;
   }
 
+  // Only used by EventFloodsDataService, but lives here so the probability it exposes
+  // cannot drift from classification semantics: % of runs exceeding the severity-class
+  // threshold resolved from the median, not the median value itself.
+  public computeExceedanceProbability({
+    medianValue,
+    runValues,
+    severityLevels,
+  }: {
+    medianValue: number;
+    runValues: number[];
+    severityLevels: ClassLevelDto[];
+  }): number | null {
+    if (runValues.length === 0) {
+      return null;
+    }
+    const resolvedLevel = this.sortByThresholdDescending(severityLevels).find(
+      (level) => medianValue >= level.threshold,
+    );
+    if (!resolvedLevel) {
+      return null;
+    }
+    return this.computeProbability({
+      runValues,
+      severityThreshold: resolvedLevel.threshold,
+    });
+  }
+
   private computeAlertClass(
     alertClassPerTimeInterval: Map<string, AlertClass | null>,
   ): AlertClass | null {
