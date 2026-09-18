@@ -117,19 +117,19 @@ describe('EventsService', () => {
           placeCode: 'KEN_01',
           adminLevel: 1,
           name: 'Region A',
-          exposure: [{ layerName: LayerName.populationExposed, exposed: 500 }],
+          exposure: [{ layerName: LayerName.exposedPopulation, exposed: 500 }],
         },
         {
           placeCode: 'KEN_01_001',
           adminLevel: 3,
           name: 'District X',
-          exposure: [{ layerName: LayerName.populationExposed, exposed: 200 }],
+          exposure: [{ layerName: LayerName.exposedPopulation, exposed: 200 }],
         },
         {
           placeCode: 'KEN_01_002',
           adminLevel: 3,
           name: 'District Y',
-          exposure: [{ layerName: LayerName.populationExposed, exposed: 300 }],
+          exposure: [{ layerName: LayerName.exposedPopulation, exposed: 300 }],
         },
       ];
       repository.getEvents.mockResolvedValue([event]);
@@ -149,7 +149,7 @@ describe('EventsService', () => {
             name: 'Region A',
             exposure: [
               {
-                layerName: LayerName.populationExposed,
+                layerName: LayerName.exposedPopulation,
                 total: null,
                 exposed: 500,
               },
@@ -163,7 +163,7 @@ describe('EventsService', () => {
             name: 'District X',
             exposure: [
               {
-                layerName: LayerName.populationExposed,
+                layerName: LayerName.exposedPopulation,
                 total: null,
                 exposed: 200,
               },
@@ -175,7 +175,7 @@ describe('EventsService', () => {
             name: 'District Y',
             exposure: [
               {
-                layerName: LayerName.populationExposed,
+                layerName: LayerName.exposedPopulation,
                 total: null,
                 exposed: 300,
               },

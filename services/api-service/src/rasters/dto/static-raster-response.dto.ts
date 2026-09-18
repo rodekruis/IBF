@@ -7,7 +7,7 @@ export class StaticRasterResponseDto {
   @ApiProperty({ example: 1 })
   public readonly id: number;
 
-  @ApiProperty({ enum: LayerName, example: LayerName.population })
+  @ApiProperty({ enum: LayerName, example: LayerName.populationDensity })
   public readonly layer: LayerName;
 
   @ApiProperty({ type: RasterMetadataDto })

@@ -121,7 +121,7 @@ def _generate_mock_alerts(
         data_submitter.add_admin_area_exposure(
             event_name=event_name,
             admin_level=target_admin_level,
-            layer=LayerName.POPULATION_EXPOSED,
+            layer=LayerName.EXPOSED_POPULATION,
             values_by_place_code={
                 pcode: 100 * (i + 1) + pcode_idx * 10
                 for pcode_idx, pcode in enumerate(exposed_pcodes)

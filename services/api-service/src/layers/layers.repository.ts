@@ -76,7 +76,7 @@ export class LayersRepository {
     type: string;
     hazardType: HazardType | null;
   }): boolean {
-    // Exclude shape layers (e.g. populationExposed) as these are handled differently in the FE
+    // Exclude shape layers (e.g. exposedPopulation) as these are handled differently in the FE
     if (row.type === LayerType.shape) {
       return false;
     }
