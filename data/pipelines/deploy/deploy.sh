@@ -22,7 +22,7 @@ DEPLOYMENT_NAME="nrw-batch-infra"
 SCRIPT_DIR="$(dirname "$0")"
 TEMPLATE_FILE="${SCRIPT_DIR}/main.bicep"
 PARAMETERS_FILE="${SCRIPT_DIR}/parameters.dev.json"
-ENV_FILE="${SCRIPT_DIR}/../.env"
+ENV_FILE="${SCRIPT_DIR}/../../.env"
 # Function App name is owned by main.bicep and captured here so publish-function.sh
 # always targets exactly the app that was deployed.
 FUNCTION_APP_NAME_FILE="${SCRIPT_DIR}/.function-app-name"

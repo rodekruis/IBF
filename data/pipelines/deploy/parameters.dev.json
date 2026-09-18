@@ -38,8 +38,11 @@
     "dataCacheDir": {
       "value": "/mnt/batch/tasks/fsmounts/nrw-data-cache"
     },
-    "alertEmail": {
-      "value": "ehill@redcross.nl"
+    "alertEmails": {
+      "value": ["ehill@redcross.nl", "ibf-devops@redcross.nl"]
+    },
+    "eventAlertEmails": {
+      "value": ["ehill@redcross.nl", "ibf-devops@redcross.nl"]
     }
   }
 }

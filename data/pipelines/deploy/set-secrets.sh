@@ -20,7 +20,7 @@
 set -euo pipefail
 
 KEY_VAULT_NAME="nrw-batch-poc"
-ENV_FILE="$(dirname "$0")/../.env"
+ENV_FILE="$(dirname "$0")/../../.env"
 
 # Key Vault secret name -> .env variable name.
 declare -a SECRET_NAMES=(

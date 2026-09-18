@@ -21,7 +21,7 @@ set -euo pipefail
 
 ACR_NAME="nrwdockerregistry"
 IMAGE="nrwdockerregistry.azurecr.io/pipelines:latest"
-BUILD_CONTEXT="$(cd "$(dirname "$0")/.." && pwd)"
+BUILD_CONTEXT="$(cd "$(dirname "$0")/../.." && pwd)"
 DOCKERFILE="${BUILD_CONTEXT}/Dockerfile"
 
 if [[ ! -f "${DOCKERFILE}" ]]; then

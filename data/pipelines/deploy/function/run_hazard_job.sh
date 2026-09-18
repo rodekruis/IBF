@@ -14,7 +14,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DATA_DIR="${SCRIPT_DIR}/../.."
+DATA_DIR="${SCRIPT_DIR}/../../.."
 
 if [[ $# -ne 1 ]]; then
   echo "Usage: $0 <hazard-type>" >&2

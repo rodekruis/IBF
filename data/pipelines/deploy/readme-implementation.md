@@ -107,7 +107,7 @@ User accounts:
 
 ## Deployment steps and scripts
 
-All files live under `data/deploy/`.
+All files live under `data/pipelines/deploy/`.
 
 ### One time setup
 
@@ -125,7 +125,7 @@ Run these in order the first time, but after that, you can just run the ones tha
 
 1. `build-and-push-image.sh` — build & push the pipeline Docker image to ACR. Note that YAML configs (`pipelines/infra/configs/*.yaml`) are baked into the image, so adding a country or changing data sources requires a new build+push.
 2. `deploy.sh` (`main.bicep`, `parameters.dev.json`) — deploy the Function App + monitoring (Bicep).
-3. `publish-function.sh` (`function/`) — deploy the Azure Function code and it's dependencies (from data/deploy/function/).
+3. `publish-function.sh` (`function/`) — deploy the Azure Function code and it's dependencies (from data/pipelines/deploy/function/).
 
 ### Helper jobs
 
@@ -163,7 +163,7 @@ Run these in order the first time, but after that, you can just run the ones tha
 
 - **Azure Blob Storage**: GloFAS global downloads (~600 MB per file, ~30 GB total for a daily set of ~50 files), country split outputs, debug/dev data, and large result payloads. Only one GloFAS file is loaded at a time, so peak working storage is ~600 MB–1 GB. All downloaded GloFAS files are written to Blob Storage.
 
-- **Blob storage retention**: `glofas/raw` has the limit set in `data/deploy/blob-lifecycle-policy.json`. For `glofas/country_split` and `glofas/country_split_alert`, they are not shown in that file since we want them to be indefinite at first, and the default setting is an indefinite period.
+- **Blob storage retention**: `glofas/raw` has the limit set in `data/pipelines/deploy/blob-lifecycle-policy.json`. For `glofas/country_split` and `glofas/country_split_alert`, they are not shown in that file since we want them to be indefinite at first, and the default setting is an indefinite period.
 
 ### Blob storage retention
 

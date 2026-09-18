@@ -12,7 +12,7 @@
 # Auth: the Batch account is AAD-only, so the job is submitted as the
 # operator's own `az login` identity. That operator needs
 # "Azure Batch Job Submitter" on nrwbatchpoc and "Key Vault Secrets User" on
-# the nrw-batch-poc vault (see data/deploy/readme-implementation.md for the
+# the nrw-batch-poc vault (see data/pipelines/deploy/readme-implementation.md for the
 # one-time grant commands; the scheduler UAMI's grants do not apply to a human
 # running these scripts).
 #
@@ -101,7 +101,7 @@ submit_job() {
   (
     cd "${DATA_DIR}"
     uv run --with "azure-batch>=15,<16" --with azure-identity \
-      python deploy/function/submit_hazard_job.py "$@"
+      python pipelines/deploy/function/submit_hazard_job.py "$@"
   )
   unset IBF_PIPELINE_API_KEY GLOFAS_FTP_USER GLOFAS_FTP_PASSWORD
 }

@@ -60,4 +60,4 @@ MANIFEST
 pipelines/tropical_cyclone/bronze/
 
 # Function App name captured by deploy.sh from the Bicep deployment outputs.
-deploy/.function-app-name
+pipelines/deploy/.function-app-name

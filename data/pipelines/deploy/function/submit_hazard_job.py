@@ -2,14 +2,14 @@
 
 Reuses the job/task construction from batch_client.py so manual submissions
 stay identical to the scheduled daily runs. Intended to be invoked via
-data/deploy/function/run_hazard_job.sh (standard run) or
-data/deploy/function/mock_run_hazard_job.sh (mock-data run), which inject the
+data/pipelines/deploy/function/run_hazard_job.sh (standard run) or
+data/pipelines/deploy/function/mock_run_hazard_job.sh (mock-data run), which inject the
 required environment variables (secrets read from Key Vault, never from the
 command line).
 """
 
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from batch_client import create_batch_client, HazardConfig, submit_hazard_job
 
@@ -21,9 +21,7 @@ def main() -> None:
         config_path=default_config_path(args.hazard_type),
         extra_args=tuple(args.extra_args),
     )
-    job_id = submit_hazard_job(
-        create_batch_client(), hazard_config, datetime.now(timezone.utc)
-    )
+    job_id = submit_hazard_job(create_batch_client(), hazard_config, datetime.now(UTC))
     print(f"Submitted Batch job '{job_id}' for hazard '{hazard_config.hazard_type}'.")
 
 
