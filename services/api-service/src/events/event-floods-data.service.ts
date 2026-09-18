@@ -58,23 +58,17 @@ export class EventFloodsDataService {
     private readonly alertClassificationService: AlertClassificationService,
   ) {}
 
-  public async buildContext({
-    events,
-    eventIds,
-  }: {
-    events: Event[];
-    eventIds: number[];
-  }): Promise<FloodsSpecificData> {
+  public async buildContext(floodEvents: Event[]): Promise<FloodsSpecificData> {
     const geoFeatureDataByEventId =
       await this.eventsRepository.getGeoFeatureExposureForLatestAlerts(
-        eventIds,
+        floodEvents.map((event) => event.id),
       );
     const stationDetailsByKey = await this.fetchStationDetails({
-      events,
+      events: floodEvents,
       geoFeatureDataByEventId,
     });
     const severityLevelsByKey = await this.fetchSeverityLevels({
-      events,
+      events: floodEvents,
       geoFeatureDataByEventId,
     });
     return {
@@ -127,9 +121,6 @@ export class EventFloodsDataService {
     const seen = new Set<string>();
     const references: { countryCodeIso3: string; referenceId: string }[] = [];
     for (const event of events) {
-      if (event.hazardType !== HazardType.floods) {
-        continue;
-      }
       const data = geoFeatureDataByEventId.get(event.id);
       if (!data) {
         continue;
@@ -162,9 +153,6 @@ export class EventFloodsDataService {
     const result = new Map<string, ClassLevelDto[]>();
     const seen = new Set<string>();
     for (const event of events) {
-      if (event.hazardType !== HazardType.floods) {
-        continue;
-      }
       const data = geoFeatureDataByEventId.get(event.id);
       if (!data || data.geoFeatures.length === 0) {
         continue;
@@ -205,8 +193,15 @@ export class EventFloodsDataService {
     if (!waterDischarge || waterDischarge.length === 0) {
       return null;
     }
+    // Integrity validation accepts unsorted intervals, so sort chronologically here
+    const timeSeries = [...waterDischarge].sort(
+      (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
+    );
 
-    const peakEntry = this.findPeakEntry({ waterDischarge, severity });
+    const peakEntry = this.findPeakEntry({
+      waterDischarge: timeSeries,
+      severity,
+    });
     const atPeak = this.findSeverityAtInterval({
       severity,
       timeIntervalStart: new Date(peakEntry.start),
@@ -229,8 +224,8 @@ export class EventFloodsDataService {
       stationCode: geoFeature.geoFeatureId,
       stationName: this.getStationDisplayName(stationDetails),
       alertDetails: {
-        timeSeries: waterDischarge,
-        current: waterDischarge[0].median,
+        timeSeries,
+        current: timeSeries[0].median,
         peakDay: peakEntry.start,
         peakValue: peakEntry.median,
         returnPeriod: atPeak.medianValue,
@@ -263,20 +258,18 @@ export class EventFloodsDataService {
     severity: LatestAlertSeverityRecord[];
   }): WaterDischargeTimeSeriesEntryDto {
     const peakMedian = Math.max(...waterDischarge.map((entry) => entry.median));
-    const sortedPeakTimeIntervals = waterDischarge
-      .filter((entry) => entry.median === peakMedian)
-      .sort(
-        (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
-      );
+    const peakTimeIntervals = waterDischarge.filter(
+      (entry) => entry.median === peakMedian,
+    );
     // .find intentionally finds the first candidate with peak severity (if multiple)
-    const candidateWithSeverity = sortedPeakTimeIntervals.find(
+    const candidateWithSeverity = peakTimeIntervals.find(
       (entry) =>
         this.findSeverityAtInterval({
           severity,
           timeIntervalStart: new Date(entry.start),
         }).medianValue !== null,
     );
-    return candidateWithSeverity ?? sortedPeakTimeIntervals[0];
+    return candidateWithSeverity ?? peakTimeIntervals[0];
   }
 
   private findSeverityAtInterval({
