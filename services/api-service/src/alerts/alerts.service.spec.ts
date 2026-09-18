@@ -618,7 +618,7 @@ describe('AlertsService', () => {
             {
               placeCode: 'A',
               adminLevel: 3,
-              layer: LayerName.populationExposed,
+              layer: LayerName.exposedPopulation,
               value: 1,
             },
           ],
