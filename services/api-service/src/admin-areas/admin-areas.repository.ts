@@ -156,7 +156,7 @@ export class AdminAreasRepository {
               ${dto.adminLevel},
               ${dto.nameEn},
               ${dto.countryCodeIso3},
-              ${dto.placeCodeLevel0 ?? null},
+              ${dto.placeCodeLevel0},
               ${dto.placeCodeLevel1 ?? null},
               ${dto.placeCodeLevel2 ?? null},
               ${dto.placeCodeLevel3 ?? null},

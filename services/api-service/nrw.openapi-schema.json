@@ -2880,9 +2880,8 @@
             "example": "KEN"
           },
           "placeCodeLevel0": {
-            "type": "object",
-            "example": "KE",
-            "nullable": true
+            "type": "string",
+            "example": "KE"
           },
           "placeCodeLevel1": {
             "type": "object",
