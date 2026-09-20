@@ -10,6 +10,7 @@
   "private": true,
   "scripts": {
     "start": "echo 'See README.md#getting-started \\n\\n'",
+    "benchmark:docker": "node scripts/benchmark-docker.mjs",
     "logs:services": "cd services/ && docker compose logs --follow",
     "start:services": "cd services/ && docker compose --file=docker-compose.yml --file=docker-compose.development.yml up --build",
     "stop:services": "cd services/ && docker compose --file=docker-compose.yml --file=docker-compose.development.yml stop",

@@ -21,9 +21,11 @@ services:
           'CMD-SHELL',
           "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DBNAME}'",
         ]
-      interval: 10s
+      interval: 2s
       timeout: 3s
-      retries: 3
+      retries: 5
+      start_period: 1s
+      start_interval: 1s
 
   api-service:
     container_name: api-service
