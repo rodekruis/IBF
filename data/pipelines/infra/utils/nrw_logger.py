@@ -1,4 +1,5 @@
 import logging
+import os
 from enum import StrEnum
 
 
@@ -39,7 +40,20 @@ def log_with_tag(
     If more tags or parseable fields are needed in the future,
     consider writing out the whole log string as JSON.
     """
-    logger.log(level, "tag_%s %s", tag.value, message)
+    run_origin = os.environ.get("PIPELINE_RUN_ORIGIN", "local")
+    source_target = os.environ.get("PIPELINE_SOURCE_TARGET", "unknown")
+    logger.log(
+        level,
+        "run_origin=%s source_target=%s tag_%s %s",
+        run_origin,
+        source_target,
+        tag.value,
+        message,
+        extra={
+            "pipeline_run_origin": run_origin,
+            "pipeline_source_target": source_target,
+        },
+    )
 
 
 def log_info(logger: logging.Logger, tag: LogTag, message: str) -> None:

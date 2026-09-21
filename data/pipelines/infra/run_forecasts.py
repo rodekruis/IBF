@@ -165,6 +165,7 @@ def run_forecasts(
     _register_hazard_functions()
 
     source_target = _resolve_source_target(mock)
+    os.environ["PIPELINE_SOURCE_TARGET"] = source_target.value
 
     config_reader = ConfigReader(source_target=source_target, infra_only=infra_only)
     if not config_reader.load_all(config_path) or config_reader.config is None:
@@ -194,7 +195,10 @@ def run_forecasts(
 
     all_errors: list[str] = []
 
-    api_client = ApiClient()
+    api_client = ApiClient(
+        run_origin=os.environ.get("PIPELINE_RUN_ORIGIN", "local"),
+        source_target=source_target.value,
+    )
 
     active_fn = hazard_fn
     if infra_only:

@@ -66,6 +66,7 @@ export IBF_PIPELINE_API_KEY GLOFAS_FTP_USER GLOFAS_FTP_PASSWORD
 export GITHUB_DATA_BASE_URL="https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main"
 export GLOFAS_FTP_HOST="aux.ecmwf.int"
 export DATA_CACHE_DIR="/mnt/batch/tasks/fsmounts/nrw-data-cache"
+export PIPELINE_RUN_ORIGIN="manual"
 
 # Mirror the Function App setting from main.bicep so submitted jobs export
 # pipeline logs to the same Application Insights component as the scheduled
