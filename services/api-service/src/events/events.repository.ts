@@ -325,10 +325,7 @@ export class EventsRepository {
     });
 
     for (const row of rows) {
-      const attributes = row.attributes as {
-        name?: string;
-        thresholds?: { return_period: number; threshold_value: number }[];
-      };
+      const attributes = row.attributes as unknown as GloFasStationDetails;
       result.set(`${row.countryCodeIso3}::${row.referenceId}`, {
         name: attributes.name ?? null,
         thresholds: attributes.thresholds ?? [],

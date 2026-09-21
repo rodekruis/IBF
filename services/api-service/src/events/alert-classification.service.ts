@@ -272,7 +272,7 @@ export class AlertClassificationService {
     return exceedCount / runValues.length;
   }
 
-  // Only used by EventFloodsDataService, but lives here so the probability it exposes
+  // Only used by EventFloodsDetailsService, but lives here so the probability it exposes
   // cannot drift from classification semantics: % of runs exceeding the severity-class
   // threshold resolved from the median, not the median value itself.
   public computeExceedanceProbability({

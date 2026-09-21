@@ -49,8 +49,8 @@ function severityLevelsKey({
 }
 
 @Injectable()
-export class EventFloodsDataService {
-  private readonly logger = new Logger(EventFloodsDataService.name);
+export class EventFloodsDetailsService {
+  private readonly logger = new Logger(EventFloodsDetailsService.name);
 
   public constructor(
     private readonly eventsRepository: EventsRepository,

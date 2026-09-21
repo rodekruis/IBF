@@ -4,7 +4,7 @@ import { Event } from '@prisma/client';
 
 import { AlertConfigsService } from '@api-service/src/alert-configs/alert-configs.service';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
-import { EventFloodsDataService } from '@api-service/src/events/event-floods-data.service';
+import { EventFloodsDetailsService } from '@api-service/src/events/event-floods-details.service';
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import {
   AlertClass,
@@ -35,15 +35,15 @@ function buildEvent(overrides: Partial<Event> = {}): Event {
   };
 }
 
-describe('EventFloodsDataService', () => {
-  let service: EventFloodsDataService;
+describe('EventFloodsDetailsService', () => {
+  let service: EventFloodsDetailsService;
   let repository: jest.Mocked<EventsRepository>;
   let alertConfigsService: jest.Mocked<AlertConfigsService>;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
-        EventFloodsDataService,
+        EventFloodsDetailsService,
         AlertClassificationService,
         {
           provide: EventsRepository,
@@ -61,7 +61,7 @@ describe('EventFloodsDataService', () => {
       ],
     }).compile();
 
-    service = module.get(EventFloodsDataService);
+    service = module.get(EventFloodsDetailsService);
     repository = module.get(EventsRepository);
     alertConfigsService = module.get(AlertConfigsService);
     repository.getGeoFeatureExposureForLatestAlerts.mockResolvedValue(
