@@ -163,6 +163,7 @@ export class AlertClassificationService {
       config,
     });
 
+    // startAt/endAt are only consumed later when alertClass !== null, which guarantees at least one above-threshold time-interval and thus defined start/end.
     return {
       alertClassPerTimeInterval,
       alertClass,
