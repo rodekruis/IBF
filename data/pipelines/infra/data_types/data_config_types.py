@@ -18,6 +18,17 @@ class SourceTarget(StrEnum):
     MOCK_NO_ALERT = "mock_no_alert"  # --mock 0
 
 
+class RunOrigin(StrEnum):
+    """
+    What initiated the pipeline run.
+    Scheduled or manual run to deployed pipeline infra, or local run.
+    """
+
+    LOCAL = "local"
+    MANUAL = "manual"
+    SCHEDULED = "scheduled"
+
+
 class DataSource(StrEnum):
     """
     Enum of the different data sources that can be loaded.

@@ -21,6 +21,7 @@ from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
     OutputMode,
+    RunOrigin,
     SourceTarget,
 )
 from pipelines.infra.data_types.enums import ForecastSource, HazardType
@@ -195,8 +196,9 @@ def run_forecasts(
 
     all_errors: list[str] = []
 
+    run_origin = RunOrigin(os.environ.get("PIPELINE_RUN_ORIGIN", RunOrigin.LOCAL))
     api_client = ApiClient(
-        run_origin=os.environ.get("PIPELINE_RUN_ORIGIN", "local"),
+        run_origin=run_origin,
         source_target=source_target.value,
     )
 

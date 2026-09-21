@@ -37,3 +37,15 @@ def test_log_defaults_to_local_source() -> None:
         "pipeline_run_origin": "local",
         "pipeline_source_target": "unknown",
     }
+
+
+def test_rejects_unknown_run_origin() -> None:
+    logger = logging.getLogger("test_nrw_logger")
+
+    with patch.dict("os.environ", {"PIPELINE_RUN_ORIGIN": "unexpected"}):
+        try:
+            log_info(logger, LogTag.INFRA, "pipeline started")
+        except ValueError as error:
+            assert "unexpected" in str(error)
+        else:
+            raise AssertionError("Unknown run origin should be rejected")
