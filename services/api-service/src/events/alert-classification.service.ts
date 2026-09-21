@@ -133,6 +133,11 @@ export class AlertClassificationService {
       });
       alertClassPerTimeInterval.set(group.start, alertClassForTimeInterval);
 
+      // Only time-intervals above some threshold contribute to event bounds so that startAt/endAt reflect the country-specific low threshold, not the pipeline's generic minimum severity.
+      if (alertClassForTimeInterval === null) {
+        continue;
+      }
+
       const start = new Date(group.start);
       const end = new Date(group.end);
       if (!earliestStart || start < earliestStart) {
@@ -158,6 +163,7 @@ export class AlertClassificationService {
       config,
     });
 
+    // startAt/endAt are only consumed later when alertClass !== null, which guarantees at least one above-threshold time-interval and thus defined start/end.
     return {
       alertClassPerTimeInterval,
       alertClass,

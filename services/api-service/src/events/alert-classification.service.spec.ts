@@ -194,6 +194,41 @@ describe('AlertClassificationService', () => {
         );
       });
 
+      it('should exclude below-low-threshold intervals from startAt/endAt', async () => {
+        // Simulates the pipeline's generic min-threshold (e.g. 1.5yr RP) being
+        // more permissive than the country-specific low threshold: the first
+        // interval clears the pipeline gate but classifies as null here.
+        const alert = buildAlert({
+          severity: [
+            ...buildSeverityData({
+              start: new Date('2026-04-01T00:00:00Z'),
+              end: new Date('2026-04-02T00:00:00Z'),
+              medianValue: 1.0,
+              runValues: [1.0, 1.0, 1.0],
+            }),
+            ...buildSeverityData({
+              start: new Date('2026-04-03T00:00:00Z'),
+              end: new Date('2026-04-05T00:00:00Z'),
+              medianValue: 25,
+              runValues: [25, 25, 25],
+            }),
+            ...buildSeverityData({
+              start: new Date('2026-04-06T00:00:00Z'),
+              end: new Date('2026-04-07T00:00:00Z'),
+              medianValue: 1.0,
+              runValues: [1.0, 1.0, 1.0],
+            }),
+          ],
+        });
+
+        const result = await service.classifyAlert(
+          toClassificationInput({ alert }),
+        );
+        expect(result.alertClass).toBe(AlertClassificationLevel.high);
+        expect(result.startAt).toEqual(new Date('2026-04-03T00:00:00Z'));
+        expect(result.endAt).toEqual(new Date('2026-04-05T00:00:00Z'));
+      });
+
       describe('trigger', () => {
         it('should be true when high alertClass peaks within lead time duration', async () => {
           const alert = buildAlert({
