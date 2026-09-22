@@ -69,13 +69,11 @@ param dataCacheDir string = '/mnt/batch/tasks/fsmounts/nrw-data-cache'
 
 @description('Email addresses that receive TaskFailEvent alerts.')
 param alertEmails array = [
-  'ehill@redcross.nl'
   'ibf-devops@redcross.nl'
 ]
 
 @description('Email addresses notified when the pipeline logs an expected event (PLACEHOLDER_EMAIL_ALERT).')
 param eventAlertEmails array = [
-  'ehill@redcross.nl'
   'ibf-devops@redcross.nl'
 ]
 

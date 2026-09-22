@@ -39,10 +39,10 @@
       "value": "/mnt/batch/tasks/fsmounts/nrw-data-cache"
     },
     "alertEmails": {
-      "value": ["ehill@redcross.nl", "ibf-devops@redcross.nl"]
+      "value": ["ibf-devops@redcross.nl"]
     },
     "eventAlertEmails": {
-      "value": ["ehill@redcross.nl", "ibf-devops@redcross.nl"]
+      "value": ["ibf-devops@redcross.nl"]
     }
   }
 }
