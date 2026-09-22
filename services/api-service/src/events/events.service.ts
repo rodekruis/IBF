@@ -3,17 +3,33 @@ import { Event } from '@prisma/client';
 import { Layer } from '@prisma/client';
 
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
+import { EventHazardTypeDetailsDto as EventHazardTypeDetailsDto } from '@api-service/src/events/dto/event-hazard-type-details.dto';
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
+import {
+  EventFloodsDetailsService,
+  FloodsDetailsContext,
+} from '@api-service/src/events/event-floods-details.service';
 import {
   EventsRepository,
   ExposedAdminAreaRecord,
 } from '@api-service/src/events/events.repository';
 import { EventLayerDto } from '@api-service/src/layers/dto/event-layer.dto';
-import { EventStatus, LayerType } from '@api-service/src/shared-enums';
+import {
+  EventStatus,
+  HazardType,
+  LayerType,
+} from '@api-service/src/shared-enums';
+
+interface HazardTypeDetailsContext {
+  readonly [HazardType.floods]?: FloodsDetailsContext;
+}
 
 @Injectable()
 export class EventsService {
-  public constructor(private readonly eventsRepository: EventsRepository) {}
+  public constructor(
+    private readonly eventsRepository: EventsRepository,
+    private readonly eventFloodsDetailsService: EventFloodsDetailsService,
+  ) {}
 
   public async getEvents({
     viewTime,
@@ -34,14 +50,33 @@ export class EventsService {
       await this.eventsRepository.getExposedAdminAreasForLatestAlerts(eventIds);
     const rastersByEventId =
       await this.eventsRepository.getRasterIdsForLatestAlerts(eventIds);
+    const hazardTypeDetailsContext =
+      await this.buildHazardTypeDetailsContext(events);
+
     return events.map((event) =>
       this.mapEventToResponse({
         event,
         viewTime,
         exposedAdminAreas: exposedAdminAreasByEventId.get(event.id) ?? [],
         rasters: rastersByEventId.get(event.id) ?? [],
+        hazardTypeDetailsContext,
       }),
     );
+  }
+
+  private async buildHazardTypeDetailsContext(
+    events: Event[],
+  ): Promise<HazardTypeDetailsContext> {
+    const floodEvents = events.filter(
+      (event) => event.hazardType === HazardType.floods,
+    );
+    if (floodEvents.length === 0) {
+      return {};
+    }
+    return {
+      [HazardType.floods]:
+        await this.eventFloodsDetailsService.buildContext(floodEvents),
+    };
   }
 
   private mapEventToResponse({
@@ -49,11 +84,13 @@ export class EventsService {
     viewTime,
     exposedAdminAreas,
     rasters,
+    hazardTypeDetailsContext,
   }: {
     event: Event;
     viewTime: Date;
     exposedAdminAreas: ExposedAdminAreaRecord[];
     rasters: { id: number; layer: Layer }[];
+    hazardTypeDetailsContext: HazardTypeDetailsContext;
   }): EventResponseDto {
     return {
       eventId: event.id,
@@ -73,6 +110,10 @@ export class EventsService {
       eventStatus: this.getEventStatus({ event, viewTime }),
       exposedAdminAreas: this.mapExposedAdminAreas(exposedAdminAreas),
       availableLayers: this.mapAvailableLayers(rasters),
+      hazardTypeDetails: this.buildEventHazardTypeDetails({
+        event,
+        hazardTypeDetailsContext,
+      }),
     };
   }
 
@@ -138,5 +179,28 @@ export class EventsService {
 
   public async deleteEventsByCountry(countryCodeIso3: string): Promise<number> {
     return this.eventsRepository.deleteEventsByCountry(countryCodeIso3);
+  }
+
+  private buildEventHazardTypeDetails({
+    event,
+    hazardTypeDetailsContext,
+  }: {
+    event: Event;
+    hazardTypeDetailsContext: HazardTypeDetailsContext;
+  }): EventHazardTypeDetailsDto {
+    switch (event.hazardType) {
+      case HazardType.floods: {
+        if (!hazardTypeDetailsContext.floods) {
+          return {};
+        }
+        const details = this.eventFloodsDetailsService.buildDetails({
+          event,
+          floodsContext: hazardTypeDetailsContext.floods,
+        });
+        return details ? { [HazardType.floods]: details } : {};
+      }
+      default:
+        return {};
+    }
   }
 }
