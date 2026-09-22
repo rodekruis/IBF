@@ -150,10 +150,10 @@ test.describe('event card', () => {
       'true',
     );
     const populationLayerToggle = nrwMapPage.layerToggle('Population density');
+    await expect(populationLayerToggle).not.toBeChecked();
 
     // Act
-    // Do not assume the layer's default state: only click when it is hidden.
-    await populationLayerToggle.setChecked(true);
+    await populationLayerToggle.click();
 
     // Assert
     await expect(populationLayerToggle).toBeChecked();
