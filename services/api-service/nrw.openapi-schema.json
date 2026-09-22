@@ -715,7 +715,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GeoJsonFeatureCollectionDto"
+                  "$ref": "#/components/schemas/AdminAreaFeatureCollectionDto"
                 }
               }
             }
@@ -794,7 +794,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GeoJsonFeatureDto"
+                  "$ref": "#/components/schemas/AdminAreaFeatureDto"
                 }
               }
             }
@@ -2947,7 +2947,91 @@
           "type"
         ]
       },
-      "GeoJsonFeatureDto": {
+      "AdminAreaAttributesDto": {
+        "type": "object",
+        "properties": {
+          "POPULATION": {
+            "type": "number",
+            "example": 215293
+          }
+        }
+      },
+      "AdminAreaPropertiesDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 11430
+          },
+          "placeCode": {
+            "type": "string",
+            "example": "KEN.10_1"
+          },
+          "adminLevel": {
+            "type": "number",
+            "example": 1
+          },
+          "nameEn": {
+            "type": "string",
+            "example": "Nairobi"
+          },
+          "countryCodeIso3": {
+            "type": "string",
+            "example": "KEN"
+          },
+          "placeCodeLevel0": {
+            "type": "string",
+            "example": "KE"
+          },
+          "placeCodeLevel1": {
+            "type": "string",
+            "example": "KEN.10_1",
+            "nullable": true
+          },
+          "placeCodeLevel2": {
+            "type": "string",
+            "example": "KEN.10.1_1",
+            "nullable": true
+          },
+          "placeCodeLevel3": {
+            "type": "string",
+            "example": "KEN.10.1.1_1",
+            "nullable": true
+          },
+          "placeCodeLevel4": {
+            "type": "string",
+            "example": "KEN.10.1.1.1_1",
+            "nullable": true
+          },
+          "attributes": {
+            "$ref": "#/components/schemas/AdminAreaAttributesDto"
+          },
+          "created": {
+            "type": "string",
+            "example": "2026-09-21 10:16:32.766"
+          },
+          "updated": {
+            "type": "string",
+            "example": "2026-09-21 10:16:32.766"
+          }
+        },
+        "required": [
+          "id",
+          "placeCode",
+          "adminLevel",
+          "nameEn",
+          "countryCodeIso3",
+          "placeCodeLevel0",
+          "placeCodeLevel1",
+          "placeCodeLevel2",
+          "placeCodeLevel3",
+          "placeCodeLevel4",
+          "attributes",
+          "created",
+          "updated"
+        ]
+      },
+      "AdminAreaFeatureDto": {
         "type": "object",
         "properties": {
           "type": {
@@ -2966,18 +3050,12 @@
             ]
           },
           "id": {
-            "type": "object",
+            "type": "string",
             "description": "Feature identifier",
             "example": "KEN.10_1"
           },
           "properties": {
-            "type": "object",
-            "description": "Feature properties",
-            "example": {
-              "name": "Nairobi",
-              "adminLevel": 1
-            },
-            "nullable": true
+            "$ref": "#/components/schemas/AdminAreaPropertiesDto"
           }
         },
         "required": [
@@ -2986,7 +3064,7 @@
           "properties"
         ]
       },
-      "GeoJsonFeatureCollectionDto": {
+      "AdminAreaFeatureCollectionDto": {
         "type": "object",
         "properties": {
           "type": {
@@ -2998,7 +3076,7 @@
           "features": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/GeoJsonFeatureDto"
+              "$ref": "#/components/schemas/AdminAreaFeatureDto"
             }
           }
         },
@@ -3113,6 +3191,67 @@
             "example": "Kenya"
           }
         }
+      },
+      "GeoJsonFeatureDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "Feature"
+            ]
+          },
+          "geometry": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GeoJsonGeometryDto"
+              }
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "Feature identifier",
+            "example": "KEN.10_1"
+          },
+          "properties": {
+            "type": "object",
+            "description": "Feature properties",
+            "example": {
+              "name": "Nairobi",
+              "adminLevel": 1
+            },
+            "additionalProperties": true,
+            "nullable": true
+          }
+        },
+        "required": [
+          "type",
+          "geometry",
+          "properties"
+        ]
+      },
+      "GeoJsonFeatureCollectionDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "FeatureCollection"
+            ]
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GeoJsonFeatureDto"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "features"
+        ]
       },
       "GeoFeatureUpdateDto": {
         "type": "object",
