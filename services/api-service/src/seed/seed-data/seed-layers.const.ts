@@ -26,18 +26,6 @@ export const SEED_LAYERS: SeedLayer[] = [
     hazardType: null,
   },
   {
-    name: LayerName.redCrossBranches,
-    label: LayerLabel.redCrossBranches,
-    type: LayerType.point,
-    hazardType: null,
-  },
-  {
-    name: LayerName.clinics,
-    label: LayerLabel.clinics,
-    type: LayerType.point,
-    hazardType: null,
-  },
-  {
     name: LayerName.floodDepth,
     label: LayerLabel.floodDepth,
     type: LayerType.raster,
