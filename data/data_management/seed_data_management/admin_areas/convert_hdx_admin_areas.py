@@ -13,16 +13,16 @@ import os
 from dataclasses import asdict
 from pathlib import Path
 
-from data_management.seed_data_management.admin_areas.admin_area_source_config import (
-    AdminAreaSource,
-    COUNTRY_NAMES,
-    get_countries_for_source,
-)
-from data_management.utils.admin_area_geojson import (
+from data_management.seed_data_management.admin_areas.admin_area_geojson import (
     AdminAreaFeatureCollection,
     AdminAreaProperties,
     Feature,
     Geometry,
+)
+from data_management.seed_data_management.admin_areas.admin_area_source_config import (
+    AdminAreaSource,
+    COUNTRY_NAMES,
+    get_countries_for_source,
 )
 from shared.country_data import CountryCodeIso2, CountryCodeIso3
 from shared.data_helpers import get_seed_data_repo_path

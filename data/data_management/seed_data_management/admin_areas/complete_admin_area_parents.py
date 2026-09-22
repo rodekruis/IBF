@@ -4,10 +4,12 @@ import json
 from dataclasses import fields
 from pathlib import Path
 
+from data_management.seed_data_management.admin_areas.admin_area_geojson import (
+    AdminAreaProperties,
+)
 from data_management.seed_data_management.admin_areas.admin_area_source_config import (
     DERIVED_PARENT_PCODES,
 )
-from data_management.utils.admin_area_geojson import AdminAreaProperties
 from shapely.geometry import mapping, shape
 from shapely.ops import unary_union
 from shared.data_helpers import get_seed_data_repo_path
