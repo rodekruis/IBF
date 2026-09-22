@@ -539,3 +539,74 @@ export const SEED_TROPICAL_CYCLONE_ALERT_CONFIGS: SeedAlertConfig[] =
       triggerLeadTimeDuration: config.triggerLeadTimeDuration,
     }),
   );
+
+// --- COMPOUND FLOODS: in-code config ---
+// TODO: should some of the below come from a seed-data repo source instead of defined in code?
+// TODO: PHL deepestAdminLevel is currently 3 in seed-countries.const.ts; admin-4 pcodes require
+// updating the admin-area seed pipeline for PHL and bumping deepestAdminLevel.
+// TODO: replace placeholder area names and pcodes with the final values.
+
+const COMPOUND_FLOODS_LEAD_TIME_SPECTRUM = [
+  '0-day',
+  '1-day',
+  '2-day',
+  '3-day',
+  '4-day',
+  '5-day',
+];
+
+interface CompoundFloodClassificationConfig {
+  readonly severityClassLevels: ClassLevel[];
+  readonly probabilityClassLevels: ClassLevel[];
+  readonly triggerAlertClass: AlertClass | null;
+  readonly triggerLeadTimeDuration: string | null;
+}
+
+const COMPOUND_FLOODS_CLASSIFICATION_BY_COUNTRY: Record<
+  string,
+  CompoundFloodClassificationConfig
+> = {
+  PHL: {
+    severityClassLevels: [
+      { label: low, threshold: 1.5 },
+      { label: medium, threshold: 2 },
+      { label: high, threshold: 5 },
+    ],
+    probabilityClassLevels: [{ label: singleThreshold, threshold: 0 }],
+    triggerAlertClass: AlertClass.high,
+    triggerLeadTimeDuration: null,
+  },
+};
+
+interface CompoundFloodsArea {
+  readonly spatialExtentName: string;
+  readonly spatialExtentPlaceCodes: string[];
+}
+
+const COMPOUND_FLOODS_AREAS_BY_COUNTRY: Record<string, CompoundFloodsArea[]> = {
+  PHL: [
+    { spatialExtentName: 'Area 1', spatialExtentPlaceCodes: [] },
+    { spatialExtentName: 'Area 2', spatialExtentPlaceCodes: [] },
+    { spatialExtentName: 'Area 3', spatialExtentPlaceCodes: [] },
+  ],
+};
+
+export const SEED_COMPOUND_FLOODS_ALERT_CONFIGS: SeedAlertConfig[] =
+  Object.entries(COMPOUND_FLOODS_CLASSIFICATION_BY_COUNTRY).flatMap(
+    ([countryCodeIso3, config]) =>
+      (COMPOUND_FLOODS_AREAS_BY_COUNTRY[countryCodeIso3] ?? []).map(
+        (area): SeedAlertConfig => ({
+          countryCodeIso3,
+          hazardType: HazardType.compoundFloods,
+          spatialExtentName: area.spatialExtentName,
+          spatialExtentPlaceCodes: area.spatialExtentPlaceCodes,
+          temporalExtents: [
+            { 'lead-time-spectrum': COMPOUND_FLOODS_LEAD_TIME_SPECTRUM },
+          ],
+          severityClassLevels: config.severityClassLevels,
+          probabilityClassLevels: config.probabilityClassLevels,
+          triggerAlertClass: config.triggerAlertClass,
+          triggerLeadTimeDuration: config.triggerLeadTimeDuration,
+        }),
+      ),
+  );

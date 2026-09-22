@@ -15,6 +15,7 @@ enum HazardType {
   floods
   drought
   tropicalCyclone
+  compoundFloods
 
   @@schema("api-service")
 }
@@ -38,6 +39,7 @@ enum ForecastSource {
   glofas
   ECMWF
   GEFS
+  compoundFloodsSource
 
   @@schema("api-service")
 }

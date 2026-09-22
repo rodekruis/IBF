@@ -17,22 +17,24 @@ class ForecastSource(StrEnum):
     GLOFAS = "glofas"
     ECMWF = "ECMWF"
     GEFS = "GEFS"
+    COMPOUND_FLOODS_SOURCE = "compoundFloodsSource"
 
 
 class HazardType(StrEnum):
     FLOODS = "floods"
     DROUGHT = "drought"
     TROPICAL_CYCLONE = "tropicalCyclone"
+    COMPOUND_FLOODS = "compoundFloods"
 
 
 class LayerName(StrEnum):
     # --- generic layers (cross-hazard) ---
     POPULATION_DENSITY = "populationDensity"
     EXPOSED_POPULATION = "exposedPopulation"
-
-    # --- floods-specific layers ---
     RED_CROSS_BRANCHES = "redCrossBranches"
     CLINICS = "clinics"
+
+    # --- floods-specific layers ---
     FLOOD_DEPTH = "floodDepth"
     GLOFAS_STATIONS = "glofasStations"
 

@@ -16,6 +16,7 @@ import { RastersService } from '@api-service/src/rasters/rasters.service';
 import {
   FLOOD_CLASSIFICATION_BY_COUNTRY,
   FLOOD_LEAD_TIME_SPECTRUM,
+  SEED_COMPOUND_FLOODS_ALERT_CONFIGS,
   SEED_DROUGHT_ALERT_CONFIGS,
   SEED_TROPICAL_CYCLONE_ALERT_CONFIGS,
   SeedAlertConfig,
@@ -316,10 +317,19 @@ export class SeedInit {
         ),
     );
 
+    // Compound flood: fixed set of areas per country, defined in code
+    const compoundFloodConfigs = SEED_COMPOUND_FLOODS_ALERT_CONFIGS.filter(
+      (c) =>
+        countryCodesForHazard(HazardType.compoundFloods).includes(
+          c.countryCodeIso3,
+        ),
+    );
+
     const allConfigs: SeedAlertConfig[] = [
       ...floodConfigs,
       ...droughtConfigs,
       ...tropicalCycloneConfigs,
+      ...compoundFloodConfigs,
     ];
 
     await this.alertConfigsService.createAlertConfigs(

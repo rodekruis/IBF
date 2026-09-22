@@ -312,7 +312,8 @@
                 "enum": [
                   "floods",
                   "drought",
-                  "tropicalCyclone"
+                  "tropicalCyclone",
+                  "compoundFloods"
                 ]
               }
             }
@@ -569,7 +570,8 @@
               "enum": [
                 "floods",
                 "drought",
-                "tropicalCyclone"
+                "tropicalCyclone",
+                "compoundFloods"
               ],
               "type": "string"
             }
@@ -1195,7 +1197,8 @@
               "enum": [
                 "floods",
                 "drought",
-                "tropicalCyclone"
+                "tropicalCyclone",
+                "compoundFloods"
               ],
               "type": "string"
             }
@@ -2085,7 +2088,8 @@
             "enum": [
               "floods",
               "drought",
-              "tropicalCyclone"
+              "tropicalCyclone",
+              "compoundFloods"
             ]
           },
           "forecastSources": {
@@ -2356,7 +2360,8 @@
             "enum": [
               "floods",
               "drought",
-              "tropicalCyclone"
+              "tropicalCyclone",
+              "compoundFloods"
             ],
             "example": "floods"
           },
@@ -2650,7 +2655,8 @@
             "enum": [
               "floods",
               "drought",
-              "tropicalCyclone"
+              "tropicalCyclone",
+              "compoundFloods"
             ]
           },
           "forecastSources": {
@@ -2804,7 +2810,8 @@
             "enum": [
               "floods",
               "drought",
-              "tropicalCyclone"
+              "tropicalCyclone",
+              "compoundFloods"
             ],
             "example": "floods"
           },
@@ -3181,7 +3188,8 @@
             "enum": [
               "floods",
               "drought",
-              "tropicalCyclone"
+              "tropicalCyclone",
+              "compoundFloods"
             ],
             "example": null
           },
@@ -3230,7 +3238,8 @@
             "enum": [
               "floods",
               "drought",
-              "tropicalCyclone"
+              "tropicalCyclone",
+              "compoundFloods"
             ]
           },
           "description": {
@@ -3265,7 +3274,8 @@
             "enum": [
               "floods",
               "drought",
-              "tropicalCyclone"
+              "tropicalCyclone",
+              "compoundFloods"
             ]
           },
           "description": {
