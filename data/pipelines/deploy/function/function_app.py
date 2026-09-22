@@ -29,7 +29,11 @@ app = func.FunctionApp()
 @app.timer_trigger(schedule="0 0 12 * * *", arg_name="timer", run_on_startup=False)
 def daily_pipeline_scheduler(timer: func.TimerRequest) -> None:
     run_started_at = datetime.now(UTC)
-    logger.info("Pipeline scheduler fired at %s.", run_started_at.isoformat())
+    logger.info(
+        "Pipeline scheduler fired at %s, Time past schedule: %s.",
+        run_started_at.isoformat(),
+        timer.past_due,
+    )
 
     batch_client = create_batch_client()
     for pipeline_config in PIPELINE_CONFIGS:
