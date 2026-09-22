@@ -11,6 +11,7 @@ import { EventsService } from '@api-service/src/events/events.service';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import {
   buildMockForecasts,
+  getMockCountriesForHazards,
   MockConfigError,
   SUPPORTED_MOCK_COUNTRIES,
 } from '@api-service/src/seed/seed-data/mock-events.helper';
@@ -82,8 +83,16 @@ export class SeedService {
     hazardTypes?: HazardType[];
   }): Promise<void> {
     // if no countryCodes provided, mock 'all', which means 'all currently seeded countries', as we can't mock events for countries that are not seeded yet
-    const resolvedCountryCodes =
+    const seededCountryCodes =
       countryCodes ?? (await this.getSeededCountryCodes());
+
+    // when countries were not explicitly provided, silently skip countries that don't support the requested hazards
+    const resolvedCountryCodes =
+      countryCodes === undefined && hazardTypes
+        ? seededCountryCodes.filter((code) =>
+            getMockCountriesForHazards(hazardTypes).includes(code),
+          )
+        : seededCountryCodes;
 
     this.logger.log(
       `Mock events - Countries: ${resolvedCountryCodes.join(', ')} - Scenario: ${scenario} - Clear: ${String(clearEvents)}` +

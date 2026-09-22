@@ -10,6 +10,19 @@ import {
   SeverityKey,
 } from '@api-service/src/shared-enums';
 
+// Mock events per country & hazard-type:
+// - Each country has one 'high/trigger' event copied from real pipeline output, including real pipeline raster.
+// - To (re)derive pipeline-based values: run the pipeline with local output
+// (`uv run pipeline --config pipelines/infra/configs/<hazardType>.yaml --mock 1 --output-mode local`)
+// and let an LLM copy the values from data/pipelines/output/<hazardType>/<country>/<run>/forecast.json into the builders below.
+// - Additional low/medium events are LLM-generated and have a generic raster.
+
+// TODO: as this file grows, split it up (e.g. one data file per country, rasters as separate
+// assets) and move the mock data to a code-free format (e.g. JSON per event, possibly in the
+// seed-data repo) so non-developers can add/edit mock events.
+
+// ─── Pipeline-based rasters (one per country/hazard high event) ───────────────
+
 const ETH_G5173_FLOOD_DEPTH_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAANsAAACRCAAAAABvK5KWAAAElElEQVR42u1cy3IbRwzsBmZXVCpOyof8/0emKqK4C3QOJGVLIZcSo7JnxtMXHchSbS+AxmuGwMAvCB7/TKXGh/P30zC4rrGTmuU2y3YTXfnNVACAL3+VjFqpvXrSq/w9nExEgq95uK9Zb8C8w2708HRJIoVXFlJsG6xAlXOL4u6h1Iddz7J2n8SDZ4QgtIV3iLdrwkFqjRlg7/BaY2S2R+02NzM8Pj0bGoTfpKY5vw81mrMPbmbkbh84kTMUQaJR7RSE1z4t0MN6IJWAked09pvi0LrdJkbJFaCA4njJ1Ms6/+Tc9f+5WbCsMAEwvSqv4rGgdse8wQ2mpSAhwxszLQv+ULSbA8wlGBMi821kMp92Lee3QJYSAvDfiks4yJr1SRalTREEebGYXEqpuRSzzc9kjgTBy7KRdVvOtjsUs0gAea0HOESj3Fxpc8C19S02yc0nshwWSiB4hUOj8UY3zulIQkG3nnocLjGvCYgQixEd9TiWxcCwpFBiVU/cykMszKRwmkx25JO+LmTIjBNbpLbBjbYIAWDiuqK3mYIlXbJocQ50SycJmIBGmW1ySwAi2Sq1zRyAJADV3F7zTi3JBAnUbTjeqSWiSfQ4xp57jYlg6837RjkpYyZJwkg+1Jm/7S67OYAg8xhvtDonkro+B97s30AalaCE1FxnxCXtnnkJlLQkSJAslfbYKlcst1mXeAoUoWPIZqVKmVfUcrMuOQ/vqEzzSksvAbqslpv9G5HnDGdAzWOfi15pm/lNgAECAdZcMeuiV25wkwtkCmCtsfadGT46MxcMOh6XqbxifvuAnLgZbwREP8YqYHX3Oip6VYilbvQBlDkIFKp45W75rV2Z7SQN5UbmEIxWmLmq7kWpZKAEI88jOd88fXGena8zcoeoXU8sIehl2rihEcUoZBIlZDP2zc3x7EZ35J6+BnXI7GimwELCmG4rAbAsPc0nDaRY5EZHV2fVSEhKLwEzYO2Lm8iEPxePhGvtKN7mCZJLJVJAoj0tuZ67y94KloWCas9sH+XmUiSCDDa5oNrwyWkXKJIUuHYCo1Utmb9kukCjo9U1zhuf9N/9nz3nxzCfSohxHHahB5/8ks8McTI9l8PpRBClLrjlfl2BfD6IFuU0s80+dlQvNEzkvhhESOxr/+Yln0yrMyhrdXPql1dZmR5KsCxJdqAlUx4NdrohBU0uW5VR/X2hD/4vApgezfHzl4efHu6cWM1m9F52fq1AmZsNs83Fsc8A6OgKJ37nRaRNbdOxN9ecAbwUkJo6s93F6SvGDf2BgcZ8kiPefuAd6E7y29DSe5+bwyeHlvxIu5FDk1p8VLZDQj2UJT5ydxfcetI7e89BxA+kADZ2P+IDr6gqs9u9wnhFAoVeKy52qJOl52Efb5qNbcttbfnjk5xpIgWqT6/0Up/XfZYIyOs7qu2ff4a9PxSMlU+DdYl13L+pX27seCtnbf/m96bZ/tw912eoz3nh+vvrY7f9W9f7bus23vp+3zX+MPGw250X44fdxj5gcBsYGBjHKweGMw4MDAwM/OKJYPQ4A6M4GRgYGBioBf8CH23Ha8QmUDgAAAAASUVORK5CYII=';
 
@@ -31,13 +44,15 @@ const SSD_G5100_FLOOD_DEPTH_BASE64 =
 const ZMB_NGWERERECONFLUENCE_FLOOD_DEPTH_BASE64 =
   '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';
 
+const PHL_WP20_WIND_SPEED_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAADAAAAAvCAAAAACA6RYVAAAALklEQVR4nGNgwA/+owsw4VfvvYOBRJBAonrGC6TaMApGwSgYBaNgFIyCUcCAAACvkwM25qvXfgAAAABJRU5ErkJggg==';
+
+// ─── Generic raster for LLM-generated low/medium events ──────────────────────
+
 // This basic flood depth raster is used for any additional events per country, in addition to the realistic/pipeline-based one above.
 // The image is the same for every event/country, just the extent changes (below).
 const MOCK_RASTER_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAA8AAAAUCAYAAABSx2cSAAAA0ElEQVR4AaXBsW0jQRREwXezedDpNNpmTDTXZEy0OxLa7fwIpFvgCAjCeVP153a7fd3vdy6Px4OP5/PJ5fV68X6/+Z/FhmNmzrZIIgm2udgmCZJoy8zw22LDYsMBnDNDWySRBNtcbJMESbRlZvhpsWGxYbHhAE7+mhnaIokk2OZimyRIoi0zw8diw2LDAZz8MzO0RRJJsM3FNkmQRFtmhstiw2LDAZz8MDO0RRJJsM3FNkmQRFtmhsWGxYbFhgM4+WVmaIskkmCbi22SIIm2fANUaHZa8hEamQAAAABJRU5ErkJggg==';
-
-const PHL_WP20_WIND_SPEED_BASE64 =
-  'iVBORw0KGgoAAAANSUhEUgAAADAAAAAvCAAAAACA6RYVAAAALklEQVR4nGNgwA/+owsw4VfvvYOBRJBAonrGC6TaMApGwSgYBaNgFIyCUcCAAACvkwM25qvXfgAAAABJRU5ErkJggg==';
 
 type MockCountryBuilder = (issuedAt: Date) => AlertCreateDto[];
 
@@ -52,35 +67,35 @@ const MOCK_BUILDERS: Record<string, MockHazardConfig[]> = {
     {
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
-      builder: buildEthiopiaAlerts,
+      builder: buildEthiopiaFloodAlerts,
     },
   ],
   UGA: [
     {
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
-      builder: buildUgandaAlerts,
+      builder: buildUgandaFloodAlerts,
     },
   ],
   MWI: [
     {
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
-      builder: buildMalawiAlerts,
+      builder: buildMalawiFloodAlerts,
     },
   ],
   KEN: [
     {
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
-      builder: buildKenyaAlerts,
+      builder: buildKenyaFloodAlerts,
     },
   ],
   PHL: [
     {
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
-      builder: buildPhilippinesAlerts,
+      builder: buildPhilippinesFloodAlerts,
     },
     {
       hazardType: HazardType.tropicalCyclone,
@@ -92,45 +107,123 @@ const MOCK_BUILDERS: Record<string, MockHazardConfig[]> = {
     {
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
-      builder: buildSouthSudanAlerts,
+      builder: buildSouthSudanFloodAlerts,
     },
   ],
   ZMB: [
     {
       hazardType: HazardType.floods,
       forecastSources: [ForecastSource.glofas],
-      builder: buildZambiaAlerts,
+      builder: buildZambiaFloodAlerts,
     },
   ],
 };
 
 export const SUPPORTED_MOCK_COUNTRIES = Object.keys(MOCK_BUILDERS);
 
-function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
+export function getMockCountriesForHazards(
+  hazardTypes: HazardType[],
+): string[] {
+  return SUPPORTED_MOCK_COUNTRIES.filter((countryCodeIso3) =>
+    MOCK_BUILDERS[countryCodeIso3].some((c) =>
+      hazardTypes.includes(c.hazardType),
+    ),
+  );
+}
+
+// Every flood event carries a basic waterDischarge time series on its GloFAS station.
+// Values are basic (same per day), but real station-threshold-based.
+// Individual events may override with richer, hand-crafted data (see 'Gambella' below).
+function buildBasicGlofasStationGeoFeature({
+  issuedAt,
+  geoFeatureId,
+  discharge,
+}: {
+  issuedAt: Date;
+  geoFeatureId: string;
+  discharge: { median: number; low: number; high: number };
+}) {
+  return {
+    geoFeatureId,
+    layer: LayerName.glofasStations,
+    attributes: {
+      waterDischarge: Array.from({ length: 8 }, (_, day) => ({
+        start: addDays(issuedAt, day).toISOString(),
+        end: addDays(issuedAt, day + 1).toISOString(),
+        median: discharge.median,
+        low: discharge.low,
+        high: discharge.high,
+      })),
+    },
+  };
+}
+
+// ─── Country alert builders ──────────────────────────────────────────────────
+
+function buildEthiopiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
+  // The 'Gambella' event overrides the basic waterDischarge with richer per-day severity variation.
+  const gambellaPerDaySeverities: {
+    day: number;
+    median: number;
+    runs: number[];
+  }[] = [
+    { day: 1, median: 1.5, runs: Array<number>(10).fill(1.5) },
+    {
+      day: 2,
+      median: 2,
+      runs: [1.5, 1.5, 2, 2, 2, 2, 2, 2, 2, 2],
+    },
+    { day: 3, median: 2, runs: Array<number>(10).fill(2) },
+    {
+      day: 4,
+      median: 5,
+      runs: [1.5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+    },
+    {
+      day: 5,
+      median: 5,
+      runs: [2, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+    },
+    { day: 6, median: 5, runs: Array<number>(10).fill(5) },
+    { day: 7, median: 2, runs: Array<number>(10).fill(2) },
+  ];
+  const gambellaWaterDischarge = [
+    { day: 0, median: 1500, low: 1450, high: 1550 },
+    { day: 1, median: 1700, low: 1500, high: 1900 },
+    { day: 2, median: 1900, low: 1650, high: 2050 },
+    { day: 3, median: 2000, low: 1700, high: 2150 },
+    { day: 4, median: 2200, low: 1850, high: 2500 },
+    { day: 5, median: 2270, low: 2082, high: 2650 },
+    { day: 6, median: 2100, low: 1850, high: 2450 },
+    { day: 7, median: 1900, low: 1600, high: 2150 },
+  ];
+
   return [
     {
-      eventName: 'awash-metehara',
+      eventName: 'Metahara',
       centroid: { latitude: 8.9, longitude: 39.9 },
-      severity: [
-        {
-          timeInterval: {
-            start: addDays(issuedAt, 1),
-            end: addDays(issuedAt, 9),
+      severity: Array.from({ length: 8 }, (_, index) => index + 1).flatMap(
+        (day) => [
+          {
+            timeInterval: {
+              start: addDays(issuedAt, day),
+              end: addDays(issuedAt, day + 1),
+            },
+            ensembleMemberType: EnsembleMemberType.median,
+            severityKey: SeverityKey.returnPeriod,
+            severityValue: 3,
           },
-          ensembleMemberType: EnsembleMemberType.median,
-          severityKey: SeverityKey.returnPeriod,
-          severityValue: 3,
-        },
-        ...Array.from({ length: 5 }, () => ({
-          timeInterval: {
-            start: addDays(issuedAt, 1),
-            end: addDays(issuedAt, 9),
-          },
-          ensembleMemberType: EnsembleMemberType.run,
-          severityKey: SeverityKey.returnPeriod,
-          severityValue: 3,
-        })),
-      ],
+          ...Array.from({ length: 5 }, () => ({
+            timeInterval: {
+              start: addDays(issuedAt, day),
+              end: addDays(issuedAt, day + 1),
+            },
+            ensembleMemberType: EnsembleMemberType.run,
+            severityKey: SeverityKey.returnPeriod,
+            severityValue: 3,
+          })),
+        ],
+      ),
       exposure: {
         adminAreas: [
           {
@@ -140,13 +233,13 @@ function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
             value: 12400,
           },
           {
-            placeCode: 'ET040799',
+            placeCode: 'ET040703',
             adminLevel: 3,
             layer: LayerName.exposedPopulation,
             value: 6800,
           },
           {
-            placeCode: 'ET020302',
+            placeCode: 'ET040714',
             adminLevel: 3,
             layer: LayerName.exposedPopulation,
             value: 5300,
@@ -206,6 +299,13 @@ function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
             value: 53600,
           },
         ],
+        geoFeatures: [
+          buildBasicGlofasStationGeoFeature({
+            issuedAt,
+            geoFeatureId: 'G1074',
+            discharge: { median: 633, low: 611, high: 656 },
+          }),
+        ],
         rasters: [
           {
             layer: LayerName.floodDepth,
@@ -216,38 +316,38 @@ function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
       },
     },
     {
-      eventName: 'baro-gambella',
+      eventName: 'Gambella',
       centroid: { latitude: 8.25, longitude: 34.59 },
-      severity: [
+      severity: gambellaPerDaySeverities.flatMap(({ day, median, runs }) => [
         {
           timeInterval: {
-            start: addDays(issuedAt, 3),
-            end: addDays(issuedAt, 10),
+            start: addDays(issuedAt, day),
+            end: addDays(issuedAt, day + 1),
           },
           ensembleMemberType: EnsembleMemberType.median,
           severityKey: SeverityKey.returnPeriod,
-          severityValue: 5,
+          severityValue: median,
         },
-        ...Array.from({ length: 3 }, () => ({
+        ...runs.map((runValue) => ({
           timeInterval: {
-            start: addDays(issuedAt, 3),
-            end: addDays(issuedAt, 10),
+            start: addDays(issuedAt, day),
+            end: addDays(issuedAt, day + 1),
           },
           ensembleMemberType: EnsembleMemberType.run,
           severityKey: SeverityKey.returnPeriod,
-          severityValue: 5,
+          severityValue: runValue,
         })),
-      ],
+      ]),
       exposure: {
         adminAreas: [
           {
-            placeCode: 'ET120201',
+            placeCode: 'ET120102',
             adminLevel: 3,
             layer: LayerName.exposedPopulation,
             value: 1500,
           },
           {
-            placeCode: 'ET120202',
+            placeCode: 'ET120103',
             adminLevel: 3,
             layer: LayerName.exposedPopulation,
             value: 6400,
@@ -263,6 +363,12 @@ function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
             adminLevel: 3,
             layer: LayerName.exposedPopulation,
             value: 5300,
+          },
+          {
+            placeCode: 'ET1201',
+            adminLevel: 2,
+            layer: LayerName.exposedPopulation,
+            value: 7900,
           },
           {
             placeCode: 'ET1202',
@@ -287,6 +393,23 @@ function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
             adminLevel: 0,
             layer: LayerName.exposedPopulation,
             value: 27300,
+          },
+        ],
+        geoFeatures: [
+          {
+            geoFeatureId: 'G1603',
+            layer: LayerName.glofasStations,
+            attributes: {
+              waterDischarge: gambellaWaterDischarge.map(
+                ({ day, median, low, high }) => ({
+                  start: addDays(issuedAt, day).toISOString(),
+                  end: addDays(issuedAt, day + 1).toISOString(),
+                  median,
+                  low,
+                  high,
+                }),
+              ),
+            },
           },
         ],
         rasters: [
@@ -347,6 +470,19 @@ function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
             layer: LayerName.exposedPopulation,
             value: 763,
           },
+          {
+            placeCode: 'ET',
+            adminLevel: 0,
+            layer: LayerName.exposedPopulation,
+            value: 763,
+          },
+        ],
+        geoFeatures: [
+          buildBasicGlofasStationGeoFeature({
+            issuedAt,
+            geoFeatureId: 'G5173',
+            discharge: { median: 17.58, low: 17.58, high: 17.58 },
+          }),
         ],
         rasters: [
           {
@@ -365,7 +501,7 @@ function buildEthiopiaAlerts(issuedAt: Date): AlertCreateDto[] {
   ];
 }
 
-function buildUgandaAlerts(issuedAt: Date): AlertCreateDto[] {
+function buildUgandaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'Akokorio at Uganda Gauge',
@@ -680,6 +816,19 @@ function buildUgandaAlerts(issuedAt: Date): AlertCreateDto[] {
             layer: LayerName.exposedPopulation,
             value: 6549,
           },
+          {
+            placeCode: 'UG',
+            adminLevel: 0,
+            layer: LayerName.exposedPopulation,
+            value: 6852,
+          },
+        ],
+        geoFeatures: [
+          buildBasicGlofasStationGeoFeature({
+            issuedAt,
+            geoFeatureId: 'G5196',
+            discharge: { median: 91.42, low: 91.42, high: 91.42 },
+          }),
         ],
         rasters: [
           {
@@ -696,80 +845,736 @@ function buildUgandaAlerts(issuedAt: Date): AlertCreateDto[] {
       },
     },
     {
-      eventName: 'lokok-karamoja',
-      centroid: { latitude: 3.381, longitude: 34.302 },
-      severity: [
-        {
-          timeInterval: {
-            start: addDays(issuedAt, 2),
-            end: addDays(issuedAt, 6),
+      eventName: 'Manafwa at Butaleja (82212)',
+      centroid: { latitude: 0.936944, longitude: 34.15778 },
+      severity: Array.from({ length: 4 }, (_, index) => index + 2).flatMap(
+        (day) => [
+          {
+            timeInterval: {
+              start: addDays(issuedAt, day),
+              end: addDays(issuedAt, day + 1),
+            },
+            ensembleMemberType: EnsembleMemberType.median,
+            severityKey: SeverityKey.returnPeriod,
+            severityValue: 2,
           },
-          ensembleMemberType: EnsembleMemberType.median,
-          severityKey: SeverityKey.returnPeriod,
-          severityValue: 2,
-        },
-        ...Array.from({ length: 3 }, () => ({
-          timeInterval: {
-            start: addDays(issuedAt, 2),
-            end: addDays(issuedAt, 6),
-          },
-          ensembleMemberType: EnsembleMemberType.run,
-          severityKey: SeverityKey.returnPeriod,
-          severityValue: 2,
-        })),
-      ],
+          ...Array.from({ length: 3 }, () => ({
+            timeInterval: {
+              start: addDays(issuedAt, day),
+              end: addDays(issuedAt, day + 1),
+            },
+            ensembleMemberType: EnsembleMemberType.run,
+            severityKey: SeverityKey.returnPeriod,
+            severityValue: 2,
+          })),
+        ],
+      ),
       exposure: {
         adminAreas: [
           {
-            placeCode: 'UG30750101',
+            placeCode: 'UG20280101',
             adminLevel: 4,
             layer: LayerName.exposedPopulation,
             value: 600,
           },
           {
-            placeCode: 'UG30750102',
+            placeCode: 'UG20280102',
             adminLevel: 4,
             layer: LayerName.exposedPopulation,
             value: 1300,
           },
           {
-            placeCode: 'UG30750103',
+            placeCode: 'UG20280103',
             adminLevel: 4,
             layer: LayerName.exposedPopulation,
             value: 500,
           },
           {
-            placeCode: 'UG30750105',
+            placeCode: 'UG20280104',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20280105',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20280106',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20280107',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20280201',
             adminLevel: 4,
             layer: LayerName.exposedPopulation,
             value: 900,
           },
           {
-            placeCode: 'UG30750109',
+            placeCode: 'UG20280202',
             adminLevel: 4,
             layer: LayerName.exposedPopulation,
             value: 1100,
           },
           {
-            placeCode: 'UG30750112',
+            placeCode: 'UG20280203',
             adminLevel: 4,
             layer: LayerName.exposedPopulation,
             value: 1600,
           },
           {
-            placeCode: 'UG307501',
+            placeCode: 'UG20280204',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 800,
+          },
+          {
+            placeCode: 'UG20280205',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20280206',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20290101',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG20290102',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20290103',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20290104',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20290105',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20290106',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20290107',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20290108',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20290109',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20290110',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 600,
+          },
+          {
+            placeCode: 'UG20290111',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20290112',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20290113',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20290114',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20290115',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20290116',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20290117',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 100,
+          },
+          {
+            placeCode: 'UG20360101',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 700,
+          },
+          {
+            placeCode: 'UG20360102',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 800,
+          },
+          {
+            placeCode: 'UG20360103',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20360104',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20360105',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20360106',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20360107',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 600,
+          },
+          {
+            placeCode: 'UG20360108',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 600,
+          },
+          {
+            placeCode: 'UG20360109',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 800,
+          },
+          {
+            placeCode: 'UG20360110',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 1000,
+          },
+          {
+            placeCode: 'UG20360111',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20360112',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 700,
+          },
+          {
+            placeCode: 'UG20520101',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20520102',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 100,
+          },
+          {
+            placeCode: 'UG20520103',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20520104',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20520105',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 100,
+          },
+          {
+            placeCode: 'UG20520106',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20520107',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 600,
+          },
+          {
+            placeCode: 'UG20520108',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 100,
+          },
+          {
+            placeCode: 'UG20520109',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG20520110',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 100,
+          },
+          {
+            placeCode: 'UG20520111',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 100,
+          },
+          {
+            placeCode: 'UG20520112',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20520113',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20520114',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG20520115',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG20520116',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 100,
+          },
+          {
+            placeCode: 'UG20520117',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 100,
+          },
+          {
+            placeCode: 'UG20540101',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20540102',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG20540103',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20540104',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 600,
+          },
+          {
+            placeCode: 'UG20540105',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 1000,
+          },
+          {
+            placeCode: 'UG20540106',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20540107',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 600,
+          },
+          {
+            placeCode: 'UG20540108',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 700,
+          },
+          {
+            placeCode: 'UG20540109',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 900,
+          },
+          {
+            placeCode: 'UG20540110',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 700,
+          },
+          {
+            placeCode: 'UG20540111',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20540112',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 700,
+          },
+          {
+            placeCode: 'UG20540113',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20540114',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 800,
+          },
+          {
+            placeCode: 'UG20540115',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20540116',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20540117',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20540118',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20540119',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 800,
+          },
+          {
+            placeCode: 'UG20540120',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20540121',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 1000,
+          },
+          {
+            placeCode: 'UG20540122',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20540123',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20540124',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20540201',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 800,
+          },
+          {
+            placeCode: 'UG20540202',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 700,
+          },
+          {
+            placeCode: 'UG20540203',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20560101',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 900,
+          },
+          {
+            placeCode: 'UG20560102',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20560103',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20560104',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20560105',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG20560106',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20560107',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 600,
+          },
+          {
+            placeCode: 'UG20560108',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG20560109',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG20560110',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20560111',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20560112',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG20560113',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG20560114',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG20560115',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG20560116',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG20560117',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG202801',
             adminLevel: 3,
             layer: LayerName.exposedPopulation,
             value: 6000,
           },
           {
-            placeCode: 'UG3075',
+            placeCode: 'UG202802',
+            adminLevel: 3,
+            layer: LayerName.exposedPopulation,
+            value: 5200,
+          },
+          {
+            placeCode: 'UG202901',
+            adminLevel: 3,
+            layer: LayerName.exposedPopulation,
+            value: 6500,
+          },
+          {
+            placeCode: 'UG203601',
+            adminLevel: 3,
+            layer: LayerName.exposedPopulation,
+            value: 7600,
+          },
+          {
+            placeCode: 'UG205201',
+            adminLevel: 3,
+            layer: LayerName.exposedPopulation,
+            value: 4100,
+          },
+          {
+            placeCode: 'UG205401',
+            adminLevel: 3,
+            layer: LayerName.exposedPopulation,
+            value: 13000,
+          },
+          {
+            placeCode: 'UG205402',
+            adminLevel: 3,
+            layer: LayerName.exposedPopulation,
+            value: 1900,
+          },
+          {
+            placeCode: 'UG205601',
+            adminLevel: 3,
+            layer: LayerName.exposedPopulation,
+            value: 6100,
+          },
+          {
+            placeCode: 'UG2028',
             adminLevel: 2,
             layer: LayerName.exposedPopulation,
             value: 6000,
           },
           {
-            placeCode: 'UG3',
+            placeCode: 'UG2029',
+            adminLevel: 2,
+            layer: LayerName.exposedPopulation,
+            value: 6500,
+          },
+          {
+            placeCode: 'UG2036',
+            adminLevel: 2,
+            layer: LayerName.exposedPopulation,
+            value: 7600,
+          },
+          {
+            placeCode: 'UG2052',
+            adminLevel: 2,
+            layer: LayerName.exposedPopulation,
+            value: 4100,
+          },
+          {
+            placeCode: 'UG2054',
+            adminLevel: 2,
+            layer: LayerName.exposedPopulation,
+            value: 14900,
+          },
+          {
+            placeCode: 'UG2056',
+            adminLevel: 2,
+            layer: LayerName.exposedPopulation,
+            value: 6100,
+          },
+          {
+            placeCode: 'UG2',
             adminLevel: 1,
             layer: LayerName.exposedPopulation,
             value: 6000,
@@ -781,45 +1586,108 @@ function buildUgandaAlerts(issuedAt: Date): AlertCreateDto[] {
             value: 6000,
           },
         ],
+        geoFeatures: [
+          buildBasicGlofasStationGeoFeature({
+            issuedAt,
+            geoFeatureId: 'G5220',
+            discharge: { median: 203, low: 192, high: 214 },
+          }),
+        ],
         rasters: [
           {
             layer: LayerName.floodDepth,
             valueGreyscale: MOCK_RASTER_BASE64,
-            extent: { xmin: 34.05, ymin: 3.08, xmax: 34.56, ymax: 3.7 },
+            extent: { xmin: 33.9, ymin: 0.7, xmax: 34.4, ymax: 1.2 },
           },
         ],
       },
     },
     {
-      eventName: 'mpologoma-kyankwanzi',
+      eventName: 'Mayanja (83218)',
       centroid: { latitude: 1.1, longitude: 31.8 },
-      severity: [
-        {
-          timeInterval: {
-            start: addDays(issuedAt, 2),
-            end: addDays(issuedAt, 5),
+      severity: Array.from({ length: 3 }, (_, index) => index + 2).flatMap(
+        (day) => [
+          {
+            timeInterval: {
+              start: addDays(issuedAt, day),
+              end: addDays(issuedAt, day + 1),
+            },
+            ensembleMemberType: EnsembleMemberType.median,
+            severityKey: SeverityKey.returnPeriod,
+            severityValue: 1.5,
           },
-          ensembleMemberType: EnsembleMemberType.median,
-          severityKey: SeverityKey.returnPeriod,
-          severityValue: 1.5,
-        },
-        ...Array.from({ length: 2 }, () => ({
-          timeInterval: {
-            start: addDays(issuedAt, 2),
-            end: addDays(issuedAt, 5),
-          },
-          ensembleMemberType: EnsembleMemberType.run,
-          severityKey: SeverityKey.returnPeriod,
-          severityValue: 1.5,
-        })),
-      ],
+          ...Array.from({ length: 2 }, () => ({
+            timeInterval: {
+              start: addDays(issuedAt, day),
+              end: addDays(issuedAt, day + 1),
+            },
+            ensembleMemberType: EnsembleMemberType.run,
+            severityKey: SeverityKey.returnPeriod,
+            severityValue: 1.5,
+          })),
+        ],
+      ),
       exposure: {
         adminAreas: [
+          {
+            placeCode: 'UG10110101',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10110102',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG10110103',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
           {
             placeCode: 'UG10110104',
             adminLevel: 4,
             layer: LayerName.exposedPopulation,
             value: 1500,
+          },
+          {
+            placeCode: 'UG10110105',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10110106',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG10110107',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 600,
+          },
+          {
+            placeCode: 'UG10110108',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG10110109',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 600,
+          },
+          {
+            placeCode: 'UG10120110',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 1000,
           },
           {
             placeCode: 'UG10120111',
@@ -834,6 +1702,24 @@ function buildUgandaAlerts(issuedAt: Date): AlertCreateDto[] {
             value: 1100,
           },
           {
+            placeCode: 'UG10120113',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10120114',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10120115',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 600,
+          },
+          {
             placeCode: 'UG10120116',
             adminLevel: 4,
             layer: LayerName.exposedPopulation,
@@ -846,10 +1732,376 @@ function buildUgandaAlerts(issuedAt: Date): AlertCreateDto[] {
             value: 1500,
           },
           {
+            placeCode: 'UG10120118',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10120119',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG10120120',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 1100,
+          },
+          {
+            placeCode: 'UG10120121',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG10120122',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
             placeCode: 'UG10120123',
             adminLevel: 4,
             layer: LayerName.exposedPopulation,
             value: 4200,
+          },
+          {
+            placeCode: 'UG10180101',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG10180102',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG10180103',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10180104',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10180105',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 700,
+          },
+          {
+            placeCode: 'UG10180201',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10180301',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 900,
+          },
+          {
+            placeCode: 'UG10180302',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG10180303',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 800,
+          },
+          {
+            placeCode: 'UG10180304',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 800,
+          },
+          {
+            placeCode: 'UG10180305',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10180306',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 800,
+          },
+          {
+            placeCode: 'UG10180401',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 1100,
+          },
+          {
+            placeCode: 'UG10180402',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 600,
+          },
+          {
+            placeCode: 'UG10220101',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 100,
+          },
+          {
+            placeCode: 'UG10220102',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 600,
+          },
+          {
+            placeCode: 'UG10220103',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 700,
+          },
+          {
+            placeCode: 'UG10220104',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10220105',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG10220106',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10220107',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG10220108',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 300,
+          },
+          {
+            placeCode: 'UG10220109',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10220110',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 200,
+          },
+          {
+            placeCode: 'UG10220111',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 500,
+          },
+          {
+            placeCode: 'UG10220112',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 100,
+          },
+          {
+            placeCode: 'UG10220113',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 800,
+          },
+          {
+            placeCode: 'UG10220114',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 100,
+          },
+          {
+            placeCode: 'UG10220115',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 400,
+          },
+          {
+            placeCode: 'UG10260101',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 800,
+          },
+          {
+            placeCode: 'UG10260102',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 4000,
+          },
+          {
+            placeCode: 'UG10260103',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 2300,
+          },
+          {
+            placeCode: 'UG10260104',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 900,
+          },
+          {
+            placeCode: 'UG10260105',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 2400,
+          },
+          {
+            placeCode: 'UG10260106',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 4000,
+          },
+          {
+            placeCode: 'UG10260107',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 4000,
+          },
+          {
+            placeCode: 'UG10260108',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 700,
+          },
+          {
+            placeCode: 'UG10260109',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 900,
+          },
+          {
+            placeCode: 'UG10260110',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 1800,
+          },
+          {
+            placeCode: 'UG10260111',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 1000,
+          },
+          {
+            placeCode: 'UG10260112',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 900,
+          },
+          {
+            placeCode: 'UG10260113',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 4000,
+          },
+          {
+            placeCode: 'UG10260114',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 3000,
+          },
+          {
+            placeCode: 'UG10260201',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 1700,
+          },
+          {
+            placeCode: 'UG10260202',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 1100,
+          },
+          {
+            placeCode: 'UG10260301',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 2700,
+          },
+          {
+            placeCode: 'UG10260302',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 3900,
+          },
+          {
+            placeCode: 'UG10260303',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 3700,
+          },
+          {
+            placeCode: 'UG10260401',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 4000,
+          },
+          {
+            placeCode: 'UG10260501',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 2200,
+          },
+          {
+            placeCode: 'UG10260502',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 3300,
+          },
+          {
+            placeCode: 'UG10260503',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 3700,
+          },
+          {
+            placeCode: 'UG10260601',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 2300,
+          },
+          {
+            placeCode: 'UG10260602',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 4000,
+          },
+          {
+            placeCode: 'UG10260603',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 3400,
+          },
+          {
+            placeCode: 'UG10260604',
+            adminLevel: 4,
+            layer: LayerName.exposedPopulation,
+            value: 2800,
           },
           {
             placeCode: 'UG101101',
@@ -888,6 +2140,13 @@ function buildUgandaAlerts(issuedAt: Date): AlertCreateDto[] {
             value: 10600,
           },
         ],
+        geoFeatures: [
+          buildBasicGlofasStationGeoFeature({
+            issuedAt,
+            geoFeatureId: 'G5160',
+            discharge: { median: 69, low: 66, high: 72 },
+          }),
+        ],
         rasters: [
           {
             layer: LayerName.floodDepth,
@@ -900,7 +2159,7 @@ function buildUgandaAlerts(issuedAt: Date): AlertCreateDto[] {
   ];
 }
 
-function buildMalawiAlerts(issuedAt: Date): AlertCreateDto[] {
+function buildMalawiFloodAlerts(issuedAt: Date): AlertCreateDto[] {
   // NOTE: MWI currently has single threshold for both severity and probability, and therefore only 'high' alert-class is possible. Therefore only 1 event is mocked here.
   return [
     {
@@ -952,6 +2211,19 @@ function buildMalawiAlerts(issuedAt: Date): AlertCreateDto[] {
             layer: LayerName.exposedPopulation,
             value: 61,
           },
+          {
+            placeCode: 'MW',
+            adminLevel: 0,
+            layer: LayerName.exposedPopulation,
+            value: 61,
+          },
+        ],
+        geoFeatures: [
+          buildBasicGlofasStationGeoFeature({
+            issuedAt,
+            geoFeatureId: 'G5670',
+            discharge: { median: 1239.26, low: 1239.26, high: 1239.26 },
+          }),
         ],
         rasters: [
           {
@@ -970,7 +2242,7 @@ function buildMalawiAlerts(issuedAt: Date): AlertCreateDto[] {
   ];
 }
 
-function buildKenyaAlerts(issuedAt: Date): AlertCreateDto[] {
+function buildKenyaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'ATHI MUNYU (3DA02)',
@@ -1105,6 +2377,19 @@ function buildKenyaAlerts(issuedAt: Date): AlertCreateDto[] {
             layer: LayerName.exposedPopulation,
             value: 171,
           },
+          {
+            placeCode: 'KE',
+            adminLevel: 0,
+            layer: LayerName.exposedPopulation,
+            value: 42036,
+          },
+        ],
+        geoFeatures: [
+          buildBasicGlofasStationGeoFeature({
+            issuedAt,
+            geoFeatureId: 'G5142',
+            discharge: { median: 8.16, low: 8.16, high: 8.16 },
+          }),
         ],
         rasters: [
           {
@@ -1123,7 +2408,7 @@ function buildKenyaAlerts(issuedAt: Date): AlertCreateDto[] {
   ];
 }
 
-function buildPhilippinesAlerts(issuedAt: Date): AlertCreateDto[] {
+function buildPhilippinesFloodAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'Nia Pumping Station',
@@ -1258,6 +2543,19 @@ function buildPhilippinesAlerts(issuedAt: Date): AlertCreateDto[] {
             layer: LayerName.exposedPopulation,
             value: 410143,
           },
+          {
+            placeCode: 'PH',
+            adminLevel: 0,
+            layer: LayerName.exposedPopulation,
+            value: 410143,
+          },
+        ],
+        geoFeatures: [
+          buildBasicGlofasStationGeoFeature({
+            issuedAt,
+            geoFeatureId: 'G5368',
+            discharge: { median: 23.87, low: 23.87, high: 23.87 },
+          }),
         ],
         rasters: [
           {
@@ -1356,6 +2654,12 @@ function buildPhilippinesTropicalCycloneAlerts(
             layer: LayerName.exposedPopulation,
             value: 20042,
           },
+          {
+            placeCode: 'PH',
+            adminLevel: 0,
+            layer: LayerName.exposedPopulation,
+            value: 20042,
+          },
         ],
         rasters: [
           {
@@ -1374,7 +2678,7 @@ function buildPhilippinesTropicalCycloneAlerts(
   ];
 }
 
-function buildSouthSudanAlerts(issuedAt: Date): AlertCreateDto[] {
+function buildSouthSudanFloodAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'G5100',
@@ -1581,6 +2885,19 @@ function buildSouthSudanAlerts(issuedAt: Date): AlertCreateDto[] {
             layer: LayerName.exposedPopulation,
             value: 30933,
           },
+          {
+            placeCode: 'SS',
+            adminLevel: 0,
+            layer: LayerName.exposedPopulation,
+            value: 289372,
+          },
+        ],
+        geoFeatures: [
+          buildBasicGlofasStationGeoFeature({
+            issuedAt,
+            geoFeatureId: 'G5100',
+            discharge: { median: 12625.04, low: 12625.04, high: 12625.04 },
+          }),
         ],
         rasters: [
           {
@@ -1599,7 +2916,7 @@ function buildSouthSudanAlerts(issuedAt: Date): AlertCreateDto[] {
   ];
 }
 
-function buildZambiaAlerts(issuedAt: Date): AlertCreateDto[] {
+function buildZambiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'NgwerereConfluence',
@@ -1974,6 +3291,19 @@ function buildZambiaAlerts(issuedAt: Date): AlertCreateDto[] {
             layer: LayerName.exposedPopulation,
             value: 1079,
           },
+          {
+            placeCode: 'ZM',
+            adminLevel: 0,
+            layer: LayerName.exposedPopulation,
+            value: 3097,
+          },
+        ],
+        geoFeatures: [
+          buildBasicGlofasStationGeoFeature({
+            issuedAt,
+            geoFeatureId: 'G1344',
+            discharge: { median: 56.78, low: 56.78, high: 56.78 },
+          }),
         ],
         rasters: [
           {
@@ -1991,6 +3321,8 @@ function buildZambiaAlerts(issuedAt: Date): AlertCreateDto[] {
     },
   ];
 }
+
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 export class MockConfigError extends Error {}
 
