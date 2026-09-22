@@ -186,7 +186,7 @@ describe('/rasters/static', () => {
     // Uses a different layer than the seeded population raster, because tests
     // run in random order (randomize: true) and deleting the shared raster
     // would cause other GET tests to fail.
-    const deleteLayer = LayerName.clinics;
+    const deleteLayer = LayerName.windSpeed;
 
     it('should delete the static raster and return 204', async () => {
       const createResponse = await createStaticRaster({
