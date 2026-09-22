@@ -8,15 +8,30 @@ import { NrwMapPage } from '@ibf-e2e/nrw/pages/NrwMapPage';
 
 const COUNTRIES = ['MWI'];
 
-test.describe('event card', () => {
-  test.beforeAll(async () => {
-    await resetDb(COUNTRIES);
-    await mockDb({
-      scenario: MockScenario.events,
-      countryCodes: COUNTRIES,
-    });
+test.beforeAll(async () => {
+  await resetDb(COUNTRIES);
+  await mockDb({
+    scenario: MockScenario.events,
+    countryCodes: COUNTRIES,
   });
+});
 
+test.describe('map', () => {
+  test('shows event markers for active alerts', async ({ page }) => {
+    // Arrange
+    const nrwMapPage = new NrwMapPage(page);
+
+    // Act
+    await nrwMapPage.goto(COUNTRIES);
+    await nrwMapPage.waitForMapLoaded();
+
+    // Assert
+    await expect(nrwMapPage.eventMarkers.first()).toBeVisible();
+    await expect(page).toHaveScreenshot('event-card-collapsed.png');
+  });
+});
+
+test.describe('event card', () => {
   test('expanding a card shows the event detail and hides the event markers', async ({
     page,
   }) => {
@@ -44,9 +59,7 @@ test.describe('event card', () => {
     ).toHaveText(['Southern', '61']);
     await expect(nrwMapPage.eventMarkers).toHaveCount(0);
     await expect(nrwMapPage.layersButton).toBeVisible();
-    await expect(page).toHaveScreenshot(
-      'single-country-event-card-expanded.png',
-    );
+    await expect(page).toHaveScreenshot('event-card-expanded.png');
   });
 
   test('collapsing a card shows all events and the event markers again', async ({
@@ -137,7 +150,9 @@ test.describe('event card', () => {
     // Assert
     await expect(nrwMapPage.hoveredEventCards).toHaveCount(1);
   });
+});
 
+test.describe('layer panel', () => {
   test('showing the population layer adds it to the map', async ({ page }) => {
     // Arrange
     const nrwMapPage = new NrwMapPage(page);
@@ -150,15 +165,13 @@ test.describe('event card', () => {
       'true',
     );
     const populationLayerToggle = nrwMapPage.layerToggle('Population density');
+    await expect(populationLayerToggle).not.toBeChecked();
 
     // Act
-    // Do not assume the layer's default state: only click when it is hidden.
-    await populationLayerToggle.setChecked(true);
+    await populationLayerToggle.click();
 
     // Assert
     await expect(populationLayerToggle).toBeChecked();
-    await expect(page).toHaveScreenshot(
-      'single-country-event-population-layer-visible.png',
-    );
+    await expect(page).toHaveScreenshot('event-population-layer-visible.png');
   });
 });
