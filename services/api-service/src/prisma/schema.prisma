@@ -260,17 +260,18 @@ model Country {
   @@schema("api-service")
   @@map("country")
 
-  id               Int      @id @default(autoincrement())
-  created          DateTime @default(now())
-  updated          DateTime @updatedAt
-  countryCodeIso3  String   @unique
-  countryCodeIso2  String
-  countryName      String
+  id                Int      @id @default(autoincrement())
+  created           DateTime @default(now())
+  updated           DateTime @updatedAt
+  countryCodeIso3   String   @unique
+  countryCodeIso2   String
+  countryName       String
+  adminLevelLabels  Json     @default("{}") // e.g. { "1": { "singular": "County", "plural": "Counties" } }
 
-  adminAreas       AdminArea[]
-  alertConfigs     AlertConfig[]
-  geoFeatures      GeoFeature[]
-  staticRasterData StaticRasterData[]
+  adminAreas        AdminArea[]
+  alertConfigs      AlertConfig[]
+  geoFeatures       GeoFeature[]
+  staticRasterData  StaticRasterData[]
 }
 
 model AdminArea {
