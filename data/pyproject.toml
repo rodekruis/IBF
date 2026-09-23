@@ -21,7 +21,6 @@ dependencies = [
     "netCDF4",
     "numpy",
     "pillow",
-    "psycopg[binary]",
     "PyYAML",
     "python-dotenv",
     "rasterio",

@@ -6,12 +6,14 @@ import sys
 from dataclasses import fields
 from pathlib import Path
 
+from data_management.seed_data_management.admin_areas.admin_area_geojson import (
+    AdminAreaProperties,
+)
 from data_management.seed_data_management.admin_areas.admin_area_source_config import (
     ADMIN_AREA_LEVELS,
     ADMIN_AREA_SOURCES,
     AdminAreaSource,
 )
-from data_management.utils.admin_area_geojson import AdminAreaProperties
 from shapely.errors import ShapelyError
 from shapely.geometry import shape
 from shared.data_helpers import get_seed_data_repo_path

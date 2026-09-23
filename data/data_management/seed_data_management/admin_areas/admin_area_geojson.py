@@ -1,7 +1,7 @@
 """
 Uniform data structure for admin areas geojson.
 There are many sources for admin areas, but they should be parsed to
-fit this format for the DB uploader to be able to process them.
+fit this format for downstream processing.
 """
 
 from dataclasses import dataclass
