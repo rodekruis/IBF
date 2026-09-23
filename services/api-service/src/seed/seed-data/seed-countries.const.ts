@@ -1,6 +1,6 @@
 import { HazardType } from '@api-service/src/shared-enums';
 
-export interface AdminLevelLabel {
+interface AdminLevelLabel {
   readonly singular: string;
   readonly plural: string;
 }

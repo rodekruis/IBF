@@ -106,10 +106,8 @@ export class CountriesRepository {
         data: {
           countryCodeIso2: countryUpdateDto.countryCodeIso2,
           countryName: countryUpdateDto.countryName,
-          ...(countryUpdateDto.adminLevelLabels !== undefined && {
-            adminLevelLabels:
-              countryUpdateDto.adminLevelLabels as unknown as Prisma.InputJsonValue,
-          }),
+          adminLevelLabels: countryUpdateDto.adminLevelLabels as unknown as
+            Prisma.InputJsonValue | undefined,
         },
         select: countrySelect,
       });
