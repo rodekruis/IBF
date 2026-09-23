@@ -39,7 +39,7 @@ enum ForecastSource {
   glofas
   ECMWF
   GEFS
-  compoundFloodsSource
+  DestinE
 
   @@schema("api-service")
 }
