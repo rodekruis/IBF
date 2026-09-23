@@ -13,6 +13,12 @@ class LogTag(StrEnum):
     # to track creation and if it passes related thresholds
     ALERT_GENERATION = "alert_generation"
 
+    # Until email notifications are properly set up,
+    # use this tag to trigger an email notification for a forecast.
+    # Removal tracked in this task:
+    # https://dev.azure.com/redcrossnl/National%20Risk%20Watch/_workitems/edit/44709
+    PLACEHOLDER_EMAIL_ALERT = "placeholder_email_alert"
+
     # Tag related to when alert data is sent to the backend
     INFRA_SEND = "infra_send"
 

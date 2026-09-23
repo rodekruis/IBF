@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from collections.abc import Callable
 from datetime import datetime, UTC
@@ -75,7 +76,10 @@ def _run_country(
     if not load_success:
         return load_errors
 
-    data_submitter = DataSubmitter(api_client)
+    # Determine if this is a live run based on the GloFAS data source.
+    # Only live runs load GloFAS data from the FTP server.
+    is_live_run = DataSource.GLOFAS_DISCHARGE_FTP in data_provider.loaded_data
+    data_submitter = DataSubmitter(api_client, is_live_run=is_live_run)
 
     # --- Set forecast metadata based on hazard type ---
     forecast_sources = FORECAST_SOURCES[hazard_type]
@@ -244,6 +248,22 @@ def run_forecasts(
     return all_errors
 
 
+def configure_app_insights() -> None:
+    """Export to Azure Monitor log when a connection string is present."""
+    connection_string = os.environ.get("APPLICATIONINSIGHTS_CONNECTION_STRING")
+    if not connection_string:
+        return
+    from azure.monitor.opentelemetry import configure_azure_monitor
+
+    # Set AppRoleName so logs can be identified in Application Insights
+    os.environ.setdefault("OTEL_SERVICE_NAME", "nrw-pipeline")
+
+    configure_azure_monitor(
+        connection_string=connection_string,
+        logger_name="",  # root logger (get all logs)
+    )
+
+
 @click.command()
 @click.option(
     "--config",
@@ -341,6 +361,7 @@ def main(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    configure_app_insights()
 
     try:
         env = load_environment_settings()
