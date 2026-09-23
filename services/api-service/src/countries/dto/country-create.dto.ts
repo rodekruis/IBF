@@ -1,4 +1,9 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsObject,
@@ -9,6 +14,7 @@ import {
 
 import { AdminLevelLabelDto } from '@api-service/src/countries/dto/admin-level-label.dto';
 
+@ApiExtraModels(AdminLevelLabelDto)
 export class CountryCreateDto {
   @ApiProperty({ example: 'KEN' })
   @IsString()
@@ -26,7 +32,7 @@ export class CountryCreateDto {
     description:
       'A mapping of admin level (as a string key) to the singular/plural label for that level',
     type: 'object',
-    additionalProperties: { $ref: '#/components/schemas/AdminLevelLabelDto' },
+    additionalProperties: { $ref: getSchemaPath(AdminLevelLabelDto) },
     example: {
       '1': { singular: 'County', plural: 'Counties' },
       '2': { singular: 'Subcounty', plural: 'Subcounties' },
