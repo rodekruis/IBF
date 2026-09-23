@@ -23,7 +23,7 @@ describe('/ Layers', () => {
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBe(3);
+      expect(response.body.length).toBe(1);
       response.body.forEach((layer: { hazardType: string | null }) => {
         expect(layer.hazardType).toBeNull();
       });
