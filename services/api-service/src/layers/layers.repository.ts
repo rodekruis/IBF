@@ -77,7 +77,7 @@ export class LayersRepository {
     hazardType: HazardType | null;
   }): boolean {
     // Exclude hazard-specific raster layers (e.g. floodDepth) as these are served per-event via GET /events
-    // TODO AB#42980: probably serve all hazard-type-specific layers (e.g. glofasStations) via GET /events
+    // TODO: probably serve all hazard-type-specific layers (e.g. glofasStations) via GET /events
     if (row.type === LayerType.raster && row.hazardType !== null) {
       return false;
     }
