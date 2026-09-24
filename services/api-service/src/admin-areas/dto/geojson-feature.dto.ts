@@ -25,7 +25,7 @@ export function GeoJsonFeatureDtoOf<TProperties extends GeoJsonProperties>(
     @ApiPropertyOptional({
       description: 'Feature identifier',
       example: 'KEN.10_1',
-      type: String,
+      oneOf: [{ type: 'string' }, { type: 'number' }],
     })
     public readonly id?: string | number;
 
