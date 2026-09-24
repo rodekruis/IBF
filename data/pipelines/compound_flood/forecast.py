@@ -46,7 +46,7 @@ def calculate_compound_flood_forecasts(
         DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
     )
     # For now DestinE flood-depth NetCDF is fetched directly here
-    # TODO: add it to the data provider config
+    # TODO-infra: add it to the data provider config
     flood_depth_netcdf_paths = _get_destine_netcdf_paths()
 
     if (not alert_configs 
@@ -72,6 +72,7 @@ def calculate_compound_flood_forecasts(
     population_raster: RasterData | None = None
 
     ### Step 2 - Slice the NetCDF to country bounds once ###
+    #TODO-infra: add to alert config
     #TODO: define thresholds for compound flood severity
     flood_depth_thresholds = json.load(SEVERITY_THRESHOLDS_PATH.open())
     # flood_depth_thresholds: list[FloodDepthThresholdValue] = [
@@ -160,7 +161,7 @@ def calculate_compound_flood_forecasts(
                     DataSource.POPULATION_IBF_API, RasterData
                 )
 
-            population_exposed_raster = compute_population_exposed( #TODO: move this and the one in flood to infra?
+            population_exposed_raster = compute_population_exposed( #TODO-infra?: move this and the one in flood to infra?
                 population_raster,
                 clipped_depth_raster,
             )
