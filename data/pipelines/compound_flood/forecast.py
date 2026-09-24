@@ -95,6 +95,7 @@ def calculate_compound_flood_forecasts(
             country_bounds,
         )
         country_sliced_netcdf_paths.append(country_sliced_path)
+    #TODO: clean outliers and permanent water
 
     ### Step 3 - Loop over alert configs (spatial extents / river basins) ###
     # REQUIRED: loop over spatial extents (alert configs)
