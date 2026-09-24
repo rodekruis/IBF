@@ -1,19 +1,12 @@
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
 
-from pipelines.compound_flood.constants import BRONZE_DATA_DIR, MINIMUM_SEVERITY_LABEL
 from pipelines.compound_flood.compute_flood_depth import compute_flood_depth
 from pipelines.compound_flood.determine_alerts import determine_temporal_extent
-from pipelines.compound_flood.determine_exposure import (
-    clip_alert_raster_to_admin_area,
-    compute_population_exposure,
-    determine_spatial_extent
-)
+from pipelines.compound_flood.determine_exposure import determine_spatial_extent
 from pipelines.compound_flood.extract_forecast import extract_flood_depth_series
-from pipelines.infra import data_submitter
 from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
@@ -36,7 +29,7 @@ from pipelines.infra.utils.raster import (
 logger = logging.getLogger(__name__)
 
 SEVERITY_THRESHOLDS_PATH = Path(__file__).parent / "config" / "severity_thresholds.json"
-
+BRONZE_DATA_DIR = Path(__file__).parent / "data" / "bronze"
 
 def calculate_compound_flood_forecasts(
     data_provider: DataProvider,
