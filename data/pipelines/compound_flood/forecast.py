@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 
 from pipelines.compound_flood.compute_flood_depth import compute_flood_depth
-from pipelines.compound_flood.determine_alerts import determine_temporal_extent
+from pipelines.compound_flood.determine_alerts import FloodDepthThresholdValue, determine_temporal_extent
 from pipelines.compound_flood.determine_exposure import determine_spatial_extent
 from pipelines.compound_flood.extract_forecast import extract_flood_depth_series
 from pipelines.infra.data_provider import DataProvider
@@ -28,7 +29,7 @@ from pipelines.infra.utils.raster import (
 
 logger = logging.getLogger(__name__)
 
-SEVERITY_THRESHOLDS_PATH = Path(__file__).parent / "config" / "severity_thresholds.json"
+SEVERITY_THRESHOLDS_PATH = Path(__file__).parent / "data" / "severity_thresholds.json"
 BRONZE_DATA_DIR = Path(__file__).parent / "data" / "bronze"
 
 def calculate_compound_flood_forecasts(
@@ -72,12 +73,12 @@ def calculate_compound_flood_forecasts(
 
     ### Step 2 - Slice the NetCDF to country bounds once ###
     #TODO: define thresholds for compound flood severity
-    flood_depth_thresholds = _load_flood_depth_thresholds()
-    # flood_depth_thresholds: list[ReturnPeriodThresholds] = [
+    flood_depth_thresholds = json.load(SEVERITY_THRESHOLDS_PATH.open())
+    # flood_depth_thresholds: list[FloodDepthThresholdValue] = [
     #     {
-    #         "pcode": target_admin_area.pcode,
+    #         "name": target_admin_area.pcode,
     #         "thresholds": cast(
-    #             list[ReturnPeriodThresholdValue],
+    #             list[FloodDepthThresholdValue],
     #             target_admin_area.attributes["thresholds"],
     #         ),
     #     }
@@ -282,14 +283,3 @@ def _get_destine_netcdf_paths() -> list[str] | None:
     return [str(path) for path in netcdf_files]
 
 
-def _load_flood_depth_thresholds():
-    """#TODO: Load per spatial extent severity thresholds from the local config.
-    Return dict[str, float]
-    """
-    thresholds = {}
-    # Example: Load thresholds from a local config file or environment variables
-    # thresholds = {
-    #     "place_code_1": 0.5,
-    #     "place_code_2": 1.0,
-    # }
-    return thresholds
