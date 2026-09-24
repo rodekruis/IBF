@@ -23,7 +23,7 @@ describe('/ Layers', () => {
 
       expect(response.status).toBe(HttpStatus.OK);
       expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBe(3);
+      expect(response.body.length).toBe(4);
       response.body.forEach((layer: { hazardType: string | null }) => {
         expect(layer.hazardType).toBeNull();
       });
@@ -55,7 +55,7 @@ describe('/ Layers', () => {
       expect(glofasStations.hazardType).toBe('floods');
     });
 
-    it('should exclude shape and hazard-specific raster layers', async () => {
+    it('should include shape layers and exclude hazard-specific raster layers', async () => {
       const response = await getServer()
         .get('/layers?hazardType=floods')
         .set('Cookie', [accessToken]);
@@ -63,7 +63,7 @@ describe('/ Layers', () => {
       const layerNames = response.body.map(
         (layer: { name: string }) => layer.name,
       );
-      expect(layerNames).not.toContain(LayerName.exposedPopulation);
+      expect(layerNames).toContain(LayerName.exposedPopulation);
       expect(layerNames).not.toContain(LayerName.floodDepth);
     });
 
