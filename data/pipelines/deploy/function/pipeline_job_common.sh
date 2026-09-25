@@ -76,6 +76,19 @@ export APPLICATIONINSIGHTS_CONNECTION_STRING="$(az monitor app-insights componen
   --query connectionString \
   --output tsv)"
 
+# Mirror the Function App settings from main.bicep so the Batch node agent
+# uploads task stdout/stderr to blob storage (task-logs/)
+export BATCH_TASK_LOGS_CONTAINER_URL="$(az storage account show \
+  --name nrwbatchpoc \
+  --resource-group nrw-batch-poc \
+  --query primaryEndpoints.blob \
+  --output tsv)nrw-data-cache"
+export BATCH_POOL_NODE_IDENTITY_RESOURCE_ID="$(az identity show \
+  --name nrw-batch-poc \
+  --resource-group nrw-batch-poc \
+  --query id \
+  --output tsv)"
+
 # Force the operator's own identity: a stray AZURE_CLIENT_ID in the shell
 # would make batch_client use ManagedIdentityCredential instead of
 # DefaultAzureCredential.
