@@ -264,6 +264,7 @@ class ConfigReader:
                     source=data_source,
                     hazard_type=hazard_type,
                     source_target=parsed_source_target,
+                    retryable=bool(source_entry.get("retryable", False)),
                 )
             )
 
