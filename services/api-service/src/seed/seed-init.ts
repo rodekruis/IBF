@@ -149,13 +149,38 @@ export class SeedInit {
   }
 
   private async seedCountries(countries: SeedCountry[]): Promise<void> {
+    for (const country of countries) {
+      this.assertAdminLevelLabelsComplete(country);
+    }
     await this.countriesService.createCountries(
-      countries.map(({ countryCodeIso3, countryCodeIso2, countryName }) => ({
-        countryCodeIso3,
-        countryCodeIso2,
-        countryName,
-      })),
+      countries.map(
+        ({
+          countryCodeIso3,
+          countryCodeIso2,
+          countryName,
+          adminLevelLabels,
+        }) => ({
+          countryCodeIso3,
+          countryCodeIso2,
+          countryName,
+          adminLevelLabels,
+        }),
+      ),
     );
+  }
+
+  private assertAdminLevelLabelsComplete(country: SeedCountry): void {
+    for (
+      let adminLevel = 1;
+      adminLevel <= country.deepestAdminLevel;
+      adminLevel++
+    ) {
+      if (!country.adminLevelLabels[String(adminLevel)]) {
+        throw new Error(
+          `Missing adminLevelLabels for ${country.countryCodeIso3} adm${adminLevel}`,
+        );
+      }
+    }
   }
 
   private async seedLayers(): Promise<void> {

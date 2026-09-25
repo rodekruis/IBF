@@ -3090,6 +3090,27 @@
           "countryName": {
             "type": "string",
             "example": "Kenya"
+          },
+          "adminLevelLabels": {
+            "type": "object",
+            "description": "A mapping of admin level (as a string key) to the singular/plural label for that level",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AdminLevelLabelDto"
+            },
+            "example": {
+              "1": {
+                "singular": "County",
+                "plural": "Counties"
+              },
+              "2": {
+                "singular": "Subcounty",
+                "plural": "Subcounties"
+              },
+              "3": {
+                "singular": "Ward",
+                "plural": "Wards"
+              }
+            }
           }
         },
         "required": [
@@ -3111,6 +3132,27 @@
           "countryName": {
             "type": "string",
             "example": "Kenya"
+          },
+          "adminLevelLabels": {
+            "type": "object",
+            "description": "A mapping of admin level (as a string key) to the singular/plural label for that level",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AdminLevelLabelDto"
+            },
+            "example": {
+              "1": {
+                "singular": "County",
+                "plural": "Counties"
+              },
+              "2": {
+                "singular": "Subcounty",
+                "plural": "Subcounties"
+              },
+              "3": {
+                "singular": "Ward",
+                "plural": "Wards"
+              }
+            }
           }
         }
       },
