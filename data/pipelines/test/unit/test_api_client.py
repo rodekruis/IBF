@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
+from pipelines.infra.data_types.data_config_types import RunOrigin
 from pipelines.infra.utils.api_client import ApiClient
 
 
@@ -47,6 +48,17 @@ class TestApiClientInit:
         """Trailing slash is stripped from the base URL to avoid double slashes."""
         client = ApiClient()
         assert client._base_url == "http://localhost:4000"
+
+    @patch.dict(
+        "os.environ",
+        {"IBF_API_URL": "http://localhost:4000", "IBF_PIPELINE_API_KEY": "a" * 32},
+    )
+    def test_sets_pipeline_provenance_headers(self) -> None:
+        """Pipeline provenance is forwarded to the backend with each request."""
+        client = ApiClient(run_origin=RunOrigin.MANUAL, source_target="mock_alert")
+
+        assert client._session.headers["x-nrw-pipeline-run-origin"] == "manual"
+        assert client._session.headers["x-nrw-pipeline-source-target"] == "mock_alert"
 
 
 class TestSubmitAlerts:

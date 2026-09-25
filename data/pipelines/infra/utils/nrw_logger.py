@@ -1,5 +1,8 @@
 import logging
+import os
 from enum import StrEnum
+
+from pipelines.infra.data_types.data_config_types import RunOrigin
 
 
 # Log tags used to help find and compare logs in Kusto
@@ -36,10 +39,23 @@ def log_with_tag(
 ) -> None:
     """
     Log a message prefixed with a tag for fast Kusto filtering
+    Run origin and source target are attached as structured fields
+    so logs can be filtered by provenance without changing the message.
     If more tags or parseable fields are needed in the future,
     consider writing out the whole log string as JSON.
     """
-    logger.log(level, "tag_%s %s", tag.value, message)
+    run_origin = RunOrigin(os.environ.get("PIPELINE_RUN_ORIGIN", RunOrigin.LOCAL))
+    source_target = os.environ.get("PIPELINE_SOURCE_TARGET", "unknown")
+    logger.log(
+        level,
+        "tag_%s %s",
+        tag.value,
+        message,
+        extra={
+            "run_origin": run_origin.value,
+            "source_target": source_target,
+        },
+    )
 
 
 def log_info(logger: logging.Logger, tag: LogTag, message: str) -> None:

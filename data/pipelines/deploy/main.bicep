@@ -216,6 +216,10 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           value: dataCacheDir
         }
         {
+          name: 'PIPELINE_RUN_ORIGIN'
+          value: 'scheduled'
+        }
+        {
           name: 'IBF_PIPELINE_API_KEY'
           value: apiKeyReference
         }

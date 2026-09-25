@@ -5,6 +5,7 @@ import os
 from urllib.parse import urlencode
 
 import requests
+from pipelines.infra.data_types.data_config_types import RunOrigin
 from pipelines.infra.data_types.enums import LayerName
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.data_types.location_point import LocationPoint
@@ -20,7 +21,9 @@ STATIC_RASTERS_PATH = "/api/rasters/static"
 
 
 class ApiClient:
-    def __init__(self) -> None:
+    def __init__(
+        self, run_origin: RunOrigin = RunOrigin.LOCAL, source_target: str = "unknown"
+    ) -> None:
         base_url = os.environ.get("IBF_API_URL", "")
         if not base_url:
             raise ValueError("IBF_API_URL environment variable must be set")
@@ -33,6 +36,8 @@ class ApiClient:
         self._session = requests.Session()
 
         self._session.headers["x-api-key"] = api_key
+        self._session.headers["x-nrw-pipeline-run-origin"] = run_origin.value
+        self._session.headers["x-nrw-pipeline-source-target"] = source_target
 
     def submit_forecast(self, forecast: dict, is_live_run: bool = False) -> list[str]:
         url = f"{self._base_url}{ALERTS_PATH}"

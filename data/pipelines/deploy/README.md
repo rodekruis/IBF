@@ -54,6 +54,18 @@ union traces, exceptions
 
 This component's Logs blade shows only the pipeline's telemetry, so the query above needs no extra filter.
 
+Each pipeline log carries its 'run origin' (`scheduled`, `manual`, `local`) and 'source target' (`live`, `mock_alert`, `mock_no_alert`) as `customDimensions`, so logs can be filtered by provenance. For example, to find manually submitted mock runs:
+
+```kusto
+traces
+| where customDimensions.source_target == "mock_alert"
+| where customDimensions.run_origin == "manual"
+| order by timestamp desc
+```
+
+The same values are sent to the backend as
+`x-nrw-pipeline-run-origin` and `x-nrw-pipeline-source-target` request headers.
+
 ### From the shared nrw-app-law workspace
 
 You can also see the same logs in the shared NRW workspace at [nrw-app-law → Logs](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.OperationalInsights/workspaces/nrw-app-law/logs). This lets you see it next to backend logs within the same query. Filter by the `AppRoleName` fields to see the different apps. The name changes based on the environment. Here is a sample query for `test` with the following app names:
