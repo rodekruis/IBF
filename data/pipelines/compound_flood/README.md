@@ -16,14 +16,15 @@ Unlike the `flood` pipeline (GloFAS discharge -> return periods -> static flood-
 
 - `extract_forecast.py`
   - Intended logic: read the flood-depth band per lead time from the (country-sliced) NetCDF file; band index = lead time + 1.
-  - Clean outliers (cap values at the 95th percentile of valid cells) and mask permanent water bodies (`mask_permanent_water`).
-  - Compute the median flood depth over each admin area's valid (non-water) cells per lead time.
+  - Mask permanent water bodies (`mask_permanent_water`) + nodata cells + outliers (p99 or 95? upper end) #TODO: check tropical cyclone
+  - Compute the median/mean (#TODO: data analysis to define, or Deltares) flood depth over the entire raster's valid (non-water) cells per lead time.
 
 - `determine_alerts.py`
-  - Determines temporal extents (lead times) where the admin area's median flood depth reaches the minimum severity threshold.
+  - Determines temporal extents (lead times) where the admin area's median flood depth reaches the minimum severity threshold. 
 
 - `compute_flood_depth.py`
   - Builds the boolean alert-extent raster (cells where flood depth exceeds the minimum threshold).
+  - Pick the flood extent of the max depth across lead time 
 
 - `determine_exposure.py` (makes use of `pipelines/infra/utils`)
   - Clips the flood-depth raster to an admin area.
@@ -34,6 +35,7 @@ Unlike the `flood` pipeline (GloFAS discharge -> return periods -> static flood-
 
 - `data/severity_thresholds.json` (temp)
   - Per spatial extent minimum flood-depth threshold (meters): a flat dict keyed by place code with a single `threshold_value` each. The commented-out block in `forecast.py` shows the intended API-driven `severityClassLevels` equivalent once the pipeline `AlertConfig` carries them.
+  - #TODO -> HIGH PRIORITY: make use of JRC flood depth scenarios as reference for DestinE's flood depth, check with David's SN flood analysis
 
 ## DestinE forecast flood depth data
 
