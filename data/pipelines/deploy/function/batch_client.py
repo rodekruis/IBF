@@ -150,10 +150,13 @@ def build_container_task(
 
 def build_command_line(pipeline_config: PipelineConfig) -> str:
     """Render the pipeline CLI invocation, e.g. `pipeline --config <path> --mock 0 --country PHL`."""
+    data_cache_dir = require_app_setting("DATA_CACHE_DIR").rstrip("/")
     parts = [
         "pipeline",
         "--config",
         pipeline_config.config_path,
+        "--output-path",
+        f"{data_cache_dir}/pipeline-output",
         *pipeline_config.extra_args,
     ]
     return " ".join(parts)
