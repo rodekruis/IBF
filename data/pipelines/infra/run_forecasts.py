@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, UTC
 from pathlib import Path
 
@@ -49,6 +50,26 @@ HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
 HAZARD_FUNCTIONS: dict[str, HazardFunction] = {}
 
 
+@dataclass(frozen=True)
+class ForecastRunContext:
+    hazard_fn: HazardFunction
+    hazard_type: HazardType
+    issued_at: datetime | None
+    output_mode: OutputMode
+    output_path: str
+    api_client: ApiClient
+    local_data: str | None
+    local_data_date: str | None
+
+
+@dataclass
+class CountryRunResult:
+    country: CountryRunConfig
+    errors: list[str]
+    is_retryable_data_failure: bool
+    data_load_succeeded: bool
+
+
 def _register_hazard_functions() -> None:
 
     HAZARD_FUNCTIONS["floods"] = calculate_flood_forecasts
@@ -57,41 +78,41 @@ def _register_hazard_functions() -> None:
 
 
 def _run_country(
-    hazard_fn: HazardFunction,
+    context: ForecastRunContext,
     country: CountryRunConfig,
-    hazard_type: HazardType,
-    issued_at: datetime | None,
-    output_mode: OutputMode,
-    output_path: str,
-    api_client: ApiClient,
-    local_data: str | None = None,
-    local_data_date: str | None = None,
-) -> list[str]:
+) -> CountryRunResult:
     data_provider = DataProvider(
-        api_client,
-        local_data=local_data,
-        local_data_date=local_data_date,
+        context.api_client,
+        local_data=context.local_data,
+        local_data_date=context.local_data_date,
     )
     load_success, load_errors = data_provider.try_load_data(country)
     if not load_success:
-        return load_errors
+        return CountryRunResult(
+            country,
+            load_errors,
+            is_retryable_data_failure=_has_retryable_source_failure(
+                country, data_provider
+            ),
+            data_load_succeeded=False,
+        )
 
     # Determine if this is a live run based on the GloFAS data source.
     # Only live runs load GloFAS data from the FTP server.
     is_live_run = DataSource.GLOFAS_DISCHARGE_FTP in data_provider.loaded_data
-    data_submitter = DataSubmitter(api_client, is_live_run=is_live_run)
+    data_submitter = DataSubmitter(context.api_client, is_live_run=is_live_run)
 
     # --- Set forecast metadata based on hazard type ---
-    forecast_sources = FORECAST_SOURCES[hazard_type]
+    forecast_sources = FORECAST_SOURCES[context.hazard_type]
     data_submitter.set_forecast_metadata(
-        issued_at=issued_at or datetime.now(UTC),
-        hazard_type=hazard_type,
+        issued_at=context.issued_at or datetime.now(UTC),
+        hazard_type=context.hazard_type,
         forecast_sources=forecast_sources,
         country_code_iso3=country.country_code_iso_3,
     )
 
     # --- Hazard-specific forecast logic (implemented by data scientists) ---
-    hazard_fn(
+    context.hazard_fn(
         data_provider,
         data_submitter,
         country.country_code_iso_3,
@@ -106,10 +127,31 @@ def _run_country(
     # --- Write output ---
     timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     country_output_path = str(
-        Path(output_path) / hazard_type / country.country_code_iso_3 / timestamp
+        Path(context.output_path)
+        / context.hazard_type
+        / country.country_code_iso_3
+        / timestamp
     )
 
-    return data_submitter.send_all(output_mode, country_output_path)
+    errors = data_submitter.send_all(context.output_mode, country_output_path)
+    return CountryRunResult(
+        country, errors, is_retryable_data_failure=False, data_load_succeeded=True
+    )
+
+
+def _has_retryable_source_failure(
+    country: CountryRunConfig,
+    data_provider: DataProvider,
+) -> bool:
+    retryable_sources = {
+        source_config.source
+        for source_config in country.data_sources
+        if source_config.retryable
+    }
+    return any(
+        container.error is not None and source in retryable_sources
+        for source, container in data_provider.loaded_data.items()
+    )
 
 
 def _resolve_countries(
@@ -192,8 +234,6 @@ def run_forecasts(
             f"Flag will be ignored for '{hazard_type}'.",
         )
 
-    all_errors: list[str] = []
-
     api_client = ApiClient()
 
     active_fn = hazard_fn
@@ -207,45 +247,95 @@ def run_forecasts(
             f" mock alert(s) per country",
         )
 
+    context = ForecastRunContext(
+        hazard_fn=active_fn,
+        hazard_type=hazard_type,
+        issued_at=issued_at,
+        output_mode=output_mode,
+        output_path=output_path,
+        api_client=api_client,
+        local_data=local_data,
+        local_data_date=local_data_date,
+    )
+
     log_info(
         logger,
         LogTag.INFRA,
         f"Start '{hazard_type}' pipeline for '{', '.join(c.country_code_iso_3 for c in countries)}' (source target: '{source_target}'{', infra-only' if infra_only else ''})",
     )
 
+    results = _run_countries(context, countries)
+
+    # Countries whose retryable data source failed transiently (e.g. a GloFAS FTP
+    # timeout) can be retried once another country has warmed the shared cache.
+    results = _retry_failed_data_countries(context, results)
+
+    return [error for result in results for error in result.errors]
+
+
+def _run_countries(
+    context: ForecastRunContext,
+    countries: list[CountryRunConfig],
+) -> list[CountryRunResult]:
+    results: list[CountryRunResult] = []
     for country in countries:
         log_info(
             logger,
             LogTag.INFRA,
-            f"Forecast '{hazard_type}' for '{country.country_code_iso_3}'",
+            f"Forecast '{context.hazard_type}' for '{country.country_code_iso_3}'",
+        )
+        result = _run_country(context, country)
+        _log_country_result(context, result)
+        results.append(result)
+    return results
+
+
+def _log_country_result(
+    context: ForecastRunContext,
+    result: CountryRunResult,
+) -> None:
+    country_code = result.country.country_code_iso_3
+    if result.errors:
+        log_error(
+            logger,
+            LogTag.INFRA,
+            f"Errors for '{country_code}': {result.errors}",
+        )
+    else:
+        log_info(
+            logger,
+            LogTag.INFRA,
+            f"Completed '{context.hazard_type}' for '{country_code}'",
         )
 
-        errors = _run_country(
-            active_fn,
-            country,
-            hazard_type,
-            issued_at,
-            output_mode,
-            output_path,
-            api_client,
-            local_data=local_data,
-            local_data_date=local_data_date,
-        )
-        if errors:
-            log_error(
-                logger,
-                LogTag.INFRA,
-                f"Errors for '{country.country_code_iso_3}': {errors}",
-            )
-            all_errors.extend(errors)
-        else:
-            log_info(
-                logger,
-                LogTag.INFRA,
-                f"Completed '{hazard_type}' for '{country.country_code_iso_3}'",
-            )
 
-    return all_errors
+def _retry_failed_data_countries(
+    context: ForecastRunContext,
+    results: list[CountryRunResult],
+) -> list[CountryRunResult]:
+    any_data_loaded = any(result.data_load_succeeded for result in results)
+    countries_to_retry = [
+        result.country for result in results if result.is_retryable_data_failure
+    ]
+    if not any_data_loaded or not countries_to_retry:
+        return results
+
+    log_info(
+        logger,
+        LogTag.INFRA,
+        f"Retrying {len(countries_to_retry)} country(ies) that failed to load data: "
+        f"{', '.join(c.country_code_iso_3 for c in countries_to_retry)}",
+    )
+
+    retried_results = {
+        result.country.country_code_iso_3: result
+        for result in _run_countries(context, countries_to_retry)
+    }
+
+    return [
+        retried_results.get(result.country.country_code_iso_3, result)
+        for result in results
+    ]
 
 
 def configure_app_insights() -> None:

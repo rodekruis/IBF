@@ -57,12 +57,17 @@ class DataSourceConfig:
 
     Data Sources tagged with `source_target` are loaded only for the source target
     and skipped for --infra-only runs.  Untagged sources are loaded for any run.
+
+    Sources marked `retryable` populate shared cached state on a successful load
+    (e.g. a lazy download reused by later countries), so a country that fails to
+    load one can be retried once another country has warmed that cache.
     """
 
     country_code_iso_3: CountryCodeIso3
     source: DataSource
     hazard_type: HazardType
     source_target: SourceTarget | None = None
+    retryable: bool = False
 
 
 @dataclass
