@@ -39,6 +39,8 @@ def log_with_tag(
 ) -> None:
     """
     Log a message prefixed with a tag for fast Kusto filtering
+    Run origin and source target are attached as structured fields
+    so logs can be filtered by provenance without changing the message.
     If more tags or parseable fields are needed in the future,
     consider writing out the whole log string as JSON.
     """
@@ -46,14 +48,12 @@ def log_with_tag(
     source_target = os.environ.get("PIPELINE_SOURCE_TARGET", "unknown")
     logger.log(
         level,
-        "run_origin=%s source_target=%s tag_%s %s",
-        run_origin.value,
-        source_target,
+        "tag_%s %s",
         tag.value,
         message,
         extra={
-            "pipeline_run_origin": run_origin.value,
-            "pipeline_source_target": source_target,
+            "run_origin": run_origin.value,
+            "source_target": source_target,
         },
     )
 

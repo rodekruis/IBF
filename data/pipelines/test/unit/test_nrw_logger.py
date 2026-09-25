@@ -15,14 +15,12 @@ def test_log_includes_pipeline_provenance() -> None:
 
     log.assert_called_once_with(
         logging.INFO,
-        "run_origin=%s source_target=%s tag_%s %s",
-        "scheduled",
-        "live",
+        "tag_%s %s",
         "infra",
         "pipeline started",
         extra={
-            "pipeline_run_origin": "scheduled",
-            "pipeline_source_target": "live",
+            "run_origin": "scheduled",
+            "source_target": "live",
         },
     )
 
@@ -34,8 +32,8 @@ def test_log_defaults_to_local_source() -> None:
         log_info(logger, LogTag.INFRA, "pipeline started")
 
     assert log.call_args.kwargs["extra"] == {
-        "pipeline_run_origin": "local",
-        "pipeline_source_target": "unknown",
+        "run_origin": "local",
+        "source_target": "unknown",
     }
 
 

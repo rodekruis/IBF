@@ -54,12 +54,12 @@ union traces, exceptions
 
 This component's Logs blade shows only the pipeline's telemetry, so the query above needs no extra filter.
 
-Pipeline logs include both the 'run origin' (`scheduled`, `manual`, `local`) and the 'source target' (`live`, `mock_alert`, `mock_no_alert`). For example, to find manually submitted mock runs:
+Each pipeline log carries its 'run origin' (`scheduled`, `manual`, `local`) and 'source target' (`live`, `mock_alert`, `mock_no_alert`) as `customDimensions`, so logs can be filtered by provenance. For example, to find manually submitted mock runs:
 
 ```kusto
 traces
-| where message has "run_origin=manual"
-| where message has "source_target=mock_alert"
+| where customDimensions.source_target == "mock_alert"
+| where customDimensions.run_origin == "manual"
 | order by timestamp desc
 ```
 
