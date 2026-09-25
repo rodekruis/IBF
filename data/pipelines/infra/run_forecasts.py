@@ -67,10 +67,7 @@ class CountryRunResult:
     country: CountryRunConfig
     errors: list[str]
     is_retryable_data_failure: bool
-
-    @property
-    def succeeded(self) -> bool:
-        return not self.errors
+    data_load_succeeded: bool
 
 
 def _register_hazard_functions() -> None:
@@ -97,6 +94,7 @@ def _run_country(
             is_retryable_data_failure=_has_retryable_source_failure(
                 country, data_provider
             ),
+            data_load_succeeded=False,
         )
 
     # Determine if this is a live run based on the GloFAS data source.
@@ -136,7 +134,9 @@ def _run_country(
     )
 
     errors = data_submitter.send_all(context.output_mode, country_output_path)
-    return CountryRunResult(country, errors, is_retryable_data_failure=False)
+    return CountryRunResult(
+        country, errors, is_retryable_data_failure=False, data_load_succeeded=True
+    )
 
 
 def _has_retryable_source_failure(
@@ -313,11 +313,11 @@ def _retry_failed_data_countries(
     context: ForecastRunContext,
     results: list[CountryRunResult],
 ) -> list[CountryRunResult]:
-    any_success = any(result.succeeded for result in results)
+    any_data_loaded = any(result.data_load_succeeded for result in results)
     countries_to_retry = [
         result.country for result in results if result.is_retryable_data_failure
     ]
-    if not any_success or not countries_to_retry:
+    if not any_data_loaded or not countries_to_retry:
         return results
 
     log_info(

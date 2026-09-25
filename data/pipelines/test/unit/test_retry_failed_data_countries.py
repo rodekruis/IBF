@@ -62,15 +62,25 @@ class TestRetryFailedDataCountries:
         succeeded_country = _make_country("ETH")
         results = [
             CountryRunResult(
-                failed_country, ["FTP timeout"], is_retryable_data_failure=True
+                failed_country,
+                ["FTP timeout"],
+                is_retryable_data_failure=True,
+                data_load_succeeded=False,
             ),
-            CountryRunResult(succeeded_country, [], is_retryable_data_failure=False),
+            CountryRunResult(
+                succeeded_country,
+                [],
+                is_retryable_data_failure=False,
+                data_load_succeeded=True,
+            ),
         ]
 
         def fake_run_country(
             _context: ForecastRunContext, country: CountryRunConfig
         ) -> CountryRunResult:
-            return CountryRunResult(country, [], is_retryable_data_failure=False)
+            return CountryRunResult(
+                country, [], is_retryable_data_failure=False, data_load_succeeded=True
+            )
 
         monkeypatch.setattr(run_forecasts_module, "_run_country", fake_run_country)
 
@@ -86,10 +96,16 @@ class TestRetryFailedDataCountries:
         # Arrange
         results = [
             CountryRunResult(
-                _make_country("KEN"), ["FTP timeout"], is_retryable_data_failure=True
+                _make_country("KEN"),
+                ["FTP timeout"],
+                is_retryable_data_failure=True,
+                data_load_succeeded=False,
             ),
             CountryRunResult(
-                _make_country("ETH"), ["FTP timeout"], is_retryable_data_failure=True
+                _make_country("ETH"),
+                ["FTP timeout"],
+                is_retryable_data_failure=True,
+                data_load_succeeded=False,
             ),
         ]
         retried_countries: list[CountryRunConfig] = []
@@ -98,7 +114,9 @@ class TestRetryFailedDataCountries:
             _context: ForecastRunContext, country: CountryRunConfig
         ) -> CountryRunResult:
             retried_countries.append(country)
-            return CountryRunResult(country, [], is_retryable_data_failure=False)
+            return CountryRunResult(
+                country, [], is_retryable_data_failure=False, data_load_succeeded=True
+            )
 
         monkeypatch.setattr(run_forecasts_module, "_run_country", fake_run_country)
 
@@ -117,9 +135,17 @@ class TestRetryFailedDataCountries:
         succeeded_country = _make_country("KEN")
         failed_country = _make_country("ETH")
         results = [
-            CountryRunResult(succeeded_country, [], is_retryable_data_failure=False),
             CountryRunResult(
-                failed_country, ["submission failed"], is_retryable_data_failure=False
+                succeeded_country,
+                [],
+                is_retryable_data_failure=False,
+                data_load_succeeded=True,
+            ),
+            CountryRunResult(
+                failed_country,
+                ["submission failed"],
+                is_retryable_data_failure=False,
+                data_load_succeeded=True,
             ),
         ]
         retried_countries: list[CountryRunConfig] = []
@@ -128,7 +154,9 @@ class TestRetryFailedDataCountries:
             _context: ForecastRunContext, country: CountryRunConfig
         ) -> CountryRunResult:
             retried_countries.append(country)
-            return CountryRunResult(country, [], is_retryable_data_failure=False)
+            return CountryRunResult(
+                country, [], is_retryable_data_failure=False, data_load_succeeded=True
+            )
 
         monkeypatch.setattr(run_forecasts_module, "_run_country", fake_run_country)
 
@@ -150,16 +178,27 @@ class TestRetryFailedDataCountries:
         succeeded_country = _make_country("ETH")
         results = [
             CountryRunResult(
-                failed_country, ["FTP timeout"], is_retryable_data_failure=True
+                failed_country,
+                ["FTP timeout"],
+                is_retryable_data_failure=True,
+                data_load_succeeded=False,
             ),
-            CountryRunResult(succeeded_country, [], is_retryable_data_failure=False),
+            CountryRunResult(
+                succeeded_country,
+                [],
+                is_retryable_data_failure=False,
+                data_load_succeeded=True,
+            ),
         ]
 
         def fake_run_country(
             _context: ForecastRunContext, country: CountryRunConfig
         ) -> CountryRunResult:
             return CountryRunResult(
-                country, ["still failing"], is_retryable_data_failure=True
+                country,
+                ["still failing"],
+                is_retryable_data_failure=True,
+                data_load_succeeded=False,
             )
 
         monkeypatch.setattr(run_forecasts_module, "_run_country", fake_run_country)
@@ -176,6 +215,45 @@ class TestRetryFailedDataCountries:
         )
         assert failed_result.errors == ["still failing"]
         assert succeeded_result.errors == []
+
+    def test_retry_runs_when_a_country_loaded_data_but_failed_submission(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Arrange
+        failed_country = _make_country("KEN")
+        loaded_but_submission_failed = _make_country("ETH")
+        results = [
+            CountryRunResult(
+                failed_country,
+                ["FTP timeout"],
+                is_retryable_data_failure=True,
+                data_load_succeeded=False,
+            ),
+            CountryRunResult(
+                loaded_but_submission_failed,
+                ["submission failed"],
+                is_retryable_data_failure=False,
+                data_load_succeeded=True,
+            ),
+        ]
+
+        def fake_run_country(
+            _context: ForecastRunContext, country: CountryRunConfig
+        ) -> CountryRunResult:
+            return CountryRunResult(
+                country, [], is_retryable_data_failure=False, data_load_succeeded=True
+            )
+
+        monkeypatch.setattr(run_forecasts_module, "_run_country", fake_run_country)
+
+        # Act
+        retried = _retry_failed_data_countries(_make_context(), results)
+
+        # Assert
+        failed_result = next(
+            result for result in retried if result.country is failed_country
+        )
+        assert failed_result.errors == []
 
 
 class _FakeDataProvider:
@@ -209,6 +287,7 @@ class TestRunCountryRetryableFlag:
 
         # Assert
         assert result.is_retryable_data_failure is True
+        assert result.data_load_succeeded is False
 
     def test_non_retryable_source_failure_is_not_flagged(
         self, monkeypatch: pytest.MonkeyPatch
@@ -232,6 +311,7 @@ class TestRunCountryRetryableFlag:
 
         # Assert
         assert result.is_retryable_data_failure is False
+        assert result.data_load_succeeded is False
 
 
 class TestHasRetryableSourceFailure:
