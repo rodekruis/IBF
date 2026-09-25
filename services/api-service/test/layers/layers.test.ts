@@ -55,7 +55,7 @@ describe('/ Layers', () => {
       expect(glofasStations.hazardType).toBe('floods');
     });
 
-    it('should include shape layers and exclude hazard-specific raster layers', async () => {
+    it('should exclude hazard-specific raster layers', async () => {
       const response = await getServer()
         .get('/layers?hazardType=floods')
         .set('Cookie', [accessToken]);
