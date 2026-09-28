@@ -10,6 +10,7 @@ from pipelines.infra.data_types.admin_area_types import (
     AdminAreasSet,
 )
 from pipelines.infra.data_types.enums import ForecastSource
+from pipelines.tropical_cyclone.determine_alerts import TimeIntervalWindSpeedSeverity
 from pipelines.tropical_cyclone.extract_track import (
     _ecmwf_message_fixes,
     _parse_atcf_coordinate,
@@ -18,6 +19,7 @@ from pipelines.tropical_cyclone.extract_track import (
     _read_track_fixes,
     extract_track,
     find_storm_pairs_sharing_place_codes,
+    peak_wind_within_tracked_window,
     select_place_codes_near_storm,
     StormTrack,
     TimeIntervalTrackFix,
@@ -464,6 +466,73 @@ def _make_track_bucket(
             for latitude, longitude in fixes
         ],
     )
+
+
+def _make_severity(
+    median_wind_speed: float, time_interval_start: str
+) -> TimeIntervalWindSpeedSeverity:
+    return TimeIntervalWindSpeedSeverity(
+        time_interval_start=time_interval_start,
+        time_interval_end="unused",
+        median_wind_speed=median_wind_speed,
+        ensemble_wind_speeds=[],
+        ensemble_wind_speed_rasters=[],
+    )
+
+
+class TestPeakWindWithinTrackedWindow:
+    def test_false_when_the_peak_wind_time_is_after_the_tracked_window(self):
+        # Arrange
+        track_fixes = [
+            _make_track_bucket("2026-07-10T00:00:00Z", [(1.0, 1.0)]),
+            _make_track_bucket("2026-07-10T06:00:00Z", [(1.5, 1.5)]),
+        ]
+        severities = [_make_severity(45.0, "2026-07-10T12:00:00Z")]
+
+        # Act & Assert
+        assert not peak_wind_within_tracked_window(track_fixes, severities)
+
+    def test_false_when_the_peak_wind_time_is_before_the_tracked_window(self):
+        # Arrange
+        track_fixes = [
+            _make_track_bucket("2026-07-10T06:00:00Z", [(1.0, 1.0)]),
+            _make_track_bucket("2026-07-10T12:00:00Z", [(1.5, 1.5)]),
+        ]
+        severities = [_make_severity(45.0, "2026-07-10T00:00:00Z")]
+
+        # Act & Assert
+        assert not peak_wind_within_tracked_window(track_fixes, severities)
+
+    def test_false_when_there_are_no_track_fixes(self):
+        # Arrange
+        severities = [_make_severity(45.0, "2026-07-10T00:00:00Z")]
+
+        # Act & Assert
+        assert not peak_wind_within_tracked_window([], severities)
+
+    def test_true_when_the_peak_wind_time_is_on_the_tracked_window_edge(self):
+        # Arrange
+        track_fixes = [
+            _make_track_bucket("2026-07-10T00:00:00Z", [(1.0, 1.0)]),
+            _make_track_bucket("2026-07-10T06:00:00Z", [(1.5, 1.5)]),
+        ]
+
+        # Act & Assert
+        for peak_time in ("2026-07-10T00:00:00Z", "2026-07-10T06:00:00Z"):
+            assert peak_wind_within_tracked_window(
+                track_fixes, [_make_severity(45.0, peak_time)]
+            )
+
+    def test_gates_on_the_highest_median_bucket_not_the_first_one(self):
+        # Arrange
+        track_fixes = [_make_track_bucket("2026-07-10T00:00:00Z", [(1.0, 1.0)])]
+        severities = [
+            _make_severity(10.0, "2026-07-10T00:00:00Z"),
+            _make_severity(45.0, "2026-07-10T12:00:00Z"),
+        ]
+
+        # Act & Assert
+        assert not peak_wind_within_tracked_window(track_fixes, severities)
 
 
 def _make_square_admin_area(pcode: str, min_lon: float, min_lat: float) -> AdminArea:

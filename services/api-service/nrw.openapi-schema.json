@@ -2100,7 +2100,7 @@
                 "glofas",
                 "ECMWF",
                 "GEFS",
-                "compoundFloodsSource"
+                "DestinE"
               ]
             }
           },
@@ -2377,7 +2377,7 @@
                 "glofas",
                 "ECMWF",
                 "GEFS",
-                "compoundFloodsSource"
+                "DestinE"
               ]
             }
           },
@@ -2669,7 +2669,7 @@
                 "glofas",
                 "ECMWF",
                 "GEFS",
-                "compoundFloodsSource"
+                "DestinE"
               ]
             }
           },

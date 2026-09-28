@@ -18,6 +18,7 @@ from pipelines.tropical_cyclone.constants import (
     GEFS_TRACK_NATIVE_LEAD_TIME_STEP_HOURS,
     METERS_PER_SECOND_TO_KNOTS,
 )
+from pipelines.tropical_cyclone.determine_alerts import TimeIntervalWindSpeedSeverity
 
 logger = logging.getLogger(__name__)
 
@@ -562,6 +563,39 @@ def _ecmwf_optional(values: list[float], index: int) -> float:
         return 0.0
     value = values[index]
     return 0.0 if _ecmwf_value_missing(value) else float(value)
+
+
+def peak_wind_within_tracked_window(
+    time_interval_track_fixes: list[TimeIntervalTrackFix],
+    time_interval_severities: list[TimeIntervalWindSpeedSeverity],
+) -> bool:
+    """
+    True when the peak-intensity wind bucket (highest MEDIAN wind speed) starts within the time
+    window the storm is tracked over. When it starts before or after that window, the peak wind
+    cannot be attributed to the tracked storm and no alert should be raised. A peak time exactly on
+    either end of the tracked window counts as inside it.
+    """
+    if not time_interval_track_fixes or not time_interval_severities:
+        return False
+
+    track_start_times = sorted(
+        _parse_time_interval_start(bucket.time_interval_start)
+        for bucket in time_interval_track_fixes
+    )
+    first_track_time = track_start_times[0]
+    last_track_time = track_start_times[-1]
+
+    peak_bucket = max(
+        time_interval_severities, key=lambda severity: severity.median_wind_speed
+    )
+    peak_time = _parse_time_interval_start(peak_bucket.time_interval_start)
+    return first_track_time <= peak_time <= last_track_time
+
+
+def _parse_time_interval_start(time_interval_start: str) -> datetime:
+    return datetime.strptime(time_interval_start, "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=UTC
+    )
 
 
 def select_place_codes_near_storm(

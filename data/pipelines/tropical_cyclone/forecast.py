@@ -85,6 +85,7 @@ from pipelines.tropical_cyclone.extract_forecast import extract_wind_speed
 from pipelines.tropical_cyclone.extract_track import (
     extract_track,
     find_storm_pairs_sharing_place_codes,
+    peak_wind_within_tracked_window,
     select_place_codes_near_storm,
 )
 
@@ -282,6 +283,21 @@ def calculate_tropical_cyclone_forecasts(
                         f"'{storm_track.storm_identifier}' "
                         f"({alert_config.spatial_extent_name}): no bucket cleared "
                         f"MIN_SEVERITY_MS={MIN_SEVERITY_MS}",
+                    )
+                    continue
+
+                # The peak wind must fall within the storm's tracked time window, otherwise that
+                # wind cannot be attributed to this storm and no alert is raised.
+                if not peak_wind_within_tracked_window(
+                    storm_track.time_interval_track_fixes, time_interval_severities
+                ):
+                    nrw_logger.log_info(
+                        logger,
+                        nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
+                        f"No tropical-cyclone alert for '{country}' from storm "
+                        f"'{storm_track.storm_identifier}' "
+                        f"({alert_config.spatial_extent_name}): the peak wind bucket falls "
+                        f"outside that storm's own tracked window",
                     )
                     continue
 

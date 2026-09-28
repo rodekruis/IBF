@@ -73,6 +73,8 @@ The sections below describe each piece in more technical detail.
     for ECMWF.
   - ATCF invests (cyclone numbers 90-99) are dropped.
   - `StormTrack.storm_identifier`: stable per-storm event name, e.g. `WP24_2025`.
+  - `peak_wind_within_tracked_window`: guards that the peak-wind bucket falls inside the storm's
+    tracked window, so that wind can be attributed to the storm; otherwise no alert is raised.
   - `select_place_codes_near_storm`: the admin areas near one storm's own track, used to scope that
     storm's alert.
   - `find_storm_pairs_sharing_place_codes`: flags storm pairs scoped to overlapping admin areas.
@@ -145,7 +147,7 @@ mock_no_alert`); each downloads + caches its seeded GEFS cycle via the matching 
 6. Loop over alert configs (spatial extents) x temporal extents. Per spatial extent, scope every
    storm to its own admin areas and flag any pair that overlaps.
 7. `extract_wind_speed` once per temporal extent (shared across all storms).
-8. Per storm: `determine_severities` -> `compute_alert_spatial_extent` +
+8. Per storm: `determine_severities` -> `peak_wind_within_tracked_window` -> `compute_alert_spatial_extent` +
    `clip_wind_spatial_extent_to_admin_areas` -> `compute_population_exposed` + `aggregate_population_exposed`
    -> submit via `DataSubmitter` under that storm's `storm_identifier`. The event centroid is derived
    by pipeline infra as the center of mass of the deepest-level exposed admin areas.
