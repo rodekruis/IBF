@@ -4,16 +4,23 @@ import { MockScenario } from '@ibf-e2e/nrw/helpers/enums';
 import { getEvents } from '@ibf-e2e/nrw/helpers/events';
 import { mockDb } from '@ibf-e2e/nrw/helpers/mock';
 import { resetDb } from '@ibf-e2e/nrw/helpers/reset';
+import { freezeEventsViewTime } from '@ibf-e2e/nrw/helpers/view-time';
 import { NrwMapPage } from '@ibf-e2e/nrw/pages/NrwMapPage';
 
 const COUNTRIES = ['MWI'];
+const ALERT_ISSUED_AT = new Date('2026-09-22T00:00:00Z');
 
 test.beforeAll(async () => {
   await resetDb(COUNTRIES);
   await mockDb({
     scenario: MockScenario.events,
     countryCodes: COUNTRIES,
+    issuedAt: ALERT_ISSUED_AT,
   });
+});
+
+test.beforeEach(async ({ page }) => {
+  await freezeEventsViewTime(page, ALERT_ISSUED_AT);
 });
 
 test.describe('map', () => {
@@ -88,7 +95,7 @@ test.describe('event card', () => {
 
   test('opening an event link shows the expanded card', async ({ page }) => {
     // Arrange
-    const [event] = await getEvents(COUNTRIES);
+    const [event] = await getEvents(COUNTRIES, ALERT_ISSUED_AT);
     const nrwMapPage = new NrwMapPage(page);
 
     // Act
