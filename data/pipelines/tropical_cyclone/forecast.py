@@ -83,7 +83,6 @@ from pipelines.tropical_cyclone.determine_exposure import (
 )
 from pipelines.tropical_cyclone.extract_forecast import extract_wind_speed
 from pipelines.tropical_cyclone.extract_track import (
-    derive_alert_centroid,
     extract_track,
     find_storm_pairs_sharing_place_codes,
     select_place_codes_near_storm,
@@ -286,25 +285,6 @@ def calculate_tropical_cyclone_forecasts(
                     )
                     continue
 
-                # Storm-center point to report. None means the peak wind bucket falls outside the
-                # window this storm is tracked over, so that wind cannot be attributed to it.
-                centroid = derive_alert_centroid(
-                    storm_track.time_interval_track_fixes,
-                    time_interval_severities,
-                    storm_place_codes,
-                    target_admin_areas,
-                )
-                if centroid is None:
-                    nrw_logger.log_info(
-                        logger,
-                        nrw_logger.LogTag.TROPICAL_CYCLONE_LOGIC,
-                        f"No tropical-cyclone alert for '{country}' from storm "
-                        f"'{storm_track.storm_identifier}' "
-                        f"({alert_config.spatial_extent_name}): the peak wind bucket falls "
-                        f"outside that storm's own tracked window",
-                    )
-                    continue
-
                 ### Step 8 - Compute the alert spatial extent and its spatial exposure ###
                 wind_spatial_extent = compute_alert_spatial_extent(
                     time_interval_severities
@@ -348,7 +328,7 @@ def calculate_tropical_cyclone_forecasts(
                 # with a uniquifying suffix.
                 event_name = storm_track.storm_identifier
 
-                data_submitter.create_alert(event_name=event_name, centroid=centroid)
+                data_submitter.create_alert(event_name=event_name)
 
                 nrw_logger.log_info(
                     logger,

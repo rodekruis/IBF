@@ -181,14 +181,14 @@ class Exposure:
 @dataclass
 class Alert:
     event_name: str
-    centroid: Centroid
+    centroid: Centroid | None = None
     severity: list[Severity] = field(default_factory=list)
     exposure: Exposure = field(default_factory=Exposure)
 
     def to_dict(self) -> JsonDict:
         return {
             "eventName": self.event_name,
-            "centroid": self.centroid.to_dict(),
+            "centroid": self.centroid.to_dict() if self.centroid is not None else None,
             "severity": [item.to_dict() for item in self.severity],
             "exposure": self.exposure.to_dict(),
         }

@@ -5,15 +5,10 @@ import os
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, UTC
-from itertools import pairwise
-from statistics import fmean
 
-from shapely.geometry import box, LineString, Point
-from shapely.geometry.base import BaseGeometry
-from shapely.ops import nearest_points, unary_union
+from shapely.geometry import box
 
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
-from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.enums import ForecastSource
 from pipelines.infra.utils import nrw_logger
 from pipelines.infra.utils.raster import BoundingBox, pad_bounding_box
@@ -23,7 +18,6 @@ from pipelines.tropical_cyclone.constants import (
     GEFS_TRACK_NATIVE_LEAD_TIME_STEP_HOURS,
     METERS_PER_SECOND_TO_KNOTS,
 )
-from pipelines.tropical_cyclone.determine_alerts import TimeIntervalWindSpeedSeverity
 
 logger = logging.getLogger(__name__)
 
@@ -108,8 +102,8 @@ def extract_track(
     far side of the world is pooled into the same fixes as one making landfall. Storms are returned
     in (basin, storm_number) order so event order does not depend on row order across member files.
 
-    Per-member track identity is intentionally not kept: the only consumer (derive_alert_centroid)
-    averages fixes, so every member's fix for a storm's lead hour is pooled.
+    Per-member track identity is intentionally not kept: every member's fix for a storm's lead
+    hour is pooled into a single bucket.
 
     GEFS only. ECMWF stores tracks completely differently (BUFR, one file per run, one message per
     storm, members as subsets) and is not implemented - see the raise below.
@@ -562,170 +556,12 @@ def _bufr_float_array(codes_array: object) -> list[float]:
 
 def _ecmwf_optional(values: list[float], index: int) -> float:
     """A co-indexed BUFR measurement (wind/pressure), or 0.0 when absent or flagged missing - these
-    fields are carried on TrackFix but not used by the centroid step, so a missing one must not
+    fields are carried on TrackFix but not required downstream, so a missing one must not
     drop an otherwise-valid storm-centre fix."""
     if index >= len(values):
         return 0.0
     value = values[index]
     return 0.0 if _ecmwf_value_missing(value) else float(value)
-
-
-def derive_alert_centroid(
-    time_interval_track_fixes: list[TimeIntervalTrackFix],
-    time_interval_severities: list[TimeIntervalWindSpeedSeverity],
-    place_codes: list[str],
-    admin_areas: AdminAreasSet,
-) -> Centroid | None:
-    """
-    Storm-center point to report for the alert, or None when the peak-intensity wind bucket
-    (highest MEDIAN wind speed) starts outside the time window the storm is tracked over - that
-    wind cannot be attributed to the tracked storm, and no alert is raised. A peak time exactly on
-    either end of the tracked window counts as inside it. Otherwise the reported position is the
-    first point where the storm's pseudo-track (straight lines between the time-ordered
-    ensemble-mean bucket positions) enters the admin areas, or the point in the admin areas
-    closest to the pseudo-track when it never crosses them.
-    """
-    if not time_interval_track_fixes or not time_interval_severities:
-        return None
-
-    sorted_buckets = sorted(
-        time_interval_track_fixes,
-        key=lambda bucket: _parse_time_interval_start(bucket.time_interval_start),
-    )
-    first_track_time = _parse_time_interval_start(sorted_buckets[0].time_interval_start)
-    last_track_time = _parse_time_interval_start(sorted_buckets[-1].time_interval_start)
-
-    peak_bucket = max(
-        time_interval_severities, key=lambda severity: severity.median_wind_speed
-    )
-    peak_time = _parse_time_interval_start(peak_bucket.time_interval_start)
-    if peak_time < first_track_time or peak_time > last_track_time:
-        return None
-
-    return _landfall_or_closest_approach_centroid(
-        sorted_buckets, place_codes, admin_areas
-    )
-
-
-def _landfall_or_closest_approach_centroid(
-    sorted_buckets: list[TimeIntervalTrackFix],
-    place_codes: list[str],
-    admin_areas: AdminAreasSet,
-) -> Centroid:
-    """
-    The first point, in time order, where the pseudo-track enters the admin-area union. The
-    pseudo-track is the straight-line interpolation between consecutive bucket centroids (each an
-    ensemble-mean position), so a storm whose 6-hourly fixes both sit outside the union still
-    reports the crossing point between them rather than the nearer fix. A storm already inside at
-    its first bucket reports that bucket's centroid. When the pseudo-track never enters the union,
-    falls back to the point in the union closest to the pseudo-track - a point on land, which the
-    map can always zoom to, rather than a storm position out at sea.
-    """
-    admin_area_union = _admin_area_union(place_codes, admin_areas)
-    bucket_centroids = [_bucket_centroid(bucket) for bucket in sorted_buckets]
-
-    first_centroid = bucket_centroids[0]
-    if admin_area_union.contains(
-        Point(first_centroid.longitude, first_centroid.latitude)
-    ):
-        return first_centroid
-
-    for start, end in pairwise(bucket_centroids):
-        entry_point = _segment_entry_point(start, end, admin_area_union)
-        if entry_point is not None:
-            return entry_point
-
-    pseudo_track: Point | LineString = (
-        LineString(
-            [(centroid.longitude, centroid.latitude) for centroid in bucket_centroids]
-        )
-        if len(bucket_centroids) > 1
-        else Point(bucket_centroids[0].longitude, bucket_centroids[0].latitude)
-    )
-    nearest_in_union, _ = nearest_points(admin_area_union, pseudo_track)
-    return Centroid(latitude=nearest_in_union.y, longitude=nearest_in_union.x)
-
-
-def _segment_entry_point(
-    start: Centroid, end: Centroid, admin_area_union: BaseGeometry
-) -> Centroid | None:
-    """
-    The first point where the straight segment from `start` to `end` enters the admin-area union,
-    or None when the segment never enters it. "First" is measured along the segment from `start`,
-    which stands in for time order since the pseudo-track's vertices are time-ordered. `start`
-    itself is assumed to lie outside the union (the caller checks bucket centroids first); a
-    segment starting inside would return `start` here.
-
-    The segment is clipped to the whole union (boundary included, so the crossing point is part of
-    the clip). A segment merely touching the boundary - e.g., ending exactly on a corner - clips to
-    a 0-dimensional Point and has not entered the admin areas, the same distinction `contains`
-    makes for the bucket centroids themselves. A genuine entry clips to a 1-dimensional LineString
-    (the part of the segment inside), whose point nearest the segment start is the crossing point.
-    """
-    segment = LineString(
-        [(start.longitude, start.latitude), (end.longitude, end.latitude)]
-    )
-    if segment.length == 0:
-        return None
-
-    clipped = segment.intersection(admin_area_union)
-    if clipped.is_empty:
-        return None
-
-    entry_candidates = [
-        point
-        for part in getattr(clipped, "geoms", [clipped])
-        if isinstance(part, LineString)
-        for point in _geometry_points(part)
-    ]
-    if not entry_candidates:
-        return None
-
-    entry_point = min(entry_candidates, key=lambda point: segment.project(point))
-    return Centroid(latitude=entry_point.y, longitude=entry_point.x)
-
-
-def _geometry_points(geometry: BaseGeometry) -> list[Point]:
-    """
-    Flatten any intersection result into the Points it is made of: itself when already a Point,
-    its vertices when a LineString, or the points of each part when a collection.
-    """
-    if isinstance(geometry, Point):
-        return [geometry]
-    if isinstance(geometry, LineString):
-        return [Point(coordinate) for coordinate in geometry.coords]
-    return [
-        point
-        for part in getattr(geometry, "geoms", [])
-        for point in _geometry_points(part)
-    ]
-
-
-def _admin_area_union(
-    place_codes: list[str], admin_areas: AdminAreasSet
-) -> BaseGeometry:
-    """The single geometry covering the given admin areas."""
-    return unary_union(
-        [
-            admin_areas.admin_areas[place_code].to_geometry()
-            for place_code in place_codes
-            if place_code in admin_areas.admin_areas
-        ]
-    )
-
-
-def _parse_time_interval_start(time_interval_start: str) -> datetime:
-    return datetime.strptime(time_interval_start, "%Y-%m-%dT%H:%M:%SZ").replace(
-        tzinfo=UTC
-    )
-
-
-def _bucket_centroid(bucket: TimeIntervalTrackFix) -> Centroid:
-    fixes = bucket.ensemble_track_fixes
-    return Centroid(
-        latitude=fmean(fix.latitude for fix in fixes),
-        longitude=fmean(fix.longitude for fix in fixes),
-    )
 
 
 def select_place_codes_near_storm(

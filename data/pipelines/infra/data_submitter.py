@@ -9,7 +9,6 @@ from datetime import datetime, UTC
 from pipelines.infra.data_types.data_config_types import OutputMode
 from pipelines.infra.data_types.dtos import (
     Alert,
-    Centroid,
     EnsembleMemberType,
     ExposureAdminArea,
     ExposureGeoFeature,
@@ -67,7 +66,6 @@ class DataSubmitter:
     def create_alert(
         self,
         event_name: str,
-        centroid: Centroid,
     ) -> None:
         if event_name in self._alerts:
             self.errors[f"create_alert:{event_name}"] = (
@@ -77,7 +75,6 @@ class DataSubmitter:
 
         self._alerts[event_name] = Alert(
             event_name=event_name,
-            centroid=centroid,
         )
 
     def _get_alert(self, event_name: str, caller: str) -> Alert | None:
