@@ -539,3 +539,139 @@ export const SEED_TROPICAL_CYCLONE_ALERT_CONFIGS: SeedAlertConfig[] =
       triggerLeadTimeDuration: config.triggerLeadTimeDuration,
     }),
   );
+
+// --- COMPOUND FLOODS: in-code config ---
+// TODO: should some of the below come from a seed-data repo source instead of defined in code?
+
+const COMPOUND_FLOODS_LEAD_TIME_SPECTRUM = [
+  '0-day',
+  '1-day',
+  '2-day',
+  '3-day',
+  '4-day',
+  '5-day',
+];
+
+interface CompoundFloodClassificationConfig {
+  readonly severityClassLevels: ClassLevel[];
+  readonly probabilityClassLevels: ClassLevel[];
+  readonly triggerAlertClass: AlertClass | null;
+  readonly triggerLeadTimeDuration: string | null;
+}
+
+const COMPOUND_FLOODS_CLASSIFICATION_BY_COUNTRY: Record<
+  string,
+  CompoundFloodClassificationConfig
+> = {
+  PHL: {
+    severityClassLevels: [
+      { label: low, threshold: 1.5 },
+      { label: medium, threshold: 2 },
+      { label: high, threshold: 5 },
+    ],
+    probabilityClassLevels: [{ label: singleThreshold, threshold: 0 }],
+    triggerAlertClass: AlertClass.high,
+    triggerLeadTimeDuration: null,
+  },
+};
+
+interface CompoundFloodsArea {
+  readonly spatialExtentName: string;
+  readonly spatialExtentPlaceCodes: string[];
+}
+
+const COMPOUND_FLOODS_AREAS_BY_COUNTRY: Record<string, CompoundFloodsArea[]> = {
+  PHL: [
+    {
+      spatialExtentName: 'Pasig River',
+      spatialExtentPlaceCodes: [
+        'PH1303901',
+        'PH1307401',
+        'PH1307402',
+        'PH1307403',
+        'PH1307404',
+        'PH1307405',
+        'PH1307501',
+        'PH1307502',
+        'PH1307503',
+        'PH1307504',
+        'PH1307601',
+        'PH1307602',
+        'PH1307604',
+        'PH1307605',
+        'PH1307606',
+        'PH1307607',
+      ],
+    },
+    {
+      spatialExtentName: 'Santa Maria River',
+      spatialExtentPlaceCodes: [
+        'PH0301402',
+        'PH0301404',
+        'PH0301405',
+        'PH0301408',
+        'PH0301410',
+        'PH0301411',
+        'PH0301412',
+        'PH0301414',
+        'PH0301415',
+        'PH0301417',
+        'PH0301423',
+      ],
+    },
+    {
+      spatialExtentName: 'Bicol River',
+      spatialExtentPlaceCodes: [
+        'PH0501704',
+        'PH0501707',
+        'PH0501708',
+        'PH0501709',
+        'PH0501710',
+        'PH0501713',
+        'PH0501718',
+        'PH0501720',
+        'PH0501721',
+        'PH0501722',
+        'PH0501724',
+        'PH0501726',
+        'PH0501728',
+        'PH0501732',
+        'PH0501734',
+        'PH0501737',
+      ],
+    },
+    {
+      spatialExtentName: 'Panay River',
+      spatialExtentPlaceCodes: [
+        'PH0601905',
+        'PH0601907',
+        'PH0601909',
+        'PH0601910',
+        'PH0601911',
+        'PH0601912',
+        'PH0601913',
+        'PH0601914',
+      ],
+    },
+  ],
+};
+
+export const SEED_COMPOUND_FLOODS_ALERT_CONFIGS: SeedAlertConfig[] =
+  Object.entries(COMPOUND_FLOODS_CLASSIFICATION_BY_COUNTRY).flatMap(
+    ([countryCodeIso3, config]) =>
+      (COMPOUND_FLOODS_AREAS_BY_COUNTRY[countryCodeIso3] ?? []).map(
+        (area): SeedAlertConfig => ({
+          countryCodeIso3,
+          hazardType: HazardType.compoundFloods,
+          spatialExtentName: area.spatialExtentName,
+          spatialExtentPlaceCodes: area.spatialExtentPlaceCodes,
+          temporalExtents: [
+            { 'lead-time-spectrum': COMPOUND_FLOODS_LEAD_TIME_SPECTRUM },
+          ],
+          severityClassLevels: config.severityClassLevels,
+          probabilityClassLevels: config.probabilityClassLevels,
+          triggerAlertClass: config.triggerAlertClass,
+          triggerLeadTimeDuration: config.triggerLeadTimeDuration,
+        }),
+      ),
+  );

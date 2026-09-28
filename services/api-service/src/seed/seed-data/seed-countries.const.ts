@@ -66,7 +66,11 @@ export const SEED_COUNTRIES: SeedCountry[] = [
       '3': { singular: 'Municipality', plural: 'Municipalities' },
       '4': { singular: 'Barangay', plural: 'Barangays' },
     },
-    hazardTypes: [HazardType.floods, HazardType.tropicalCyclone],
+    hazardTypes: [
+      HazardType.floods,
+      HazardType.tropicalCyclone,
+      HazardType.compoundFloods,
+    ],
   },
   {
     countryCodeIso3: 'ZMB',
