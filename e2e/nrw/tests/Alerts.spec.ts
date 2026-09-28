@@ -95,7 +95,7 @@ test.describe('event card', () => {
 
   test('opening an event link shows the expanded card', async ({ page }) => {
     // Arrange
-    const [event] = await getEvents(COUNTRIES);
+    const [event] = await getEvents(COUNTRIES, ALERT_ISSUED_AT);
     const nrwMapPage = new NrwMapPage(page);
 
     // Act
