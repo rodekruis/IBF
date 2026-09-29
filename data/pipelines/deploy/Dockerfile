@@ -7,5 +7,6 @@ RUN npm install --global mapshaper@0.7.59
 WORKDIR /app
 COPY . .
 RUN uv sync --locked --no-dev
+ENV PATH="/app/.venv/bin:$PATH"
 
 CMD ["uv", "run", "pipeline", "--help"]
