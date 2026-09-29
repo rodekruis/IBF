@@ -337,7 +337,7 @@ resource eventCreatedAlert 'Microsoft.Insights/scheduledQueryRules@2022-06-15' =
         }
       ]
     }
-    autoMitigate: false
+    autoMitigate: true
     actions: {
       actionGroups: [
         eventCreatedActionGroup.id
