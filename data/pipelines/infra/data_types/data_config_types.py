@@ -18,6 +18,11 @@ class SourceTarget(StrEnum):
     MOCK_NO_ALERT = "mock_no_alert"  # --mock 0
 
 
+def to_live_or_mock(source_target: str) -> str:
+    """Coarsen a source target to the binary live-versus-mock distinction."""
+    return "live" if source_target == SourceTarget.LIVE else "mock"
+
+
 class RunOrigin(StrEnum):
     """
     What initiated the pipeline run.

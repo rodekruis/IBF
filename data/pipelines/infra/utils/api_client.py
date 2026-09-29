@@ -5,7 +5,7 @@ import os
 from urllib.parse import urlencode
 
 import requests
-from pipelines.infra.data_types.data_config_types import RunOrigin
+from pipelines.infra.data_types.data_config_types import RunOrigin, to_live_or_mock
 from pipelines.infra.data_types.enums import LayerName
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.data_types.location_point import LocationPoint
@@ -37,7 +37,9 @@ class ApiClient:
 
         self._session.headers["x-api-key"] = api_key
         self._session.headers["x-nrw-pipeline-run-origin"] = run_origin.value
-        self._session.headers["x-nrw-pipeline-source-target"] = source_target
+        self._session.headers["x-nrw-pipeline-source-target"] = to_live_or_mock(
+            source_target
+        )
 
     def submit_forecast(self, forecast: dict, is_live_run: bool = False) -> list[str]:
         url = f"{self._base_url}{ALERTS_PATH}"

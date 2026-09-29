@@ -54,17 +54,17 @@ union traces, exceptions
 
 This component's Logs blade shows only the pipeline's telemetry, so the query above needs no extra filter.
 
-Each pipeline log carries its 'run origin' (`scheduled`, `manual`, `local`) and 'source target' (`live`, `mock_alert`, `mock_no_alert`) as `customDimensions`, so logs can be filtered by provenance. For example, to find manually submitted mock runs:
+Each pipeline log carries its 'run origin' (`scheduled`, `manual`, `local`) as a `customDimensions` field, plus a live-or-mock marker (`data_live` / `data_mock`) inline in the message, so logs can be filtered by provenance. For example, to find scheduled live runs:
 
 ```kusto
 traces
-| where customDimensions.source_target == "mock_alert"
-| where customDimensions.run_origin == "manual"
+| where message has "data_live"
+| where customDimensions.run_origin == "scheduled"
 | order by timestamp desc
 ```
 
-The same values are sent to the backend as
-`x-nrw-pipeline-run-origin` and `x-nrw-pipeline-source-target` request headers.
+The live-or-mock value and run origin are also sent to the backend as
+`x-nrw-pipeline-source-target` and `x-nrw-pipeline-run-origin` request headers.
 
 ### From the shared nrw-app-law workspace
 

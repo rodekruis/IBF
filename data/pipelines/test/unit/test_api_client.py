@@ -58,7 +58,7 @@ class TestApiClientInit:
         client = ApiClient(run_origin=RunOrigin.MANUAL, source_target="mock_alert")
 
         assert client._session.headers["x-nrw-pipeline-run-origin"] == "manual"
-        assert client._session.headers["x-nrw-pipeline-source-target"] == "mock_alert"
+        assert client._session.headers["x-nrw-pipeline-source-target"] == "mock"
 
 
 class TestSubmitAlerts:
