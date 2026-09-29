@@ -9,19 +9,24 @@ See [readme-requirements.md](readme-requirements.md) for the initial requirement
 
 These commands submit a one-off job to the deployed Azure Batch infrastructure. They do not run the pipeline in a local Docker container.
 
-Before submitting a job:
+### Prerequisites
 
 - Log in with `az login` using an identity that has `Azure Batch Job Submitter` on the `nrwbatchpoc` Batch account and `Key Vault Secrets User` on the `nrw-batch-poc` Key Vault.
 - Install `uv`.
 - Set `IBF_API_URL` in `data/.env` to the deployed API that should receive the results, for example `https://api-test.nationalriskwatch.org/`.
 
-From `data/pipelines/deploy/`, start a standard live job with:
+### Live data run
+
+This is the manual way to kick off the scheduled jobs. It uses live data, such as Glofas for floods.
+From `data/pipelines/deploy/`, run `./function/run_pipeline_job.sh <hazard name>`, such as
 
 ```bash
 ./function/run_pipeline_job.sh floods
 ```
 
 The script reads the pipeline secrets from Key Vault and prints the submitted Batch job ID. Use the Azure Batch account to monitor the job and its task logs.
+
+### Mock data run
 
 For a mock-data job, use the separate mock launcher. It requires `--mock` and passes the remaining pipeline flags through unchanged:
 
