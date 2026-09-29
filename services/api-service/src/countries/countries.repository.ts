@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
+import { AdminLevelLabelDto } from '@api-service/src/countries/dto/admin-level-label.dto';
 import { CountryCreateDto } from '@api-service/src/countries/dto/country-create.dto';
 import { CountryResponseDto } from '@api-service/src/countries/dto/country-response.dto';
 import { CountryUpdateDto } from '@api-service/src/countries/dto/country-update.dto';
@@ -18,6 +19,7 @@ const countrySelect = {
   countryCodeIso3: true,
   countryCodeIso2: true,
   countryName: true,
+  adminLevelLabels: true,
 } as const;
 
 type CountryRow = Prisma.CountryGetPayload<{ select: typeof countrySelect }>;
@@ -34,6 +36,10 @@ export class CountriesRepository {
       countryCodeIso3: row.countryCodeIso3,
       countryCodeIso2: row.countryCodeIso2,
       countryName: row.countryName,
+      adminLevelLabels: row.adminLevelLabels as unknown as Record<
+        string,
+        AdminLevelLabelDto
+      >,
     };
   }
 
@@ -69,6 +75,8 @@ export class CountriesRepository {
               countryCodeIso3: dto.countryCodeIso3,
               countryCodeIso2: dto.countryCodeIso2,
               countryName: dto.countryName,
+              adminLevelLabels: (dto.adminLevelLabels ??
+                {}) as unknown as Prisma.InputJsonValue,
             },
             select: countrySelect,
           }),
@@ -98,6 +106,8 @@ export class CountriesRepository {
         data: {
           countryCodeIso2: countryUpdateDto.countryCodeIso2,
           countryName: countryUpdateDto.countryName,
+          adminLevelLabels: countryUpdateDto.adminLevelLabels as unknown as
+            Prisma.InputJsonValue | undefined,
         },
         select: countrySelect,
       });

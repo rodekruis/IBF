@@ -16,6 +16,7 @@ import { RastersService } from '@api-service/src/rasters/rasters.service';
 import {
   FLOOD_CLASSIFICATION_BY_COUNTRY,
   FLOOD_LEAD_TIME_SPECTRUM,
+  SEED_COMPOUND_FLOODS_ALERT_CONFIGS,
   SEED_DROUGHT_ALERT_CONFIGS,
   SEED_TROPICAL_CYCLONE_ALERT_CONFIGS,
   SeedAlertConfig,
@@ -149,13 +150,38 @@ export class SeedInit {
   }
 
   private async seedCountries(countries: SeedCountry[]): Promise<void> {
+    for (const country of countries) {
+      this.assertAdminLevelLabelsComplete(country);
+    }
     await this.countriesService.createCountries(
-      countries.map(({ countryCodeIso3, countryCodeIso2, countryName }) => ({
-        countryCodeIso3,
-        countryCodeIso2,
-        countryName,
-      })),
+      countries.map(
+        ({
+          countryCodeIso3,
+          countryCodeIso2,
+          countryName,
+          adminLevelLabels,
+        }) => ({
+          countryCodeIso3,
+          countryCodeIso2,
+          countryName,
+          adminLevelLabels,
+        }),
+      ),
     );
+  }
+
+  private assertAdminLevelLabelsComplete(country: SeedCountry): void {
+    for (
+      let adminLevel = 1;
+      adminLevel <= country.deepestAdminLevel;
+      adminLevel++
+    ) {
+      if (!country.adminLevelLabels[String(adminLevel)]) {
+        throw new Error(
+          `Missing adminLevelLabels for ${country.countryCodeIso3} adm${adminLevel}`,
+        );
+      }
+    }
   }
 
   private async seedLayers(): Promise<void> {
@@ -316,10 +342,19 @@ export class SeedInit {
         ),
     );
 
+    // Compound flood: fixed set of areas per country, defined in code
+    const compoundFloodConfigs = SEED_COMPOUND_FLOODS_ALERT_CONFIGS.filter(
+      (c) =>
+        countryCodesForHazard(HazardType.compoundFloods).includes(
+          c.countryCodeIso3,
+        ),
+    );
+
     const allConfigs: SeedAlertConfig[] = [
       ...floodConfigs,
       ...droughtConfigs,
       ...tropicalCycloneConfigs,
+      ...compoundFloodConfigs,
     ];
 
     await this.alertConfigsService.createAlertConfigs(
