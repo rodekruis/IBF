@@ -1,6 +1,7 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
+import { transform, transformIgnorePatterns } from './jest.transform.mjs';
+
+/** @type {import('jest').Config} */
 export default {
-  preset: 'ts-jest',
   rootDir: '.',
   testMatch: ['<rootDir>/test/**/*.test.ts'],
   coverageReporters: ['json', 'lcov'],
@@ -10,11 +11,8 @@ export default {
     '^@api-service/(.*)$': '<rootDir>/$1',
   },
   moduleFileExtensions: ['js', 'ts'],
-  transform: {
-    '^.+\\.ts?$': ['ts-jest', { tsconfig: '<rootDir>/test/tsconfig.json' }],
-    'node_modules/@t3-oss/.+\\.js$': ['ts-jest'],
-  },
-  transformIgnorePatterns: ['node_modules/(?!@t3-oss)'],
+  transform,
+  transformIgnorePatterns,
   testTimeout: 30_000,
   randomize: true,
   verbose: true,
