@@ -1,10 +1,9 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { ModulesContainer, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import { Request, Response } from 'express';
-import { SpelunkerModule } from 'nestjs-spelunker';
 import fs, { writeFileSync } from 'node:fs';
 
 import { ApplicationModule } from '@api-service/src/app.module';
@@ -26,20 +25,16 @@ import 'multer'; // This is import is required to prevent typing error on the Mu
 import appInsights = require('applicationinsights');
 
 /**
- * A visualization of module dependencies is generated using `nestjs-spelunker`
- * The file can be vied with [Mermaid](https://mermaid.live) or the VSCode extension "bierner.markdown-mermaid"
- * See: https://github.com/jmcdo29/nestjs-spelunker
+ * A visualization of module dependencies, derived from Nest's DI container.
+ * The file can be viewed with [Mermaid](https://mermaid.live) or the VSCode extension "bierner.markdown-mermaid"
  */
 function generateModuleDependencyGraph(app: INestApplication): void {
-  const tree = SpelunkerModule.explore(app);
-  const root = SpelunkerModule.graph(tree);
-  const edges = SpelunkerModule.findGraphEdges(root);
   const genericModules = [
     // Sorted alphabetically
     'ApplicationModule',
     'AuthModule',
     'HealthModule',
-    'HttpModule',
+    'InternalCoreModule',
     'MulterModule',
     'PassportModule',
     'SeedModule',
@@ -47,13 +42,21 @@ function generateModuleDependencyGraph(app: INestApplication): void {
     'ThrottlerModule',
     'PrismaModule',
   ];
-  const mermaidEdges = edges
-    .filter(
-      ({ from, to }) =>
-        !genericModules.includes(from.module.name) &&
-        !genericModules.includes(to.module.name),
-    )
-    .map(({ from, to }) => `  ${from.module.name}-->${to.module.name}`);
+  const modulesContainer = app.get(ModulesContainer);
+  const mermaidEdges: string[] = [];
+  for (const module of modulesContainer.values()) {
+    const from = module.metatype?.name;
+    if (!from || genericModules.includes(from)) {
+      continue;
+    }
+    for (const importedModule of module.imports) {
+      const to = importedModule.metatype?.name;
+      if (!to || genericModules.includes(to)) {
+        continue;
+      }
+      mermaidEdges.push(`  ${from}-->${to}`);
+    }
+  }
   const mermaidGraph =
     '# Module Dependencies Graph\n\n```mermaid\ngraph LR\n' +
     mermaidEdges.sort().join('\n') +
