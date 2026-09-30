@@ -216,6 +216,10 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           value: dataCacheDir
         }
         {
+          name: 'PIPELINE_RUN_ORIGIN'
+          value: 'scheduled'
+        }
+        {
           name: 'IBF_PIPELINE_API_KEY'
           value: apiKeyReference
         }
@@ -337,7 +341,7 @@ resource eventCreatedAlert 'Microsoft.Insights/scheduledQueryRules@2022-06-15' =
         }
       ]
     }
-    autoMitigate: false
+    autoMitigate: true
     actions: {
       actionGroups: [
         eventCreatedActionGroup.id

@@ -9,13 +9,6 @@
 # Submission goes through function/submit_pipeline_job.py, which reuses
 # function/batch_client.py.
 #
-# Auth: the Batch account is AAD-only, so the job is submitted as the
-# operator's own `az login` identity. That operator needs
-# "Azure Batch Job Submitter" on nrwbatchpoc and "Key Vault Secrets User" on
-# the nrw-batch-poc vault (see data/pipelines/deploy/readme-implementation.md for the
-# one-time grant commands; the scheduler UAMI's grants do not apply to a human
-# running these scripts).
-#
 # Prerequisites:
 #   - Azure CLI logged in (`az login`) with the grants listed above.
 #   - uv installed (provides azure-batch/azure-identity via `uv run --with`).
@@ -66,6 +59,7 @@ export IBF_PIPELINE_API_KEY GLOFAS_FTP_USER GLOFAS_FTP_PASSWORD
 export GITHUB_DATA_BASE_URL="https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main"
 export GLOFAS_FTP_HOST="aux.ecmwf.int"
 export DATA_CACHE_DIR="/mnt/batch/tasks/fsmounts/nrw-data-cache"
+export PIPELINE_RUN_ORIGIN="manual"
 
 # Mirror the Function App setting from main.bicep so submitted jobs export
 # pipeline logs to the same Application Insights component as the scheduled
@@ -74,6 +68,19 @@ export APPLICATIONINSIGHTS_CONNECTION_STRING="$(az monitor app-insights componen
   --app nrw-batch-scheduler \
   --resource-group nrw-batch-poc \
   --query connectionString \
+  --output tsv)"
+
+# Mirror the Function App settings from main.bicep so the Batch node agent
+# uploads task stdout/stderr to blob storage (task-logs/)
+export BATCH_TASK_LOGS_CONTAINER_URL="$(az storage account show \
+  --name nrwbatchpoc \
+  --resource-group nrw-batch-poc \
+  --query primaryEndpoints.blob \
+  --output tsv)nrw-data-cache"
+export BATCH_POOL_NODE_IDENTITY_RESOURCE_ID="$(az identity show \
+  --name nrw-batch-poc \
+  --resource-group nrw-batch-poc \
+  --query id \
   --output tsv)"
 
 # Force the operator's own identity: a stray AZURE_CLIENT_ID in the shell

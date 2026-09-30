@@ -4,8 +4,16 @@
 
 - `pipelines/infra/` — shared infrastructure: data submission, integrity checks, configuration
 - `pipelines/<hazard-type>/` — hazard-specific pipeline implementations (flood, drought)
+- `pipelines/deploy/` — Azure Batch deployment and manual job-submission helpers
 - `pipelines/test/` — tests: unit, infra-integration, pipeline-integration
 - `data_management/` — scripts for managing seed data
+
+## Running Pipelines
+
+Keep the two execution paths distinct:
+
+- Local run: see `data/pipelines/README.md`
+- Deployed Azure Batch job: from `data/pipelines/deploy/`, use `./function/run_pipeline_job.sh <hazard-type>` for a live run or `./function/mock_run_pipeline_job.sh <hazard-type> --mock <count> [flags]` for mock data.
 
 ## Style
 
