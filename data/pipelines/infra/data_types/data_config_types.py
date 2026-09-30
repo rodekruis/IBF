@@ -76,7 +76,7 @@ class DataSourceConfig:
 
     Sources marked `retryable` populate shared cached state on a successful load
     (e.g. a lazy download reused by later countries), so a country that fails to
-    load one can be retried once another country has warmed that cache.
+    load one can be retried once another country has loaded data into that cache.
     """
 
     country_code_iso_3: CountryCodeIso3

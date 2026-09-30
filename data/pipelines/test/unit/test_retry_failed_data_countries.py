@@ -14,6 +14,8 @@ from pipelines.infra.data_types.data_config_types import (
 from pipelines.infra.data_types.enums import HazardType
 from pipelines.infra.run_forecasts import (
     _has_retryable_source_failure,
+    _log_country_result,
+    _log_failed_countries,
     _retry_failed_data_countries,
     _run_country,
     CountryRunResult,
@@ -337,3 +339,74 @@ class TestHasRetryableSourceFailure:
 
         # Assert
         assert result is False
+
+
+class TestFailureLogging:
+    def test_recovered_country_is_not_logged_as_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Arrange
+        errors_logged: list[str] = []
+        infos_logged: list[str] = []
+        monkeypatch.setattr(
+            run_forecasts_module,
+            "log_error",
+            lambda _logger, _tag, message: errors_logged.append(message),
+        )
+        monkeypatch.setattr(
+            run_forecasts_module,
+            "log_info",
+            lambda _logger, _tag, message: infos_logged.append(message),
+        )
+        failed = CountryRunResult(
+            _make_country("KEN"),
+            ["FTP timeout"],
+            is_retryable_data_failure=True,
+            data_load_succeeded=False,
+        )
+        succeeded = CountryRunResult(
+            _make_country("ETH"),
+            [],
+            is_retryable_data_failure=False,
+            data_load_succeeded=True,
+        )
+
+        # Act
+        _log_country_result(_make_context(), failed)
+        _log_country_result(_make_context(), succeeded)
+
+        # Assert
+        assert errors_logged == []
+        assert any("ETH" in message for message in infos_logged)
+
+    def test_still_failing_countries_are_logged_once_after_retry(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Arrange
+        errors_logged: list[str] = []
+        monkeypatch.setattr(
+            run_forecasts_module,
+            "log_error",
+            lambda _logger, _tag, message: errors_logged.append(message),
+        )
+        results = [
+            CountryRunResult(
+                _make_country("KEN"),
+                ["FTP timeout"],
+                is_retryable_data_failure=True,
+                data_load_succeeded=False,
+            ),
+            CountryRunResult(
+                _make_country("ETH"),
+                [],
+                is_retryable_data_failure=False,
+                data_load_succeeded=True,
+            ),
+        ]
+
+        # Act
+        _log_failed_countries(results)
+
+        # Assert
+        assert len(errors_logged) == 1
+        assert "KEN" in errors_logged[0]

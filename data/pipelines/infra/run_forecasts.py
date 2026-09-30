@@ -273,8 +273,10 @@ def run_forecasts(
     results = _run_countries(context, countries)
 
     # Countries whose retryable data source failed transiently (e.g. a GloFAS FTP
-    # timeout) can be retried once another country has warmed the shared cache.
+    # timeout) can be retried once another country has loaded data into the shared cache.
     results = _retry_failed_data_countries(context, results)
+
+    _log_failed_countries(results)
 
     return [error for result in results for error in result.errors]
 
@@ -300,19 +302,25 @@ def _log_country_result(
     context: ForecastRunContext,
     result: CountryRunResult,
 ) -> None:
-    country_code = result.country.country_code_iso_3
+    # Failures are logged once after the retry pass, so a country that recovers
+    # on retry never leaves an error behind.
     if result.errors:
-        log_error(
-            logger,
-            LogTag.INFRA,
-            f"Errors for '{country_code}': {result.errors}",
-        )
-    else:
-        log_info(
-            logger,
-            LogTag.INFRA,
-            f"Completed '{context.hazard_type}' for '{country_code}'",
-        )
+        return
+    log_info(
+        logger,
+        LogTag.INFRA,
+        f"Completed '{context.hazard_type}' for '{result.country.country_code_iso_3}'",
+    )
+
+
+def _log_failed_countries(results: list[CountryRunResult]) -> None:
+    for result in results:
+        if result.errors:
+            log_error(
+                logger,
+                LogTag.INFRA,
+                f"Errors for '{result.country.country_code_iso_3}': {result.errors}",
+            )
 
 
 def _retry_failed_data_countries(
