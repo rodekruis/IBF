@@ -56,6 +56,7 @@ TASK_ENVIRONMENT_VARIABLES = (
     # Set by main.bicep on the Function App; enables pipeline log export to
     # Application Insights inside the Batch task containers.
     "APPLICATIONINSIGHTS_CONNECTION_STRING",
+    "PIPELINE_RUN_ORIGIN",
 )
 
 

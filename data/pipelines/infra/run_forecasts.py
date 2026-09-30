@@ -21,6 +21,7 @@ from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
     OutputMode,
+    RunOrigin,
     SourceTarget,
 )
 from pipelines.infra.data_types.enums import ForecastSource, HazardType
@@ -64,6 +65,7 @@ def _run_country(
     output_mode: OutputMode,
     output_path: str,
     api_client: ApiClient,
+    is_live_run: bool,
     local_data: str | None = None,
     local_data_date: str | None = None,
 ) -> list[str]:
@@ -76,9 +78,6 @@ def _run_country(
     if not load_success:
         return load_errors
 
-    # Determine if this is a live run based on the GloFAS data source.
-    # Only live runs load GloFAS data from the FTP server.
-    is_live_run = DataSource.GLOFAS_DISCHARGE_FTP in data_provider.loaded_data
     data_submitter = DataSubmitter(api_client, is_live_run=is_live_run)
 
     # --- Set forecast metadata based on hazard type ---
@@ -165,6 +164,8 @@ def run_forecasts(
     _register_hazard_functions()
 
     source_target = _resolve_source_target(mock)
+    is_live_run = source_target == SourceTarget.LIVE and local_data is None
+    os.environ["PIPELINE_SOURCE_TARGET"] = source_target.value
 
     config_reader = ConfigReader(source_target=source_target, infra_only=infra_only)
     if not config_reader.load_all(config_path) or config_reader.config is None:
@@ -194,7 +195,11 @@ def run_forecasts(
 
     all_errors: list[str] = []
 
-    api_client = ApiClient()
+    run_origin = RunOrigin(os.environ.get("PIPELINE_RUN_ORIGIN", RunOrigin.LOCAL))
+    api_client = ApiClient(
+        run_origin=run_origin,
+        source_target=source_target.value,
+    )
 
     active_fn = hazard_fn
     if infra_only:
@@ -228,6 +233,7 @@ def run_forecasts(
             output_mode,
             output_path,
             api_client,
+            is_live_run=is_live_run,
             local_data=local_data,
             local_data_date=local_data_date,
         )
