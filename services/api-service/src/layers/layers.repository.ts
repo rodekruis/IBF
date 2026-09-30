@@ -76,11 +76,6 @@ export class LayersRepository {
     type: string;
     hazardType: HazardType | null;
   }): boolean {
-    // Exclude shape layers (e.g. exposedPopulation) as these are handled differently in the FE
-    if (row.type === LayerType.shape) {
-      return false;
-    }
-
     // Exclude hazard-specific raster layers (e.g. floodDepth) as these are served per-event via GET /events
     // TODO: probably serve all hazard-type-specific layers (e.g. glofasStations) via GET /events
     if (row.type === LayerType.raster && row.hazardType !== null) {
