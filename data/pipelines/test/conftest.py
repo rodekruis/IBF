@@ -36,8 +36,9 @@ def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
     )
     submitter.create_alert(
         event_name=EVENT_NAME,
-        centroid=Centroid(latitude=1.0, longitude=37.0),
     )
+    # The centroid is normally derived by infra post-processing; set it directly here.
+    submitter.get_alerts()[-1].centroid = Centroid(latitude=1.0, longitude=37.0)
     submitter.add_severity_data(
         event_name=EVENT_NAME,
         time_interval_start="2026-03-20T00:00:00Z",

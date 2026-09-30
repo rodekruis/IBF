@@ -73,8 +73,8 @@ The sections below describe each piece in more technical detail.
     for ECMWF.
   - ATCF invests (cyclone numbers 90-99) are dropped.
   - `StormTrack.storm_identifier`: stable per-storm event name, e.g. `WP24_2025`.
-  - `derive_alert_centroid`: the storm-center point to report, or `None` if the peak-wind bucket
-    falls outside that storm's tracked window.
+  - `peak_wind_within_tracked_window`: guards that the peak-wind bucket falls inside the storm's
+    tracked window, so that wind can be attributed to the storm; otherwise no alert is raised.
   - `select_place_codes_near_storm`: the admin areas near one storm's own track, used to scope that
     storm's alert.
   - `find_storm_pairs_sharing_place_codes`: flags storm pairs scoped to overlapping admin areas.
@@ -125,7 +125,6 @@ The sections below describe each piece in more technical detail.
 # Alert scenario: Krathon/Julian, WP20/2024 gefs.20240929/06
 uv run pipeline --config pipelines/infra/configs/tropicalCyclone.yaml --country PHL --mock 1 --output-mode local
 # eventName: WP20_2024
-# centroid: latitude: 20.635, longitude: 121.858
 # median severities: 38.67, 33.75, 37.33, 41.22, 41.32, 41.96, 37.15 m/s (7 buckets, all above MIN_SEVERITY_MS=33.0)
 # total population exposed: 60090
 
@@ -148,9 +147,10 @@ mock_no_alert`); each downloads + caches its seeded GEFS cycle via the matching 
 6. Loop over alert configs (spatial extents) x temporal extents. Per spatial extent, scope every
    storm to its own admin areas and flag any pair that overlaps.
 7. `extract_wind_speed` once per temporal extent (shared across all storms).
-8. Per storm: `determine_severities` -> `derive_alert_centroid` -> `compute_alert_spatial_extent` +
+8. Per storm: `determine_severities` -> `peak_wind_within_tracked_window` -> `compute_alert_spatial_extent` +
    `clip_wind_spatial_extent_to_admin_areas` -> `compute_population_exposed` + `aggregate_population_exposed`
-   -> submit via `DataSubmitter` under that storm's `storm_identifier`.
+   -> submit via `DataSubmitter` under that storm's `storm_identifier`. The event centroid is derived
+   by pipeline infra as the center of mass of the deepest-level exposed admin areas.
 
 ## Output
 

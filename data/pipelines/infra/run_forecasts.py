@@ -29,6 +29,7 @@ from pipelines.infra.environment import load_environment_settings
 from pipelines.infra.utils.alert_admin_aggregation import (
     aggregate_to_parent_admin_levels,
 )
+from pipelines.infra.utils.alert_centroid import compute_alert_centroid
 from pipelines.infra.utils.api_client import ApiClient
 from pipelines.infra.utils.infra_mock_generator import make_infra_mock_hazard_function
 from pipelines.infra.utils.nrw_logger import log_error, log_info, log_warning, LogTag
@@ -97,9 +98,10 @@ def _run_country(
         country.target_admin_level,
     )
 
-    # --- Post-processing: aggregate deepest-level admin area data upward ---
+    # --- Post-processing: derive the event centroid and aggregate admin area data upward ---
     admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_IBF_API, AdminAreasSet)
     for alert in data_submitter.get_alerts():
+        alert.centroid = compute_alert_centroid(alert, admin_areas)
         aggregate_to_parent_admin_levels(alert, admin_areas)
 
     # --- Write output ---

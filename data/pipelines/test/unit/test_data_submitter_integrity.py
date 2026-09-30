@@ -30,8 +30,8 @@ def test_incomplete_alert_is_rejected(tmp_output: Path):
     )
     submitter.create_alert(
         event_name=EVENT_NAME,
-        centroid=Centroid(latitude=1.0, longitude=37.0),
     )
+    submitter.get_alerts()[-1].centroid = Centroid(latitude=1.0, longitude=37.0)
 
     errors = submitter.send_all(OutputMode.LOCAL, str(tmp_output))
 
@@ -107,8 +107,8 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     )
     submitter.create_alert(
         event_name=EVENT_NAME,
-        centroid=Centroid(latitude=91.0, longitude=200.0),
     )
+    submitter.get_alerts()[-1].centroid = Centroid(latitude=91.0, longitude=200.0)
     submitter.add_severity_data(
         event_name=EVENT_NAME,
         time_interval_start="2026-03-20T00:00:00Z",
@@ -142,6 +142,16 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
 
     assert any("latitude 91.0 out of range" in e for e in errors)
     assert any("longitude 200.0 out of range" in e for e in errors)
+    assert not (tmp_output / "forecast.json").exists()
+
+
+def test_missing_centroid_is_rejected(valid_submitter: DataSubmitter, tmp_output: Path):
+    """An alert whose centroid was never derived is rejected."""
+    valid_submitter.get_alerts()[-1].centroid = None
+
+    errors = valid_submitter.send_all(OutputMode.LOCAL, str(tmp_output))
+
+    assert any("centroid: not set" in e for e in errors)
     assert not (tmp_output / "forecast.json").exists()
 
 
@@ -192,8 +202,8 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
     )
     submitter.create_alert(
         event_name=EVENT_NAME,
-        centroid=Centroid(latitude=1.0, longitude=37.0),
     )
+    submitter.get_alerts()[-1].centroid = Centroid(latitude=1.0, longitude=37.0)
     submitter.add_severity_data(
         event_name=EVENT_NAME,
         time_interval_start="2026-03-20T00:00:00Z",
