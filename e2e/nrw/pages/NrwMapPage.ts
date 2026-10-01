@@ -62,6 +62,14 @@ export class NrwMapPage {
     return this.eventDetail.locator('tbody tr');
   }
 
+  get selectedAdminArea(): Locator {
+    return this.eventDetail.locator('[class*="selected-admin-area-value"]');
+  }
+
+  get exposedAdminAreasBackButton(): Locator {
+    return this.eventDetail.getByRole('button', { name: 'Back', exact: true });
+  }
+
   get layersButton(): Locator {
     return this.page.getByRole('button', { name: 'Layers', exact: true });
   }
