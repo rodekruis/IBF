@@ -20,8 +20,10 @@ MEDIAN = "median"
 HIGH = "high"
 
 
-def check_centroid(event_name: str, centroid: Centroid) -> list[str]:
+def check_centroid(event_name: str, centroid: Centroid | None) -> list[str]:
     errors: list[str] = []
+    if centroid is None:
+        return [f"Alert '{event_name}' centroid: not set"]
     if not (-90 <= centroid.latitude <= 90):
         errors.append(
             f"Alert '{event_name}' centroid: latitude {centroid.latitude} "

@@ -8,7 +8,6 @@ from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
 from pipelines.infra.data_types.dtos import (
-    Centroid,
     EnsembleMemberType,
     HazardType,
     LayerName,
@@ -113,7 +112,6 @@ def _generate_mock_alerts(
 
         data_submitter.create_alert(
             event_name=event_name,
-            centroid=Centroid(latitude=float(i), longitude=float(i)),
         )
 
         _submit_severity_data(data_submitter, event_name, profile, i)

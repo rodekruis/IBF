@@ -14,7 +14,6 @@ from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
-from pipelines.infra.data_types.dtos import Centroid
 from pipelines.infra.data_types.enums import EnsembleMemberType, LayerName, SeverityKey
 from pipelines.infra.data_types.loaded_data_types import AlertConfig
 from pipelines.infra.utils.exposure import get_place_codes_for_alert_config
@@ -64,7 +63,6 @@ def calculate_forecasts(
             # Step 3 - Create an alert and submit severity data.
             data_submitter.create_alert(
                 event_name=event_name,
-                centroid=Centroid(latitude=0.0, longitude=0.0),
             )
 
             # At least 1 RUN + 1 MEDIAN severity record per time interval is required.

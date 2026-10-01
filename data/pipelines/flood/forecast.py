@@ -18,7 +18,7 @@ from pipelines.infra.data_provider import DataProvider
 from pipelines.infra.data_submitter import DataSubmitter
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import DataSource
-from pipelines.infra.data_types.dtos import Centroid, WATER_DISCHARGE_ATTRIBUTE
+from pipelines.infra.data_types.dtos import WATER_DISCHARGE_ATTRIBUTE
 from pipelines.infra.data_types.enums import EnsembleMemberType, LayerName, SeverityKey
 from pipelines.infra.data_types.flood_depth_provider import FloodDepthProvider
 from pipelines.infra.data_types.loaded_data_types import AlertConfig, RasterData
@@ -206,11 +206,6 @@ def calculate_flood_forecasts(
             event_name = station.name if station.name.lower() != "na" else station_code
             data_submitter.create_alert(
                 event_name=event_name,
-                # For floods we agreed that event centroid is the station location
-                centroid=Centroid(
-                    latitude=station.lat,
-                    longitude=station.lon,
-                ),
             )
             log_info(
                 logger,
