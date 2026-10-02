@@ -423,7 +423,7 @@ function buildEthiopiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
     },
     {
       eventName: 'G5173',
-      centroid: { latitude: 2.85, longitude: 37.45 },
+      centroid: { latitude: 4.7331, longitude: 37.4361 },
       severity: [
         ...Array.from({ length: 8 }, (_, i) => ({
           timeInterval: {
@@ -505,7 +505,7 @@ function buildUgandaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'Akokorio at Uganda Gauge',
-      centroid: { latitude: 1.775, longitude: 33.875 },
+      centroid: { latitude: 2.4849, longitude: 34.0353 },
       severity: [
         ...Array.from({ length: 8 }, (_, i) => ({
           timeInterval: {
@@ -2164,7 +2164,7 @@ function buildMalawiFloodAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'Sinoya South',
-      centroid: { latitude: -16.223, longitude: 35.307 },
+      centroid: { latitude: -16.2736, longitude: 35.2203 },
       severity: [
         ...Array.from({ length: 8 }, (_, i) => ({
           timeInterval: {
@@ -2246,7 +2246,7 @@ function buildKenyaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'ATHI MUNYU (3DA02)',
-      centroid: { latitude: -1.095, longitude: 37.194 },
+      centroid: { latitude: -3.0918, longitude: 39.5013 },
       severity: [
         ...Array.from({ length: 8 }, (_, i) => ({
           timeInterval: {
@@ -2412,7 +2412,7 @@ function buildPhilippinesFloodAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'Nia Pumping Station',
-      centroid: { latitude: 8.886, longitude: 125.541 },
+      centroid: { latitude: 8.7677, longitude: 125.5668 },
       severity: [
         ...Array.from({ length: 8 }, (_, i) => ({
           timeInterval: {
@@ -2580,7 +2580,7 @@ function buildPhilippinesTropicalCycloneAlerts(
   return [
     {
       eventName: 'WP20_2024',
-      centroid: { latitude: 20.69, longitude: 121.8 },
+      centroid: { latitude: 20.5524, longitude: 121.8879 },
       severity: [
         ...Array.from({ length: 7 }, (_, i) => ({
           timeInterval: {
@@ -2682,7 +2682,7 @@ function buildSouthSudanFloodAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'G5100',
-      centroid: { latitude: 6.208, longitude: 31.542 },
+      centroid: { latitude: 6.606, longitude: 31.5314 },
       severity: [
         ...Array.from({ length: 8 }, (_, i) => ({
           timeInterval: {
@@ -2920,7 +2920,7 @@ function buildZambiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
   return [
     {
       eventName: 'NgwerereConfluence',
-      centroid: { latitude: -15.2167, longitude: 28.5 },
+      centroid: { latitude: -14.554, longitude: 28.0265 },
       severity: [
         ...Array.from({ length: 8 }, (_, i) => ({
           timeInterval: {

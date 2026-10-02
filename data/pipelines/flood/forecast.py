@@ -202,6 +202,15 @@ def calculate_flood_forecasts(
                 population_exposed_raster, place_codes_exposed, target_admin_areas
             )
 
+            flooded_admin_areas = list(population_exposed)
+            if not flooded_admin_areas:
+                log_warning(
+                    logger,
+                    LogTag.FLOOD_LOGIC,
+                    f"No alert for station {station_code}: the flood extent covers none of its admin areas",
+                )
+                continue
+
             ### Step 9 - Create alert and submit severity/exposure payloads ###
             event_name = station.name if station.name.lower() != "na" else station_code
             data_submitter.create_alert(

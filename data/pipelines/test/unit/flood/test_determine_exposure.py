@@ -173,6 +173,37 @@ def test_compute_population_exposed_returns_zero_for_empty_spatial_extent():
     assert population == {}
 
 
+def test_aggregate_population_exposed_keeps_flooded_area_without_population():
+    # Arrange
+    population_data = RasterData(
+        array=np.array([[0.0, 0.0], [30.0, 40.0]], dtype=np.float32),
+        transform=from_origin(0, 2, 1, 1),
+        crs=DEFAULT_CRS,
+        nodata=POPULATION_NODATA_VALUE,
+    )
+    flood_depth_data = RasterData(
+        array=np.array([[5, 5], [0, 0]], dtype=np.float32),
+        transform=from_origin(0, 2, 1, 1),
+        crs=DEFAULT_CRS,
+        nodata=POPULATION_NODATA_VALUE,
+    )
+    population_exposed_raster = compute_population_exposed(
+        population_raster=population_data,
+        hazard_spatial_extent_raster=flood_depth_data,
+    )
+    assert population_exposed_raster is not None
+
+    # Act
+    population = aggregate_population_exposed(
+        population_exposed_raster=population_exposed_raster,
+        place_codes_exposed=["PC001"],
+        admin_areas=_build_admin_areas(),
+    )
+
+    # Assert
+    assert population == {"PC001": 0.0}
+
+
 def test_clip_flood_depth_to_admin_areas_clips_to_geometry():
     flood_depth_data = RasterData(
         array=np.array([[1, 2], [3, 4]], dtype=np.float32),
