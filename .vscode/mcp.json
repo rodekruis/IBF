@@ -3,7 +3,13 @@
     "ado": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@azure-devops/mcp", "redcrossnl"],
+      "args": [
+        "-y",
+        "@azure-devops/mcp",
+        "redcrossnl",
+        "--authentication",
+        "azcli"
+      ],
       "env": {
         "ado_mcp_project": "National Risk Watch"
       }
