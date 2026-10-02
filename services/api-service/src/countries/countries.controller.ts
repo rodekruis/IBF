@@ -10,15 +10,22 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { CountriesService } from '@api-service/src/countries/countries.service';
+import { AdminLevelLabelDto } from '@api-service/src/countries/dto/admin-level-label.dto';
 import { CountryCreateDto } from '@api-service/src/countries/dto/country-create.dto';
 import { CountryResponseDto } from '@api-service/src/countries/dto/country-response.dto';
 import { CountryUpdateDto } from '@api-service/src/countries/dto/country-update.dto';
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 
 @ApiTags('countries')
+@ApiExtraModels(AdminLevelLabelDto)
 @Controller('countries')
 export class CountriesController {
   public constructor(private readonly countriesService: CountriesService) {}
