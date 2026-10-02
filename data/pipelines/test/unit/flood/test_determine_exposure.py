@@ -5,6 +5,7 @@ from pipelines.constants import DEFAULT_CRS, POPULATION_NODATA_VALUE
 from pipelines.flood.determine_exposure import (
     clip_flood_depth_to_admin_areas,
     determine_spatial_extent,
+    has_flooded_cells,
 )
 from pipelines.flood.forecast import validate_alert_config_place_codes
 from pipelines.infra.data_types.admin_area_types import (
@@ -267,6 +268,38 @@ def test_determine_spatial_extent_returns_early_when_all_place_codes_invalid():
 
     assert valid_codes == []
     assert clipped is None
+
+
+def test_has_flooded_cells_is_true_for_positive_flood_depth():
+    # Arrange
+    flood_depth_data = RasterData(
+        array=np.array([[-9999.0, 0.0], [0.0, 0.4]], dtype=np.float32),
+        transform=from_origin(0, 2, 1, 1),
+        crs=DEFAULT_CRS,
+        nodata=-9999.0,
+    )
+
+    # Act
+    result = has_flooded_cells(flood_depth_data)
+
+    # Assert
+    assert result is True
+
+
+def test_has_flooded_cells_is_false_without_positive_flood_depth():
+    # Arrange
+    flood_depth_data = RasterData(
+        array=np.array([[-9999.0, 0.0], [0.0, -9999.0]], dtype=np.float32),
+        transform=from_origin(0, 2, 1, 1),
+        crs=DEFAULT_CRS,
+        nodata=-9999.0,
+    )
+
+    # Act
+    result = has_flooded_cells(flood_depth_data)
+
+    # Assert
+    assert result is False
 
 
 def test_determine_spatial_extent_returns_early_when_place_codes_empty():

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import numpy as np
+
 from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.loaded_data_types import RasterData
 from pipelines.infra.data_types.location_point import LocationPoint
@@ -33,6 +35,12 @@ def determine_spatial_extent(
     )
 
     return clipped_flood_depth, valid_place_codes
+
+
+def has_flooded_cells(flood_depth: RasterData) -> bool:
+    return bool(
+        np.any((flood_depth.array > 0) & (flood_depth.array != flood_depth.nodata))
+    )
 
 
 def clip_flood_depth_to_admin_areas(

@@ -1,10 +1,18 @@
-from __future__ import annotations
+"""Manual flood check: does every configured flood station produce a valid alert?
 
-"""Manual flood check: run pipeline for all stations of all countries, with simulated high discharge.
+What: runs the flood pipeline logic once per alert config (station) of every configured country,
+with simulated GloFAS discharge forced above the station's thresholds.
+The regular mock run (``uv run pipeline --mock 1``) uses only one seeded discharge file per country.
+This sweep exercises all stations, to catch potential data edge cases (e.g. flood extent without population)
+that otherwise only show up when that specific station alerts in production.
 
-Run from the data directory with ``uv run python pipelines/test/manual_checks/flood_station_sweep.py``.
+Usage (from the data directory, with the local API running):
+    uv run python pipelines/test/manual_checks/flood_station_sweep.py [--country ETH] [--return-period 10]
+Add ``--station <code> --output-mode api`` to post a single station's alert to the local API.
 The report is written under pipelines/output, and decoded population rasters are cached under data/.
 """
+
+from __future__ import annotations
 
 import argparse
 import json
