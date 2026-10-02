@@ -9,7 +9,10 @@ from pipelines.flood.determine_alerts import (
     ReturnPeriodThresholds,
     ReturnPeriodThresholdValue,
 )
-from pipelines.flood.determine_exposure import determine_spatial_extent
+from pipelines.flood.determine_exposure import (
+    determine_spatial_extent,
+    has_flooded_cells,
+)
 from pipelines.flood.extract_forecast import (
     build_water_discharge_time_series,
     extract_discharge_glofas_station,
@@ -174,6 +177,14 @@ def calculate_flood_forecasts(
                     logger,
                     LogTag.FLOOD_LOGIC,
                     f"No place codes for station {station_code}",
+                )
+                continue
+
+            if not has_flooded_cells(clipped_flood_depth):
+                log_warning(
+                    logger,
+                    LogTag.FLOOD_LOGIC,
+                    f"No alert for station {station_code}: the flood extent covers none of its admin areas",
                 )
                 continue
 

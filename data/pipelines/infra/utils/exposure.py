@@ -18,6 +18,9 @@ from shapely.ops import unary_union
 
 logger = logging.getLogger(__name__)
 
+# Not 0, which stands for exposed cells without population
+OUTSIDE_HAZARD_EXTENT_VALUE = -1.0
+
 
 @dataclass(frozen=True)
 class RasterAdminAreaClipper:
@@ -63,7 +66,8 @@ def aggregate_population_exposed(
     admin_areas: AdminAreasSet,
 ) -> dict[str, float]:
     """
-    Aggregate population exposed within the alert spatial extent per place code.
+    Aggregate population exposed per place code, for admin areas that intersect the hazard
+    spatial extent. Intersecting admin areas without population get 0; others are left out.
     """
 
     population: dict[str, float] = {}
@@ -80,17 +84,17 @@ def aggregate_population_exposed(
         geometries,
         population_exposed_raster.array,
         affine=population_exposed_raster.transform,
-        stats=["sum"],
+        stats=["sum", "count"],
         all_touched=False,
         nodata=population_exposed_raster.nodata,
     )
 
     for pcode, stat in zip(pcodes_ordered, stats):
-        value = stat.get("sum")
-        population[pcode] = round(value, 0) if value is not None else 0.0
-
-    # drop records if exposed population is zero, to avoid sending empty values to the API
-    population = {k: v for k, v in population.items() if v > 0}
+        # Cells outside the hazard spatial extent are nodata, so "count" only counts hazard cells
+        hazard_cell_count = stat.get("count") or 0
+        if hazard_cell_count == 0:
+            continue
+        population[pcode] = round(stat["sum"], 0)
 
     return population
 
@@ -102,6 +106,8 @@ def compute_population_exposed(
     """
     Masks the population raster with the (binary) hazard spatial extent raster
     so only exposed pixels count toward the population sum.
+    Pixels outside the hazard spatial extent are nodata, so they stay distinguishable from
+    exposed pixels without population.
     Returns the exposed population as in-memory raster data.
     """
     if (
@@ -138,15 +144,20 @@ def compute_population_exposed(
     binary_hazard_spatial_extent = (
         (hazard_array_resampled > 0) & (hazard_array_resampled != hazard_nodata)
     ).astype(np.uint8)
+    population_without_nodata = np.where(
+        cropped_pop_array == population_raster.nodata, 0.0, cropped_pop_array
+    )
     population_in_hazard_spatial_extent = np.where(
-        binary_hazard_spatial_extent == 1, cropped_pop_array, 0.0
+        binary_hazard_spatial_extent == 1,
+        population_without_nodata,
+        OUTSIDE_HAZARD_EXTENT_VALUE,
     )
 
     return RasterData(
         array=population_in_hazard_spatial_extent.astype(np.float32),
         transform=cropped_pop_transform,
         crs=pop_crs,
-        nodata=population_raster.nodata,
+        nodata=OUTSIDE_HAZARD_EXTENT_VALUE,
     )
 
 

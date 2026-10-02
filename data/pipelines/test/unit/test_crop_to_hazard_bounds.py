@@ -10,6 +10,10 @@ from pipelines.infra.utils.exposure import (
 )
 
 
+def _exposed_population_sum(raster: RasterData) -> float:
+    return float(raster.array[raster.array != raster.nodata].sum())
+
+
 class TestCropToHazardBounds:
     def test_crops_population_to_hazard_spatial_extent(self):
         pop_array = np.ones((100, 100), dtype=np.float32) * 10.0
@@ -101,7 +105,7 @@ class TestComputePopulationExposedWithCrop:
         assert result.array.shape[0] <= pop_array.shape[0]
         assert result.array.shape[1] <= pop_array.shape[1]
 
-        total_exposed = result.array.sum()
+        total_exposed = _exposed_population_sum(result)
         total_if_full_country = pop_array.sum()
         assert total_exposed < total_if_full_country
         assert total_exposed > 0
@@ -128,7 +132,7 @@ class TestComputePopulationExposedWithCrop:
         result = compute_population_exposed(population_raster, hazard_raster)
 
         assert result is not None
-        assert result.array.sum() == 0.0
+        assert _exposed_population_sum(result) == 0.0
 
     def test_result_matches_original_for_full_overlap(self):
         pop_array = np.ones((20, 20), dtype=np.float32) * 25.0
@@ -152,7 +156,9 @@ class TestComputePopulationExposedWithCrop:
         result = compute_population_exposed(population_raster, hazard_raster)
 
         assert result is not None
-        np.testing.assert_allclose(result.array.sum(), pop_array.sum(), rtol=0.01)
+        np.testing.assert_allclose(
+            _exposed_population_sum(result), pop_array.sum(), rtol=0.01
+        )
 
 
 class TestComputePopulationExposedAcrossNodataConventions:
@@ -186,4 +192,6 @@ class TestComputePopulationExposedAcrossNodataConventions:
         result = compute_population_exposed(population_raster, hazard_raster)
 
         assert result is not None
-        np.testing.assert_allclose(result.array.sum(), 100.0 * 16, rtol=0.01)
+        np.testing.assert_allclose(
+            _exposed_population_sum(result), 100.0 * 16, rtol=0.01
+        )
