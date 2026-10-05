@@ -139,5 +139,24 @@ describe('POST /alerts', () => {
       expect(response.body.errors).toBeDefined();
       expect(response.body.errors.length).toBeGreaterThan(0);
     });
+
+    it('should reject alert with two rasters for the same layer', async () => {
+      const alert = buildAlert({ eventName: 'duplicate-raster-layer' });
+      const [raster] = alert.exposure.rasters!;
+
+      const response = await createAlerts({
+        forecast: buildForecast({
+          alerts: [
+            {
+              ...alert,
+              exposure: { ...alert.exposure, rasters: [raster, raster] },
+            },
+          ],
+        }),
+        apiKey: apiKey!,
+      });
+
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+    });
   });
 });
