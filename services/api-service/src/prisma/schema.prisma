@@ -236,6 +236,7 @@ model AlertExposureRasterData {
   valueColoured   String
   metadata        Json
 
+  @@unique([alertId, layerName])
   @@index([alertId])
 }
 
