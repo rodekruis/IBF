@@ -31,7 +31,7 @@ export default defineConfig({
     viewport: null,
     ignoreHTTPSErrors: true,
     bypassCSP: false,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
   },
   projects: [
     {

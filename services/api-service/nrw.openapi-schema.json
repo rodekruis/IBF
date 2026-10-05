@@ -3225,6 +3225,23 @@
           }
         }
       },
+      "AdminLevelLabelDto": {
+        "type": "object",
+        "properties": {
+          "singular": {
+            "type": "string",
+            "example": "County"
+          },
+          "plural": {
+            "type": "string",
+            "example": "Counties"
+          }
+        },
+        "required": [
+          "singular",
+          "plural"
+        ]
+      },
       "CountryResponseDto": {
         "type": "object",
         "properties": {

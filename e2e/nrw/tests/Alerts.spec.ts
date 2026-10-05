@@ -60,10 +60,14 @@ test.describe('event card', () => {
     await expect(nrwMapPage.eventDetail).toContainText(
       'Trigger - activate EAP',
     );
-    await expect(nrwMapPage.exposedAdminAreaRows).toHaveCount(1);
+    await expect(nrwMapPage.eventDetail).toContainText(
+      'Total exposed Traditional Authorities',
+    );
+    await expect(nrwMapPage.exposedAdminAreaRows).toHaveCount(2);
     await expect(
       nrwMapPage.exposedAdminAreaRows.first().getByRole('cell'),
-    ).toHaveText(['Southern', '61']);
+    ).toHaveText(['STA Mbawela', '37']);
+    await expect(nrwMapPage.exposedAdminAreasBackButton).toHaveCount(0);
     await expect(nrwMapPage.eventMarkers).toHaveCount(0);
     await expect(nrwMapPage.layersButton).toBeVisible();
     await expect(page).toHaveScreenshot('event-card-expanded.png');
