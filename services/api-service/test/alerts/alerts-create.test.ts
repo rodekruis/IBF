@@ -28,15 +28,18 @@ describe('POST /alerts', () => {
   describe('successful submission', () => {
     // NOTE: event-lifecycle.test.ts covers more detailed successful submission scenarios. Also the test_pipeline_api.py pipeline tests asserts successful submission of alerts.
     it('should accept valid alert', async () => {
+      // Act
       const response = await createAlerts({
         forecast: VALID_FORECAST,
         apiKey: apiKey!,
       });
 
+      // Assert
       expect(response.status).toBe(HttpStatus.CREATED);
     });
 
     it('should not create event on too low alert severity', async () => {
+      // Arrange
       const lowSeverityAlert = buildAlert({
         eventName: 'low-severity',
         severity: [
@@ -61,11 +64,13 @@ describe('POST /alerts', () => {
         ],
       });
 
+      // Act
       await createAlerts({
         forecast: buildForecast({ alerts: [lowSeverityAlert] }),
         apiKey: apiKey!,
       });
 
+      // Assert
       const eventResponse = await getActiveEvents({ accessToken });
       expect(eventResponse.status).toBe(HttpStatus.OK);
       const event = eventResponse.body.find(
@@ -77,23 +82,28 @@ describe('POST /alerts', () => {
 
   describe('authentication', () => {
     it('should reject request without API key', async () => {
+      // Act
       const response = await getServer().post('/alerts').send(VALID_FORECAST);
 
+      // Assert
       expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
     });
 
     it('should reject request with invalid API key', async () => {
+      // Act
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', 'wrong-key-that-is-at-least-32-chars!!')
         .send(VALID_FORECAST);
 
+      // Assert
       expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
     });
   });
 
   describe('validation', () => {
     it('should reject alert with missing required fields', async () => {
+      // Act
       const response = await getServer()
         .post('/alerts')
         .set('x-api-key', apiKey!)
@@ -102,10 +112,12 @@ describe('POST /alerts', () => {
           alerts: [{ eventName: 'incomplete' }],
         });
 
+      // Assert
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
 
     it('should reject alert failing integrity check', async () => {
+      // Arrange
       const badAlert = buildAlert({
         eventName: 'BAD-time-interval',
         severity: [
@@ -130,20 +142,24 @@ describe('POST /alerts', () => {
         ],
       });
 
+      // Act
       const response = await createAlerts({
         forecast: buildForecast({ alerts: [badAlert] }),
         apiKey: apiKey!,
       });
 
+      // Assert
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
       expect(response.body.errors).toBeDefined();
       expect(response.body.errors.length).toBeGreaterThan(0);
     });
 
     it('should reject alert with two rasters for the same layer', async () => {
+      // Arrange
       const alert = buildAlert({ eventName: 'duplicate-raster-layer' });
       const [raster] = alert.exposure.rasters!;
 
+      // Act
       const response = await createAlerts({
         forecast: buildForecast({
           alerts: [
@@ -156,6 +172,7 @@ describe('POST /alerts', () => {
         apiKey: apiKey!,
       });
 
+      // Assert
       expect(response.status).toBe(HttpStatus.BAD_REQUEST);
     });
   });
