@@ -8,7 +8,6 @@ module.exports = {
   ignoreDependencies: [
     // Known issues with devDependencies:
     '@automock/adapters.nestjs', // Auto-loaded by @automock/jest
-    '@compodoc/compodoc', // Only used 'manually', see README.md
     'supertest', // Used in integration tests, but not directly imported
     'eslint-plugin-custom-rules', // Only imported in config, not in code
   ],
