@@ -1,6 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsOptional, ValidateNested } from 'class-validator';
+import {
+  ArrayUnique,
+  IsArray,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
 
 import { ExposureAdminAreaDto } from '@api-service/src/alerts/dto/exposure-admin-area.dto';
 import { ExposureGeoFeatureDto } from '@api-service/src/alerts/dto/exposure-geo-feature.dto';
@@ -36,6 +41,7 @@ export class ExposureDto {
   @ApiProperty({ type: [ExposureRasterDto], required: false })
   @IsOptional()
   @IsArray()
+  @ArrayUnique((raster: ExposureRasterDto) => raster.layer)
   @ValidateNested({ each: true })
   @Type(() => ExposureRasterDto)
   public readonly rasters?: ExposureRasterDto[];
