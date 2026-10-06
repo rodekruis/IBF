@@ -27,10 +27,3 @@ cert/Microsoft_RSA_Root_Certificate_Authority_2017.pem
 cert/Microsoft RSA Root Certificate Authority 2017.pem
 cert/DigiCert_Global_Root_G2.pem
 cert/DigiCertGlobalRootG2.crt.pem
-
-# Compodoc documentation
-documentation
-
-# AppMap
-tmp
-sql_warning.txt

@@ -16,7 +16,6 @@
     "start:services:detach": "npm run start:services -- --detach",
     "start:services:ci": "npm run start:services:detach -- --quiet-pull --wait --wait-timeout 300",
     "start:services:ci:production": "cd services/ && docker --log-level='warn' compose --file=docker-compose.yml up --detach --build --quiet-pull --wait --wait-timeout 300",
-    "start:services:appmap": "cd services/ && docker compose --file=docker-compose.yml --file=docker-compose.development.yml --file=docker-compose.development-appmap.yml up --detach --build",
     "setup:pipelines": "docker build --tag=pipelines:development --target=development data/ && docker run --rm --init --network=host --volume=$PWD/data:/home/pipelines/app",
     "start:pipelines": "npm run setup:pipelines -- pipelines:development uv run pipeline",
     "install:services": "cd services/ && docker compose --file=docker-compose.yml build",
