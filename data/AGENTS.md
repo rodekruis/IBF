@@ -13,7 +13,7 @@
 Keep the two execution paths distinct:
 
 - Local run: see `data/pipelines/README.md`
-- Deployed Azure Batch job: from `data/pipelines/deploy/`, use `./function/run_pipeline_job.sh <hazard-type>` for a live run or `./function/mock_run_pipeline_job.sh <hazard-type> --mock <count> [flags]` for mock data.
+- Deployed Azure Batch job: from `data/pipelines/deploy/`, use `./function/run_pipeline_job.sh <environment> <hazard-type>` for a live run or `./function/mock_run_pipeline_job.sh <environment> <hazard-type> --mock <count> [flags]` for mock data. `<environment>` is `poc`, `test`, `staging` or `prod`.
 
 ## Style
 
