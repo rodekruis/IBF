@@ -10,7 +10,6 @@
 # Prerequisites:
 #   - Azure CLI logged in (`az login`) with rights to deploy to the
 #     nrw-batch-poc resource group.
-#   - data/.env populated with IBF_API_URL (the NRW backend base URL, no /api).
 #
 # Usage:
 #   ./deploy.sh
@@ -22,7 +21,6 @@ DEPLOYMENT_NAME="nrw-batch-infra"
 SCRIPT_DIR="$(dirname "$0")"
 TEMPLATE_FILE="${SCRIPT_DIR}/main.bicep"
 PARAMETERS_FILE="${SCRIPT_DIR}/parameters.dev.json"
-ENV_FILE="${SCRIPT_DIR}/../../.env"
 # Function App name is owned by main.bicep and captured here so publish-function.sh
 # always targets exactly the app that was deployed.
 FUNCTION_APP_NAME_FILE="${SCRIPT_DIR}/.function-app-name"
@@ -37,20 +35,6 @@ if [[ ! -f "${PARAMETERS_FILE}" ]]; then
   exit 1
 fi
 
-if [[ ! -f "${ENV_FILE}" ]]; then
-  echo "Env file not found: ${ENV_FILE}" >&2
-  exit 1
-fi
-
-# Read a single KEY=value from the env file, stripping surrounding quotes.
-# shellcheck source=env_helpers.sh
-source "${SCRIPT_DIR}/env_helpers.sh"
-
-if ! ibf_api_url="$(read_env_var "IBF_API_URL")" || [[ -z "${ibf_api_url}" ]]; then
-  echo "IBF_API_URL not found in ${ENV_FILE}." >&2
-  exit 1
-fi
-
 echo "Deploying Bicep template '${TEMPLATE_FILE}' to resource group '${RESOURCE_GROUP}'."
 
 az deployment group create \
@@ -58,7 +42,6 @@ az deployment group create \
   --resource-group "${RESOURCE_GROUP}" \
   --template-file "${TEMPLATE_FILE}" \
   --parameters "@${PARAMETERS_FILE}" \
-  --parameters ibfApiUrl="${ibf_api_url}" \
   --output none
 
 echo "Capturing deployed Function App name from the '${DEPLOYMENT_NAME}' deployment outputs."

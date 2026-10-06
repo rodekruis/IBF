@@ -8,21 +8,22 @@
 # mock-data run, use mock_run_pipeline_job.sh instead.
 #
 # Usage:
-#   ./run_pipeline_job.sh <hazard-type>
-#   ./run_pipeline_job.sh floods
+#   ./run_pipeline_job.sh <environment> <hazard-type>
+#   ./run_pipeline_job.sh test floods
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_DIR="${SCRIPT_DIR}/../../.."
 
-if [[ $# -ne 1 ]]; then
-  echo "Usage: $0 <hazard-type>" >&2
-  echo "  e.g. $0 floods" >&2
+if [[ $# -ne 2 ]]; then
+  echo "Usage: $0 <environment> <hazard-type>" >&2
+  echo "  e.g. $0 test floods" >&2
   exit 1
 fi
 
-HAZARD_TYPE="$1"
+TARGET_ENVIRONMENT="$1"
+HAZARD_TYPE="$2"
 
 # Reject anything outside a conservative character allowlist
 if [[ ! "${HAZARD_TYPE}" =~ ^[A-Za-z_-]+$ ]]; then
@@ -33,6 +34,6 @@ fi
 # shellcheck source=pipeline_job_common.sh
 source "${SCRIPT_DIR}/pipeline_job_common.sh"
 
-echo "Submitting job for hazard '${HAZARD_TYPE}'."
+echo "Submitting job for hazard '${HAZARD_TYPE}' to environment '${TARGET_ENVIRONMENT}'."
 submit_job "${HAZARD_TYPE}"
 echo "Done."

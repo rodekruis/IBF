@@ -29,6 +29,9 @@
     "ibfEnvironment": {
       "value": "test"
     },
+    "ibfApiUrl": {
+      "value": "https://api-test.nationalriskwatch.org/"
+    },
     "githubDataBaseUrl": {
       "value": "https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main"
     },
