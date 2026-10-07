@@ -1,4 +1,8 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  ConsoleLogger,
+  INestApplication,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ModulesContainer, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
@@ -17,6 +21,7 @@ import {
 } from '@api-service/src/config';
 import { env } from '@api-service/src/env';
 import { INTERFACE_NAME_HEADER } from '@api-service/src/shared/enum/interface-names.enum';
+import { HttpExceptionLoggingFilter } from '@api-service/src/shared/filters/http-exception-logging.filter';
 import { AzureLogService } from '@api-service/src/shared/services/azure-log.service';
 import { ValidationPipeOptions } from '@api-service/src/validation-options/validation-pipe-options.const';
 
@@ -82,10 +87,53 @@ function generateNrwOpenApiSwagger(app: INestApplication<any>): void {
   writeFileSync('nrw.openapi-schema.json', document);
 }
 
+function setupAppInsights(): void {
+  if (!env.APPLICATIONINSIGHTS_CONNECTION_STRING) {
+    return;
+  }
+
+  appInsights
+    .setup(env.APPLICATIONINSIGHTS_CONNECTION_STRING)
+    .setAutoCollectConsole(true, true)
+    .start();
+
+  const client = appInsights.defaultClient;
+
+  // Telemetry processor to correlate requests with their origin interface
+  client.addTelemetryProcessor((envelope, contextObjects) => {
+    const telemetryType = envelope.data?.baseType;
+    const baseData = envelope.data?.baseData;
+
+    // Only touch request telemetry
+    if (telemetryType === 'RequestData' && baseData) {
+      const httpRequest = contextObjects?.http?.request;
+
+      if (httpRequest?.headers) {
+        const interfaceName = httpRequest.headers[INTERFACE_NAME_HEADER];
+
+        if (interfaceName) {
+          baseData.properties = baseData.properties || {};
+          baseData.properties.interface = interfaceName;
+        }
+      }
+    }
+
+    // IMPORTANT: Return `true` in all cases to keep the telemetry
+    return true;
+  });
+}
+
 async function bootstrap(): Promise<void> {
   console.warn(`Bootstrapping ${APP_TITLE} - ${APP_VERSION}`);
 
-  const app = await NestFactory.create(ApplicationModule);
+  const app = await NestFactory.create(ApplicationModule, {
+    // Write via `console` instead of `process.stdout`, so App Insights console auto-collection picks up Nest logs
+    logger: new ConsoleLogger({
+      forceConsole: true,
+      // Colors are on for local dev, but disabled when running in Azure
+      colors: IS_DEVELOPMENT,
+    }),
+  });
 
   // CORS is only enabled for local development; Because the Azure App Service applies its own CORS settings 'on the outside'
   app.enableCors({
@@ -146,6 +194,7 @@ async function bootstrap(): Promise<void> {
   });
 
   app.useGlobalPipes(new ValidationPipe(ValidationPipeOptions));
+  app.useGlobalFilters(new HttpExceptionLoggingFilter());
   app.use(bodyParser.json({ limit: '25mb' }));
   app.use(
     bodyParser.urlencoded({
@@ -189,34 +238,6 @@ async function bootstrap(): Promise<void> {
   });
 }
 
+// App Insights patches `console` at setup, so it must run before anything is logged
+setupAppInsights();
 void bootstrap();
-
-if (!!env.APPLICATIONINSIGHTS_CONNECTION_STRING) {
-  appInsights.setup(env.APPLICATIONINSIGHTS_CONNECTION_STRING);
-  appInsights.start();
-
-  const client = appInsights.defaultClient;
-
-  // Telemetry processor to correlate requests with their origin interface
-  client.addTelemetryProcessor((envelope, contextObjects) => {
-    const telemetryType = envelope.data?.baseType;
-    const baseData = envelope.data?.baseData;
-
-    // Only touch request telemetry
-    if (telemetryType === 'RequestData' && baseData) {
-      const httpRequest = contextObjects?.http?.request;
-
-      if (httpRequest?.headers) {
-        const interfaceName = httpRequest.headers[INTERFACE_NAME_HEADER];
-
-        if (interfaceName) {
-          baseData.properties = baseData.properties || {};
-          baseData.properties.interface = interfaceName;
-        }
-      }
-    }
-
-    // IMPORTANT: Return `true` in all cases to keep the telemetry
-    return true;
-  });
-}
