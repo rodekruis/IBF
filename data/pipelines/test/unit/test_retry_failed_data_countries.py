@@ -50,7 +50,6 @@ def _make_context() -> ForecastRunContext:
         output_mode=OutputMode.API,
         output_path="output",
         api_client=MagicMock(),
-        is_live_run=True,
         local_data=None,
         local_data_date=None,
     )

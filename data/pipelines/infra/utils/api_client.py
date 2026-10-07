@@ -41,7 +41,7 @@ class ApiClient:
             source_target
         )
 
-    def submit_forecast(self, forecast: dict, is_live_run: bool = False) -> list[str]:
+    def submit_forecast(self, forecast: dict) -> list[str]:
         url = f"{self._base_url}{ALERTS_PATH}"
         try:
             response = self._session.post(
@@ -69,7 +69,6 @@ class ApiClient:
                 f"alert_count={len(alerts)} "
                 f"event_names={[alert.get('eventName') for alert in alerts]}",
             )
-            self._log_placeholder_email_alerts(forecast, is_live_run)
             return []
 
         try:
@@ -81,22 +80,6 @@ class ApiClient:
         for err in errors:
             log_error(logger, LogTag.INFRA_SEND, f"API error: {err}")
         return errors
-
-    # Temporary workaround: Log a tagged message that will
-    # trigger email notifications on deployed jobs with live data.
-    # Remove once notifications are handled by the backend.
-    # Removal tracked in this task:
-    # https://dev.azure.com/redcrossnl/National%20Risk%20Watch/_workitems/edit/44709
-    def _log_placeholder_email_alerts(self, forecast: dict, is_live_run: bool) -> None:
-        if not is_live_run:
-            return
-
-        for alert in forecast.get("alerts", []):
-            log_info(
-                logger,
-                LogTag.PLACEHOLDER_EMAIL_ALERT,
-                f"Event expected for '{alert.get('eventName')}'",
-            )
 
     def get_admin_areas(
         self, country_code_iso_3: str, admin_level: int | None = None

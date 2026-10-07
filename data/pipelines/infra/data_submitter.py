@@ -37,12 +37,11 @@ logger = logging.getLogger(__name__)
 
 
 class DataSubmitter:
-    def __init__(self, api_client: ApiClient, is_live_run: bool = False) -> None:
+    def __init__(self, api_client: ApiClient) -> None:
         self._alerts: dict[str, Alert] = {}
         self._forecast: Forecast | None = None
         self.errors: dict[str, str] = {}
         self.api_client = api_client
-        self._is_live_run = is_live_run
 
     def add_error(self, error: str) -> None:
         self.errors[f"manual:{len(self.errors)}"] = error
@@ -201,9 +200,7 @@ class DataSubmitter:
                 log_warning(
                     logger, LogTag.INFRA, f"Local debug write failed: '{file_errors}'"
                 )
-            api_errors = self.api_client.submit_forecast(
-                forecast_dict, is_live_run=self._is_live_run
-            )
+            api_errors = self.api_client.submit_forecast(forecast_dict)
             if not api_errors:
                 shutil.rmtree(output_path, ignore_errors=True)
                 log_info(
