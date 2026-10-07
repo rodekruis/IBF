@@ -96,10 +96,10 @@ User accounts:
   - Role: `Key Vault Secrets Officer`; Scope: Key Vault `nrw-batch-poc`
 - **To run `func start`**
   - Role: `Azure Batch Job Submitter`; Scope: Batch account `nrwbatchpoc`; Why: local job submission uses the operator's own `az login` identity, not the scheduler UAMI.
-- **To run `function/run_pipeline_job.sh` or `function/mock_run_pipeline_job.sh`**
-  - Role: `Key Vault Secrets User`; Scope: Key Vault `nrw-batch-poc`
-  - Role: `Azure Batch Job Submitter`; Scope: Batch account `nrwbatchpoc`
-  - Role: `Reader`; Scope: resource group `nrw-batch-poc`;
+- **To run `function/run_pipeline_job.sh` or `function/mock_run_pipeline_job.sh`** (scopes per target environment)
+  - Role: `Key Vault Secrets User`; Scope: the environment's Key Vault (e.g. `nrw-batch-poc`)
+  - Role: `Azure Batch Job Submitter`; Scope: the environment's Batch account (e.g. `nrwbatchpoc`)
+  - Role: `Website Contributor`; Scope: the environment's scheduler Function App (e.g. `nrw-batch-scheduler`); Why: listing app settings is a write-level action (`Microsoft.Web/sites/config/list/action`).
 - **To run `create-pool.sh`**
   - Role: `Azure Batch Data Contributor`; Scope: Batch account `nrwbatchpoc`; Why: pool delete/create are data-plane operations authenticated with the operator's `az login` Entra ID token; `Azure Batch Job Submitter` cannot manage pools.
   - Role: `Contributor`; Scope: Batch account `nrwbatchpoc`; Why: attaching the pool managed identity goes through the management API (`az rest PATCH`).
@@ -123,13 +123,13 @@ These run once on first setup (and only again on rotation/policy changes).
 Run these in order the first time, but after that, you can just run the ones that are updated.
 
 1. `build-and-push-image.sh` — build & push the pipeline Docker image to ACR. Note that YAML configs (`pipelines/infra/configs/*.yaml`) are baked into the image, so adding a country or changing data sources requires a new build+push.
-2. `deploy.sh` (`main.bicep`, `parameters.dev.json`) — deploy the Function App + monitoring (Bicep). Be sure to set the correct `.env` variables before running this, such as `IBF_API_URL`.
+2. `deploy.sh` (`main.bicep`, `parameters.dev.json`) — deploy the Function App + monitoring (Bicep).
 3. `publish-function.sh` (`function/`) — deploy the Azure Function code and it's dependencies (from data/pipelines/deploy/function/).
 
 ### Helper jobs
 
-- `run_pipeline_job.sh` (`function/run_pipeline_job.sh`): Manually kick off a hazard pipeline run for a given hazard. Example: `./function/run_pipeline_job.sh floods`. This is the same job and parameters as a standard scheduled run of the hazard.
-- `mock_run_pipeline_job.sh` (`function/mock_run_pipeline_job.sh`): Run the pipeline with mock data; `--mock` is required and all other arguments are passed through unchanged. See the [pipelines readme](../pipelines/README.md) for possible flags. `./function/mock_run_pipeline_job.sh floods --mock 1 --country KEN`
+- `run_pipeline_job.sh` (`function/run_pipeline_job.sh`): Manually kick off a hazard pipeline run for a given environment and hazard. Example: `./function/run_pipeline_job.sh test floods`. This is the same job and parameters as a standard scheduled run of the hazard, using the app settings of that environment's scheduler Function App.
+- `mock_run_pipeline_job.sh` (`function/mock_run_pipeline_job.sh`): Run the pipeline with mock data; `--mock` is required and all other arguments are passed through unchanged. See the [pipelines readme](../pipelines/README.md) for possible flags. `./function/mock_run_pipeline_job.sh test floods --mock 1 --country KEN`
 
 ## Storage
 
