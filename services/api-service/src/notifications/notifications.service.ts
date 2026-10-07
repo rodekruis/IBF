@@ -144,9 +144,7 @@ export class NotificationsService {
     forecast: ForecastCreateDto;
     events: EventResponseDto[];
   }): string {
-    const prefix = env.TEAMS_NOTIFICATIONS_PREFIX
-      ? `[${env.TEAMS_NOTIFICATIONS_PREFIX}] `
-      : '';
+    const prefix = env.ENV_NAME ? `[${env.ENV_NAME}] ` : '';
     const countByChange = (change: EventChange): number =>
       events.filter((event) => this.getEventChange(event) === change).length;
     return `${prefix}${forecast.hazardType} in ${forecast.countryCodeIso3}: ${countByChange(EventChange.new)} new, ${countByChange(EventChange.updated)} updated, ${countByChange(EventChange.closed)} closed events`;

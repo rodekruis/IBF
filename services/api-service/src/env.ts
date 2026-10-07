@@ -73,7 +73,6 @@ export const env = createEnv({
 
     // Third-party: Microsoft Teams notifications
     TEAMS_NOTIFICATIONS_WEBHOOK_URL: z.url().optional(),
-    TEAMS_NOTIFICATIONS_PREFIX: z.string().optional(),
     TEAMS_NOTIFICATIONS_MENTION_EMAILS: z
       .string()
       .optional()

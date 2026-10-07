@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 jest.mock('@api-service/src/env', () => ({
   env: {
     TEAMS_NOTIFICATIONS_WEBHOOK_URL: undefined as string | undefined,
-    TEAMS_NOTIFICATIONS_PREFIX: undefined as string | undefined,
+    ENV_NAME: undefined as string | undefined,
     TEAMS_NOTIFICATIONS_MENTION_EMAILS: [] as string[],
     REDIRECT_PORTAL_URL_HOST: 'https://nrw.example.org',
   },
@@ -12,7 +12,7 @@ jest.mock('@api-service/src/env', () => ({
 const mockEnv = jest.requireMock<{
   env: {
     TEAMS_NOTIFICATIONS_WEBHOOK_URL: string | undefined;
-    TEAMS_NOTIFICATIONS_PREFIX: string | undefined;
+    ENV_NAME: string | undefined;
     TEAMS_NOTIFICATIONS_MENTION_EMAILS: string[];
   };
 }>('@api-service/src/env').env;
@@ -94,7 +94,7 @@ describe('NotificationsService', () => {
 
   beforeEach(async () => {
     mockEnv.TEAMS_NOTIFICATIONS_WEBHOOK_URL = WEBHOOK_URL;
-    mockEnv.TEAMS_NOTIFICATIONS_PREFIX = undefined;
+    mockEnv.ENV_NAME = undefined;
     mockEnv.TEAMS_NOTIFICATIONS_MENTION_EMAILS = [];
     eventsService = { getEvents: jest.fn().mockResolvedValue([]) };
     fetchMock = jest.fn().mockResolvedValue({ ok: true });
@@ -177,9 +177,9 @@ describe('NotificationsService', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('should prefix the title when a prefix is configured', async () => {
+  it('should prefix the title with the environment name when configured', async () => {
     // Arrange
-    mockEnv.TEAMS_NOTIFICATIONS_PREFIX = 'TEST';
+    mockEnv.ENV_NAME = 'TEST';
     eventsService.getEvents.mockResolvedValue([createEvent({})]);
 
     // Act
