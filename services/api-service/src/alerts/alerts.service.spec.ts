@@ -6,6 +6,7 @@ import { AlertsService } from '@api-service/src/alerts/alerts.service';
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
+import { NotificationsService } from '@api-service/src/notifications/notifications.service';
 import {
   EnsembleMemberType,
   ForecastSource,
@@ -86,6 +87,7 @@ describe('AlertsService', () => {
   let service: AlertsService;
   let repository: AlertsRepository;
   let alertToEventService: AlertToEventService;
+  let notificationsService: NotificationsService;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -107,16 +109,57 @@ describe('AlertsService', () => {
             closeStaleEvents: jest.fn(),
           },
         },
+        {
+          provide: NotificationsService,
+          useValue: {
+            notifyEventsUpdatedByForecast: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get(AlertsService);
     repository = module.get(AlertsRepository);
     alertToEventService = module.get(AlertToEventService);
+    notificationsService = module.get(NotificationsService);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('createAlertsAndNotify', () => {
+    it('should create alerts and notify for the forecast', async () => {
+      // Arrange
+      const forecast = createMockValidForecast({
+        alerts: [createMockValidAlert()],
+      });
+
+      // Act
+      await service.createAlertsAndNotify(forecast);
+
+      // Assert
+      expect(repository.createAlerts).toHaveBeenCalled();
+      expect(
+        notificationsService.notifyEventsUpdatedByForecast,
+      ).toHaveBeenCalledWith(forecast);
+    });
+
+    it('should not notify when alert creation fails', async () => {
+      // Arrange
+      const forecast = createMockValidForecast({
+        alerts: [createMockValidAlert({ severity: [] })],
+      });
+
+      // Act
+      const result = service.createAlertsAndNotify(forecast);
+
+      // Assert
+      await expect(result).rejects.toThrow(HttpException);
+      expect(
+        notificationsService.notifyEventsUpdatedByForecast,
+      ).not.toHaveBeenCalled();
+    });
   });
 
   describe('createAlerts – valid data', () => {

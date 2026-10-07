@@ -6,6 +6,7 @@ import { AlertReadDto } from '@api-service/src/alerts/dto/alert-read.dto';
 import { WaterDischargeTimeSeriesEntryDto } from '@api-service/src/alerts/dto/exposure-geo-feature.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
+import { NotificationsService } from '@api-service/src/notifications/notifications.service';
 import { EnsembleMemberType, LayerName } from '@api-service/src/shared-enums';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class AlertsService {
   public constructor(
     private readonly alertsRepository: AlertsRepository,
     private readonly alertToEventService: AlertToEventService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   public async getAlerts(): Promise<AlertReadDto[]> {
@@ -25,6 +27,14 @@ export class AlertsService {
 
   public async deleteAlertOrThrow(id: number): Promise<void> {
     await this.alertsRepository.deleteAlertOrThrow(id);
+  }
+
+  public async createAlertsAndNotify(
+    forecast: ForecastCreateDto,
+  ): Promise<AlertReadDto[]> {
+    const alerts = await this.createAlerts(forecast);
+    void this.notificationsService.notifyEventsUpdatedByForecast(forecast);
+    return alerts;
   }
 
   public async createAlerts(

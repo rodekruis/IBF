@@ -23,12 +23,14 @@ describe('SeedService', () => {
     const alertsService = {} as never;
     const countriesService = {} as never;
     const eventsService = {} as never;
+    const notificationsService = {} as never;
 
     service = new SeedService(
       seedInit,
       alertsService,
       countriesService,
       eventsService,
+      notificationsService,
     );
   });
 
@@ -142,6 +144,8 @@ describe('SeedService', () => {
     let createAlertsMock: jest.Mock;
     let deleteEventsMock: jest.Mock;
     let getCountriesMock: jest.Mock;
+    let createAlertsAndNotifyMock: jest.Mock;
+    let isNotificationsEnabledMock: jest.Mock;
 
     const issuedAt = new Date('2026-08-25T12:00:00Z');
 
@@ -149,12 +153,20 @@ describe('SeedService', () => {
       createAlertsMock = jest.fn().mockResolvedValue(undefined);
       deleteEventsMock = jest.fn().mockResolvedValue(undefined);
       getCountriesMock = jest.fn().mockResolvedValue([]);
+      createAlertsAndNotifyMock = jest.fn().mockResolvedValue(undefined);
+      isNotificationsEnabledMock = jest.fn().mockReturnValue(true);
 
       const seedInit = { run: jest.fn().mockResolvedValue(undefined) } as never;
-      const alertsService = { createAlerts: createAlertsMock } as never;
+      const alertsService = {
+        createAlerts: createAlertsMock,
+        createAlertsAndNotify: createAlertsAndNotifyMock,
+      } as never;
       const countriesService = { getCountries: getCountriesMock } as never;
       const eventsService = {
         deleteEventsByCountry: deleteEventsMock,
+      } as never;
+      const notificationsService = {
+        isEnabled: isNotificationsEnabledMock,
       } as never;
 
       service = new SeedService(
@@ -162,7 +174,71 @@ describe('SeedService', () => {
         alertsService,
         countriesService,
         eventsService,
+        notificationsService,
       );
+    });
+
+    describe('notify', () => {
+      it('should not send notifications by default', async () => {
+        // Arrange
+        const params = {
+          countryCodes: ['PHL'],
+          scenario: MockScenario.events,
+          clearEvents: false,
+          issuedAt,
+          hazardTypes: [HazardType.tropicalCyclone],
+        };
+
+        // Act
+        await service.mockEvents(params);
+
+        // Assert
+        expect(createAlertsAndNotifyMock).not.toHaveBeenCalled();
+        expect(createAlertsMock).toHaveBeenCalledTimes(1);
+      });
+
+      it('should send notifications per forecast when notify is true', async () => {
+        // Arrange
+        const params = {
+          countryCodes: ['PHL'],
+          scenario: MockScenario.events,
+          clearEvents: false,
+          issuedAt,
+          hazardTypes: [HazardType.tropicalCyclone],
+          notify: true,
+        };
+
+        // Act
+        await service.mockEvents(params);
+
+        // Assert
+        expect(createAlertsMock).not.toHaveBeenCalled();
+        expect(createAlertsAndNotifyMock).toHaveBeenCalledTimes(1);
+        expect(createAlertsAndNotifyMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            hazardType: HazardType.tropicalCyclone,
+            countryCodeIso3: 'PHL',
+          }),
+        );
+      });
+
+      it('should throw BadRequestException when notify is true but notifications are not configured', async () => {
+        // Arrange
+        isNotificationsEnabledMock.mockReturnValue(false);
+        const params = {
+          countryCodes: ['PHL'],
+          scenario: MockScenario.events,
+          clearEvents: false,
+          issuedAt,
+          notify: true,
+        };
+
+        // Act & Assert
+        await expect(service.mockEvents(params)).rejects.toThrow(
+          BadRequestException,
+        );
+        expect(createAlertsMock).not.toHaveBeenCalled();
+      });
     });
 
     describe('with specific countryCodes', () => {

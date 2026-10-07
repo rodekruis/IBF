@@ -73,31 +73,36 @@ export class EventsRepository {
     viewTime,
     active,
     countryCodesIso3,
+    lastUpdatedAt,
   }: {
     viewTime: Date;
     active?: boolean;
     countryCodesIso3?: string[];
+    lastUpdatedAt?: Date;
   }): Promise<Event[]> {
     const countryFilter =
       countryCodesIso3 && countryCodesIso3.length > 0
         ? { countryCodeIso3: { in: countryCodesIso3 } }
         : {};
+    const baseFilter = lastUpdatedAt
+      ? { ...countryFilter, lastUpdatedAt }
+      : countryFilter;
 
     if (active === undefined) {
       return await this.prisma.event.findMany({
-        where: countryFilter,
+        where: baseFilter,
         orderBy: eventsOrderBy,
       });
     }
 
     const where = active
       ? {
-          ...countryFilter,
+          ...baseFilter,
           closedAt: null,
           endAt: { gt: viewTime },
         }
       : {
-          ...countryFilter,
+          ...baseFilter,
           OR: [{ closedAt: { not: null } }, { endAt: { lte: viewTime } }],
         };
 
