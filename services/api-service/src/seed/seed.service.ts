@@ -6,8 +6,10 @@ import {
 } from '@nestjs/common';
 
 import { AlertsService } from '@api-service/src/alerts/alerts.service';
+import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { CountriesService } from '@api-service/src/countries/countries.service';
 import { EventsService } from '@api-service/src/events/events.service';
+import { NotificationsService } from '@api-service/src/notifications/notifications.service';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import {
   buildMockForecasts,
@@ -29,6 +31,7 @@ export class SeedService {
     private readonly alertsService: AlertsService,
     private readonly countriesService: CountriesService,
     private readonly eventsService: EventsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   public getResetStatus(): { inProgress: boolean; error: string | null } {
@@ -75,13 +78,21 @@ export class SeedService {
     clearEvents,
     issuedAt,
     hazardTypes,
+    notify = false,
   }: {
     countryCodes?: string[];
     scenario: MockScenario;
     clearEvents: boolean;
     issuedAt: Date;
     hazardTypes?: HazardType[];
+    notify?: boolean;
   }): Promise<void> {
+    if (notify && !this.notificationsService.isEnabled()) {
+      throw new BadRequestException(
+        'Cannot notify: TEAMS_NOTIFICATIONS_WEBHOOK_URL is not configured',
+      );
+    }
+
     // if no countryCodes provided, mock 'all', which means 'all currently seeded countries', as we can't mock events for countries that are not seeded yet
     const seededCountryCodes =
       countryCodes ?? (await this.getSeededCountryCodes());
@@ -96,7 +107,8 @@ export class SeedService {
 
     this.logger.log(
       `Mock events - Countries: ${resolvedCountryCodes.join(', ')} - Scenario: ${scenario} - Clear: ${String(clearEvents)}` +
-        (hazardTypes ? ` - Hazards: ${hazardTypes.join(', ')}` : ''),
+        (hazardTypes ? ` - Hazards: ${hazardTypes.join(', ')}` : '') +
+        (notify ? ' - Notify: true' : ''),
     );
 
     for (const countryCodeIso3 of resolvedCountryCodes) {
@@ -112,24 +124,36 @@ export class SeedService {
             alertsOverride: [],
             hazardTypes,
           });
-          for (const forecast of forecasts) {
-            await this.alertsService.createAlerts(forecast);
-          }
+          await this.createMockAlerts({ forecasts, notify });
         } else {
           const forecasts = buildMockForecasts({
             countryCodeIso3,
             issuedAt,
             hazardTypes,
           });
-          for (const forecast of forecasts) {
-            await this.alertsService.createAlerts(forecast);
-          }
+          await this.createMockAlerts({ forecasts, notify });
         }
       } catch (error: unknown) {
         if (error instanceof MockConfigError) {
           throw new BadRequestException(error.message);
         }
         throw error;
+      }
+    }
+  }
+
+  private async createMockAlerts({
+    forecasts,
+    notify,
+  }: {
+    forecasts: ForecastCreateDto[];
+    notify: boolean;
+  }): Promise<void> {
+    for (const forecast of forecasts) {
+      if (notify) {
+        await this.alertsService.createAlertsAndNotify(forecast);
+      } else {
+        await this.alertsService.createAlerts(forecast);
       }
     }
   }
