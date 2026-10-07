@@ -33,7 +33,7 @@ export class AlertsService {
     forecast: ForecastCreateDto,
   ): Promise<AlertReadDto[]> {
     const alerts = await this.createAlerts(forecast);
-    await this.notificationsService.notifyEventsUpdatedByForecast(forecast);
+    void this.notificationsService.notifyEventsUpdatedByForecast(forecast);
     return alerts;
   }
 
