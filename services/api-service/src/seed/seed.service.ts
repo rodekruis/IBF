@@ -89,7 +89,7 @@ export class SeedService {
   }): Promise<void> {
     if (notify && !this.notificationsService.isEnabled()) {
       throw new BadRequestException(
-        'Cannot notify: TEAMS_NOTIFICATIONS_WEBHOOK_URL is not configured',
+        'Cannot notify: TEAMS_NOTIFICATIONS_ENABLED is not true or TEAMS_NOTIFICATIONS_WEBHOOK_URL is not configured',
       );
     }
 

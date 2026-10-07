@@ -24,13 +24,13 @@ export class NotificationsService {
   public constructor(private readonly eventsService: EventsService) {}
 
   public isEnabled(): boolean {
-    return !!env.TEAMS_NOTIFICATIONS_WEBHOOK_URL;
+    return !!this.getEnabledWebhookUrl();
   }
 
   public async notifyEventsUpdatedByForecast(
     forecast: ForecastCreateDto,
   ): Promise<void> {
-    const webhookUrl = env.TEAMS_NOTIFICATIONS_WEBHOOK_URL;
+    const webhookUrl = this.getEnabledWebhookUrl();
     if (!webhookUrl) {
       return;
     }
@@ -50,6 +50,12 @@ export class NotificationsService {
         error instanceof Error ? error.stack : String(error),
       );
     }
+  }
+
+  private getEnabledWebhookUrl(): string | undefined {
+    return env.TEAMS_NOTIFICATIONS_ENABLED
+      ? env.TEAMS_NOTIFICATIONS_WEBHOOK_URL
+      : undefined;
   }
 
   private async getEventsUpdatedByForecast(

@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 
 jest.mock('@api-service/src/env', () => ({
   env: {
+    TEAMS_NOTIFICATIONS_ENABLED: true,
     TEAMS_NOTIFICATIONS_WEBHOOK_URL: undefined as string | undefined,
     ENV_NAME: undefined as string | undefined,
     TEAMS_NOTIFICATIONS_MENTION_EMAILS: [] as string[],
@@ -11,6 +12,7 @@ jest.mock('@api-service/src/env', () => ({
 
 const mockEnv = jest.requireMock<{
   env: {
+    TEAMS_NOTIFICATIONS_ENABLED: boolean;
     TEAMS_NOTIFICATIONS_WEBHOOK_URL: string | undefined;
     ENV_NAME: string | undefined;
     TEAMS_NOTIFICATIONS_MENTION_EMAILS: string[];
@@ -93,6 +95,7 @@ describe('NotificationsService', () => {
   let fetchMock: jest.Mock;
 
   beforeEach(async () => {
+    mockEnv.TEAMS_NOTIFICATIONS_ENABLED = true;
     mockEnv.TEAMS_NOTIFICATIONS_WEBHOOK_URL = WEBHOOK_URL;
     mockEnv.ENV_NAME = undefined;
     mockEnv.TEAMS_NOTIFICATIONS_MENTION_EMAILS = [];
@@ -118,6 +121,19 @@ describe('NotificationsService', () => {
     await service.notifyEventsUpdatedByForecast(createForecast());
 
     // Assert
+    expect(eventsService.getEvents).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('should do nothing when notifications are disabled', async () => {
+    // Arrange
+    mockEnv.TEAMS_NOTIFICATIONS_ENABLED = false;
+
+    // Act
+    await service.notifyEventsUpdatedByForecast(createForecast());
+
+    // Assert
+    expect(service.isEnabled()).toBe(false);
     expect(eventsService.getEvents).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
   });
