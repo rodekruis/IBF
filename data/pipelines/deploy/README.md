@@ -98,7 +98,7 @@ The live-or-mock value and run origin are also sent to the backend as
 
 You can also see the same logs in the shared NRW workspace at [nrw-app-law → Logs](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.OperationalInsights/workspaces/nrw-app-law/logs). This lets you see it next to backend logs within the same query. Filter by the `AppRoleName` fields to see the different apps. The name changes based on the environment. Here is a sample query for `test` with the following app names:
 
-- `nrw-test`: the NRW backend
+- `nrw-test`: the NRW backend. See request logs in the `AppRequests` table and application logs in the `AppTraces` table.
 - `nrw-pipeline`: the pipeline logs
 
 ```kusto
@@ -108,6 +108,10 @@ union
      | where OperationName has "POST /api/alerts"
      | extend Component = "Backend API",
               Message = strcat(Name, " -> ", ResultCode)),
+    (AppTraces
+     | where AppRoleName == "nrw-test"
+     | where Message has "/api/alerts"
+     | extend Component = "Backend API"),
     (AppTraces
      | where AppRoleName == "nrw-pipeline"
      | where Message has "KEN"
