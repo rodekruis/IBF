@@ -14,14 +14,16 @@ interface ColorizationConfigBase {
   // true: zero pixels are invisible (typical for flood depth rasters on a map).
   // false: zero pixels are rendered using the lowest color.
   zeroIsTransparent: boolean;
+}
 
+interface RelativeColorizationConfigBase extends ColorizationConfigBase {
   // Whether to apply log1p scaling before normalizing.
   // true: compresses high dynamic range, revealing detail in low values.
   // false: linear mapping (uniform spread from min to max).
   useLogScale: boolean;
 }
 
-interface GradientColorizationConfig extends ColorizationConfigBase {
+interface GradientColorizationConfig extends RelativeColorizationConfigBase {
   mode: 'gradient';
 
   // Color+alpha for the lowest non-zero values (RGBA, each 0–255).
@@ -35,17 +37,38 @@ interface GradientColorizationConfig extends ColorizationConfigBase {
   steps: number;
 }
 
-interface PaletteColorizationConfig extends ColorizationConfigBase {
+interface PaletteColorizationConfig extends RelativeColorizationConfigBase {
   mode: 'palette';
 
   // Color palette for the color steps, in order of lowest step color to highest
   palette: Rgba[];
 }
 
-type ColorizationConfig =
+interface FixedScaleColorizationConfig extends ColorizationConfigBase {
+  mode: 'fixedScale';
+
+  // Value of grey level 255; grey levels 1–255 map linearly to 0–maxValue, as encoded by the pipeline.
+  maxValue: number;
+
+  // Ascending lower bounds (in the raster's unit) of palette colors 2..n.
+  thresholds: number[];
+
+  palette: Rgba[];
+}
+
+type RelativeColorizationConfig =
   GradientColorizationConfig | PaletteColorizationConfig;
 
-const POPULATION_CONFIG: ColorizationConfig = {
+type ColorizationConfig =
+  RelativeColorizationConfig | FixedScaleColorizationConfig;
+
+interface Downsampling {
+  factor: number;
+  // 'sum' for counts per pixel (e.g. population), 'mean' for intensities (e.g. flood depth).
+  aggregation: 'sum' | 'mean';
+}
+
+const POPULATION_CONFIG: RelativeColorizationConfig = {
   mode: 'palette',
   zeroIsTransparent: true,
   useLogScale: true,
@@ -58,15 +81,26 @@ const POPULATION_CONFIG: ColorizationConfig = {
   ],
 };
 
-const POPULATION_DOWNSAMPLE_FACTOR = 10;
+const POPULATION_DOWNSAMPLING: Downsampling = {
+  factor: 10,
+  aggregation: 'sum',
+};
 
-const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
-  mode: 'gradient',
-  colorLow: [173, 216, 230, 179],
-  colorHigh: [0, 0, 139, 179],
+// Must match FLOOD_DEPTH_GREYSCALE_MAX_METRES in the pipeline. This is needed to map greyscale levels back to metres.
+const FLOOD_DEPTH_GREYSCALE_MAX_METRES = 10;
+
+export const FLOOD_DEPTH_CONFIG: FixedScaleColorizationConfig = {
+  mode: 'fixedScale',
   zeroIsTransparent: true,
-  steps: 6,
-  useLogScale: false,
+  maxValue: FLOOD_DEPTH_GREYSCALE_MAX_METRES,
+  thresholds: [0.25, 0.75, 1.5, 2.5],
+  palette: [
+    [203, 221, 242, 166], // Blue 20 — 65% #CBDDF2
+    [158, 186, 220, 166], // Blue 30 — 65% #9EBADC
+    [110, 150, 197, 166], // Blue 40 — 65% #6E96C5
+    [70, 122, 188, 166], // Blue 50 — 65% #467ABC
+    [49, 99, 160, 166], // Blue 60 — 65% #3163A0
+  ],
 };
 
 const WIND_SPEED_CONFIG: ColorizationConfig = {
@@ -96,7 +130,7 @@ function resolveColor({
   config,
   normalized,
 }: {
-  config: ColorizationConfig;
+  config: RelativeColorizationConfig;
   normalized: number;
 }): Rgba {
   if (config.mode === 'palette') {
@@ -123,6 +157,21 @@ function resolveColor({
   ];
 }
 
+function resolveFixedScaleColor({
+  config,
+  greyLevel,
+}: {
+  config: FixedScaleColorizationConfig;
+  greyLevel: number;
+}): Rgba {
+  const value = ((greyLevel - 1) / 254) * config.maxValue;
+  let band = 0;
+  while (band < config.thresholds.length && value >= config.thresholds[band]) {
+    band++;
+  }
+  return config.palette[band];
+}
+
 export function colorizeGrayscalePng({
   base64Grayscale,
   config,
@@ -134,7 +183,7 @@ export function colorizeGrayscalePng({
     return '';
   }
 
-  const { zeroIsTransparent, useLogScale } = config;
+  const { zeroIsTransparent } = config;
 
   const inputBuffer = Buffer.from(base64Grayscale, 'base64');
   const grayscalePng = PNG.sync.read(inputBuffer);
@@ -143,13 +192,15 @@ export function colorizeGrayscalePng({
 
   // Pass 1: find max value (with optional log scaling) for normalization
   let max = 0;
-  for (let i = 0; i < pixelCount; i++) {
-    let value = data[i * 4];
-    if (useLogScale) {
-      value = Math.log1p(value);
-    }
-    if (value > max) {
-      max = value;
+  if (config.mode !== 'fixedScale') {
+    for (let i = 0; i < pixelCount; i++) {
+      let value = data[i * 4];
+      if (config.useLogScale) {
+        value = Math.log1p(value);
+      }
+      if (value > max) {
+        max = value;
+      }
     }
   }
   if (max === 0) {
@@ -168,9 +219,13 @@ export function colorizeGrayscalePng({
       outputPng.data[idx + 2] = 0;
       outputPng.data[idx + 3] = 0;
     } else {
-      const scaled = useLogScale ? Math.log1p(raw) : raw;
-      const normalized = scaled / max;
-      const color = resolveColor({ config, normalized });
+      const color =
+        config.mode === 'fixedScale'
+          ? resolveFixedScaleColor({ config, greyLevel: raw })
+          : resolveColor({
+              config,
+              normalized: (config.useLogScale ? Math.log1p(raw) : raw) / max,
+            });
 
       outputPng.data[idx] = color[0];
       outputPng.data[idx + 1] = color[1];
@@ -244,7 +299,7 @@ export function processPopulationRaster({
   const colouredBase64 = colorizeRgbaEncodedPng({
     inputBuffer: dataPngBuffer,
     config: POPULATION_CONFIG,
-    downsampleFactor: POPULATION_DOWNSAMPLE_FACTOR,
+    downsampling: POPULATION_DOWNSAMPLING,
   });
   const { ymin, ymax } = rasterMetadata.data.extent;
 
@@ -264,15 +319,15 @@ export function processPopulationRaster({
 // Divide by 1000 since the number was encoded with 3 decimal places of precision.)
 // This function decodes those values (optionally downsampling) and colorizes based on population.
 // It allocates a Float32Array for decoded values and uses three passes (decode, max scan, render).
-// Peak memory is roughly input + output + decoded, so keep downsampleFactor in mind for large rasters.
+// Peak memory is roughly input + output + decoded, so keep the downsampling factor in mind for large rasters.
 function colorizeRgbaEncodedPng({
   inputBuffer,
   config,
-  downsampleFactor = 1,
+  downsampling = { factor: 1, aggregation: 'mean' },
 }: {
   inputBuffer: Buffer;
-  config: ColorizationConfig;
-  downsampleFactor?: number;
+  config: RelativeColorizationConfig;
+  downsampling?: Downsampling;
 }): string {
   const { zeroIsTransparent, useLogScale } = config;
 
@@ -280,8 +335,8 @@ function colorizeRgbaEncodedPng({
   const { width, height, data } = png;
 
   const effectiveFactor =
-    width >= downsampleFactor && height >= downsampleFactor
-      ? downsampleFactor
+    width >= downsampling.factor && height >= downsampling.factor
+      ? downsampling.factor
       : 1;
   const outWidth = Math.floor(width / effectiveFactor);
   const outHeight = Math.floor(height / effectiveFactor);
@@ -316,7 +371,10 @@ function colorizeRgbaEncodedPng({
               1000;
           }
         }
-        decoded[oy * outWidth + ox] = sum / (effectiveFactor * effectiveFactor);
+        decoded[oy * outWidth + ox] =
+          downsampling.aggregation === 'sum'
+            ? sum
+            : sum / (effectiveFactor * effectiveFactor);
       }
     }
   }
