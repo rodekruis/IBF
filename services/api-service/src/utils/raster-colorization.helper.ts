@@ -89,7 +89,7 @@ const POPULATION_DOWNSAMPLING: Downsampling = {
 // Must match FLOOD_DEPTH_GREYSCALE_MAX_METRES in the pipeline. This is needed to map greyscale levels back to metres.
 const FLOOD_DEPTH_GREYSCALE_MAX_METRES = 10;
 
-const FLOOD_DEPTH_CONFIG: ColorizationConfig = {
+export const FLOOD_DEPTH_CONFIG: FixedScaleColorizationConfig = {
   mode: 'fixedScale',
   zeroIsTransparent: true,
   maxValue: FLOOD_DEPTH_GREYSCALE_MAX_METRES,
@@ -165,9 +165,10 @@ function resolveFixedScaleColor({
   greyLevel: number;
 }): Rgba {
   const value = ((greyLevel - 1) / 254) * config.maxValue;
-  const band = config.thresholds.filter(
-    (threshold) => value >= threshold,
-  ).length;
+  let band = 0;
+  while (band < config.thresholds.length && value >= config.thresholds[band]) {
+    band++;
+  }
   return config.palette[band];
 }
 

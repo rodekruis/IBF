@@ -4,13 +4,12 @@ import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 import { LayerName } from '@api-service/src/shared-enums';
 import {
   colorizeGrayscalePng,
+  FLOOD_DEPTH_CONFIG,
   getColorizationConfig,
   processPopulationRaster,
   reprojectExtents4326To3857,
   reprojectPng4326To3857,
 } from '@api-service/src/utils/raster-colorization.helper';
-
-const FLOOD_DEPTH_CONFIG = getColorizationConfig(LayerName.floodDepth);
 
 function createGrayscalePng({
   width,
@@ -326,9 +325,14 @@ describe('raster-colorization.helper', () => {
       });
 
       // Assert
-      expect(readOutputPixel({ base64: result, pixelIndex: 0 }).a).toBe(26);
-      expect(readOutputPixel({ base64: result, pixelIndex: 1 }).a).toBe(89);
-      expect(readOutputPixel({ base64: result, pixelIndex: 2 }).a).toBe(204);
+      const { palette } = FLOOD_DEPTH_CONFIG;
+      const readRgba = (pixelIndex: number) => {
+        const { r, g, b, a } = readOutputPixel({ base64: result, pixelIndex });
+        return [r, g, b, a];
+      };
+      expect(readRgba(0)).toEqual(palette[0]);
+      expect(readRgba(1)).toEqual(palette[2]);
+      expect(readRgba(2)).toEqual(palette[4]);
     });
   });
 
