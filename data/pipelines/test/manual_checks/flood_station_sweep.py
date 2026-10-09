@@ -8,8 +8,8 @@ that otherwise only show up when that specific station alerts in production.
 
 Usage (from the data directory, with the local API running):
     uv run python pipelines/test/manual_checks/flood_station_sweep.py [--country ETH] [--return-period 10]
-Add ``--station <code> --output-mode api`` to post a single station's alert to the local API.
-The report is written under pipelines/output, and decoded population rasters are cached under data/.
+Add ``--output-mode api`` to also post one forecast per country with the alerts of all valid stations to the local API.
+The report and per-station forecast.json files are written under pipelines/output, and decoded population rasters are cached under data/.
 """
 
 from __future__ import annotations
@@ -18,7 +18,6 @@ import argparse
 import json
 import logging
 import os
-import tempfile
 from collections.abc import Iterable, Sequence
 from dataclasses import replace
 from datetime import datetime, timedelta, UTC
@@ -149,6 +148,7 @@ def run_station_sweep(
                 return_period=return_period,
                 station_codes=station_codes,
                 output_mode=output_mode,
+                forecast_output_dir=output_path.parent,
             )
             all_results.extend(country_results)
 
@@ -178,6 +178,7 @@ def _run_country_sweep(
     return_period: float | None,
     station_codes: Sequence[str] | None,
     output_mode: OutputMode,
+    forecast_output_dir: Path,
 ) -> list[dict[str, object]]:
     country_code = country_config.country_code_iso_3
     data_sources: list[DataSourceConfig] = [
@@ -211,38 +212,19 @@ def _run_country_sweep(
         station_code = alert_config.spatial_extent_name
         if station_codes and station_code not in station_codes:
             continue
-        data_provider.loaded_data[DataSource.ALERT_CONFIGS_IBF_API].data = [
-            alert_config
-        ]
-        submitter = DataSubmitter(api_client)
-        submitter.set_forecast_metadata(
-            issued_at=datetime.now(UTC),
+        submitter = _calculate_alerts(
+            data_provider=data_provider,
+            alert_configs=[alert_config],
+            admin_areas=admin_areas,
+            api_client=api_client,
             hazard_type=hazard_type,
-            forecast_sources=[ForecastSource.GLOFAS],
-            country_code_iso3=str(country_code),
+            country_config=country_config,
+            return_period=return_period,
         )
-        with patch.object(
-            flood_forecast,
-            "extract_discharge_glofas_station",
-            side_effect=partial(
-                _simulated_station_discharge, return_period=return_period
-            ),
-        ):
-            flood_forecast.calculate_flood_forecasts(
-                data_provider,
-                submitter,
-                str(country_code),
-                country_config.target_admin_level,
-            )
-
-        for alert in submitter.get_alerts():
-            alert.centroid = compute_alert_centroid(alert, admin_areas)
-            aggregate_to_parent_admin_levels(alert, admin_areas)
-
-        with tempfile.TemporaryDirectory(
-            prefix="flood-station-sweep-"
-        ) as temporary_output:
-            errors = submitter.send_all(output_mode, temporary_output)
+        errors = submitter.send_all(
+            OutputMode.LOCAL,
+            str(forecast_output_dir / str(country_code) / station_code),
+        )
 
         if not submitter.get_alerts():
             station_results.append(
@@ -310,7 +292,101 @@ def _run_country_sweep(
             }
         )
 
+    if output_mode == OutputMode.API:
+        station_results.extend(
+            _submit_country_forecast(
+                data_provider=data_provider,
+                alert_configs=alert_configs,
+                station_results=station_results,
+                admin_areas=admin_areas,
+                api_client=api_client,
+                hazard_type=hazard_type,
+                country_config=country_config,
+                return_period=return_period,
+                forecast_output_dir=forecast_output_dir,
+            )
+        )
+
     return station_results
+
+
+def _submit_country_forecast(
+    data_provider: DataProvider,
+    alert_configs: list[AlertConfig],
+    station_results: list[dict[str, object]],
+    admin_areas: AdminAreasSet,
+    api_client: ApiClient,
+    hazard_type: HazardType,
+    country_config: CountryRunConfig,
+    return_period: float | None,
+    forecast_output_dir: Path,
+) -> list[dict[str, object]]:
+    # One multi-alert forecast per country, as each forecast closes events not included in it.
+    country_code = str(country_config.country_code_iso_3)
+    valid_station_codes = {
+        result["stationCode"]
+        for result in station_results
+        if result["status"] == "valid_alert"
+    }
+    valid_alert_configs = [
+        alert_config
+        for alert_config in alert_configs
+        if alert_config.spatial_extent_name in valid_station_codes
+    ]
+    if not valid_alert_configs:
+        return []
+
+    submitter = _calculate_alerts(
+        data_provider=data_provider,
+        alert_configs=valid_alert_configs,
+        admin_areas=admin_areas,
+        api_client=api_client,
+        hazard_type=hazard_type,
+        country_config=country_config,
+        return_period=return_period,
+    )
+    errors = submitter.send_all(
+        OutputMode.API, str(forecast_output_dir / country_code / "all-stations")
+    )
+    if errors:
+        return [_result(country_code, "", "api_error", errors)]
+    return []
+
+
+def _calculate_alerts(
+    data_provider: DataProvider,
+    alert_configs: list[AlertConfig],
+    admin_areas: AdminAreasSet,
+    api_client: ApiClient,
+    hazard_type: HazardType,
+    country_config: CountryRunConfig,
+    return_period: float | None,
+) -> DataSubmitter:
+    country_code = str(country_config.country_code_iso_3)
+    data_provider.loaded_data[DataSource.ALERT_CONFIGS_IBF_API].data = alert_configs
+    submitter = DataSubmitter(api_client)
+    submitter.set_forecast_metadata(
+        issued_at=datetime.now(UTC),
+        hazard_type=hazard_type,
+        forecast_sources=[ForecastSource.GLOFAS],
+        country_code_iso3=country_code,
+    )
+    with patch.object(
+        flood_forecast,
+        "extract_discharge_glofas_station",
+        side_effect=partial(_simulated_station_discharge, return_period=return_period),
+    ):
+        flood_forecast.calculate_flood_forecasts(
+            data_provider,
+            submitter,
+            country_code,
+            country_config.target_admin_level,
+        )
+
+    for alert in submitter.get_alerts():
+        alert.centroid = compute_alert_centroid(alert, admin_areas)
+        aggregate_to_parent_admin_levels(alert, admin_areas)
+    return submitter
 
 
 def _simulated_station_discharge(
@@ -490,12 +566,9 @@ def parse_arguments() -> argparse.Namespace:
         type=OutputMode,
         choices=list(OutputMode),
         default=OutputMode.LOCAL,
-        help="'api' posts each station's forecast to the API and requires --station.",
+        help="'api' also posts one forecast per country with the alerts of all valid stations.",
     )
-    arguments = parser.parse_args()
-    if arguments.output_mode == OutputMode.API and not arguments.station_codes:
-        parser.error("--output-mode api requires --station")
-    return arguments
+    return parser.parse_args()
 
 
 def main() -> None:

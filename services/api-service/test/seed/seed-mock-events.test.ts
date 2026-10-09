@@ -11,6 +11,7 @@ import {
 
 const COUNTRY_1 = 'MWI';
 const COUNTRY_2 = 'UGA';
+const COUNTRY_ETH = 'ETH';
 
 function mockEvents(params: {
   countryCodes?: string[];
@@ -282,6 +283,49 @@ describe('POST /mock', () => {
 
       expect(country1Response.body.length).toBeGreaterThan(0);
       expect(country2Response.body.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('mocked event content', () => {
+    const issuedAt = '2026-08-25T12:00:00.000Z';
+
+    beforeAll(async () => {
+      await resetDB({
+        countryCodes: [COUNTRY_ETH],
+        resetIdentifier: __filename,
+      });
+      accessToken = await getAccessToken();
+      await mockEvents({
+        countryCodes: [COUNTRY_ETH],
+        scenario: MockScenario.events,
+        clearEvents: true,
+        issuedAt,
+      });
+    });
+
+    // Keep this test at least until we have the FE built for this, to make sure it keeps working.
+    it('should expose a varying water discharge time series for the line-chart event', async () => {
+      // Act
+      const response = await readEvents({
+        accessToken,
+        countryCodesIso3: [COUNTRY_ETH],
+        query: { timestamp: issuedAt },
+      });
+
+      // Assert
+      expect(response.status).toBe(HttpStatus.OK);
+      const lineChartEvent = response.body.find(
+        (event: { eventName: string }) => event.eventName === 'Tendaho',
+      );
+      const { alertDetails } = lineChartEvent.hazardTypeDetails.floods;
+      const medians = alertDetails.timeSeries.map(
+        (entry: { median: number }) => entry.median,
+      );
+      expect(medians).toHaveLength(8);
+      expect(new Set(medians).size).toBeGreaterThan(1);
+      expect(alertDetails.peakValue).toBe(Math.max(...medians));
+      expect(alertDetails.returnPeriod).toBe(5);
+      expect(alertDetails.probabilityOfExceedance).toBe(0.9);
     });
   });
 });
