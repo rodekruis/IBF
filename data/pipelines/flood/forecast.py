@@ -4,6 +4,7 @@ import logging
 from typing import cast
 
 from pipelines.flood.compute_flood_depth import compute_flood_depth
+from pipelines.flood.constants import FLOOD_DEPTH_GREYSCALE_MAX_METRES
 from pipelines.flood.determine_alerts import (
     determine_temporal_extent,
     ReturnPeriodThresholds,
@@ -267,7 +268,10 @@ def calculate_flood_forecasts(
             data_submitter.add_raster_exposure(
                 event_name=event_name,
                 layer=LayerName.FLOOD_DEPTH,
-                value_greyscale=raster_to_base64_png(clipped_flood_depth),
+                value_greyscale=raster_to_base64_png(
+                    clipped_flood_depth,
+                    fixed_max_value=FLOOD_DEPTH_GREYSCALE_MAX_METRES,
+                ),
                 extent=get_raster_extent(clipped_flood_depth),
             )
 

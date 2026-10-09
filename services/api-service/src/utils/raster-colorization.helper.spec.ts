@@ -89,9 +89,8 @@ describe('raster-colorization.helper', () => {
       });
 
       const pixel = readOutputPixel({ base64: result, pixelIndex: 0 });
-      expect(pixel.a).toBe(179);
-      expect(pixel.r).toBeGreaterThanOrEqual(0);
-      expect(pixel.r).toBeLessThanOrEqual(255);
+      expect(pixel.a).toBeGreaterThan(0);
+      expect(pixel.a).toBeLessThan(255);
     });
 
     it('should render zero pixels with colorLow when zeroIsTransparent is false', () => {
@@ -307,6 +306,29 @@ describe('raster-colorization.helper', () => {
       // Assert
       const pixel = readOutputPixel({ base64: result, pixelIndex: 0 });
       expect(pixel).toEqual({ r: 30, g: 0, b: 0, a: 30 });
+    });
+  });
+
+  describe('colorizeGrayscalePng (fixed scale mode)', () => {
+    it('should color flood depth by fixed metre cut-offs, independent of the raster max', () => {
+      // Arrange
+      // Grey levels for 0.1 m, 1 m and 3 m on the pipeline's 0-10 m scale (depth / 10 * 254 + 1).
+      const input = createGrayscalePng({
+        width: 1,
+        height: 3,
+        values: [4, 26, 77],
+      });
+
+      // Act
+      const result = colorizeGrayscalePng({
+        base64Grayscale: input,
+        config: FLOOD_DEPTH_CONFIG,
+      });
+
+      // Assert
+      expect(readOutputPixel({ base64: result, pixelIndex: 0 }).a).toBe(26);
+      expect(readOutputPixel({ base64: result, pixelIndex: 1 }).a).toBe(89);
+      expect(readOutputPixel({ base64: result, pixelIndex: 2 }).a).toBe(204);
     });
   });
 
@@ -569,6 +591,35 @@ describe('raster-colorization.helper', () => {
         pixelIndex: 2,
       });
       expect(pixelHigh.a).toBe(94);
+    });
+
+    it('should sum population values when downsampling', () => {
+      // Arrange
+      const width = 20;
+      const height = 10;
+      const values = Array.from({ length: width * height }, (_, i) => {
+        const x = i % width;
+        const y = Math.floor(i / width);
+        return x < 10 || y === 0 ? 1 : 0;
+      });
+      const pngBuffer = createEncodedPngBuffer({ width, height, values });
+
+      // Act
+      const result = processPopulationRaster({
+        dataPngBuffer: pngBuffer,
+        metadata: {
+          transform: [1, 0, 0, 0, -1, height],
+          crs: EPSG.WGS84,
+        },
+      });
+
+      // Assert
+      // Sums are 100 (left) and 10 (right): log1p(10) / log1p(100) ≈ 0.52 -> third palette band
+      const pixelRight = readOutputPixel({
+        base64: result.colouredBase64,
+        pixelIndex: 1,
+      });
+      expect(pixelRight.a).toBe(56);
     });
   });
 

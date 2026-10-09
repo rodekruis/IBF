@@ -96,3 +96,18 @@ def test_huge_positive_nodata_sentinel_is_excluded_not_treated_as_max():
     assert pixels[1, 0] == 255
     assert pixels[0, 0] == 0  # nodata sentinel -> not rendered as "max"
     assert pixels[1, 1] == 0
+
+
+def test_fixed_max_value_maps_linearly_from_zero_and_caps():
+    # Arrange
+    array = np.array([[0, 2], [5, 20]], dtype=np.float32)
+
+    # Act
+    result = raster_to_base64_png(_make_raster(array), fixed_max_value=10)
+
+    # Assert
+    pixels = np.array(Image.open(io.BytesIO(base64.b64decode(result))))
+    assert pixels[0, 0] == 0
+    assert pixels[0, 1] == 52  # 2 / 10 * 254 + 1 = 51.8
+    assert pixels[1, 0] == 128
+    assert pixels[1, 1] == 255
