@@ -9,7 +9,7 @@ import { AlertsService } from '@api-service/src/alerts/alerts.service';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { CountriesService } from '@api-service/src/countries/countries.service';
 import { EventsService } from '@api-service/src/events/events.service';
-import { NotificationsService } from '@api-service/src/notifications/notifications.service';
+import { TeamsNotificationsService } from '@api-service/src/notifications/teams-notifications.service';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import {
   buildMockForecasts,
@@ -31,7 +31,7 @@ export class SeedService {
     private readonly alertsService: AlertsService,
     private readonly countriesService: CountriesService,
     private readonly eventsService: EventsService,
-    private readonly notificationsService: NotificationsService,
+    private readonly teamsNotificationsService: TeamsNotificationsService,
   ) {}
 
   public getResetStatus(): { inProgress: boolean; error: string | null } {
@@ -87,7 +87,8 @@ export class SeedService {
     hazardTypes?: HazardType[];
     notify?: boolean;
   }): Promise<void> {
-    if (notify && !this.notificationsService.isEnabled()) {
+    // TODO: this is tight coupling between generic notification functionality and Teams, which should be handled differently ultimately.
+    if (notify && !this.teamsNotificationsService.isEnabled()) {
       throw new BadRequestException(
         'Cannot notify: TEAMS_NOTIFICATIONS_ENABLED is not true or TEAMS_NOTIFICATIONS_WEBHOOK_URL is not configured',
       );

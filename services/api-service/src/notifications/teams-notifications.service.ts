@@ -18,8 +18,8 @@ const TEAMS_REQUEST_TIMEOUT_MS = 10_000;
 
 // TODO: this should be considered as a temporary implementation until a full-fledged notification system is in place.
 @Injectable()
-export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name);
+export class TeamsNotificationsService {
+  private readonly logger = new Logger(TeamsNotificationsService.name);
 
   public constructor(private readonly eventsService: EventsService) {}
 

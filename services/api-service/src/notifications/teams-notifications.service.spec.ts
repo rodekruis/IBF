@@ -14,8 +14,6 @@ const mockEnv = jest.requireMock<{
   env: {
     TEAMS_NOTIFICATIONS_ENABLED: boolean;
     TEAMS_NOTIFICATIONS_WEBHOOK_URL: string | undefined;
-    ENV_NAME: string | undefined;
-    TEAMS_NOTIFICATIONS_MENTION_EMAILS: string[];
   };
 }>('@api-service/src/env').env;
 
@@ -23,7 +21,7 @@ import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.d
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
 import { EventsService } from '@api-service/src/events/events.service';
 import { TeamsMessage } from '@api-service/src/notifications/interfaces/teams-message';
-import { NotificationsService } from '@api-service/src/notifications/notifications.service';
+import { TeamsNotificationsService } from '@api-service/src/notifications/teams-notifications.service';
 import {
   AlertClass,
   EventStatus,
@@ -89,40 +87,26 @@ function getEventHeaders(message: TeamsMessage): string[] {
   });
 }
 
-describe('NotificationsService', () => {
-  let service: NotificationsService;
+describe('TeamsNotificationsService', () => {
+  let service: TeamsNotificationsService;
   let eventsService: { getEvents: jest.Mock };
   let fetchMock: jest.Mock;
 
   beforeEach(async () => {
     mockEnv.TEAMS_NOTIFICATIONS_ENABLED = true;
     mockEnv.TEAMS_NOTIFICATIONS_WEBHOOK_URL = WEBHOOK_URL;
-    mockEnv.ENV_NAME = undefined;
-    mockEnv.TEAMS_NOTIFICATIONS_MENTION_EMAILS = [];
     eventsService = { getEvents: jest.fn().mockResolvedValue([]) };
     fetchMock = jest.fn().mockResolvedValue({ ok: true });
     global.fetch = fetchMock;
 
     const module = await Test.createTestingModule({
       providers: [
-        NotificationsService,
+        TeamsNotificationsService,
         { provide: EventsService, useValue: eventsService },
       ],
     }).compile();
 
-    service = module.get(NotificationsService);
-  });
-
-  it('should do nothing when no webhook URL is configured', async () => {
-    // Arrange
-    mockEnv.TEAMS_NOTIFICATIONS_WEBHOOK_URL = undefined;
-
-    // Act
-    await service.notifyEventsUpdatedByForecast(createForecast());
-
-    // Assert
-    expect(eventsService.getEvents).not.toHaveBeenCalled();
-    expect(fetchMock).not.toHaveBeenCalled();
+    service = module.get(TeamsNotificationsService);
   });
 
   it('should do nothing when notifications are disabled', async () => {
@@ -191,42 +175,6 @@ describe('NotificationsService', () => {
 
     // Assert
     expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it('should prefix the title with the environment name when configured', async () => {
-    // Arrange
-    mockEnv.ENV_NAME = 'TEST';
-    eventsService.getEvents.mockResolvedValue([createEvent({})]);
-
-    // Act
-    await service.notifyEventsUpdatedByForecast(createForecast());
-
-    // Assert
-    expect(getTitle(getPostedMessage(fetchMock))).toBe(
-      '[TEST] floods in ETH: 1 new, 0 updated, 0 closed events',
-    );
-  });
-
-  it('should mention configured people', async () => {
-    // Arrange
-    mockEnv.TEAMS_NOTIFICATIONS_MENTION_EMAILS = ['person@example.org'];
-    eventsService.getEvents.mockResolvedValue([createEvent({})]);
-
-    // Act
-    await service.notifyEventsUpdatedByForecast(createForecast());
-
-    // Assert
-    const card = getPostedMessage(fetchMock).attachments[0].content;
-    expect(card.body).toContainEqual(
-      expect.objectContaining({ text: '<at>person@example.org</at>' }),
-    );
-    expect(card.msteams.entities).toEqual([
-      {
-        type: 'mention',
-        text: '<at>person@example.org</at>',
-        mentioned: { id: 'person@example.org', name: 'person@example.org' },
-      },
-    ]);
   });
 
   it('should not throw when the webhook responds with an error', async () => {

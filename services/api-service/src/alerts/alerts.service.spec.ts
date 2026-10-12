@@ -6,7 +6,7 @@ import { AlertsService } from '@api-service/src/alerts/alerts.service';
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { AlertToEventService } from '@api-service/src/events/alert-to-event.service';
-import { NotificationsService } from '@api-service/src/notifications/notifications.service';
+import { TeamsNotificationsService } from '@api-service/src/notifications/teams-notifications.service';
 import {
   EnsembleMemberType,
   ForecastSource,
@@ -87,7 +87,7 @@ describe('AlertsService', () => {
   let service: AlertsService;
   let repository: AlertsRepository;
   let alertToEventService: AlertToEventService;
-  let notificationsService: NotificationsService;
+  let teamsNotificationsService: TeamsNotificationsService;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -110,7 +110,7 @@ describe('AlertsService', () => {
           },
         },
         {
-          provide: NotificationsService,
+          provide: TeamsNotificationsService,
           useValue: {
             notifyEventsUpdatedByForecast: jest.fn(),
           },
@@ -121,7 +121,7 @@ describe('AlertsService', () => {
     service = module.get(AlertsService);
     repository = module.get(AlertsRepository);
     alertToEventService = module.get(AlertToEventService);
-    notificationsService = module.get(NotificationsService);
+    teamsNotificationsService = module.get(TeamsNotificationsService);
   });
 
   it('should be defined', () => {
@@ -141,7 +141,7 @@ describe('AlertsService', () => {
       // Assert
       expect(repository.createAlerts).toHaveBeenCalled();
       expect(
-        notificationsService.notifyEventsUpdatedByForecast,
+        teamsNotificationsService.notifyEventsUpdatedByForecast,
       ).toHaveBeenCalledWith(forecast);
     });
 
@@ -157,7 +157,7 @@ describe('AlertsService', () => {
       // Assert
       await expect(result).rejects.toThrow(HttpException);
       expect(
-        notificationsService.notifyEventsUpdatedByForecast,
+        teamsNotificationsService.notifyEventsUpdatedByForecast,
       ).not.toHaveBeenCalled();
     });
   });

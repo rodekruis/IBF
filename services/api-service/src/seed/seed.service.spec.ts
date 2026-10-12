@@ -23,14 +23,14 @@ describe('SeedService', () => {
     const alertsService = {} as never;
     const countriesService = {} as never;
     const eventsService = {} as never;
-    const notificationsService = {} as never;
+    const teamsNotificationsService = {} as never;
 
     service = new SeedService(
       seedInit,
       alertsService,
       countriesService,
       eventsService,
-      notificationsService,
+      teamsNotificationsService,
     );
   });
 
@@ -165,7 +165,7 @@ describe('SeedService', () => {
       const eventsService = {
         deleteEventsByCountry: deleteEventsMock,
       } as never;
-      const notificationsService = {
+      const teamsNotificationsService = {
         isEnabled: isNotificationsEnabledMock,
       } as never;
 
@@ -174,7 +174,7 @@ describe('SeedService', () => {
         alertsService,
         countriesService,
         eventsService,
-        notificationsService,
+        teamsNotificationsService,
       );
     });
 
