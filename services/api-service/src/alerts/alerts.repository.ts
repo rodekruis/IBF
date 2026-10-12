@@ -99,66 +99,21 @@ export class AlertsRepository {
     forecastMetadata: ForecastMetadata;
     eventIds: Map<string, number | null>;
   }): Promise<AlertReadDto[]> {
+    // Colorizing rasters is slow, so do it before opening the transaction to stay within its timeout
+    const alertCreateInputs = alertCreateDtos.map((alertCreateDto) =>
+      this.getAlertCreateInput({
+        alertCreateDto,
+        forecastMetadata,
+        eventId: eventIds.get(alertCreateDto.eventName) ?? null,
+      }),
+    );
+
     return this.prisma.$transaction(async (tx) => {
       const created: AlertReadDto[] = [];
 
-      for (const alertCreateDto of alertCreateDtos) {
-        const eventId = eventIds.get(alertCreateDto.eventName) ?? null;
+      for (const alertCreateInput of alertCreateInputs) {
         const record = await tx.alert.create({
-          data: {
-            countryCodeIso3: forecastMetadata.countryCodeIso3,
-            eventName: alertCreateDto.eventName,
-            issuedAt: new Date(forecastMetadata.issuedAt),
-            centroid: { ...alertCreateDto.centroid },
-            hazardType: forecastMetadata.hazardType,
-            forecastSources: forecastMetadata.forecastSources,
-            eventId,
-            severity: {
-              create: alertCreateDto.severity.map((entry) => ({
-                timeInterval: { ...entry.timeInterval },
-                ensembleMemberType: entry.ensembleMemberType,
-                severityKey: entry.severityKey,
-                severityValue: entry.severityValue,
-              })),
-            },
-            exposureAdminArea: {
-              create: alertCreateDto.exposure.adminAreas.map((entry) => ({
-                placeCode: entry.placeCode,
-                adminLevel: entry.adminLevel,
-                layerName: entry.layer,
-                value: entry.value,
-              })),
-            },
-            exposureGeoFeature: {
-              create: (alertCreateDto.exposure.geoFeatures ?? []).map(
-                (entry) => ({
-                  geoFeatureId: entry.geoFeatureId,
-                  attributes: entry.attributes as Prisma.InputJsonValue,
-                }),
-              ),
-            },
-            exposureRasterData: {
-              create: (alertCreateDto.exposure.rasters ?? []).map((entry) => ({
-                layerName: entry.layer,
-                valueGreyscale: entry.valueGreyscale,
-                valueColoured: colorizeGrayscalePng({
-                  base64Grayscale: entry.valueGreyscale,
-                  config: getColorizationConfig(entry.layer),
-                }),
-                metadata: {
-                  data: {
-                    extent: { ...entry.extent },
-                    crs: EPSG.WGS84,
-                    nodata: 0,
-                  },
-                  coloured: {
-                    extent: reprojectExtents4326To3857(entry.extent),
-                    crs: EPSG.WebMercator,
-                  },
-                },
-              })),
-            },
-          },
+          data: alertCreateInput,
           include: alertInclude,
         });
 
@@ -167,5 +122,68 @@ export class AlertsRepository {
 
       return created;
     });
+  }
+
+  private getAlertCreateInput({
+    alertCreateDto,
+    forecastMetadata,
+    eventId,
+  }: {
+    alertCreateDto: AlertCreateDto;
+    forecastMetadata: ForecastMetadata;
+    eventId: number | null;
+  }): Prisma.AlertUncheckedCreateInput {
+    return {
+      countryCodeIso3: forecastMetadata.countryCodeIso3,
+      eventName: alertCreateDto.eventName,
+      issuedAt: new Date(forecastMetadata.issuedAt),
+      centroid: { ...alertCreateDto.centroid },
+      hazardType: forecastMetadata.hazardType,
+      forecastSources: forecastMetadata.forecastSources,
+      eventId,
+      severity: {
+        create: alertCreateDto.severity.map((entry) => ({
+          timeInterval: { ...entry.timeInterval },
+          ensembleMemberType: entry.ensembleMemberType,
+          severityKey: entry.severityKey,
+          severityValue: entry.severityValue,
+        })),
+      },
+      exposureAdminArea: {
+        create: alertCreateDto.exposure.adminAreas.map((entry) => ({
+          placeCode: entry.placeCode,
+          adminLevel: entry.adminLevel,
+          layerName: entry.layer,
+          value: entry.value,
+        })),
+      },
+      exposureGeoFeature: {
+        create: (alertCreateDto.exposure.geoFeatures ?? []).map((entry) => ({
+          geoFeatureId: entry.geoFeatureId,
+          attributes: entry.attributes as Prisma.InputJsonValue,
+        })),
+      },
+      exposureRasterData: {
+        create: (alertCreateDto.exposure.rasters ?? []).map((entry) => ({
+          layerName: entry.layer,
+          valueGreyscale: entry.valueGreyscale,
+          valueColoured: colorizeGrayscalePng({
+            base64Grayscale: entry.valueGreyscale,
+            config: getColorizationConfig(entry.layer),
+          }),
+          metadata: {
+            data: {
+              extent: { ...entry.extent },
+              crs: EPSG.WGS84,
+              nodata: 0,
+            },
+            coloured: {
+              extent: reprojectExtents4326To3857(entry.extent),
+              crs: EPSG.WebMercator,
+            },
+          },
+        })),
+      },
+    };
   }
 }
