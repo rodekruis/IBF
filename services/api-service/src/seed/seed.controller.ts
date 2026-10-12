@@ -175,6 +175,14 @@ export class SeedController {
     description:
       'ISO8601 date for the forecast issuedAt (e.g. 2026-08-19T14:37:32.907Z). Defaults to now.',
   })
+  @ApiQuery({
+    name: 'notify',
+    required: false,
+    enum: ['true', 'false'],
+    schema: { default: 'false' },
+    description:
+      'If true, send notifications (e.g. Teams) for new and updated mock events, like for pipeline forecasts.',
+  })
   public async mockEvents(
     @Body() body: SecretDto,
     @Query(
@@ -188,6 +196,8 @@ export class SeedController {
     @Query('clearEvents', new ParseBoolPipe({ optional: true }))
     clearEvents: boolean,
     @Query('issuedAt') issuedAt: string | undefined,
+    @Query('notify', new ParseBoolPipe({ optional: true }))
+    notify: boolean | undefined,
   ): Promise<string> {
     if (IS_PRODUCTION) {
       throw new ForbiddenException('Mock events are not allowed in production');
@@ -244,6 +254,7 @@ export class SeedController {
       clearEvents: clearEvents ?? false,
       issuedAt: issuedAtDate,
       hazardTypes: resolvedHazardTypes,
+      notify: notify ?? false,
     });
 
     return `Mock scenario(s) applied`;
