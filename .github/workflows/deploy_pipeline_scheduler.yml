@@ -19,7 +19,7 @@ on:
         options:
           - test
           - staging
-          - production
+          - prod
 
 jobs:
   deploy:
