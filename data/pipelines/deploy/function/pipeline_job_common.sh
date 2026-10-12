@@ -3,7 +3,7 @@
 # pipeline_job_common.sh — Shared setup for run_pipeline_job.sh and
 # mock_run_pipeline_job.sh. Sourced by those scripts, not run directly.
 #
-# Reads the pipeline secrets from the nrw-batch-poc Key Vault (never from the
+# Reads the pipeline secrets from the batch test Key Vault (never from the
 # command line) and exports the same environment the Function App provides, so
 # manually submitted jobs stay identical to the scheduled daily runs.
 # Submission goes through function/submit_pipeline_job.py, which reuses

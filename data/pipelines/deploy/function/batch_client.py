@@ -1,6 +1,6 @@
 """Helpers to build and submit Azure Batch jobs for the NRW pipeline scheduler.
 
-Authenticates to the Batch data plane over Entra ID (the nrwbatchpoc account is
+Authenticates to the Batch data plane over Entra ID (the NRW batch accounts are
 AAD-only; shared-key auth is disabled). Deployed, the Function App's dedicated
 user-assigned managed identity (nrw-batch-scheduler) is used; locally, the
 operator's `az login` identity via DefaultAzureCredential.
