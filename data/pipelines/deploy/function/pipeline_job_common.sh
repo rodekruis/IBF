@@ -76,7 +76,7 @@ export BATCH_TASK_LOGS_CONTAINER_URL="$(az storage account show \
   --name nrwbatchtest \
   --resource-group NRW \
   --query primaryEndpoints.blob \
-  --output tsv)nrw-data-cache"
+  --output tsv | tr -d '\r\n')nrw-data-cache"
 export BATCH_POOL_NODE_IDENTITY_RESOURCE_ID="$(az identity show \
   --name nrw-batch-test \
   --resource-group NRW \
