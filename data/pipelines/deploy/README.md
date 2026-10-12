@@ -68,7 +68,7 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml \
 
 ### From App Insights
 
-- In the portal, go to the [nrw-batch-scheduler App Insights → Logs](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.Insights/components/nrw-batch-scheduler/logs)
+- In the portal, go to the [nrw-batch-scheduler-test App Insights → Logs](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.Insights/components/nrw-batch-scheduler-test/logs)
 
 You can see live metrics and performance, as well as see logs.
 
