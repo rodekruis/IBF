@@ -6,7 +6,7 @@ and writes data-encoded PNGs + metadata JSONs to /hazard/flood/flood-extents/dat
 
 Usage:
     cd data
-    uv run python data_management/seed_data_management/convert_flood_depth_to_png.py
+    uv run python -m data_management.seed_data_management.flood.convert_flood_depth_to_png
 """
 
 import json
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     for COUNTRY in COUNTRIES:
-        tif_files = sorted(INPUT_DIR.glob(f"flood_map_{COUNTRY}_*.tif"))
+        tif_files = sorted(INPUT_DIR.glob(f"{COUNTRY}_flood_extent_rp*.tif"))
         if not tif_files:
             print(f"No flood depth TIFFs found in {INPUT_DIR} for {COUNTRY}")
             continue
@@ -55,15 +55,8 @@ if __name__ == "__main__":
         print(f"Converting {len(tif_files)} flood depth rasters for {COUNTRY}:")
         return_periods: list[int] = []
         for tif_path in tif_files:
-            stem = tif_path.stem.lower()
-            suffix = stem.replace(f"flood_map_{COUNTRY.lower()}_", "")
-            if suffix == "empty":
-                continue
-            output_name = f"{COUNTRY}_flood_extent_{suffix}"
-            convert_flood_depth(tif_path, output_name)
-
-            if suffix.startswith("rp") and suffix[2:].isdigit():
-                return_periods.append(int(suffix[2:]))
+            convert_flood_depth(tif_path, tif_path.stem)
+            return_periods.append(int(tif_path.stem.rsplit("_rp", 1)[1]))
 
         # This is needed to facilitate lazy loading only needed files in the pipeline, to save on performance
         manifest = {
