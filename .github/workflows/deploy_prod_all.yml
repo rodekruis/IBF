@@ -1,0 +1,23 @@
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+
+name: 'Deploy [production] All'
+
+permissions:
+  contents: read
+  actions: read
+  deployments: write
+  id-token: write
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  deploy_service:
+    name: 'Build + Deploy: api-service'
+    uses: ./.github/workflows/deploy_prod_api-service.yml
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}

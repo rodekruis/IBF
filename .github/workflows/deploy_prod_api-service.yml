@@ -1,0 +1,103 @@
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+
+name: 'Deploy [production] api-service'
+
+env:
+  AZURE_WEBAPP_NAME: 'nrw-prod'
+  AZURE_WEBAPP_PACKAGE_PATH: services/api-service
+
+defaults:
+  run:
+    working-directory: services/api-service
+
+permissions:
+  contents: read
+  actions: read
+  deployments: write
+  id-token: write
+
+on:
+  workflow_call:
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+      DATABASE_URL:
+        required: true
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    environment: 'production'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Build Service
+        id: build
+        uses: ./.github/actions/build-service
+        with:
+          servicePath: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          databaseUrl: ${{ secrets.DATABASE_URL }}
+
+      - name: 'Azure Login: 510 - Anticipatory Action'
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure App Service
+        # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+        # Also, see: https://github.com/Azure/actions-workflow-samples
+        id: deploy_to_aas
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          package: '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/artifact.zip'
+          type: zip
+          clean: true
+
+      - name: Restart featureserv container
+        uses: azure/cli@v1
+        with:
+          inlineScript: |
+            az rest --method post --url https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/NRW/providers/Microsoft.App/containerApps/nrw-featureserv-prod/stop?api-version=2026-07-01
+            COUNT=1
+            STATUS=$( az containerapp show -n nrw-featureserv-prod -g NRW --query properties.provisioningState -o tsv )
+            until [ "$STATUS" == "InProgress" ]; do
+              ((COUNT++))
+              STATUS=$( az containerapp show -n nrw-featureserv-prod -g NRW --query properties.provisioningState -o tsv )
+              if [[ $COUNT -gt 10 ]]; then
+                echo "Error: Container app did not reach 'InProgress' status after $COUNT attempts"
+                break
+              else
+                echo "Retrying in 1 second..."
+                sleep 1
+              fi
+            done
+            COUNT=1
+            STATUS=$( az containerapp show -n nrw-featureserv-prod -g NRW --query properties.provisioningState -o tsv )
+            until [ "$STATUS" == "Succeeded" ]; do
+              ((COUNT++))
+              STATUS=$( az containerapp show -n nrw-featureserv-prod -g NRW --query properties.provisioningState -o tsv )
+              if [[ $COUNT -gt 10 ]]; then
+                echo "Error: Container app did not reach 'Succeeded' status after $COUNT attempts"
+                break
+              else
+                echo "Retrying in 1 second..."
+                sleep 1
+              fi
+            done
+            az rest --method post --url https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/NRW/providers/Microsoft.App/containerApps/nrw-featureserv-prod/start?api-version=2026-07-01
+
+      - name: Finish
+        run: |
+          echo "Build version: ${{ steps.build.outputs.build_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "Preview: <${{ steps.deploy_to_aas.outputs.webapp-url }}>" >> $GITHUB_STEP_SUMMARY
