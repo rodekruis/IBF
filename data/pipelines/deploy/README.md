@@ -7,30 +7,31 @@ See [readme-requirements.md](readme-requirements.md) for the initial requirement
 
 ## Manually starting a deployed pipeline job
 
-These commands submit a one-off job to the deployed Azure Batch infrastructure of an environment (`poc`, `test`, `staging` or `prod`). They do not run the pipeline in a local Docker container. The job gets the same settings as the scheduled run of that environment: they are read from its scheduler Function App, with Key Vault references resolved from the vault.
+These commands submit a one-off job to the deployed Azure Batch infrastructure. They do not run the pipeline in a local Docker container.
 
 ### Prerequisites
 
-- Log in with `az login` using an identity that has, for the target environment, `Azure Batch Job Submitter` on the Batch account, `Key Vault Secrets User` on the Key Vault, and permission to list the scheduler Function App's app settings (e.g. `Website Contributor`).
+- Log in with `az login` using an identity that has `Azure Batch Job Submitter` on the `nrwbatchtest` Batch account and `Key Vault Secrets User` on the `nrw-batch-test` Key Vault.
 - Install `uv`.
+- Set `IBF_API_URL` in `data/.env` to the deployed API that should receive the results, for example `https://api-test.nationalriskwatch.org/`.
 
 ### Live data run
 
 This is the manual way to kick off the scheduled jobs. It uses live data, such as Glofas for floods.
-From `data/pipelines/deploy/`, run `./function/run_pipeline_job.sh <environment> <hazard name>`, such as
+From `data/pipelines/deploy/`, run `./function/run_pipeline_job.sh <hazard name>`, such as
 
 ```bash
-./function/run_pipeline_job.sh test floods
+./function/run_pipeline_job.sh floods
 ```
 
-The script prints the submitted Batch job ID. Use the Azure Batch account to monitor the job and its task logs.
+The script reads the pipeline secrets from Key Vault and prints the submitted Batch job ID. Use the Azure Batch account to monitor the job and its task logs.
 
 ### Mock data run
 
 For a mock-data job, use the separate mock launcher. It requires `--mock` and passes the remaining pipeline flags through unchanged:
 
 ```bash
-./function/mock_run_pipeline_job.sh test floods --mock 1 --country KEN
+./function/mock_run_pipeline_job.sh floods --mock 1 --country KEN
 ```
 
 ## Getting files for local debugging
@@ -38,12 +39,12 @@ For a mock-data job, use the separate mock launcher. It requires `--mock` and pa
 You can get Glofas data from Azure for debugging local runs. Here are examples with Glofas data after it has been split into individual countries.
 
 From the azure portal:
-[Azure → nrwbatchpoc storage account → Containers → nrw-data-cache → browse into glofas/country_split/.](https://portal.azure.com/#view/Microsoft_Azure_Storage/ContainerMenuBlade/~/overview/storageAccountId/%2Fsubscriptions%2F57b0d17a-5429-4dbb-8366-35c928e3ed94%2FresourceGroups%2Fnrw-batch-poc%2Fproviders%2FMicrosoft.Storage%2FstorageAccounts%2Fnrwbatchpoc/path/nrw-data-cache/etag/%220x8DEF2D384D83E43%22/defaultId//publicAccessVal/None)
+[Azure → nrwbatchtest storage account → Containers → nrw-data-cache → browse into glofas/country_split/.](https://portal.azure.com/#view/Microsoft_Azure_Storage/ContainerMenuBlade/~/overview/storageAccountId/%2Fsubscriptions%2F57b0d17a-5429-4dbb-8366-35c928e3ed94%2FresourceGroups%2FNRW%2Fproviders%2FMicrosoft.Storage%2FstorageAccounts%2Fnrwbatchtest/path/nrw-data-cache/etag/%220x8DF2849BB064F08%22/defaultId//publicAccessVal/None)
 You can select multiple, click '...' -> 'download' for one file, and it will download for all of them.
 
 From the command line, after logging in with `az login`, you can download with something like the following command. This fetches all MWI data for Aug 22, 2026. Set the timestamp and country as needed.
 
-```
+```Bash
 az storage blob download-batch \
   --account-name nrwbatchtest \
   --source nrw-data-cache \
@@ -56,7 +57,7 @@ The files should be placed in `{DATA_CACHE_DIR}/glofas/country_split/{date}/`. T
 
 To use these, from `./data` run something like this with the correct country and timestamp.
 
-```
+```Bash
 uv run pipeline --config pipelines/infra/configs/floods.yaml \
   --country MWI \
   --local-data country \
@@ -121,13 +122,13 @@ union
 
 These are raw logs where you can see the error output, while the job is running or shortly after it completed. These are useful since you can grab all logs quickly for one job, and then parse them yourself.
 
-For ongoing jobs, go to [Azure -> nrwbatchpoc (batch account)](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Batch/batchAccounts/nrwbatchpoc/accountOverview) -> Features -> Jobs -> select job -> select task -> stderr.txt. These will be delete here once the job stops and the node it is running on is deallocated.
+For ongoing jobs, go to [Azure -> nrwbatchtest (batch account)](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.Batch/batchAccounts/nrwbatchtest/accountOverview) -> Features -> Jobs -> select job -> select task -> stderr.txt. These will be delete here once the job stops and the node it is running on is deallocated.
 
-For completed jobs, the logs are stored in blob storage. Go to the [nrwbatchpoc storage account](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Storage/storageAccounts/nrwbatchpoc/overview) -> Containers -> nrw-data-cache, under `task-logs/<hazard-type>/<job-id>/`.
+For completed jobs, the logs are stored in blob storage. Go to the [nrwbatchtest storage account](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.Storage/storageAccounts/nrwbatchtest/overview) -> Containers -> nrw-data-cache, under `task-logs/<hazard-type>/<job-id>/`.
 
 ## Resource deployment logs and current job status
 
-You can see the current status of jobs and errors from before the jobs starts in nrwbatchpoc (the batch account)(https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Batch/batchAccounts/nrwbatchpoc/accountOverview).
+You can see the current status of jobs and errors from before the jobs starts in nrwbatchtest (the batch account)(https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.Batch/batchAccounts/nrwbatchtest/accountOverview).
 
 From there go to 'Pools' for resource allocation errors, or 'Jobs' for the current status of jobs.
 
