@@ -35,15 +35,18 @@ export class EventsService {
     viewTime,
     active,
     countryCodesIso3,
+    lastUpdatedAt,
   }: {
     viewTime: Date;
     active?: boolean;
     countryCodesIso3?: string[];
+    lastUpdatedAt?: Date;
   }): Promise<EventResponseDto[]> {
     const events = await this.eventsRepository.getEvents({
       viewTime,
       active,
       countryCodesIso3,
+      lastUpdatedAt,
     });
     const eventIds = events.map((event) => event.id);
     const exposedAdminAreasByEventId =
