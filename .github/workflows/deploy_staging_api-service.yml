@@ -70,13 +70,25 @@ jobs:
           inlineScript: |
             az rest --method post --url https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/NRW/providers/Microsoft.App/containerApps/nrw-featureserv-staging/stop?api-version=2026-07-01
             COUNT=1
-            echo "Check number $COUNT of container app status"
-            STATUS=$( az containerapp show -n nrw-featureserv-staging -g NRW --query properties.runningStatus -o tsv )
-            until [ "$STATUS" == "Stopped" ]; do
+            STATUS=$( az containerapp show -n nrw-featureserv-staging -g NRW --query properties.provisioningState -o tsv )
+            until [ "$STATUS" == "InProgress" ]; do
               ((COUNT++))
-              STATUS=$( az containerapp show -n nrw-featureserv-staging -g NRW --query properties.runningStatus -o tsv )
+              STATUS=$( az containerapp show -n nrw-featureserv-staging -g NRW --query properties.provisioningState -o tsv )
               if [[ $COUNT -gt 10 ]]; then
-                echo "Error: Container app did not reach 'Stopped' status after $COUNT attempts"
+                echo "Error: Container app did not reach 'InProgress' status after $COUNT attempts"
+                break
+              else
+                echo "Retrying in 1 second..."
+                sleep 1
+              fi
+            done
+            COUNT=1
+            STATUS=$( az containerapp show -n nrw-featureserv-staging -g NRW --query properties.provisioningState -o tsv )
+            until [ "$STATUS" == "Succeeded" ]; do
+              ((COUNT++))
+              STATUS=$( az containerapp show -n nrw-featureserv-staging -g NRW --query properties.provisioningState -o tsv )
+              if [[ $COUNT -gt 10 ]]; then
+                echo "Error: Container app did not reach 'Succeeded' status after $COUNT attempts"
                 break
               else
                 echo "Retrying in 1 second..."
