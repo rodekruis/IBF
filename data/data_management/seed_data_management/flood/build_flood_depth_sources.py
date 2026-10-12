@@ -125,6 +125,7 @@ def build_country_flood_depths(
     lake_geometries = load_lake_geometries(lakes_path, country_bounds)
     print(f"{country}: {len(country_tiles)} tiles, {len(lake_geometries)} lakes")
 
+    written_paths: set[Path] = set()
     for return_period in return_periods:
         depth_paths = [
             download_jrc_file(
@@ -135,11 +136,20 @@ def build_country_flood_depths(
         ]
         depth, profile = merge_tiles(depth_paths, country_bounds)
         mask_lakes(depth, profile, lake_geometries)
-        write_flood_depth(
-            depth,
-            profile,
-            output_directory / f"{country}_flood_extent_rp{return_period}.tif",
-        )
+        output_path = output_directory / f"{country}_flood_extent_rp{return_period}.tif"
+        write_flood_depth(depth, profile, output_path)
+        written_paths.add(output_path)
+
+    remove_stale_flood_depths(output_directory, country, written_paths)
+
+
+def remove_stale_flood_depths(
+    output_directory: Path, country: str, written_paths: set[Path]
+) -> None:
+    for path in output_directory.glob(f"{country}_flood_extent_rp*.tif"):
+        if path not in written_paths:
+            path.unlink()
+            print(f"  removed stale {path.name}")
 
 
 def get_country_bounds(seed_repo_path: Path, country: str) -> Bounds:
