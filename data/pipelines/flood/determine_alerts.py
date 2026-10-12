@@ -77,9 +77,10 @@ def determine_temporal_extent(
                 f" {median_discharge:.2f} m3/s reaches return period"
                 f" {median_return_period:g}yr (minimum {minimum_return_period})",
             )
+            # Missing members are dropped so the API's exceedance probability is based on available runs only.
             ensemble_return_periods = [
-                _match_return_period_numeric(d, station_thresholds)
-                for d in time_interval_discharge.ensemble_discharges
+                _match_return_period_numeric(float(d), station_thresholds)
+                for d in ensemble_array[~np.isnan(ensemble_array)]
             ]
             time_interval_severities.append(
                 TimeIntervalReturnPeriodSeverity(
