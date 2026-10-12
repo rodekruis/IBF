@@ -46,12 +46,12 @@ if ! IBF_API_URL="$(read_env_var IBF_API_URL)" || [[ -z "${IBF_API_URL}" ]]; the
 fi
 
 echo "Reading pipeline secrets from Key Vault '${KEY_VAULT_NAME}'."
-IBF_PIPELINE_API_KEY="$(read_secret IBF-PIPELINE-API-KEY)"
+IBF_PIPELINE_API_KEY="$(read_secret IBF-PIPELINE-API-KEY-TEST)"
 GLOFAS_FTP_USER="$(read_secret GLOFAS-FTP-USER)"
 GLOFAS_FTP_PASSWORD="$(read_secret GLOFAS-FTP-PASSWORD)"
 
 # Fixed prototype values, mirroring the Function App settings in main.bicep
-export BATCH_ACCOUNT_URL="https://nrwbatchpoc.westeurope.batch.azure.com"
+export BATCH_ACCOUNT_URL="https://nrwbatchtest.westeurope.batch.azure.com"
 export BATCH_POOL_ID="nrwbatchtest"
 export IBF_ENVIRONMENT="test"
 export IBF_API_URL

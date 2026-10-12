@@ -8,104 +8,6 @@ For usage, such as deploying changes or kicking off a deployed pipeline run from
 
 See the [NRW-infra](https://github.com/rodekruis/NRW-infra) repo.
 
-## Deployment diagram
-
-```mermaid
-flowchart LR
-    subgraph External
-        glofas[GloFAS FTP<br/>aux.ecmwf.int]
-        api[NRW backend API]
-        seed[GitHub seed data]
-    end
-
-    subgraph NRW[Resource group NRW]
-        acr[ACR nrwdockerregistry<br/>pipelines:latest]
-        law[Log Analytics<br/>nrw-app-law]
-        subgraph vnet[VNet nrw-vnet-test / subnet snet-batch-poc]
-            nodes[Batch pool nodes<br/>Standard_E2as_v4]
-        end
-    end
-
-    subgraph poc[Resource group nrw-batch-poc]
-        func[Function App<br/>nrw-batch-scheduler<br/>daily timer]
-        batch[Batch account<br/>nrwbatchpoc]
-        kv[Key Vault<br/>nrw-batch-poc]
-        st[Storage account<br/>nrwbatchpoc<br/>container nrw-data-cache]
-        ai[Application Insights<br/>nrw-batch-scheduler]
-        alert[Metric alert<br/>TaskFailEvent]
-    end
-
-    func -- "submit jobs (UAMI nrw-batch-scheduler)" --> batch
-    func -- "Key Vault references" --> kv
-    func -- "runtime storage" --> st
-    batch -- "runs tasks on" --> nodes
-    nodes -- "pull image (UAMI nrw-batch-poc)" --> acr
-    nodes -- "read secrets" --> kv
-    nodes -- "blobfuse mount DATA_CACHE_DIR" --> st
-    nodes -- "download forecasts" --> glofas
-    nodes -- "seed data" --> seed
-    nodes -- "send results" --> api
-    func -- telemetry --> ai
-    nodes -- telemetry --> ai
-    ai -- backed by --> law
-    batch -- TaskFailEvent --> alert
-```
-
-## Permissions
-
-- Subscription: `57b0d17a-5429-4dbb-8366-35c928e3ed94`
-- Key Vault scope: `/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.KeyVault/vaults/nrw-batch-poc`
-- Batch account scope: `/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Batch/batchAccounts/nrwbatchpoc`
-
-Azure accounts
-
-- **`nrw-batch-scheduler`** (Function App UAMI — ServicePrincipal):
-  - Role: `Key Vault Secrets User`; Scope: Key Vault `nrw-batch-poc`; Why: resolve the Key Vault app-setting references in the Function App.
-  - Role: `Azure Batch Job Submitter`; Scope: Batch account `nrwbatchpoc`; Why: create Batch jobs over Entra ID (account is AAD-only).
-- **`nrw-batch-poc`** (pool node UAMI — ServicePrincipal):
-  - Role: `Key Vault Secrets User`; Scope: Key Vault `nrw-batch-poc`; Why: pool nodes read secrets from the vault.
-  - Role: `Storage Blob Data Contributor`; Scope: Blob container `nrw-data-cache` on storage account `nrwbatchpoc`; Why: Blob mount used as `DATA_CACHE_DIR`, and stdout/stderr upload by the Batch node agent.
-  - Role: `AcrPull`; Scope: container registry `nrwdockerregistry` (`NRW` resource group); Why: pool nodes pull `pipelines:latest` with this identity.
-- **`Microsoft Azure Batch`** (service principal — ServicePrincipal):
-  - Role: `Azure Batch` (orchestration); Scope: subscription; Why: Batch account provisioning (portal setup).
-  - Role: `Key Vault Secrets Officer`; Scope: Key Vault `nrw-batch-poc`; Why: Batch account uses the vault for node pool credential management (portal setup).
-
-User accounts:
-
-- **Create and rotate pipeline secrets**
-  - Role: `Key Vault Secrets Officer`; Scope: Key Vault `nrw-batch-poc`
-- **To run `func start`**
-  - Role: `Azure Batch Job Submitter`; Scope: Batch account `nrwbatchpoc`; Why: local job submission uses the operator's own `az login` identity, not the scheduler UAMI.
-- **To run `function/run_pipeline_job.sh` or `function/mock_run_pipeline_job.sh`**
-  - Role: `Key Vault Secrets User`; Scope: Key Vault `nrw-batch-poc`
-  - Role: `Azure Batch Job Submitter`; Scope: Batch account `nrwbatchpoc`
-  - Role: `Reader`; Scope: resource group `nrw-batch-poc`;
-- **To run `create-pool.sh`**
-  - Role: `Azure Batch Data Contributor`; Scope: Batch account `nrwbatchpoc`; Why: pool delete/create are data-plane operations authenticated with the operator's `az login` Entra ID token; `Azure Batch Job Submitter` cannot manage pools.
-  - Role: `Contributor`; Scope: Batch account `nrwbatchpoc`; Why: attaching the pool managed identity goes through the management API (`az rest PATCH`).
-
-## Deployment steps and scripts
-
-All files live under `data/pipelines/deploy/`.
-
-### One time setup
-
-- `set-secrets.sh` — store pipeline secrets in Key Vault. (If rerun this on a live instance, you need to restart the function app. (`az functionapp restart --name nrw-batch-scheduler --resource-group nrw-batch-poc`))
-- Create `nrw-batch-scheduler` UAMI + grant its roles (manual CLI) — dedicated Function identity plus `Key Vault Secrets User` and `Azure Batch Job Submitter` grants.
-- Grant the `nrw-batch-poc` pool UAMI its roles (manual CLI) — `Key Vault Secrets User`, `Storage Blob Data Contributor`, and `AcrPull` on `nrwdockerregistry` (see Permissions above).
-- `apply-lifecycle.sh` (`blob-lifecycle-policy.json`) — apply the Blob Storage retention policy.
-- `create-pool.sh` (`pool.json`) — create/recreate the Batch pool with the blob mount configured.
-
-These run once on first setup (and only again on rotation/policy changes).
-
-### Deploy to Azure
-
-Run these in order the first time, but after that, you can just run the ones that are updated.
-
-1. `build-and-push-image.sh` — build & push the pipeline Docker image to ACR. Note that YAML configs (`pipelines/infra/configs/*.yaml`) are baked into the image, so adding a country or changing data sources requires a new build+push.
-2. `deploy.sh` (`main.bicep`, `parameters.dev.json`) — deploy the Function App + monitoring (Bicep). Be sure to set the correct `.env` variables before running this, such as `IBF_API_URL`.
-3. `publish-function.sh` (`function/`) — deploy the Azure Function code and it's dependencies (from data/pipelines/deploy/function/).
-
 ### Helper jobs
 
 - `run_pipeline_job.sh` (`function/run_pipeline_job.sh`): Manually kick off a hazard pipeline run for a given hazard. Example: `./function/run_pipeline_job.sh floods`. This is the same job and parameters as a standard scheduled run of the hazard.
@@ -117,7 +19,7 @@ Run these in order the first time, but after that, you can just run the ones tha
 
 ### Blob storage retention
 
-The pipeline writes to subdirectories under `DATA_CACHE_DIR` as defined in `pipelines/infra/utils/storage_helpers.py`. Azure Blob lifecycle policies apply per prefix; finite retentions are enforced by `data/pipelines/deploy/blob-lifecycle-policy.json`, while indefinite retentions rely on the default (no rule in that file). NOAA data is not yet integrated into the pipeline, so it is not referenced here yet.
+The pipeline writes to subdirectories under `DATA_CACHE_DIR`. Azure Blob lifecycle policies apply per prefix.
 
 - `glofas/raw/{forecast_date}/`
   - Content: global GloFAS downloads
@@ -134,23 +36,7 @@ The pipeline writes to subdirectories under `DATA_CACHE_DIR` as defined in `pipe
 
 ## Logging
 
-Logging uses a workspace-based **Application Insights** component (`nrw-batch-scheduler`) backed by the shared **`nrw-app-law`** Log Analytics workspace in the `NRW` resource group
-
-## Network requirements
-
-- Batch nodes must reach the App Insights ingestion endpoint (HTTPS 443 to `dc.services.visualstudio.com`, covered by the `AzureMonitor` service tag).
-
-Connectivity notes for the pool subnet (`snet-batch-poc`):
-
-- **Private endpoints / DNS** — if the NRW API or ACR uses a private endpoint, link the corresponding **Private DNS Zone** (e.g. `privatelink.azurewebsites.net`) to `nrw-vnet-test` so DNS resolves correctly.
-- **Blob Storage** — the blobfuse mount works over HTTPS (443); add a service endpoint or private endpoint for `Microsoft.Storage` on the subnet if public access is restricted.
-
-#### NSG / firewall rules
-
-The subnet's NSG is `nrw-NSG-test`. It currently has no custom outbound rules, so Azure defaults allow the required outbound traffic. If the NSG is later locked down, explicitly allow:
-
-- HTTPS (443) to the ACR (`nrwdockerregistry.azurecr.io`) and Blob Storage (`nrwbatchpoc.blob.core.windows.net`).
-- FTP control (port 21) and passive data ports (1024–65535) to `aux.ecmwf.int`.
+Logging uses a workspace-based **Application Insights** component backed by the shared **`nrw-app-law`** Log Analytics workspace in the `NRW` resource group
 
 ## Environment variables and secrets
 

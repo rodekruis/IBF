@@ -11,7 +11,7 @@ These commands submit a one-off job to the deployed Azure Batch infrastructure. 
 
 ### Prerequisites
 
-- Log in with `az login` using an identity that has `Azure Batch Job Submitter` on the `nrwbatchpoc` Batch account and `Key Vault Secrets User` on the `nrw-batch-poc` Key Vault.
+- Log in with `az login` using an identity that has `Azure Batch Job Submitter` on the `nrwbatchtest` Batch account and `Key Vault Secrets User` on the `nrw-batch-test` Key Vault.
 - Install `uv`.
 - Set `IBF_API_URL` in `data/.env` to the deployed API that should receive the results, for example `https://api-test.nationalriskwatch.org/`.
 
@@ -46,7 +46,7 @@ From the command line, after logging in with `az login`, you can download with s
 
 ```
 az storage blob download-batch \
-  --account-name nrwbatchpoc \
+  --account-name nrwbatchtest \
   --source nrw-data-cache \
   --pattern "glofas/country_split/20260822/*MWI*" \
   --destination data/data \
@@ -68,7 +68,7 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml \
 
 ### From App Insights
 
-- In the portal, go to the [nrw-batch-scheduler App Insights → Logs](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Insights/components/nrw-batch-scheduler/logs)
+- In the portal, go to the [nrw-batch-scheduler App Insights → Logs](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.Insights/components/nrw-batch-scheduler/logs)
 
 You can see live metrics and performance, as well as see logs.
 
