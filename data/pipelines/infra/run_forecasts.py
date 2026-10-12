@@ -60,7 +60,6 @@ class ForecastRunContext:
     output_mode: OutputMode
     output_path: str
     api_client: ApiClient
-    is_live_run: bool
     local_data: str | None
     local_data_date: str | None
 
@@ -100,7 +99,7 @@ def _run_country(
             data_load_succeeded=False,
         )
 
-    data_submitter = DataSubmitter(context.api_client, is_live_run=context.is_live_run)
+    data_submitter = DataSubmitter(context.api_client)
 
     # --- Set forecast metadata based on hazard type ---
     forecast_sources = FORECAST_SOURCES[context.hazard_type]
@@ -208,7 +207,6 @@ def run_forecasts(
     _register_hazard_functions()
 
     source_target = _resolve_source_target(mock)
-    is_live_run = source_target == SourceTarget.LIVE and local_data is None
     os.environ["PIPELINE_SOURCE_TARGET"] = source_target.value
 
     config_reader = ConfigReader(source_target=source_target, infra_only=infra_only)
@@ -261,7 +259,6 @@ def run_forecasts(
         output_mode=output_mode,
         output_path=output_path,
         api_client=api_client,
-        is_live_run=is_live_run,
         local_data=local_data,
         local_data_date=local_data_date,
     )
