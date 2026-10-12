@@ -1,3 +1,28 @@
+# Flood seed data
+
+## Flood depth source rasters
+
+`build_flood_depth_sources.py` builds `hazard/flood/flood-extents/sources-tif/{ISO3}_flood_extent_rp{N}.tif` in the seed repo from the [JRC/GloFAS global river flood hazard maps](https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/) (water depth in metres, ~90 m).
+
+Per country and return period, it:
+
+1. Selects the JRC tiles intersecting the country's adm0 bounding box (via `tile_extents.geojson`).
+2. Merges the `_depth.tif` tiles, cropped to that bounding box.
+3. Masks lakes from [HydroLAKES](https://www.hydrosheds.org/products/hydrolakes) as nodata (`-9999`).
+
+Where files go:
+
+- **Output**: written directly into the local seed repo (`SEED_DATA_REPO_ROOT` in `data/.env`), overwriting `sources-tif/`. Use `--output-directory` to write elsewhere for review.
+- **Downloads**: cached in this repo under `data/data/flood-depth-sources-cache/` (gitignored, several GB for all countries).
+
+Afterwards, `convert_flood_depth_to_png.py` converts `sources-tif/` into `data-png/` (plus metadata and manifests), also in the seed repo.
+
+```bash
+cd data
+uv run python -m data_management.seed_data_management.flood.build_flood_depth_sources --countries MWI
+uv run python -m data_management.seed_data_management.flood.convert_flood_depth_to_png
+```
+
 # Flood GloFAS station-area mapping
 
 ## Spatial migration
