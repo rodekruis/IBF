@@ -3,11 +3,11 @@
 # pipeline_job_common.sh — Shared setup for run_pipeline_job.sh and
 # mock_run_pipeline_job.sh. Sourced by those scripts, not run directly.
 #
-# Reads the app settings of the target environment's scheduler Function App,
-# resolving Key Vault references from the vault (never from the command line),
-# and exports them, so manually submitted jobs stay identical to the scheduled
-# daily runs. Submission goes through function/submit_pipeline_job.py, which
-# reuses function/batch_client.py.
+# Reads the pipeline secrets from the batch test Key Vault (never from the
+# command line) and exports the same environment the Function App provides, so
+# manually submitted jobs stay identical to the scheduled daily runs.
+# Submission goes through function/submit_pipeline_job.py, which reuses
+# function/batch_client.py.
 #
 # Prerequisites:
 #   - Azure CLI logged in (`az login`) with the grants listed in
