@@ -70,6 +70,15 @@ jobs:
           type: zip
           clean: true
 
+      - name: Restart featureserv container
+        uses: azure/cli@v1
+        with:
+          inlineScript: |
+            az rest --method post --url https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/NRW/providers/Microsoft.App/containerApps/nrw-featureserv-test/stop?api-version=2026-07-01
+            sleep 10
+            az rest --method post --url https://management.azure.com/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/NRW/providers/Microsoft.App/containerApps/nrw-featureserv-test/start?api-version=2026-07-01
+
+
       - name: Finish
         run: |
           echo "Build version: ${{ steps.build.outputs.build_version }}" >> $GITHUB_STEP_SUMMARY
