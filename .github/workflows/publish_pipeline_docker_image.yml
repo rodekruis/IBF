@@ -1,0 +1,71 @@
+name: 'Publish: Pipeline Docker Image'
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Build for test or promote an existing image to prod'
+        type: choice
+        options:
+          - test
+          - prod
+        default: test
+        required: true
+      commit_sha:
+        description: 'Full commit SHA of the existing image (required for prod)'
+        type: string
+        required: false
+  push:
+    branches:
+      - main
+    paths:
+      - 'data/**'
+      - '.github/workflows/publish_pipeline_docker_image.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-pipeline-docker-image
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build and Push
+    environment: ${{ inputs.environment || 'test' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Azure Login
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and Push Pipeline Image
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.environment || 'test' }}
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+        run: bash data/pipelines/deploy/build-and-push-image.sh "${TARGET_ENVIRONMENT}" "${COMMIT_SHA}"
+
+      - name: Summarize Published Image
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.environment || 'test' }}
+          COMMIT_SHA: ${{ inputs.commit_sha || github.sha }}
+        run: |
+          IMAGE_REPOSITORY="nrwdockerregistry.azurecr.io/pipelines"
+          if [[ "${TARGET_ENVIRONMENT}" == "prod" ]]; then
+            MOVING_TAG="prod"
+          else
+            MOVING_TAG="latest"
+          fi
+          {
+            printf '### Published Pipeline Image\n\n'
+            printf '**Environment:** `%s`\n\n' "${TARGET_ENVIRONMENT}"
+            printf '**Commit SHA:** `%s`\n\n' "${COMMIT_SHA}"
+            printf '**Commit image:** `%s:%s`\n\n' "${IMAGE_REPOSITORY}" "${COMMIT_SHA}"
+            printf '**Published tag:** `%s:%s`\n' "${IMAGE_REPOSITORY}" "${MOVING_TAG}"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
