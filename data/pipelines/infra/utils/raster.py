@@ -126,19 +126,24 @@ def get_raster_extent(raster: RasterData) -> dict[str, float]:
     }
 
 
-def raster_to_base64_png(raster: RasterData) -> str:
+def raster_to_base64_png(
+    raster: RasterData, fixed_max_value: float | None = None
+) -> str:
     array = raster.array.copy()
     array = np.where(np.isnan(array) | (array == raster.nodata), 0, array)
     array = np.clip(array, 0, None)
 
-    # Normalize min-max to 1-255, leaving 0 for nodata. If the array is all zeros, return a zero array.
     nonzero_mask = array > 0
-    if not nonzero_mask.any():
-        normalized = np.zeros_like(array, dtype=np.uint8)
-    else:
+    normalized = np.zeros_like(array, dtype=np.uint8)
+    if fixed_max_value is not None:
+        # Linear 0..fixed_max_value -> 1..255 (capped), so a grey level means the same value in every raster.
+        normalized[nonzero_mask] = np.round(
+            np.clip(array[nonzero_mask] / fixed_max_value * 254 + 1, 1, 255)
+        ).astype(np.uint8)
+    # Normalize min-max to 1-255, leaving 0 for nodata. If the array is all zeros, return a zero array.
+    elif nonzero_mask.any():
         min_val = array[nonzero_mask].min()
         max_val = array[nonzero_mask].max()
-        normalized = np.zeros_like(array, dtype=np.uint8)
         if max_val > min_val:
             normalized[nonzero_mask] = (
                 ((array[nonzero_mask] - min_val) / (max_val - min_val) * 254) + 1
