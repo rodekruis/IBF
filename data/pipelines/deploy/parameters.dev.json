@@ -43,9 +43,6 @@
     },
     "alertEmails": {
       "value": ["ibf-devops@redcross.nl"]
-    },
-    "eventAlertEmails": {
-      "value": ["ibf-devops@redcross.nl"]
     }
   }
 }
