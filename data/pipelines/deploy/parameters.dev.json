@@ -6,22 +6,22 @@
       "value": "nrw-batch-scheduler"
     },
     "keyVaultName": {
-      "value": "nrw-batch-poc"
+      "value": "nrw-batch-test"
     },
     "managedIdentityName": {
-      "value": "nrw-batch-scheduler"
+      "value": "nrw-batch-scheduler-test"
     },
     "batchAccountName": {
-      "value": "nrwbatchpoc"
+      "value": "nrwbatchtest"
     },
     "batchAccountUrl": {
-      "value": "https://nrwbatchpoc.westeurope.batch.azure.com"
+      "value": "https://nrwbatchtest.westeurope.batch.azure.com"
     },
     "batchPoolId": {
-      "value": "nrwbatchpoc"
+      "value": "nrwbatchtest"
     },
     "storageAccountName": {
-      "value": "nrwbatchpoc"
+      "value": "nrwbatchtest"
     },
     "pythonVersion": {
       "value": "3.11"

@@ -6,12 +6,12 @@ For usage, such as deploying changes or kicking off a deployed pipeline run from
 
 ## Azure resources
 
-### Resource group `nrw-batch-poc`
+### Resource group `NRW`
 
-- **Batch account** `nrwbatchpoc` — AAD-only authentication, Key Vault-based node pool credential management. Treated as a **permanent resource** rather than deployed on-the-fly, to avoid single points of failure.
-  - **Batch pool** `nrwbatchpoc` — container-enabled VM Configuration pool (container support must be enabled at pool creation); `Standard_E2as_v4`, Ubuntu HPC 24.04 (`publisher: microsoft-dsvm`, `offer: ubuntu-hpc`, `sku: 2404`, `version: latest`), blobfuse mount of `nrw-data-cache`, autoscale (max 2 nodes, evaluated every 5 min). Jobs use the `nrw-batch-poc` UAMI on every node to authenticate to Azure resources; the pipeline itself only talks to the NRW backend API, so no direct database access from the nodes is needed.
-- **Key Vault** `nrw-batch-poc` — RBAC permission model; holds `ibf-pipeline-api-key`, `glofas-ftp-user`, `glofas-ftp-password`.
-- **Storage account** `nrwbatchpoc` — general-purpose V2; Blob container `nrw-data-cache` (mounted as `DATA_CACHE_DIR`, lifecycle policy from `blob-lifecycle-policy.json`, receives Batch task stdout/stderr under `task-logs/`); also reused as Function App runtime storage (`AzureWebJobsStorage`).
+- **Batch account** `nrwbatchtest` and `nrwbatchprod` — AAD-only authentication, Key Vault-based node pool credential management. Treated as a **permanent resource** rather than deployed on-the-fly, to avoid single points of failure.
+  - **Batch pool** `nrwbatchtestpool` and `nrwbatchprodpool` — container-enabled VM Configuration pool (container support must be enabled at pool creation); `Standard_E2as_v4`, Ubuntu HPC 24.04 (`publisher: microsoft-dsvm`, `offer: ubuntu-hpc`, `sku: 2404`, `version: latest`), blobfuse mount of `nrw-data-cache`, autoscale (max 2 nodes, evaluated every 5 min). Jobs use the `nrw-batch-test` and `nrw-batch-prod` UAMI on every node to authenticate to Azure resources; the pipeline itself only talks to the NRW backend API, so no direct database access from the nodes is needed.
+- **Key Vault** `nrw-batch-test` and `nrw-batch-prod` — RBAC permission model; holds `ibf-pipeline-api-key`, `glofas-ftp-user`, `glofas-ftp-password` and other secrets used by the pipeline scheduler Azure function.
+- **Storage account** `nrwbatchtest` and `nrwbatchprod` — general-purpose V2; Blob container `nrw-data-cache` (mounted as `DATA_CACHE_DIR`, lifecycle policy from `blob-lifecycle-policy.json`, receives Batch task stdout/stderr under `task-logs/`); also reused as Function App runtime storage (`AzureWebJobsStorage`).
 - **User-assigned managed identity** `nrw-batch-poc` — pool node identity (restricted to Batch providers).
 - **User-assigned managed identity** `nrw-batch-scheduler` — dedicated Function App identity.
 - **App Service plan** `nrw-batch-scheduler-plan` — Linux Consumption (Y1).
@@ -21,9 +21,6 @@ For usage, such as deploying changes or kicking off a deployed pipeline run from
 - **Metric alert** `nrwbatchpoc-task-fail-event` — fires on `TaskFailEvent` > 0 on the Batch account (5 min window).
 - **Action group** `nrw-batch-scheduler-event-created` — email receivers for expected events (placeholder, see below).
 - **Scheduled query alert** `nrw-batch-scheduler-event-created` — hourly query on the pipeline traces for the `placeholder_email_alert` tag. TODO: remove once event notifications are handled by the backend/app.
-
-### Resource group `NRW`
-
 - **Container registry** `nrwdockerregistry` (login server `nrwdockerregistry.azurecr.io`) — hosts the pipeline image `nrwdockerregistry.azurecr.io/pipelines:latest` (build context: repo root `/data`; also hosts the featureserv image). The Batch pool is attached to the registry and prefetches `pipelines:latest` so tasks start quickly.
 - **Virtual network** `nrw-vnet-test` — subnet `snet-batch-poc`, NSG `nrw-NSG-test`; `nrw-vnet-prod` also exists. The subnet must **not** have any subnet delegation: a VM Configuration pool deploys a VM Scale Set into the subnet, and a delegation (e.g. to `Microsoft.Batch/batchAccounts`, which only applies to the deprecated Cloud Services Configuration pool type) reserves the subnet for that service and makes node allocation fail with `AllocationFailed` / "subnet has delegation to external resources". Remove it with `az network vnet subnet update --resource-group NRW --vnet-name nrw-vnet-test --name snet-batch-poc --remove delegations`. Pool tasks reach the NRW backend API privately (exact connectivity — private endpoint, VNet peering, service endpoint, or public routing — depends on how the API is deployed).
 - **Log Analytics workspace** `nrw-app-law` — shared with the NRW backend; backs the Application Insights component.

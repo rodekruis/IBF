@@ -18,7 +18,7 @@
 
 ENV_FILE="${DATA_DIR}/.env"
 SUBSCRIPTION_ID="57b0d17a-5429-4dbb-8366-35c928e3ed94"
-KEY_VAULT_NAME="nrw-batch-poc"
+KEY_VAULT_NAME="nrw-batch-test"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
   echo "Env file not found: ${ENV_FILE}" >&2
@@ -46,13 +46,13 @@ if ! IBF_API_URL="$(read_env_var IBF_API_URL)" || [[ -z "${IBF_API_URL}" ]]; the
 fi
 
 echo "Reading pipeline secrets from Key Vault '${KEY_VAULT_NAME}'."
-IBF_PIPELINE_API_KEY="$(read_secret ibf-pipeline-api-key)"
-GLOFAS_FTP_USER="$(read_secret glofas-ftp-user)"
-GLOFAS_FTP_PASSWORD="$(read_secret glofas-ftp-password)"
+IBF_PIPELINE_API_KEY="$(read_secret IBF-PIPELINE-API-KEY)"
+GLOFAS_FTP_USER="$(read_secret GLOFAS-FTP-USER)"
+GLOFAS_FTP_PASSWORD="$(read_secret GLOFAS-FTP-PASSWORD)"
 
 # Fixed prototype values, mirroring the Function App settings in main.bicep
 export BATCH_ACCOUNT_URL="https://nrwbatchpoc.westeurope.batch.azure.com"
-export BATCH_POOL_ID="nrwbatchpoc"
+export BATCH_POOL_ID="nrwbatchtest"
 export IBF_ENVIRONMENT="test"
 export IBF_API_URL
 export IBF_PIPELINE_API_KEY GLOFAS_FTP_USER GLOFAS_FTP_PASSWORD
@@ -65,21 +65,21 @@ export PIPELINE_RUN_ORIGIN="manual"
 # pipeline logs to the same Application Insights component as the scheduled
 # runs.
 export APPLICATIONINSIGHTS_CONNECTION_STRING="$(az monitor app-insights component show \
-  --app nrw-batch-scheduler \
-  --resource-group nrw-batch-poc \
+  --app nrw-batch-scheduler-test \
+  --resource-group NRW \
   --query connectionString \
   --output tsv)"
 
 # Mirror the Function App settings from main.bicep so the Batch node agent
 # uploads task stdout/stderr to blob storage (task-logs/)
 export BATCH_TASK_LOGS_CONTAINER_URL="$(az storage account show \
-  --name nrwbatchpoc \
-  --resource-group nrw-batch-poc \
+  --name nrwbatchtest \
+  --resource-group NRW \
   --query primaryEndpoints.blob \
   --output tsv)nrw-data-cache"
 export BATCH_POOL_NODE_IDENTITY_RESOURCE_ID="$(az identity show \
-  --name nrw-batch-poc \
-  --resource-group nrw-batch-poc \
+  --name nrw-batch-test \
+  --resource-group NRW \
   --query id \
   --output tsv)"
 
