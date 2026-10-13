@@ -64,9 +64,13 @@ jobs:
             MOVING_TAG="latest"
           fi
           {
-            printf '### Published Pipeline Image\n\n'
-            printf '**Environment:** `%s`\n\n' "${TARGET_ENVIRONMENT}"
-            printf '**Commit SHA:** `%s`\n\n' "${COMMIT_SHA}"
-            printf '**Commit image:** `%s:%s`\n\n' "${IMAGE_REPOSITORY}" "${COMMIT_SHA}"
-            printf '**Published tag:** `%s:%s`\n' "${IMAGE_REPOSITORY}" "${MOVING_TAG}"
+            echo "### Published Pipeline Image"
+            echo
+            echo "**Environment:** \`${TARGET_ENVIRONMENT}\`"
+            echo
+            echo "**Commit SHA:** \`${COMMIT_SHA}\`"
+            echo
+            echo "**Commit image:** \`${IMAGE_REPOSITORY}:${COMMIT_SHA}\`"
+            echo
+            echo "**Published tag:** \`${IMAGE_REPOSITORY}:${MOVING_TAG}\`"
           } | tee -a "${GITHUB_STEP_SUMMARY}"

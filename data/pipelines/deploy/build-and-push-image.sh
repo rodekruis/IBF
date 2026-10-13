@@ -17,7 +17,7 @@
 #
 # Usage:
 #   ./build-and-push-image.sh [test]
-#   ./build-and-push-image.sh prod <full-commit-sha>
+#   ./build-and-push-image.sh production <full-commit-sha>
 
 set -euo pipefail
 
@@ -28,12 +28,12 @@ COMMIT_SHA="${2:-}"
 BUILD_CONTEXT="$(cd "$(dirname "$0")/../.." && pwd)"
 DOCKERFILE="$(cd "$(dirname "$0")" && pwd)/Dockerfile"
 
-if [[ $# -gt 2 || ( "${TARGET_ENVIRONMENT}" != "test" && "${TARGET_ENVIRONMENT}" != "prod" ) ]]; then
-  echo "Usage: $0 [test|prod] [full-commit-sha]" >&2
+if [[ $# -gt 2 || ( "${TARGET_ENVIRONMENT}" != "test" && "${TARGET_ENVIRONMENT}" != "production" ) ]]; then
+  echo "Usage: $0 [test|production] [full-commit-sha]" >&2
   exit 1
 fi
 
-if [[ "${TARGET_ENVIRONMENT}" == "prod" && -z "${COMMIT_SHA}" ]]; then
+if [[ "${TARGET_ENVIRONMENT}" == "production" && -z "${COMMIT_SHA}" ]]; then
   echo "Production promotion requires the full commit SHA of an existing image." >&2
   exit 1
 fi
@@ -57,7 +57,7 @@ COMMIT_IMAGE="${IMAGE_REPOSITORY}:${COMMIT_SHA}"
 echo "Logging in to ACR '${ACR_NAME}'."
 az acr login --name "${ACR_NAME}" --output none
 
-if [[ "${TARGET_ENVIRONMENT}" == "prod" ]]; then
+if [[ "${TARGET_ENVIRONMENT}" == "production" ]]; then
   PRODUCTION_IMAGE="${IMAGE_REPOSITORY}:prod"
   echo "Promoting '${COMMIT_IMAGE}' to '${PRODUCTION_IMAGE}'."
   docker pull --platform linux/amd64 "${COMMIT_IMAGE}"
