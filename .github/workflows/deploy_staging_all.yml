@@ -9,7 +9,6 @@ permissions:
   id-token: write
 
 on:
-  workflow_call:
   workflow_dispatch:
   release:
     types: [published]
