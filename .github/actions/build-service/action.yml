@@ -34,12 +34,89 @@ runs:
       run: |
         npm ci
 
+    - name: Add firewall rule for database
+      uses: azure/cli@v1
+      env:
+        DATABASE_URL: ${{ inputs.databaseUrl }}
+      with:
+        inlineScript: |
+          # Install necessary packages for `rdbms-connect` extension. Use Tiny DNF as the Azure-CLI container-image is based on Azure Linux
+          tdnf install -y build-essential python3-devel postgresql-devel gcc --quiet
+
+          # Ensure the `rdbms-connect` extension is installed for Azure CLI
+          az extension add -n rdbms-connect
+
+          # Ensure network access to the database server
+          COUNT=1
+          echo "Attempt $COUNT to retrieve the public IP address of the deployment runner..."
+          IP=$(curl https://api.ipify.org -s)
+          until [ ! -z $IP ]; do
+            ((COUNT++))
+            IP=$(curl https://api.ipify.org -s)
+            if [[ $COUNT -gt 10 ]]; then
+              echo "Error: Unable to retrieve public IP address after $COUNT attempts. Exiting."
+              exit 1
+            else
+              echo "Retrying in 3 seconds..."
+              sleep 3
+            fi
+          done
+          echo "Adding firewall rule 'AllowDeploymentRunnerIpProdDeployment' for IP: $IP"
+
+          az postgres flexible-server firewall-rule create \
+          --name "AllowDeploymentRunnerIpProdDeployment" \
+          --server-name NRW-prod \
+          --resource-group NRW \
+          --start-ip-address $IP \
+          --end-ip-address $IP
+
+          # Allow the firewall rule to be applied
+          echo "Waiting for firewall rule to be applied..."
+          sleep 3
+          COUNT=1
+
+          # Make sure the password is not fed into psql directly, to avoid exposing it in process lists
+          connection_url="${DATABASE_URL%%\?*}"
+          connection_details="${connection_url#*://}"
+          encoded_username_and_password="${connection_details%%@*}"
+          encoded_username="${encoded_username_and_password%%:*}"
+          encoded_password="${encoded_username_and_password#*:}"
+          printf -v database_password '%b' "${encoded_password//%/\\x}"
+          connection_url_without_password="${connection_url%%://*}://${encoded_username}@${connection_details#*@}"
+
+          until PGPASSWORD="$database_password" PGCONNECT_TIMEOUT=10 \
+            psql --dbname="$connection_url_without_password" \
+              --no-psqlrc --no-password --set=ON_ERROR_STOP=1 \
+              --command='SELECT 1;' >/dev/null; do
+            echo "Attempt $COUNT failed"
+            ((COUNT++))
+            if [[ $COUNT -gt 20 ]]; then
+              echo "Error: Firewall rule not applied after $COUNT attempts. Exiting."
+              exit 1
+            else
+              echo "Retrying in 30 seconds..."
+              sleep 30
+            fi
+          done
+          echo "Database is accessible"
+
     - name: Run database migrations
       shell: bash
       working-directory: ${{ inputs.servicePath }}
       run: npm run prisma:migrate:deploy
       env:
         DATABASE_URL: ${{ inputs.databaseUrl }}
+
+    - name: Remove firewall rule for database
+      if: ${{ always() }}
+      uses: azure/cli@v1
+      with:
+        inlineScript: |
+          az postgres flexible-server firewall-rule delete \
+            --name "AllowDeploymentRunnerIpProdDeployment" \
+            --server-name NRW-prod \
+            --resource-group NRW \
+            --yes
 
     - name: Generate Prisma
       shell: bash
