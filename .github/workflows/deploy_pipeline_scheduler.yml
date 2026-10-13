@@ -38,6 +38,6 @@ jobs:
         uses: Azure/functions-action@v1
         id: deploy-to-function-app
         with:
-          app-name: 'nrw-batch-scheduler-${{ github.event.inputs.environment }}'
+          app-name: ${{ vars.SCHEDULER_FUNCTION_APP_NAME }}
           package: 'data/pipelines/deploy/function'
           remote-build: true
