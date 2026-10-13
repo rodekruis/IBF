@@ -34,11 +34,17 @@ from azure.batch.models import (
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
 
-CONTAINER_IMAGE = (
-    "nrwdockerregistry.azurecr.io/pipelines:production"
-    if os.environ.get("IBF_ENVIRONMENT") == "prod"
-    else "nrwdockerregistry.azurecr.io/pipelines:latest"
-)
+match os.environ.get("IBF_ENVIRONMENT"):
+    case "production":
+        CONTAINER_IMAGE_TAG = "production"
+    case "staging":
+        CONTAINER_IMAGE_TAG = "staging"
+    case "test":
+        CONTAINER_IMAGE_TAG = "latest"
+    case _:
+        raise ValueError(f"Invalid IBF_ENVIRONMENT '{os.environ.get('IBF_ENVIRONMENT')}'.")
+
+CONTAINER_IMAGE = f"nrwdockerregistry.azurecr.io/pipelines:{CONTAINER_IMAGE_TAG}"
 TASK_MAX_WALL_CLOCK_TIME = timedelta(hours=10)
 TASK_MAX_RETRY_COUNT = 0
 

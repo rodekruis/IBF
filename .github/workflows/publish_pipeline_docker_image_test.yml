@@ -1,20 +1,15 @@
 name: 'Publish: Pipeline Docker Image'
 
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Build for test or promote an existing image to prod'
-        type: choice
-        options:
-          - test
-          - production
-        default: test
+  workflow_call:
+    secrets:
+      AZURE_CLIENT_ID:
         required: true
-      commit_sha:
-        description: 'Full commit SHA of the existing image (required for prod)'
-        type: string
-        required: false
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -34,7 +29,7 @@ concurrency:
 jobs:
   build-and-push:
     name: Build and Push
-    environment: ${{ inputs.environment || 'test' }}
+    environment: 'test'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -47,30 +42,21 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Build and Push Pipeline Image
-        env:
-          TARGET_ENVIRONMENT: ${{ inputs.environment || 'test' }}
-          COMMIT_SHA: ${{ inputs.commit_sha }}
-        run: bash data/pipelines/deploy/build-and-push-image.sh "${TARGET_ENVIRONMENT}" "${COMMIT_SHA}"
+        run: bash data/pipelines/deploy/build-and-push-image.sh "test"
 
       - name: Summarize Published Image
         env:
-          TARGET_ENVIRONMENT: ${{ inputs.environment || 'test' }}
-          COMMIT_SHA: ${{ inputs.commit_sha || github.sha }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           IMAGE_REPOSITORY="nrwdockerregistry.azurecr.io/pipelines"
-          if [[ "${TARGET_ENVIRONMENT}" == "production" ]]; then
-            MOVING_TAG="production"
-          else
-            MOVING_TAG="latest"
-          fi
           {
             echo "### Published Pipeline Image"
             echo
-            echo "**Environment:** \`${TARGET_ENVIRONMENT}\`"
+            echo "**Environment:** \`test\`"
             echo
             echo "**Commit SHA:** \`${COMMIT_SHA}\`"
             echo
             echo "**Commit image:** \`${IMAGE_REPOSITORY}:${COMMIT_SHA}\`"
             echo
-            echo "**Published tag:** \`${IMAGE_REPOSITORY}:${MOVING_TAG}\`"
+            echo "**Published tag:** \`${IMAGE_REPOSITORY}:latest\`"
           } | tee -a "${GITHUB_STEP_SUMMARY}"

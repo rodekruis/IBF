@@ -1,0 +1,57 @@
+name: 'Publish: Staging Pipeline Docker Image'
+
+on:
+  workflow_call:
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+  workflow_dispatch:
+
+
+permissions:
+  contents: read
+  deployments: write
+  id-token: write
+
+concurrency:
+  group: publish-pipeline-docker-image
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build and Push
+    environment: 'staging'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Azure Login
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and Push Pipeline Image
+        run: bash data/pipelines/deploy/build-and-push-image.sh "staging"
+
+      - name: Summarize Published Image
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          IMAGE_REPOSITORY="nrwdockerregistry.azurecr.io/pipelines"
+          {
+            echo "### Published Pipeline Image"
+            echo
+            echo "**Environment:** \`staging\`"
+            echo
+            echo "**Commit SHA:** \`${COMMIT_SHA}\`"
+            echo
+            echo "**Commit image:** \`${IMAGE_REPOSITORY}:${COMMIT_SHA}\`"
+            echo
+            echo "**Published tag:** \`${IMAGE_REPOSITORY}:staging\`"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
