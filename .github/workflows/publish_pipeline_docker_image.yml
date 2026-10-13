@@ -8,7 +8,7 @@ on:
         type: choice
         options:
           - test
-          - prod
+          - production
         default: test
         required: true
       commit_sha:
@@ -58,8 +58,8 @@ jobs:
           COMMIT_SHA: ${{ inputs.commit_sha || github.sha }}
         run: |
           IMAGE_REPOSITORY="nrwdockerregistry.azurecr.io/pipelines"
-          if [[ "${TARGET_ENVIRONMENT}" == "prod" ]]; then
-            MOVING_TAG="prod"
+          if [[ "${TARGET_ENVIRONMENT}" == "production" ]]; then
+            MOVING_TAG="production"
           else
             MOVING_TAG="latest"
           fi
