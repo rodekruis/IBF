@@ -3,7 +3,7 @@ import {
   INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
-import { HttpAdapterHost, ModulesContainer, NestFactory } from '@nestjs/core';
+import { ModulesContainer, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
 import compression from 'compression';
@@ -21,7 +21,6 @@ import {
   SWAGGER_CUSTOM_JS,
 } from '@api-service/src/config';
 import { env } from '@api-service/src/env';
-import { HttpExceptionLoggingFilter } from '@api-service/src/shared/filters/http-exception-logging.filter';
 import { AzureLogService } from '@api-service/src/shared/services/azure-log.service';
 import { ValidationPipeOptions } from '@api-service/src/validation-options/validation-pipe-options.const';
 
@@ -170,9 +169,6 @@ async function bootstrap(): Promise<void> {
 
   app.useGlobalPipes(new ValidationPipe(ValidationPipeOptions));
   app.use(compression());
-  app.useGlobalFilters(
-    new HttpExceptionLoggingFilter(app.get(HttpAdapterHost).httpAdapter),
-  );
   app.use(bodyParser.json({ limit: '25mb' }));
   app.use(
     bodyParser.urlencoded({
