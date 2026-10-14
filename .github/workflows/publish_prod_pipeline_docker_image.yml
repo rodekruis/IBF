@@ -35,6 +35,6 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Build and Push Pipeline Image
-        id: publish_image
+      - name: Promote Staging Pipeline Image to Production
+        id: promote_image
         run: bash data/pipelines/deploy/build-and-push-image.sh "production"
