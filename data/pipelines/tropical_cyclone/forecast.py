@@ -28,7 +28,7 @@ cycle, not one per storm), but each is measured only over the admin areas its ow
 cyclone number + season, e.g. `WP11_2026`) and are stable across runs. GEFS only: `extract_track`
 raises `NotImplementedError` for ECMWF.
 
-The hazard is fully registered: `HazardType.TROPICAL_CYCLONE`, `ForecastSource.GEFS`,
+The hazard is fully registered: `HazardType.TROPICAL_CYCLONE`, `ForecastSource.GEFS_TROPICAL_CYCLONE`,
 `SeverityKey.WIND_SPEED`, `LayerName.WIND_SPEED` all resolve, and the CLI dispatches to this
 function for the `tropicalCyclone` hazard type. Runnable end to end via the `pipeline` CLI with
 `--mock 1` (GEFS wind/track are downloaded from the seed repo), or by direct function call.
@@ -133,7 +133,7 @@ def calculate_tropical_cyclone_forecasts(
     # below. Both are source-aware and dispatch on country_config.forecast_source -
     # extract_wind_speed parses GEFS's per-member GRIB2 or ECMWF's number-keyed ensemble GRIB2, and
     # extract_track parses GEFS's ATCF or ECMWF's BUFR (see extract_forecast.py / extract_track.py).
-    if country_config.forecast_source == ForecastSource.GEFS:
+    if country_config.forecast_source == ForecastSource.GEFS_TROPICAL_CYCLONE:
         wind_member_paths: list[str] = _get_gefs_product_paths(
             data_provider,
             DataSource.GEFS_WIND_SEED_REPO_ALERT,
@@ -144,7 +144,7 @@ def calculate_tropical_cyclone_forecasts(
             DataSource.GEFS_TRACK_SEED_REPO_ALERT,
             DataSource.GEFS_TRACK_SEED_REPO_NO_ALERT,
         )
-    elif country_config.forecast_source == ForecastSource.ECMWF:
+    elif country_config.forecast_source == ForecastSource.ECMWF_TROPICAL_CYCLONE:
         wind_member_paths = _placeholder_load_local_ecmwf_wind_paths(country)
         track_member_paths = _placeholder_load_local_ecmwf_track_paths(country)
     else:

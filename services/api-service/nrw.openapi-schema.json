@@ -2179,9 +2179,11 @@
             "items": {
               "type": "string",
               "enum": [
-                "glofas",
-                "ECMWF",
-                "GEFS",
+                "glofasRiverDischarge",
+                "glofasFloodHazardMaps",
+                "worldpop",
+                "gefsTropicalCyclone",
+                "ecmwfTropicalCyclone",
                 "DestinE"
               ]
             }
@@ -2451,14 +2453,16 @@
           "forecastSources": {
             "type": "array",
             "example": [
-              "glofas"
+              "glofasRiverDischarge"
             ],
             "items": {
               "type": "string",
               "enum": [
-                "glofas",
-                "ECMWF",
-                "GEFS",
+                "glofasRiverDischarge",
+                "glofasFloodHazardMaps",
+                "worldpop",
+                "gefsTropicalCyclone",
+                "ecmwfTropicalCyclone",
                 "DestinE"
               ]
             }
@@ -2537,6 +2541,61 @@
           "adminLevel",
           "name",
           "exposure"
+        ]
+      },
+      "EventForecastSourceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": [
+              "glofasRiverDischarge",
+              "glofasFloodHazardMaps",
+              "worldpop",
+              "gefsTropicalCyclone",
+              "ecmwfTropicalCyclone",
+              "DestinE"
+            ],
+            "example": "glofasRiverDischarge"
+          },
+          "title": {
+            "type": "string",
+            "example": "Forecast River Discharge"
+          },
+          "dataset": {
+            "type": "string",
+            "example": "GloFAS Medium-range flood forecasts"
+          },
+          "provider": {
+            "type": "string",
+            "example": "Copernicus Emergency Management Service (GloFAS, ECMWF)"
+          },
+          "lastUpdated": {
+            "type": "string",
+            "description": "Update frequency for forecasts, or year of data for static datasets",
+            "example": "updated daily"
+          },
+          "description": {
+            "type": "string"
+          },
+          "moreInfoLabel": {
+            "type": "string",
+            "example": "WorldPop :: Population Counts"
+          },
+          "moreInfoUrl": {
+            "type": "string",
+            "example": "https://hub.worldpop.org/project/categories?id=3"
+          }
+        },
+        "required": [
+          "name",
+          "title",
+          "dataset",
+          "provider",
+          "lastUpdated",
+          "description",
+          "moreInfoLabel",
+          "moreInfoUrl"
         ]
       },
       "EventLayerDto": {
@@ -2746,13 +2805,7 @@
           "forecastSources": {
             "type": "array",
             "items": {
-              "type": "string",
-              "enum": [
-                "glofas",
-                "ECMWF",
-                "GEFS",
-                "DestinE"
-              ]
+              "$ref": "#/components/schemas/EventForecastSourceDto"
             }
           },
           "alertClass": {

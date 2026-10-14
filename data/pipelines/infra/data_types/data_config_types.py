@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from pipelines.infra.data_types.enums import HazardType
+from pipelines.infra.data_types.enums import ForecastSource, HazardType
 from shared.country_data import CountryCodeIso3
 
 
@@ -55,6 +55,24 @@ class DataSource(StrEnum):
     GEFS_TRACK_SEED_REPO_ALERT = "gefs_track_seed_repo_alert"
     GEFS_TRACK_SEED_REPO_NO_ALERT = "gefs_track_seed_repo_no_alert"
     TODO_DATA_SOURCE = "todo_data_source"
+
+
+# ##TODO: discuss in review: this mapping vs a fixed list per hazard type.
+# Data sources not listed here are not reported as forecast source to the API.
+FORECAST_SOURCE_BY_DATA_SOURCE: dict[DataSource, ForecastSource] = {
+    # Generic
+    DataSource.POPULATION_IBF_API: ForecastSource.WORLDPOP,
+    # Floods
+    DataSource.FLOOD_DEPTH_SEED_REPO: ForecastSource.GLOFAS_FLOOD_HAZARD_MAPS,
+    DataSource.GLOFAS_DISCHARGE_FTP: ForecastSource.GLOFAS_RIVER_DISCHARGE,
+    DataSource.GLOFAS_DISCHARGE_SEED_REPO_ALERT: ForecastSource.GLOFAS_RIVER_DISCHARGE,
+    DataSource.GLOFAS_DISCHARGE_SEED_REPO_NO_ALERT: ForecastSource.GLOFAS_RIVER_DISCHARGE,
+    # Tropical Cyclones
+    DataSource.GEFS_WIND_SEED_REPO_ALERT: ForecastSource.GEFS_TROPICAL_CYCLONE,
+    DataSource.GEFS_WIND_SEED_REPO_NO_ALERT: ForecastSource.GEFS_TROPICAL_CYCLONE,
+    DataSource.GEFS_TRACK_SEED_REPO_ALERT: ForecastSource.GEFS_TROPICAL_CYCLONE,
+    DataSource.GEFS_TRACK_SEED_REPO_NO_ALERT: ForecastSource.GEFS_TROPICAL_CYCLONE,
+}
 
 
 class OutputMode(StrEnum):

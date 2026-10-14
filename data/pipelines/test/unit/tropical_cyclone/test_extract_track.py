@@ -192,7 +192,7 @@ class TestExtractTrack:
         [storm] = extract_track(
             [str(track_path)],
             bounds=(120.0, 20.0, 130.0, 25.0),
-            forecast_source=ForecastSource.GEFS,
+            forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
         )
 
         [bucket] = storm.time_interval_track_fixes
@@ -221,7 +221,7 @@ class TestExtractTrack:
         storms = extract_track(
             [str(track_path)],
             bounds=(120.0, 15.0, 130.0, 25.0),
-            forecast_source=ForecastSource.GEFS,
+            forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
         )
 
         assert [storm.storm_number for storm in storms] == ["11", "12"]
@@ -241,7 +241,7 @@ class TestExtractTrack:
         storms = extract_track(
             [str(track_path)],
             bounds=(120.0, 15.0, 130.0, 25.0),
-            forecast_source=ForecastSource.GEFS,
+            forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
         )
 
         assert [storm.basin for storm in storms] == ["CP", "WP"]
@@ -256,7 +256,7 @@ class TestExtractTrack:
         [storm] = extract_track(
             paths,
             bounds=(120.0, 15.0, 130.0, 25.0),
-            forecast_source=ForecastSource.GEFS,
+            forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
         )
 
         [bucket] = storm.time_interval_track_fixes
@@ -277,7 +277,7 @@ class TestExtractTrack:
         storms = extract_track(
             [str(track_path)],
             bounds=(120.0, 15.0, 130.0, 25.0),
-            forecast_source=ForecastSource.GEFS,
+            forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
         )
 
         assert [storm.storm_identifier for storm in storms] == [
@@ -300,7 +300,7 @@ class TestExtractTrack:
         storms = extract_track(
             [str(track_path)],
             bounds=(120.0, 15.0, 130.0, 25.0),
-            forecast_source=ForecastSource.GEFS,
+            forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
         )
 
         assert [storm.storm_number for storm in storms] == ["11"]
@@ -318,7 +318,7 @@ class TestExtractTrack:
         [storm] = extract_track(
             [str(track_path)],
             bounds=(120.0, 15.0, 130.0, 25.0),
-            forecast_source=ForecastSource.GEFS,
+            forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
         )
 
         assert storm.season_year == 2025
@@ -335,7 +335,7 @@ class TestExtractTrack:
             extract_track(
                 [str(track_path)],
                 bounds=(120.0, 15.0, 130.0, 25.0),
-                forecast_source=ForecastSource.GEFS,
+                forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
             )
             == []
         )
@@ -345,7 +345,7 @@ class TestExtractTrack:
             extract_track(
                 [],
                 bounds=(120.0, 15.0, 130.0, 25.0),
-                forecast_source=ForecastSource.ECMWF,
+                forecast_source=ForecastSource.ECMWF_TROPICAL_CYCLONE,
             )
 
 

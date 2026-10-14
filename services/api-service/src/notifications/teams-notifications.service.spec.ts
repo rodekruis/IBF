@@ -38,7 +38,7 @@ function createForecast(): ForecastCreateDto {
     countryCodeIso3: 'ETH',
     issuedAt: new Date(ISSUED_AT),
     hazardType: HazardType.floods,
-    forecastSources: [ForecastSource.glofas],
+    forecastSources: [ForecastSource.glofasRiverDischarge],
     alerts: [],
   };
 }
@@ -50,7 +50,7 @@ function createEvent(overrides: Partial<EventResponseDto>): EventResponseDto {
     eventName: 'station-A',
     eventLabel: 'station-A',
     hazardType: HazardType.floods,
-    forecastSources: [ForecastSource.glofas],
+    forecastSources: [],
     alertClass: AlertClass.high,
     trigger: true,
     centroid: { latitude: 0.35, longitude: 32.6 },

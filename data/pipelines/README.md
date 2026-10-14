@@ -182,7 +182,8 @@ countries:
 3. In `data_provider_fetchers.py`, add a new function to handle the downloading of the source.
 4. Set the `LoadedDataSource.data_type` in that function. If you need to create a new `DataType` for this, do so. For the data you set, avoid using complex dictionaries, raw JSON, or other types that need lots of strings to be parsed, since these make it hard to find data errors, and make it hard to adjust the code if a source needs to change. If you have a data type like this, try to cast it to a dataclass and return that. These are easy to make with LLMs. You can have the LLM fetch the data source directly (via the URL, or from a local file) and then it can write a dataclass for you. See other data source types for examples.
 5. Also in `data_provider_fetchers.py`, in the function `load_data_container`, add a `case` to direct your new enum to your function.
-6. Add the data source string name to your config YAML, and run the pipeline locally to test it out.
+6. If the data source is an input the forecast is based on, map it to a `ForecastSource` in `FORECAST_SOURCE_BY_DATA_SOURCE` in `data_config_types.py`. The API uses these to show the data sources of an event.
+7. Add the data source string name to your config YAML, and run the pipeline locally to test it out.
 
 ## Tests
 
