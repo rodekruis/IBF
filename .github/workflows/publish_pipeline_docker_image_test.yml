@@ -43,20 +43,3 @@ jobs:
 
       - name: Build and Push Pipeline Image
         run: bash data/pipelines/deploy/build-and-push-image.sh "test"
-
-      - name: Summarize Published Image
-        env:
-          COMMIT_SHA: ${{ github.sha }}
-        run: |
-          IMAGE_REPOSITORY="nrwdockerregistry.azurecr.io/pipelines"
-          {
-            echo "### Published Pipeline Image"
-            echo
-            echo "**Environment:** \`test\`"
-            echo
-            echo "**Commit SHA:** \`${COMMIT_SHA}\`"
-            echo
-            echo "**Commit image:** \`${IMAGE_REPOSITORY}:${COMMIT_SHA}\`"
-            echo
-            echo "**Published tag:** \`${IMAGE_REPOSITORY}:latest\`"
-          } | tee -a "${GITHUB_STEP_SUMMARY}"
