@@ -29,7 +29,6 @@ import { SEED_LAYERS } from '@api-service/src/seed/seed-data/seed-layers.const';
 import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 import { HazardType, LayerName } from '@api-service/src/shared-enums';
 import { hashPassword } from '@api-service/src/utils/hash-password.helper';
-import { processPopulationRaster } from '@api-service/src/utils/raster-colorization.helper';
 
 interface GeoJsonFeature {
   readonly type: string;
@@ -531,15 +530,11 @@ export class SeedInit {
       return;
     }
 
-    const { colouredBase64, metadata: rasterMetadata } =
-      processPopulationRaster({ dataPngBuffer, metadata });
-
     await this.rastersService.upsertStaticRaster({
       countryCodeIso3,
       layer: LayerName.populationDensity,
-      valueData: dataPngBuffer.toString('base64'),
-      valueColoured: colouredBase64,
-      metadata: rasterMetadata,
+      dataPngBuffer,
+      metadata,
     });
 
     this.logger.log(`Seeded population raster for ${countryCodeIso3}`);

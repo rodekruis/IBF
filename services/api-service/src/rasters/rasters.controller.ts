@@ -11,21 +11,33 @@ import {
   Put,
   Res,
   StreamableFile,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiProduces,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { Response } from 'express';
+import { memoryStorage } from 'multer';
 
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
 import { AlertRasterResponseDto } from '@api-service/src/rasters/dto/alert-raster-response.dto';
 import { StaticRasterResponseDto } from '@api-service/src/rasters/dto/static-raster-response.dto';
-import { StaticRasterUploadDto } from '@api-service/src/rasters/dto/static-raster-upload.dto';
+import { StaticRasterSourceMetadataDto } from '@api-service/src/rasters/dto/static-raster-source-metadata.dto';
+import {
+  StaticRasterUploadDto,
+  StaticRasterUploadFormDto,
+} from '@api-service/src/rasters/dto/static-raster-upload.dto';
 import { RastersService } from '@api-service/src/rasters/rasters.service';
 import { LayerName } from '@api-service/src/shared-enums';
 
@@ -133,9 +145,20 @@ export class RastersController {
   @Put('static')
   @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'data', maxCount: 1 },
+        { name: 'metadata', maxCount: 1 },
+      ],
+      { storage: memoryStorage() },
+    ),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: StaticRasterUploadFormDto })
   @ApiOperation({
     summary:
-      'Upload or update a static raster (upsert). Admin endpoint for managing configuration.',
+      'Upload or update a static raster (upsert) from its data PNG and metadata JSON. The coloured image is generated server-side. Admin endpoint for managing configuration.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -144,8 +167,41 @@ export class RastersController {
   })
   public async upsertStaticRaster(
     @Body() dto: StaticRasterUploadDto,
+    @UploadedFiles()
+    files: { data?: Express.Multer.File[]; metadata?: Express.Multer.File[] },
   ): Promise<StaticRasterResponseDto> {
-    return this.rastersService.upsertStaticRaster(dto);
+    const [dataFile] = files.data ?? [];
+    const [metadataFile] = files.metadata ?? [];
+    if (!dataFile || !metadataFile) {
+      throw new BadRequestException(
+        "Both 'data' (PNG) and 'metadata' (JSON) files are required",
+      );
+    }
+
+    return this.rastersService.upsertStaticRaster({
+      countryCodeIso3: dto.countryCodeIso3,
+      layer: dto.layer,
+      dataPngBuffer: dataFile.buffer,
+      metadata: await this.parseSourceMetadataOrThrow(metadataFile),
+    });
+  }
+
+  private async parseSourceMetadataOrThrow(
+    file: Express.Multer.File,
+  ): Promise<StaticRasterSourceMetadataDto> {
+    let plain: unknown;
+    try {
+      plain = JSON.parse(file.buffer.toString('utf8'));
+    } catch {
+      throw new BadRequestException("'metadata' file is not valid JSON");
+    }
+
+    const metadata = plainToInstance(StaticRasterSourceMetadataDto, plain);
+    const errors = await validate(metadata);
+    if (errors.length > 0) {
+      throw new BadRequestException(errors);
+    }
+    return metadata;
   }
 
   @Delete('static/:countryCodeIso3/:layer')
