@@ -36,11 +36,13 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Build and Push Pipeline Image
+        id: publish_image
         run: bash data/pipelines/deploy/build-and-push-image.sh "staging"
 
       - name: Summarize Published Image
         env:
           COMMIT_SHA: ${{ github.sha }}
+          PROMOTED: ${{ steps.publish_image.outputs.promoted }}
         run: |
           IMAGE_REPOSITORY="nrwdockerregistry.azurecr.io/pipelines"
           {
@@ -52,5 +54,9 @@ jobs:
             echo
             echo "**Commit image:** \`${IMAGE_REPOSITORY}:${COMMIT_SHA}\`"
             echo
-            echo "**Published tag:** \`${IMAGE_REPOSITORY}:staging\`"
+            if [[ "${PROMOTED}" == "true" ]]; then
+              echo "**Published tag:** \`${IMAGE_REPOSITORY}:staging\`"
+            else
+              echo "**Promotion:** Skipped; no image exists for this commit SHA."
+            fi
           } | tee -a "${GITHUB_STEP_SUMMARY}"
