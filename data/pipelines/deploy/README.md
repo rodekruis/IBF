@@ -7,31 +7,30 @@ See [readme-requirements.md](readme-requirements.md) for the initial requirement
 
 ## Manually starting a deployed pipeline job
 
-These commands submit a one-off job to the deployed Azure Batch infrastructure. They do not run the pipeline in a local Docker container.
+These commands submit a one-off job to the deployed Azure Batch infrastructure of an environment (`poc`, `test`, `staging` or `prod`). They do not run the pipeline in a local Docker container. The job gets the same settings as the scheduled run of that environment: they are read from its scheduler Function App, with Key Vault references resolved from the vault.
 
 ### Prerequisites
 
-- Log in with `az login` using an identity that has `Azure Batch Job Submitter` on the `nrwbatchpoc` Batch account and `Key Vault Secrets User` on the `nrw-batch-poc` Key Vault.
+- Log in with `az login` using an identity that has, for the target environment, `Azure Batch Job Submitter` on the Batch account, `Key Vault Secrets User` on the Key Vault, and permission to list the scheduler Function App's app settings (e.g. `Website Contributor`).
 - Install `uv`.
-- Set `IBF_API_URL` in `data/.env` to the deployed API that should receive the results, for example `https://api-test.nationalriskwatch.org/`.
 
 ### Live data run
 
 This is the manual way to kick off the scheduled jobs. It uses live data, such as Glofas for floods.
-From `data/pipelines/deploy/`, run `./function/run_pipeline_job.sh <hazard name>`, such as
+From `data/pipelines/deploy/`, run `./function/run_pipeline_job.sh <environment> <hazard name>`, such as
 
 ```bash
-./function/run_pipeline_job.sh floods
+./function/run_pipeline_job.sh test floods
 ```
 
-The script reads the pipeline secrets from Key Vault and prints the submitted Batch job ID. Use the Azure Batch account to monitor the job and its task logs.
+The script prints the submitted Batch job ID. Use the Azure Batch account to monitor the job and its task logs.
 
 ### Mock data run
 
 For a mock-data job, use the separate mock launcher. It requires `--mock` and passes the remaining pipeline flags through unchanged:
 
 ```bash
-./function/mock_run_pipeline_job.sh floods --mock 1 --country KEN
+./function/mock_run_pipeline_job.sh test floods --mock 1 --country KEN
 ```
 
 ## Getting files for local debugging

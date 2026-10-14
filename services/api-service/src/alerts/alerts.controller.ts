@@ -100,6 +100,6 @@ export class AlertsController {
     @Body(new ValidationPipe({ ...ValidationPipeOptions, transform: true }))
     forecastCreateDto: ForecastCreateDto,
   ): Promise<AlertReadDto[]> {
-    return await this.alertsService.createAlerts(forecastCreateDto);
+    return await this.alertsService.createAlertsAndNotify(forecastCreateDto);
   }
 }

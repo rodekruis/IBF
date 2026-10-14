@@ -6,6 +6,7 @@ import {
 import { ModulesContainer, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { Request, Response } from 'express';
 import fs, { writeFileSync } from 'node:fs';
@@ -194,6 +195,7 @@ async function bootstrap(): Promise<void> {
   });
 
   app.useGlobalPipes(new ValidationPipe(ValidationPipeOptions));
+  app.use(compression());
   app.useGlobalFilters(new HttpExceptionLoggingFilter());
   app.use(bodyParser.json({ limit: '25mb' }));
   app.use(

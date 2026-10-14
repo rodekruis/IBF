@@ -7,6 +7,7 @@ import { CountriesModule } from '@api-service/src/countries/countries.module';
 import { EventsModule } from '@api-service/src/events/events.module';
 import { GeoFeaturesModule } from '@api-service/src/geo-features/geo-features.module';
 import { LayersModule } from '@api-service/src/layers/layers.module';
+import { NotificationsModule } from '@api-service/src/notifications/notifications.module';
 import { PrismaModule } from '@api-service/src/prisma/prisma.module';
 import { RastersModule } from '@api-service/src/rasters/rasters.module';
 import { SeedController } from '@api-service/src/seed/seed.controller';
@@ -23,6 +24,7 @@ import { SeedInit } from '@api-service/src/seed/seed-init';
     EventsModule,
     GeoFeaturesModule,
     LayersModule,
+    NotificationsModule,
     RastersModule,
   ],
   providers: [SeedService, SeedInit],

@@ -360,6 +360,20 @@
             "description": "If true, clear existing events for the given countries before creating new ones."
           },
           {
+            "name": "notify",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "false",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "type": "string"
+            },
+            "description": "If true, send notifications (e.g. Teams) for new and updated mock events, like for pipeline forecasts."
+          },
+          {
             "name": "issuedAt",
             "required": false,
             "in": "query",

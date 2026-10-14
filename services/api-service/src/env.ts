@@ -71,6 +71,20 @@ export const env = createEnv({
     // Third-party: Azure ApplicationInsights
     APPLICATIONINSIGHTS_CONNECTION_STRING: z.string().optional(),
 
+    // Third-party: Microsoft Teams notifications
+    TEAMS_NOTIFICATIONS_ENABLED: z.stringbool().default(false),
+    TEAMS_NOTIFICATIONS_WEBHOOK_URL: z.url().optional(),
+    TEAMS_NOTIFICATIONS_MENTION_EMAILS: z
+      .string()
+      .optional()
+      .transform((value) =>
+        (value ?? '')
+          .split(',')
+          .map((email) => email.trim())
+          .filter((email) => email.length > 0),
+      )
+      .pipe(z.array(z.email())),
+
     // Interface(s) configuration
     REDIRECT_PORTAL_URL_HOST: z
       .url()

@@ -3,85 +3,89 @@
 # pipeline_job_common.sh — Shared setup for run_pipeline_job.sh and
 # mock_run_pipeline_job.sh. Sourced by those scripts, not run directly.
 #
-# Reads the pipeline secrets from the nrw-batch-poc Key Vault (never from the
-# command line) and exports the same environment the Function App provides, so
-# manually submitted jobs stay identical to the scheduled daily runs.
-# Submission goes through function/submit_pipeline_job.py, which reuses
-# function/batch_client.py.
+# Reads the app settings of the target environment's scheduler Function App,
+# resolving Key Vault references from the vault (never from the command line),
+# and exports them, so manually submitted jobs stay identical to the scheduled
+# daily runs. Submission goes through function/submit_pipeline_job.py, which
+# reuses function/batch_client.py.
 #
 # Prerequisites:
-#   - Azure CLI logged in (`az login`) with the grants listed above.
+#   - Azure CLI logged in (`az login`) with the grants listed in
+#     readme-implementation.md.
 #   - uv installed (provides azure-batch/azure-identity via `uv run --with`).
-#   - data/.env populated with IBF_API_URL.
 #
-# Expects DATA_DIR to be set by the calling script.
+# Expects DATA_DIR and TARGET_ENVIRONMENT to be set by the calling script.
 
-ENV_FILE="${DATA_DIR}/.env"
 SUBSCRIPTION_ID="57b0d17a-5429-4dbb-8366-35c928e3ed94"
-KEY_VAULT_NAME="nrw-batch-poc"
+KEY_VAULT_REFERENCE_PATTERN='^@Microsoft\.KeyVault\(VaultName=([^;]+);SecretName=([^)]+)\)$'
+SETTING_NAMES=(
+  BATCH_ACCOUNT_URL
+  BATCH_POOL_ID
+  BATCH_TASK_LOGS_CONTAINER_URL
+  BATCH_POOL_NODE_IDENTITY_RESOURCE_ID
+  IBF_ENVIRONMENT
+  IBF_API_URL
+  IBF_PIPELINE_API_KEY
+  GITHUB_DATA_BASE_URL
+  GLOFAS_FTP_HOST
+  GLOFAS_FTP_USER
+  GLOFAS_FTP_PASSWORD
+  DATA_CACHE_DIR
+  APPLICATIONINSIGHTS_CONNECTION_STRING
+)
 
-if [[ ! -f "${ENV_FILE}" ]]; then
-  echo "Env file not found: ${ENV_FILE}" >&2
-  exit 1
-fi
+# TODO: remove 'poc' once those resources are removed.
+case "${TARGET_ENVIRONMENT}" in
+  poc)
+    FUNCTION_APP_NAME="nrw-batch-scheduler"
+    RESOURCE_GROUP="nrw-batch-poc"
+    ;;
+  test | staging | prod)
+    FUNCTION_APP_NAME="nrw-batch-scheduler-${TARGET_ENVIRONMENT}"
+    RESOURCE_GROUP="NRW"
+    ;;
+  *)
+    echo "Invalid environment '${TARGET_ENVIRONMENT}'. Use one of: poc, test, staging, prod." >&2
+    exit 1
+    ;;
+esac
 
 az account set --subscription "${SUBSCRIPTION_ID}"
 
-# shellcheck source=../env_helpers.sh
-source "$(dirname "${BASH_SOURCE[0]}")/../env_helpers.sh"
-
-# Read a secret value from Key Vault. The value is captured into a variable
-# and never echoed to stdout.
-read_secret() {
-  az keyvault secret show \
-    --vault-name "${KEY_VAULT_NAME}" \
-    --name "$1" \
-    --query value \
-    --output tsv
+# The value is captured into a variable by the caller and never echoed to stdout.
+resolve_setting_value() {
+  local setting_value="$1"
+  if [[ "${setting_value}" =~ ${KEY_VAULT_REFERENCE_PATTERN} ]]; then
+    az keyvault secret show \
+      --vault-name "${BASH_REMATCH[1]}" \
+      --name "${BASH_REMATCH[2]}" \
+      --query value \
+      --output tsv
+  else
+    printf '%s' "${setting_value}"
+  fi
 }
 
-if ! IBF_API_URL="$(read_env_var IBF_API_URL)" || [[ -z "${IBF_API_URL}" ]]; then
-  echo "IBF_API_URL not found in ${ENV_FILE}." >&2
-  exit 1
-fi
+echo "Reading app settings of Function App '${FUNCTION_APP_NAME}' and resolving its Key Vault references."
+setting_names_json="$(printf '"%s",' "${SETTING_NAMES[@]}")"
+app_settings="$(az functionapp config appsettings list \
+  --name "${FUNCTION_APP_NAME}" \
+  --resource-group "${RESOURCE_GROUP}" \
+  --query "[?contains(\`[${setting_names_json%,}]\`, name)].[name, value]" \
+  --output tsv)"
 
-echo "Reading pipeline secrets from Key Vault '${KEY_VAULT_NAME}'."
-IBF_PIPELINE_API_KEY="$(read_secret ibf-pipeline-api-key)"
-GLOFAS_FTP_USER="$(read_secret glofas-ftp-user)"
-GLOFAS_FTP_PASSWORD="$(read_secret glofas-ftp-password)"
+for setting_name in "${SETTING_NAMES[@]}"; do
+  setting_value="$(awk -F '\t' -v name="${setting_name}" '$1 == name { print $2 }' <<< "${app_settings}")"
+  if [[ -z "${setting_value}" ]]; then
+    echo "App setting '${setting_name}' not found on Function App '${FUNCTION_APP_NAME}'." >&2
+    exit 1
+  fi
+  resolved_value="$(resolve_setting_value "${setting_value}")"
+  export "${setting_name}=${resolved_value}"
+done
+unset app_settings setting_value resolved_value
 
-# Fixed prototype values, mirroring the Function App settings in main.bicep
-export BATCH_ACCOUNT_URL="https://nrwbatchpoc.westeurope.batch.azure.com"
-export BATCH_POOL_ID="nrwbatchpoc"
-export IBF_ENVIRONMENT="test"
-export IBF_API_URL
-export IBF_PIPELINE_API_KEY GLOFAS_FTP_USER GLOFAS_FTP_PASSWORD
-export GITHUB_DATA_BASE_URL="https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main"
-export GLOFAS_FTP_HOST="aux.ecmwf.int"
-export DATA_CACHE_DIR="/mnt/batch/tasks/fsmounts/nrw-data-cache"
 export PIPELINE_RUN_ORIGIN="manual"
-
-# Mirror the Function App setting from main.bicep so submitted jobs export
-# pipeline logs to the same Application Insights component as the scheduled
-# runs.
-export APPLICATIONINSIGHTS_CONNECTION_STRING="$(az monitor app-insights component show \
-  --app nrw-batch-scheduler \
-  --resource-group nrw-batch-poc \
-  --query connectionString \
-  --output tsv)"
-
-# Mirror the Function App settings from main.bicep so the Batch node agent
-# uploads task stdout/stderr to blob storage (task-logs/)
-export BATCH_TASK_LOGS_CONTAINER_URL="$(az storage account show \
-  --name nrwbatchpoc \
-  --resource-group nrw-batch-poc \
-  --query primaryEndpoints.blob \
-  --output tsv)nrw-data-cache"
-export BATCH_POOL_NODE_IDENTITY_RESOURCE_ID="$(az identity show \
-  --name nrw-batch-poc \
-  --resource-group nrw-batch-poc \
-  --query id \
-  --output tsv)"
 
 # Force the operator's own identity: a stray AZURE_CLIENT_ID in the shell
 # would make batch_client use ManagedIdentityCredential instead of
