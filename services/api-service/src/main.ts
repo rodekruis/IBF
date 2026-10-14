@@ -21,7 +21,6 @@ import {
   SWAGGER_CUSTOM_JS,
 } from '@api-service/src/config';
 import { env } from '@api-service/src/env';
-import { INTERFACE_NAME_HEADER } from '@api-service/src/shared/enum/interface-names.enum';
 import { HttpExceptionLoggingFilter } from '@api-service/src/shared/filters/http-exception-logging.filter';
 import { AzureLogService } from '@api-service/src/shared/services/azure-log.service';
 import { ValidationPipeOptions } from '@api-service/src/validation-options/validation-pipe-options.const';
@@ -97,31 +96,6 @@ function setupAppInsights(): void {
     .setup(env.APPLICATIONINSIGHTS_CONNECTION_STRING)
     .setAutoCollectConsole(true, true)
     .start();
-
-  const client = appInsights.defaultClient;
-
-  // Telemetry processor to correlate requests with their origin interface
-  client.addTelemetryProcessor((envelope, contextObjects) => {
-    const telemetryType = envelope.data?.baseType;
-    const baseData = envelope.data?.baseData;
-
-    // Only touch request telemetry
-    if (telemetryType === 'RequestData' && baseData) {
-      const httpRequest = contextObjects?.http?.request;
-
-      if (httpRequest?.headers) {
-        const interfaceName = httpRequest.headers[INTERFACE_NAME_HEADER];
-
-        if (interfaceName) {
-          baseData.properties = baseData.properties || {};
-          baseData.properties.interface = interfaceName;
-        }
-      }
-    }
-
-    // IMPORTANT: Return `true` in all cases to keep the telemetry
-    return true;
-  });
 }
 
 async function bootstrap(): Promise<void> {
