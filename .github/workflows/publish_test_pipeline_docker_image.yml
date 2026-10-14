@@ -15,7 +15,6 @@ on:
       - main
     paths:
       - 'data/**'
-      - '.github/workflows/publish_pipeline_docker_image_test.yml'
 
 permissions:
   contents: read
