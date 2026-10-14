@@ -27,6 +27,7 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { Response } from 'express';
+import { memoryStorage } from 'multer';
 
 import { AuthenticatedUser } from '@api-service/src/guards/authenticated-user.decorator';
 import { AuthenticatedUserGuard } from '@api-service/src/guards/authenticated-user.guard';
@@ -145,10 +146,13 @@ export class RastersController {
   @UseGuards(AuthenticatedUserGuard)
   @AuthenticatedUser({ isGuarded: true, isAdmin: true })
   @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'data', maxCount: 1 },
-      { name: 'metadata', maxCount: 1 },
-    ]),
+    FileFieldsInterceptor(
+      [
+        { name: 'data', maxCount: 1 },
+        { name: 'metadata', maxCount: 1 },
+      ],
+      { storage: memoryStorage() },
+    ),
   )
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: StaticRasterUploadFormDto })

@@ -25,21 +25,27 @@ function readRasterImageById(id: number) {
   return getServer().get(`/rasters/alert/${id}/image`);
 }
 
-describe('/rasters', () => {
-  let rasterId: number;
+let rasterId: number;
+let accessToken: string;
 
-  jest.setTimeout(60_000);
+jest.setTimeout(60_000);
 
-  beforeAll(async () => {
-    await resetDB({ countryCodes: ['MWI'], resetIdentifier: __filename });
-    const alert = buildAlert({ eventName: 'raster-test' });
-    const createResponse = await createAlerts({
-      forecast: buildForecast({ alerts: [alert] }),
-    });
-    const createdAlert = createResponse.body[0];
-    rasterId = createdAlert.exposure.rasters[0].id;
+beforeAll(async () => {
+  await resetDB({
+    countryCodes: ['MWI'],
+    resetIdentifier: __filename,
+    skipStaticRasters: false,
   });
+  const alert = buildAlert({ eventName: 'raster-test' });
+  const createResponse = await createAlerts({
+    forecast: buildForecast({ alerts: [alert] }),
+  });
+  const createdAlert = createResponse.body[0];
+  rasterId = createdAlert.exposure.rasters[0].id;
+  accessToken = await getAccessToken();
+});
 
+describe('/rasters', () => {
   describe('GET /rasters/alert/:id – success', () => {
     it('should return the raster metadata with layer and extent', async () => {
       const response = await readRasterById(rasterId);
@@ -97,16 +103,6 @@ describe('/rasters', () => {
 describe('/rasters/static', () => {
   const country = 'MWI';
   const layer = LayerName.populationDensity;
-  let accessToken: string;
-
-  beforeAll(async () => {
-    await resetDB({
-      countryCodes: ['MWI'],
-      resetIdentifier: __filename,
-      skipStaticRasters: false,
-    });
-    accessToken = await getAccessToken();
-  });
 
   describe('GET /rasters/static/:countryCodeIso3/:layer – success', () => {
     it('should return the static raster metadata with id, layer and extent', async () => {
