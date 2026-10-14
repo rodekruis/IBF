@@ -1,34 +1,40 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsEnum, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import { IsIn, IsNotEmpty, IsString } from 'class-validator';
 
-import { RasterMetadataDto } from '@api-service/src/alerts/dto/raster-metadata.dto';
 import { LayerName } from '@api-service/src/shared-enums';
 
+const UPLOADABLE_STATIC_RASTER_LAYERS = [LayerName.populationDensity] as const;
+
+export type UploadableStaticRasterLayer =
+  (typeof UPLOADABLE_STATIC_RASTER_LAYERS)[number];
+
 export class StaticRasterUploadDto {
-  @ApiProperty({ example: 'KEN' })
+  @ApiProperty({ example: 'MWI' })
   @IsString()
   @IsNotEmpty()
   public readonly countryCodeIso3: string;
 
-  @ApiProperty({ enum: LayerName, example: LayerName.populationDensity })
-  @IsEnum(LayerName)
-  public readonly layer: LayerName;
+  @ApiProperty({
+    enum: [...UPLOADABLE_STATIC_RASTER_LAYERS],
+    example: LayerName.populationDensity,
+  })
+  @IsIn(UPLOADABLE_STATIC_RASTER_LAYERS)
+  public readonly layer: UploadableStaticRasterLayer;
+}
+
+export class StaticRasterUploadFormDto extends StaticRasterUploadDto {
+  @ApiProperty({
+    type: 'string',
+    format: 'binary',
+    description: 'Data PNG (RGBA-encoded float values)',
+  })
+  public readonly data: Express.Multer.File;
 
   @ApiProperty({
-    description: 'Base64-encoded data PNG (RGBA-encoded float values)',
+    type: 'string',
+    format: 'binary',
+    description:
+      'Metadata JSON with StaticRasterSourceMetadataDto fields, e.g. <ISO3>_population_metadata.json',
   })
-  @IsString()
-  @IsNotEmpty()
-  public readonly valueData: string;
-
-  @ApiProperty({ description: 'Base64-encoded coloured PNG image for display' })
-  @IsString()
-  @IsNotEmpty()
-  public readonly valueColoured: string;
-
-  @ApiProperty({ type: RasterMetadataDto })
-  @ValidateNested()
-  @Type(() => RasterMetadataDto)
-  public readonly metadata: RasterMetadataDto;
+  public readonly metadata: Express.Multer.File;
 }

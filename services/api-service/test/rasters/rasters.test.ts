@@ -1,6 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 
 import { env } from '@api-service/src/env';
+import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 import { LayerName } from '@api-service/src/shared-enums';
 import {
   buildAlert,
@@ -182,31 +183,62 @@ describe('/rasters/static', () => {
     });
   });
 
-  describe('DELETE /rasters/static/:countryCodeIso3/:layer – success', () => {
-    // Uses a different layer than the seeded population raster, because tests
-    // run in random order (randomize: true) and deleting the shared raster
-    // would cause other GET tests to fail.
-    const deleteLayer = LayerName.windSpeed;
-
-    it('should delete the static raster and return 204', async () => {
-      const createResponse = await createStaticRaster({
+  describe('PUT /rasters/static – success', () => {
+    it('should store the data PNG and its server-side coloured image', async () => {
+      // Act
+      const response = await createStaticRaster({
         accessToken,
         countryCodeIso3: country,
-        layer: deleteLayer,
+        layer,
       });
-      expect(createResponse.status).toBe(HttpStatus.OK);
 
+      // Assert
+      expect(response.status).toBe(HttpStatus.OK);
+      expect(response.body.layer).toBe(layer);
+      expect(response.body.metadata.coloured.crs).toBe(EPSG.WebMercator);
+      const imageResponse = await getServer().get(
+        `/rasters/static/${country}/${layer}/image`,
+      );
+      expect(imageResponse.status).toBe(HttpStatus.OK);
+      expect(imageResponse.headers['content-type']).toBe('image/png');
+    });
+  });
+
+  describe('PUT /rasters/static – unsupported layer', () => {
+    it('should return 400 for a layer without static raster colouring', async () => {
+      // Act
+      const response = await createStaticRaster({
+        accessToken,
+        countryCodeIso3: country,
+        layer: LayerName.windSpeed,
+      });
+
+      // Assert
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+    });
+  });
+
+  describe('DELETE /rasters/static/:countryCodeIso3/:layer – success', () => {
+    it('should delete the static raster and return 204', async () => {
       const response = await getServer()
-        .delete(`/rasters/static/${country}/${deleteLayer}`)
+        .delete(`/rasters/static/${country}/${layer}`)
         .set('Cookie', [accessToken]);
 
       expect(response.status).toBe(HttpStatus.NO_CONTENT);
 
       const getResponse = await getServer().get(
-        `/rasters/static/${country}/${deleteLayer}`,
+        `/rasters/static/${country}/${layer}`,
       );
 
       expect(getResponse.status).toBe(HttpStatus.NOT_FOUND);
+
+      // Restore it, as tests run in random order and other GET tests need it
+      const restoreResponse = await createStaticRaster({
+        accessToken,
+        countryCodeIso3: country,
+        layer,
+      });
+      expect(restoreResponse.status).toBe(HttpStatus.OK);
     });
   });
 

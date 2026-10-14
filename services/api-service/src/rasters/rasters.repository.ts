@@ -5,7 +5,6 @@ import { RasterMetadataDto } from '@api-service/src/alerts/dto/raster-metadata.d
 import { PrismaService } from '@api-service/src/prisma/prisma.service';
 import { AlertRasterResponseDto } from '@api-service/src/rasters/dto/alert-raster-response.dto';
 import { StaticRasterResponseDto } from '@api-service/src/rasters/dto/static-raster-response.dto';
-import { StaticRasterUploadDto } from '@api-service/src/rasters/dto/static-raster-upload.dto';
 import { LayerName } from '@api-service/src/shared-enums';
 
 @Injectable()
@@ -134,27 +133,34 @@ export class RastersRepository {
     return Buffer.from(raster[field] as string, 'base64');
   }
 
-  public async upsertStaticRaster(
-    dto: StaticRasterUploadDto,
-  ): Promise<StaticRasterResponseDto> {
+  public async upsertStaticRaster({
+    countryCodeIso3,
+    layerName,
+    valueData,
+    valueColoured,
+    metadata,
+  }: {
+    countryCodeIso3: string;
+    layerName: LayerName;
+    valueData: string;
+    valueColoured: string;
+    metadata: RasterMetadataDto;
+  }): Promise<StaticRasterResponseDto> {
     const raster = await this.prisma.staticRasterData.upsert({
       where: {
-        countryCodeIso3_layerName: {
-          countryCodeIso3: dto.countryCodeIso3,
-          layerName: dto.layer,
-        },
+        countryCodeIso3_layerName: { countryCodeIso3, layerName },
       },
       update: {
-        valueData: dto.valueData,
-        valueColoured: dto.valueColoured,
-        metadata: dto.metadata as unknown as Prisma.InputJsonValue,
+        valueData,
+        valueColoured,
+        metadata: metadata as unknown as Prisma.InputJsonValue,
       },
       create: {
-        countryCodeIso3: dto.countryCodeIso3,
-        layerName: dto.layer,
-        valueData: dto.valueData,
-        valueColoured: dto.valueColoured,
-        metadata: dto.metadata as unknown as Prisma.InputJsonValue,
+        countryCodeIso3,
+        layerName,
+        valueData,
+        valueColoured,
+        metadata: metadata as unknown as Prisma.InputJsonValue,
       },
       select: {
         id: true,
