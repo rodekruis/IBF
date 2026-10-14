@@ -13,8 +13,8 @@ describe('ValidationPipeOptions exceptionFactory', () => {
     // Arrange
     const errors = [
       buildValidationError({
-        value: 'hunter2',
-        target: { email: 'not-an-email', password: 'hunter2' },
+        value: 'mockpasword123',
+        target: { email: 'not-an-email', password: 'mockpasword123' },
         constraints: { isEmail: 'email must be an email' },
       }),
     ];
@@ -35,6 +35,6 @@ describe('ValidationPipeOptions exceptionFactory', () => {
     expect(response.message).toEqual([
       { property: 'email', constraints: { isEmail: 'email must be an email' } },
     ]);
-    expect(JSON.stringify(response)).not.toContain('hunter2');
+    expect(JSON.stringify(response)).not.toContain('mockpasword123');
   });
 });
