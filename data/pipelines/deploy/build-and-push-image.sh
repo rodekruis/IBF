@@ -5,8 +5,8 @@
 # Deploy step. Rerun on every image change (dependency, config or pipeline code
 # change), or use the publish_pipeline_docker_image workflow.
 #
-# Builds and pushes commit and latest tags for test. Staging and production
-# promote an already-published commit image to their environment tag.
+# Builds and pushes commit and environment tags for test and staging. Production
+# promotes an already-published staging commit image to the production tag.
 #
 # Prerequisites:
 #   - Azure CLI logged in (`az login`) with rights to push to the ACR.
@@ -23,34 +23,33 @@ TARGET_ENVIRONMENT="${1:-test}"
 BUILD_CONTEXT="$(cd "$(dirname "$0")/../.." && pwd)"
 DOCKERFILE="$(cd "$(dirname "$0")" && pwd)/Dockerfile"
 
-echo "Logging in to ACR '${ACR_NAME}'."
-az acr login --name "${ACR_NAME}" --output none
-
-# Build and push the image if the environment is 'test'. Otherwise, promote the image to the target environment.
-case "${TARGET_ENVIRONMENT}" in
-  test)
+build_image() {
+    local environment_tag="$1"
     if [[ ! -f "${DOCKERFILE}" ]]; then
       echo "Dockerfile not found: ${DOCKERFILE}" >&2
       exit 1
     fi
 
     # Batch nodes are amd64; pin the platform so arm64 build hosts (e.g. Apple Silicon) still produce a runnable image.
-    echo "Building image '${IMAGE_REPOSITORY}:latest' from '${DOCKERFILE}' (context '${BUILD_CONTEXT}')."
+    echo "Building image '${IMAGE_REPOSITORY}:${environment_tag}' from '${DOCKERFILE}' (context '${BUILD_CONTEXT}')."
     docker build \
       --platform linux/amd64 \
       --file "${DOCKERFILE}" \
-      --tag "${ACR_NAME}.azurecr.io/${IMAGE_REPOSITORY}:latest" \
+      --tag "${ACR_NAME}.azurecr.io/${IMAGE_REPOSITORY}:${environment_tag}" \
       "${BUILD_CONTEXT}"
-    docker push "${ACR_NAME}.azurecr.io/${IMAGE_REPOSITORY}:latest"
-    echo "Image ${IMAGE_REPOSITORY}:latest pushed to ACR '${ACR_NAME}'."
+    docker push "${ACR_NAME}.azurecr.io/${IMAGE_REPOSITORY}:${environment_tag}"
+    echo "Image ${IMAGE_REPOSITORY}:${environment_tag} pushed to ACR '${ACR_NAME}'."
+}
+
+echo "Logging in to ACR '${ACR_NAME}'."
+az acr login --name "${ACR_NAME}" --output none
+
+case "${TARGET_ENVIRONMENT}" in
+  test)
+    build_image "test"
     ;;
   staging)
-    az acr import \
-    --name "${ACR_NAME}" \
-    --source "${ACR_NAME}.azurecr.io/${IMAGE_REPOSITORY}:latest" \
-    --image "${IMAGE_REPOSITORY}:staging" \
-    --force
-    echo "Image ${IMAGE_REPOSITORY}:latest promoted to staging."
+    build_image "staging"
     ;;
   production)
     az acr import \
