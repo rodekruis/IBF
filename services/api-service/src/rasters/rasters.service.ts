@@ -2,9 +2,11 @@ import { Injectable } from '@nestjs/common';
 
 import { AlertRasterResponseDto } from '@api-service/src/rasters/dto/alert-raster-response.dto';
 import { StaticRasterResponseDto } from '@api-service/src/rasters/dto/static-raster-response.dto';
-import { StaticRasterUploadDto } from '@api-service/src/rasters/dto/static-raster-upload.dto';
+import { StaticRasterSourceMetadataDto } from '@api-service/src/rasters/dto/static-raster-source-metadata.dto';
+import { UploadableStaticRasterLayer } from '@api-service/src/rasters/dto/static-raster-upload.dto';
 import { RastersRepository } from '@api-service/src/rasters/rasters.repository';
 import { LayerName } from '@api-service/src/shared-enums';
+import { processPopulationRaster } from '@api-service/src/utils/raster-colorization.helper';
 
 @Injectable()
 export class RastersService {
@@ -59,10 +61,27 @@ export class RastersService {
     });
   }
 
-  public async upsertStaticRaster(
-    dto: StaticRasterUploadDto,
-  ): Promise<StaticRasterResponseDto> {
-    return this.rastersRepository.upsertStaticRaster(dto);
+  public async upsertStaticRaster({
+    countryCodeIso3,
+    layer,
+    dataPngBuffer,
+    metadata,
+  }: {
+    countryCodeIso3: string;
+    layer: UploadableStaticRasterLayer;
+    dataPngBuffer: Buffer;
+    metadata: StaticRasterSourceMetadataDto;
+  }): Promise<StaticRasterResponseDto> {
+    const { colouredBase64, metadata: rasterMetadata } =
+      processPopulationRaster({ dataPngBuffer, metadata });
+
+    return this.rastersRepository.upsertStaticRaster({
+      countryCodeIso3,
+      layerName: layer,
+      valueData: dataPngBuffer.toString('base64'),
+      valueColoured: colouredBase64,
+      metadata: rasterMetadata,
+    });
   }
 
   public async deleteStaticRasterOrThrow({

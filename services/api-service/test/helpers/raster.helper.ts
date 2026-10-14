@@ -18,21 +18,19 @@ export function createStaticRaster({
   return getServer()
     .put('/rasters/static')
     .set('Cookie', [accessToken])
-    .send({
-      countryCodeIso3,
-      layer,
-      valueData: MINIMAL_PNG_BASE64,
-      valueColoured: MINIMAL_PNG_BASE64,
-      metadata: {
-        data: {
-          extent: { xmin: 33.0, ymin: 3.0, xmax: 48.0, ymax: 15.0 },
+    .field('countryCodeIso3', countryCodeIso3)
+    .field('layer', layer)
+    .attach('data', Buffer.from(MINIMAL_PNG_BASE64, 'base64'), 'data.png')
+    .attach(
+      'metadata',
+      Buffer.from(
+        JSON.stringify({
+          transform: [1, 0, 33.0, 0, -1, 15.0, 0, 0, 1],
           crs: EPSG.WGS84,
-          nodata: 0,
-        },
-        coloured: {
-          extent: { xmin: 33.0, ymin: 3.0, xmax: 48.0, ymax: 15.0 },
-          crs: EPSG.WGS84,
-        },
-      },
-    });
+          width: 1,
+          height: 1,
+        }),
+      ),
+      'metadata.json',
+    );
 }

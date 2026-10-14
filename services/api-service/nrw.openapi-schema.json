@@ -1582,9 +1582,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/StaticRasterUploadDto"
+                "$ref": "#/components/schemas/StaticRasterUploadFormDto"
               }
             }
           }
@@ -1607,7 +1607,7 @@
             "description": "User does not have the right permission to access this endpoint. \n (User must be an admin.)"
           }
         },
-        "summary": "Upload or update a static raster (upsert). Admin endpoint for managing configuration.",
+        "summary": "Upload or update a static raster (upsert) from its data PNG and metadata JSON. The coloured image is generated server-side. Admin endpoint for managing configuration.",
         "tags": [
           "rasters"
         ]
@@ -3611,43 +3611,35 @@
           "metadata"
         ]
       },
-      "StaticRasterUploadDto": {
+      "StaticRasterUploadFormDto": {
         "type": "object",
         "properties": {
           "countryCodeIso3": {
             "type": "string",
-            "example": "KEN"
+            "example": "MWI"
           },
           "layer": {
             "type": "string",
             "enum": [
-              "populationDensity",
-              "exposedPopulation",
-              "redCrossBranches",
-              "clinics",
-              "floodDepth",
-              "glofasStations",
-              "windSpeed"
+              "populationDensity"
             ],
             "example": "populationDensity"
           },
-          "valueData": {
+          "data": {
             "type": "string",
-            "description": "Base64-encoded data PNG (RGBA-encoded float values)"
-          },
-          "valueColoured": {
-            "type": "string",
-            "description": "Base64-encoded coloured PNG image for display"
+            "format": "binary",
+            "description": "Data PNG (RGBA-encoded float values)"
           },
           "metadata": {
-            "$ref": "#/components/schemas/RasterMetadataDto"
+            "type": "string",
+            "format": "binary",
+            "description": "Metadata JSON with StaticRasterSourceMetadataDto fields, e.g. <ISO3>_population_metadata.json"
           }
         },
         "required": [
           "countryCodeIso3",
           "layer",
-          "valueData",
-          "valueColoured",
+          "data",
           "metadata"
         ]
       },
