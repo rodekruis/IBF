@@ -597,7 +597,7 @@ describe('raster-colorization.helper', () => {
       expect(pixelHigh.a).toBe(94);
     });
 
-    it('should sum population values when downsampling', () => {
+    it('should average population values when downsampling', () => {
       // Arrange
       const width = 20;
       const height = 10;
@@ -618,12 +618,12 @@ describe('raster-colorization.helper', () => {
       });
 
       // Assert
-      // Sums are 100 (left) and 10 (right): log1p(10) / log1p(100) ≈ 0.52 -> third palette band
+      // Means are 1 (left) and 0.1 (right): log1p(0.1) / log1p(1) ≈ 0.14 -> first palette band
       const pixelRight = readOutputPixel({
         base64: result.colouredBase64,
         pixelIndex: 1,
       });
-      expect(pixelRight.a).toBe(56);
+      expect(pixelRight.a).toBe(20);
     });
   });
 
