@@ -1,0 +1,41 @@
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+
+name: 'Deploy pipeline scheduler - Staging'
+
+permissions:
+  contents: read
+  actions: read
+  deployments: write
+  id-token: write
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+
+jobs:
+  deploy:
+    environment: 'staging'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout repository'
+        uses: actions/checkout@v6
+      - name: 'Log in to Azure with AZ CLI'
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: 'Run the Azure Functions action'
+        uses: Azure/functions-action@v1
+        id: deploy-to-function-app
+        with:
+          app-name: ${{ vars.SCHEDULER_FUNCTION_APP_NAME }}
+          package: 'data/pipelines/deploy/function'
+          remote-build: true
