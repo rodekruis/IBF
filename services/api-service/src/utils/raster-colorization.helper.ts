@@ -83,7 +83,8 @@ const POPULATION_CONFIG: RelativeColorizationConfig = {
 
 const POPULATION_DOWNSAMPLING: Downsampling = {
   factor: 10,
-  aggregation: 'sum',
+  // Not 'sum': the log1p/max scale is not scale-invariant, and 'mean' gives the desired contrast.
+  aggregation: 'mean',
 };
 
 // Must match FLOOD_DEPTH_GREYSCALE_MAX_METRES in the pipeline. This is needed to map greyscale levels back to metres.
