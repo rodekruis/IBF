@@ -1,4 +1,4 @@
-name: 'Publish: Pipeline Docker Image'
+name: 'Publish: Test Pipeline Docker Image'
 
 on:
   workflow_call:
@@ -22,7 +22,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: publish-pipeline-docker-image
+  group: publish-pipeline-docker-image-test
   cancel-in-progress: false
 
 jobs:
