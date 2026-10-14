@@ -39,19 +39,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build Service
-        id: build
-        uses: ./.github/actions/build-service
-        with:
-          servicePath: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-          databaseUrl: ${{ secrets.DATABASE_URL }}
-
       - name: 'Azure Login: 510 - Anticipatory Action'
         uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build Service
+        id: build
+        uses: ./.github/actions/build-service
+        with:
+          servicePath: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          databaseUrl: ${{ secrets.DATABASE_URL }}
 
       - name: Deploy to Azure App Service
         # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
