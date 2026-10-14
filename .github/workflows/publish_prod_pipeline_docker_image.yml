@@ -17,7 +17,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: publish-pipeline-docker-image-production
+  group: publish-pipeline-docker-image-release
   cancel-in-progress: false
 
 jobs:
