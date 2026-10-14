@@ -1,6 +1,6 @@
 # See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
 
-name: 'Deploy pipeline scheduler - Production'
+name: 'Deploy [production] pipeline scheduler'
 
 permissions:
   contents: read
