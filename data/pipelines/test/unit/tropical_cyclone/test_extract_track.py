@@ -341,7 +341,9 @@ class TestExtractTrack:
         )
 
     def test_raises_for_the_ecmwf_forecast_source(self, tmp_path: Path) -> None:
-        with pytest.raises(NotImplementedError, match="GEFS"):
+        with pytest.raises(
+            NotImplementedError, match=str(ForecastSource.GEFS_TROPICAL_CYCLONE)
+        ):
             extract_track(
                 [],
                 bounds=(120.0, 15.0, 130.0, 25.0),
