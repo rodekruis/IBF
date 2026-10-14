@@ -13,9 +13,7 @@ interface SanitizedValidationError {
 
 // Strip `value` and `target` before this is logged.
 // These fields contain the submitted request body (e.g. passwords)
-function sanitizeValidationError(
-  error: ValidationError,
-): SanitizedValidationError {
+function sanitizeValidationError(error: ValidationError) {
   const sanitized: SanitizedValidationError = { property: error.property };
   if (error.constraints) {
     sanitized.constraints = error.constraints;
