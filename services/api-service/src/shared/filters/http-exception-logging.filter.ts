@@ -1,22 +1,22 @@
 import {
   ArgumentsHost,
   Catch,
-  ExceptionFilter,
   HttpException,
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { BaseExceptionFilter } from '@nestjs/core';
+import { Request } from 'express';
 
-// Catch and log response body of every HttpException
+// Catch and log every HttpException, and then pass them on to the
+// Nest handler to let it write the response
 @Catch(HttpException)
-export class HttpExceptionLoggingFilter implements ExceptionFilter {
+export class HttpExceptionLoggingFilter extends BaseExceptionFilter {
   private readonly logger = new Logger(HttpExceptionLoggingFilter.name);
 
   public catch(exception: HttpException, host: ArgumentsHost): void {
     const context = host.switchToHttp();
     const request = context.getRequest<Request>();
-    const response = context.getResponse<Response>();
     const status = exception.getStatus();
     const responseBody = exception.getResponse();
 
@@ -32,11 +32,7 @@ export class HttpExceptionLoggingFilter implements ExceptionFilter {
       this.logger.warn(message);
     }
 
-    // Mirrors Nest's default HttpException response shape
-    const body =
-      typeof responseBody === 'string'
-        ? { statusCode: status, message: responseBody }
-        : responseBody;
-    response.status(status).json(body);
+    // eslint-disable-next-line promise/valid-params -- Not a Promise; this is BaseExceptionFilter.catch()
+    super.catch(exception, host);
   }
 }

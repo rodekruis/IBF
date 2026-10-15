@@ -3,7 +3,7 @@ import {
   INestApplication,
   ValidationPipe,
 } from '@nestjs/common';
-import { ModulesContainer, NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, ModulesContainer, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
 import compression from 'compression';
@@ -170,7 +170,9 @@ async function bootstrap(): Promise<void> {
 
   app.useGlobalPipes(new ValidationPipe(ValidationPipeOptions));
   app.use(compression());
-  app.useGlobalFilters(new HttpExceptionLoggingFilter());
+  app.useGlobalFilters(
+    new HttpExceptionLoggingFilter(app.get(HttpAdapterHost).httpAdapter),
+  );
   app.use(bodyParser.json({ limit: '25mb' }));
   app.use(
     bodyParser.urlencoded({
