@@ -8,6 +8,7 @@ from enum import StrEnum
 class IbfEnvironment(StrEnum):
     DEVELOPMENT = "development"
     TEST = "test"
+    STAGING = "staging"
     PRODUCTION = "production"
 
 
@@ -28,14 +29,14 @@ def load_environment_settings() -> EnvironmentSettings:
     raw = os.environ.get("IBF_ENVIRONMENT")
     if not raw:
         raise ValueError(
-            "IBF_ENVIRONMENT must be set to 'development', 'test' or 'production'"
+            "IBF_ENVIRONMENT must be set to 'development', 'test', 'staging' or 'production'"
         )
 
     try:
         environment = IbfEnvironment(raw)
     except ValueError as exc:
         raise ValueError(
-            f"IBF_ENVIRONMENT must be 'development', 'test' or 'production' (got {raw!r})"
+            f"IBF_ENVIRONMENT must be 'development', 'test', 'staging' or 'production' (got {raw!r})"
         ) from exc
 
     return EnvironmentSettings(environment=environment)

@@ -33,8 +33,8 @@ from azure.batch.models import (
 )
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
-
-CONTAINER_IMAGE = "nrwdockerregistry.azurecr.io/pipelines:latest"
+CONTAINER_IMAGE_TAG = os.environ.get("IBF_ENVIRONMENT")
+CONTAINER_IMAGE = f"nrwdockerregistry.azurecr.io/pipelines:{CONTAINER_IMAGE_TAG}"
 TASK_MAX_WALL_CLOCK_TIME = timedelta(hours=10)
 TASK_MAX_RETRY_COUNT = 0
 
