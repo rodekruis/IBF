@@ -20,9 +20,9 @@ jobs:
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-  deploy_pipeline_scheduler:
-    name: 'Build + Deploy: pipeline-scheduler'
-    uses: ./.github/workflows/deploy_production_pipeline_scheduler.yml
+  publish_pipeline_docker_image:
+    name: 'Publish: Production Pipeline Docker Image'
+    uses: ./.github/workflows/publish_prod_pipeline_docker_image.yml
     secrets:
       AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}

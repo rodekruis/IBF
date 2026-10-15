@@ -1,0 +1,40 @@
+name: 'Publish: Production Pipeline Docker Image'
+
+on:
+  workflow_call:
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+  id-token: write
+
+concurrency:
+  group: publish-pipeline-docker-image-release
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build and Push
+    environment: 'production'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Azure Login
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Promote Staging Pipeline Image to Production
+        id: promote_image
+        run: bash data/pipelines/deploy/build-and-push-image.sh "production"
