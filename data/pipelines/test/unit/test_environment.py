@@ -28,6 +28,13 @@ class TestLoadEnvironmentSettings:
         assert result.environment == IbfEnvironment.TEST
         assert not result.is_production
 
+    def test_staging(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("IBF_ENVIRONMENT", "staging")
+        result = load_environment_settings()
+        assert result is not None
+        assert result.environment == IbfEnvironment.STAGING
+        assert not result.is_production
+
     def test_production(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("IBF_ENVIRONMENT", "production")
         result = load_environment_settings()
@@ -36,6 +43,6 @@ class TestLoadEnvironmentSettings:
         assert result.is_production
 
     def test_invalid_value_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("IBF_ENVIRONMENT", "staging")
-        with pytest.raises(ValueError, match="got 'staging'"):
+        monkeypatch.setenv("IBF_ENVIRONMENT", "prod")
+        with pytest.raises(ValueError, match="got 'prod'"):
             load_environment_settings()
