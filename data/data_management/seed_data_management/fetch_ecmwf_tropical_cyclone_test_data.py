@@ -5,7 +5,7 @@
 The ECMWF stream names and native wind cadence used to build the download are taken from
 `pipelines.tropical_cyclone.constants`. What it downloads does not depend on any country: ECMWF
 open-data files are global, and the pipeline slices them to a country's bounds at read time. The
-script only warns if no country is currently configured for `ForecastSource.ECMWF` (none is by
+script only warns if no country is currently configured for `ForecastSource.ECMWF_TROPICAL_CYCLONE` (none is by
 default - see COUNTRY_CONFIGS), since the fixtures it writes are then downloaded but unused until
 a country is switched over.
 
@@ -264,7 +264,7 @@ def main() -> None:
     # are global), so the fetch is still valid - the fixtures just sit unused until some country
     # is pointed at ECMWF.
     if not any(
-        config.forecast_source is ForecastSource.ECMWF
+        config.forecast_source is ForecastSource.ECMWF_TROPICAL_CYCLONE
         for config in constants.COUNTRY_CONFIGS.values()
     ):
         logger.warning(

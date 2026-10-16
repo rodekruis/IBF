@@ -54,7 +54,7 @@ export class AlertToEventService {
       await this.updateExistingEvent({
         existingEvent: existingOpenEvent,
         latestAlert: classification,
-        issuedAt: forecast.issuedAt,
+        forecast,
       });
       return existingOpenEvent.id;
     } else {
@@ -98,27 +98,28 @@ export class AlertToEventService {
   private async updateExistingEvent({
     existingEvent,
     latestAlert,
-    issuedAt,
+    forecast,
   }: {
     existingEvent: Pick<Event, 'id' | 'firstIssuedAt'>;
     latestAlert: ClassificationResult;
-    issuedAt: Date;
+    forecast: ForecastMetadata;
   }): Promise<void> {
     const startAt = await this.resolveStartAtFromAlertHistory({
       existingEvent,
       latestAlert,
-      latestIssuedAt: issuedAt,
+      latestIssuedAt: forecast.issuedAt,
     });
 
     await this.eventsRepository.updateEvent({
       id: existingEvent.id,
       data: {
+        forecastSources: forecast.forecastSources,
         alertClass: latestAlert.alertClass!,
         trigger: latestAlert.trigger,
         startAt,
         reachesPeakAlertClassAt: latestAlert.reachesPeakAlertClassAt,
         endAt: latestAlert.endAt,
-        lastUpdatedAt: issuedAt,
+        lastUpdatedAt: forecast.issuedAt,
       },
     });
   }

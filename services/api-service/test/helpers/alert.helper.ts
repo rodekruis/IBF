@@ -114,7 +114,7 @@ export function buildForecast({
     countryCodeIso3: 'MWI',
     issuedAt: new Date(),
     hazardType: HazardType.floods,
-    forecastSources: [ForecastSource.glofas],
+    forecastSources: [ForecastSource.glofasRiverDischarge],
     alerts,
     ...overrides,
   };

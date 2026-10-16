@@ -30,7 +30,7 @@ function createMockValidForecast({
     countryCodeIso3: 'ETH',
     issuedAt: new Date('2026-03-20T12:00:00Z'),
     hazardType: HazardType.floods,
-    forecastSources: [ForecastSource.glofas],
+    forecastSources: [ForecastSource.glofasRiverDischarge],
     alerts,
     ...overrides,
   };

@@ -21,7 +21,7 @@ function buildEvent(overrides: Partial<Event> = {}): Event {
     countryCodeIso3: 'ETH',
     eventName: 'station-A',
     hazardType: HazardType.floods,
-    forecastSources: ['glofas'],
+    forecastSources: ['glofasRiverDischarge'],
     alertClass: AlertClass.medium,
     trigger: false,
     centroid: { latitude: 0.35, longitude: 32.6 },

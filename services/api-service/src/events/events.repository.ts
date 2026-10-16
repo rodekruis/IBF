@@ -139,6 +139,7 @@ export class EventsRepository {
     id: number;
     data: Pick<
       Event,
+      | 'forecastSources'
       | 'alertClass'
       | 'trigger'
       | 'startAt'

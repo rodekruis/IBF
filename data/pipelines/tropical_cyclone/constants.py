@@ -62,22 +62,22 @@ COUNTRY_CONFIGS: dict[CountryCodeIso3, CountryConfig] = {
         exposure_class=ExposureClass.IN_LAND,  # TODO(data-scientist): confirm,
         sustained_wind_averaging_period=AveragingPeriod.TEN_MINUTE,  # PAGASA convention
         # TODO(data-scientist): PHL should be ECMWF; on GEFS for now for testing.
-        forecast_source=ForecastSource.GEFS,
+        forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
     ),
     CountryCodeIso3.KNA: CountryConfig(
         exposure_class=ExposureClass.AT_SEA,  # small island, per domain owner
         sustained_wind_averaging_period=AveragingPeriod.ONE_MINUTE,  # NHC convention
-        forecast_source=ForecastSource.GEFS,
+        forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
     ),
     CountryCodeIso3.DMA: CountryConfig(
         exposure_class=ExposureClass.AT_SEA,  # small island, per domain owner
         sustained_wind_averaging_period=AveragingPeriod.ONE_MINUTE,  # NHC convention
-        forecast_source=ForecastSource.GEFS,
+        forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
     ),
     CountryCodeIso3.ATG: CountryConfig(
         exposure_class=ExposureClass.AT_SEA,  # small island, per domain owner
         sustained_wind_averaging_period=AveragingPeriod.ONE_MINUTE,  # NHC convention
-        forecast_source=ForecastSource.GEFS,
+        forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
     ),
 }
 

@@ -368,7 +368,7 @@ def _calculate_alerts(
     submitter.set_forecast_metadata(
         issued_at=datetime.now(UTC),
         hazard_type=hazard_type,
-        forecast_sources=[ForecastSource.GLOFAS],
+        forecast_sources=[ForecastSource.GLOFAS_RIVER_DISCHARGE],
         country_code_iso3=country_code,
     )
     with patch.object(

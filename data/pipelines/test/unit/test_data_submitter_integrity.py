@@ -25,7 +25,7 @@ def test_incomplete_alert_is_rejected(tmp_output: Path):
     submitter.set_forecast_metadata(
         issued_at=datetime.now(UTC),
         hazard_type=HazardType.FLOODS,
-        forecast_sources=[ForecastSource.GLOFAS],
+        forecast_sources=[ForecastSource.GLOFAS_RIVER_DISCHARGE],
         country_code_iso3="ETH",
     )
     submitter.create_alert(
@@ -102,7 +102,7 @@ def test_centroid_out_of_range_is_rejected(tmp_output: Path):
     submitter.set_forecast_metadata(
         issued_at=datetime.now(UTC),
         hazard_type=HazardType.FLOODS,
-        forecast_sources=[ForecastSource.GLOFAS],
+        forecast_sources=[ForecastSource.GLOFAS_RIVER_DISCHARGE],
         country_code_iso3="ETH",
     )
     submitter.create_alert(
@@ -197,7 +197,7 @@ def test_admin_area_missing_is_rejected(tmp_output: Path):
     submitter.set_forecast_metadata(
         issued_at=datetime.now(UTC),
         hazard_type=HazardType.FLOODS,
-        forecast_sources=[ForecastSource.GLOFAS],
+        forecast_sources=[ForecastSource.GLOFAS_RIVER_DISCHARGE],
         country_code_iso3="ETH",
     )
     submitter.create_alert(
@@ -239,7 +239,7 @@ def test_naive_datetime_is_rejected(tmp_output: Path):
     submitter.set_forecast_metadata(
         issued_at=datetime(2026, 3, 20, 12, 0, 0),  # noqa: DTZ001
         hazard_type=HazardType.FLOODS,
-        forecast_sources=[ForecastSource.GLOFAS],
+        forecast_sources=[ForecastSource.GLOFAS_RIVER_DISCHARGE],
         country_code_iso3="ETH",
     )
 
@@ -255,7 +255,7 @@ def test_hazard_type_missing_is_rejected(tmp_output: Path):
     submitter.set_forecast_metadata(
         issued_at=datetime.now(UTC),
         hazard_type=None,  # type: ignore
-        forecast_sources=[ForecastSource.GLOFAS],
+        forecast_sources=[ForecastSource.GLOFAS_RIVER_DISCHARGE],
         country_code_iso3="ETH",
     )
 

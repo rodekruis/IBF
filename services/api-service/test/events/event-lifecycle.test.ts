@@ -91,7 +91,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
     expect(response.body[0]).toMatchObject({
       eventName: 'station-A',
       hazardType: HazardType.floods,
-      forecastSources: [ForecastSource.glofas],
+      forecastSources: [{ name: ForecastSource.glofasRiverDischarge }],
       alertClass: AlertClass.medium,
       trigger: false,
       firstIssuedAt: '2026-03-23T12:00:00.000Z',

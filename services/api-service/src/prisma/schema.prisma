@@ -36,9 +36,11 @@ enum EnsembleMemberType {
 }
 
 enum ForecastSource {
-  glofas
-  ECMWF
-  GEFS
+  glofasRiverDischarge
+  glofasFloodHazardMaps
+  worldpop
+  gefsTropicalCyclone
+  ecmwfTropicalCyclone
   DestinE
 
   @@schema("api-service")

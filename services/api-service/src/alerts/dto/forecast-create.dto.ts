@@ -34,7 +34,7 @@ export class ForecastCreateDto {
   @ApiProperty({
     enum: ForecastSource,
     isArray: true,
-    example: [ForecastSource.glofas],
+    example: [ForecastSource.glofasRiverDischarge],
   })
   @IsArray()
   @ArrayMinSize(1)

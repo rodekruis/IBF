@@ -31,7 +31,7 @@ def _create_valid_submitter(mock_api_client: MagicMock) -> DataSubmitter:
     submitter.set_forecast_metadata(
         issued_at=datetime.now(UTC),
         hazard_type=HazardType.FLOODS,
-        forecast_sources=[ForecastSource.GLOFAS],
+        forecast_sources=[ForecastSource.GLOFAS_RIVER_DISCHARGE],
         country_code_iso3="ETH",
     )
     submitter.create_alert(
