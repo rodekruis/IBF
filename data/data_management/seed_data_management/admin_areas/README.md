@@ -44,7 +44,7 @@ The stages perform the following work:
 3. Convert GADM source files into the common admin-area GeoJSON schema in `admin-areas/processed/`.
 4. Convert HDX property variants into the common admin-area GeoJSON schema in `admin-areas/processed/`.
 5. Add explicitly configured missing parent areas, currently South Sudan's `SS00` Abyei Region.
-6. Repair geometries, normalize them to `MultiPolygon`, simplify oversized ADM1 and ADM2 files with mapshaper while preserving shared borders, and merge safe multipart duplicate-pcode features.
+6. Repair geometries, erase large lakes from [HydroLAKES](https://www.hydrosheds.org/products/hydrolakes) (cached in `data/data/lakes/`), normalize them to `MultiPolygon`, simplify oversized ADM1 and ADM2 files with mapshaper while preserving shared borders, and merge safe multipart duplicate-pcode features.
 7. Compute independent zonal population totals for every configured processed feature.
 8. Generate `admin_area_sources.json` in the seed-data repo to record source and processing metadata.
 9. Validate processed completeness, stored source files where applicable, canonical schema, hierarchy, geometries, and population values. A successful validation regenerates `admin_area_validation_report.md`.

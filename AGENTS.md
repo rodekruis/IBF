@@ -33,6 +33,7 @@ The handover design file for NRW is the "🗺️ NRW official" Figma file. Use i
 - Avoid hardcoded values; prefer configuration. Avoid "magic" numbers or strings.
 - Organize functions using the "step-down" approach: high-level functions first, then implementation details. Place private/helper functions near the public functions they support.
 - Use `// Arrange`, `// Act`, `// Assert` section comments in all tests
+- Seed/reset is not available in production. Any change to seeded data (admin areas, countries, alert configs, layers, static rasters) needs a production update path (admin API endpoint, Prisma migration or update script). Include it in the plan and test it on test/staging first.
 
 ### Code Quality Verification
 
