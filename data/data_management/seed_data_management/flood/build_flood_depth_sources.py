@@ -24,6 +24,7 @@ from shapely.geometry.base import BaseGeometry
 from shared.data_helpers import get_seed_data_repo_path, target_countries_iso_a3
 from shared.download_helpers import download_object
 
+# When rebuilding from a new version, also update the flood hazard maps entry in api-service FORECAST_SOURCE_DETAILS.
 JRC_FLOOD_HAZARD_URL = (
     "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard"
 )

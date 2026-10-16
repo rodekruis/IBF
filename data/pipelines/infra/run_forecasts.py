@@ -21,6 +21,8 @@ from pipelines.infra.data_types.admin_area_types import AdminAreasSet
 from pipelines.infra.data_types.data_config_types import (
     CountryRunConfig,
     DataSource,
+    DataSourceConfig,
+    FORECAST_SOURCE_BY_DATA_SOURCE,
     OutputMode,
     RunOrigin,
     SourceTarget,
@@ -40,12 +42,6 @@ logger = logging.getLogger(__name__)
 
 # Default output path for local output mode.
 DEFAULT_OUTPUT_PATH = "pipelines/output"
-
-FORECAST_SOURCES: dict[str, list[ForecastSource]] = {
-    "floods": [ForecastSource.GLOFAS],
-    "drought": [ForecastSource.ECMWF],
-    "tropicalCyclone": [ForecastSource.GEFS],
-}
 
 HazardFunction = Callable[[DataProvider, DataSubmitter, str, int], None]
 
@@ -101,12 +97,11 @@ def _run_country(
 
     data_submitter = DataSubmitter(context.api_client)
 
-    # --- Set forecast metadata based on hazard type ---
-    forecast_sources = FORECAST_SOURCES[context.hazard_type]
+    # --- Set forecast metadata based on the country's data sources ---
     data_submitter.set_forecast_metadata(
         issued_at=context.issued_at or datetime.now(UTC),
         hazard_type=context.hazard_type,
-        forecast_sources=forecast_sources,
+        forecast_sources=_get_forecast_sources(country.data_sources),
         country_code_iso3=country.country_code_iso_3,
     )
 
@@ -137,6 +132,17 @@ def _run_country(
     return CountryRunResult(
         country, errors, is_retryable_data_failure=False, data_load_succeeded=True
     )
+
+
+def _get_forecast_sources(
+    data_source_configs: list[DataSourceConfig],
+) -> list[ForecastSource]:
+    forecast_sources: list[ForecastSource] = []
+    for source_config in data_source_configs:
+        forecast_source = FORECAST_SOURCE_BY_DATA_SOURCE.get(source_config.source)
+        if forecast_source is not None and forecast_source not in forecast_sources:
+            forecast_sources.append(forecast_source)
+    return forecast_sources
 
 
 def _has_retryable_source_failure(

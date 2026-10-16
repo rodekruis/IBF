@@ -18,7 +18,7 @@ from shared.download_helpers import download_object
 from shared.image_helpers import geotiff_to_rgba_data_array
 
 # URL for the population data
-# If a new model comes out, update this.
+# If a new model comes out, update this, and the WorldPop entry in api-service FORECAST_SOURCE_DETAILS.
 # See the WorldPop website for more information:
 # https://hub.worldpop.org/project/list
 # https://data.worldpop.org/GIS/Population/Global_2015_2030/

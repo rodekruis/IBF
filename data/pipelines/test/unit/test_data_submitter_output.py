@@ -43,7 +43,7 @@ class TestLocalMode:
         submitter.set_forecast_metadata(
             issued_at=datetime.now(UTC),
             hazard_type=HazardType.FLOODS,
-            forecast_sources=[ForecastSource.GLOFAS],
+            forecast_sources=[ForecastSource.GLOFAS_RIVER_DISCHARGE],
             country_code_iso3="MWI",
         )
 
@@ -56,7 +56,7 @@ class TestLocalMode:
             forecast = json.load(f)
 
         assert forecast["hazardType"] == "floods"
-        assert forecast["forecastSources"] == ["glofas"]
+        assert forecast["forecastSources"] == ["glofasRiverDischarge"]
         assert forecast["alerts"] == []
 
     def test_includes_country_code_iso3_when_provided(self, tmp_output: Path):
@@ -66,7 +66,7 @@ class TestLocalMode:
         submitter.set_forecast_metadata(
             issued_at=datetime.now(UTC),
             hazard_type=HazardType.FLOODS,
-            forecast_sources=[ForecastSource.GLOFAS],
+            forecast_sources=[ForecastSource.GLOFAS_RIVER_DISCHARGE],
             country_code_iso3="MWI",
         )
 
@@ -136,7 +136,7 @@ class TestApiMode:
         submitter.set_forecast_metadata(
             issued_at=datetime.now(UTC),
             hazard_type=HazardType.FLOODS,
-            forecast_sources=[ForecastSource.GLOFAS],
+            forecast_sources=[ForecastSource.GLOFAS_RIVER_DISCHARGE],
             country_code_iso3="MWI",
         )
 
@@ -146,5 +146,5 @@ class TestApiMode:
         mock_client.submit_forecast.assert_called_once()
         submitted_forecast = mock_client.submit_forecast.call_args.args[0]
         assert submitted_forecast["hazardType"] == "floods"
-        assert submitted_forecast["forecastSources"] == ["glofas"]
+        assert submitted_forecast["forecastSources"] == ["glofasRiverDischarge"]
         assert submitted_forecast["alerts"] == []
