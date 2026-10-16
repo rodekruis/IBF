@@ -19,7 +19,6 @@ export class AzureLogService {
       throw error;
     }
 
-    console.log('Logging error to Azure - :', error);
     try {
       this.defaultClient.trackException({
         exception: error,
@@ -41,14 +40,5 @@ export class AzureLogService {
         flushError,
       );
     }
-  }
-
-  public consoleLogAndTraceAzure(message: string): void {
-    console.log(message);
-    if (!this.defaultClient) {
-      return;
-    }
-    this.defaultClient.trackTrace({ message });
-    this.flushLogs();
   }
 }

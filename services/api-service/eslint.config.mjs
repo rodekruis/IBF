@@ -122,7 +122,7 @@ export default [
       ],
       'custom-rules/prefer-object-params': [
         'error',
-        { ignoredMethodNames: ['validate'] },
+        { ignoredMethodNames: ['validate', 'catch'] },
       ],
       'simple-import-sort/imports': [
         'error',
