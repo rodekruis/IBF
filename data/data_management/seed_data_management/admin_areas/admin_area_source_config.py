@@ -76,7 +76,7 @@ MAPSHAPER_SIMPLIFICATION_PERCENTAGES: dict[int, str] = {
     2: "50%",
 }
 
-# Large lakes are erased from admin areas, which officially often extend into them (e.g. Lake Victoria)
+# Large lakes are erased from admin areas (e.g. Lake Victoria)
 MINIMUM_LAKE_AREA_KM2 = 100
 
 
