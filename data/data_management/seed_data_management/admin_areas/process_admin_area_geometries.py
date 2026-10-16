@@ -7,12 +7,19 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from data_management.seed_data_management.admin_areas.admin_area_dataset_helpers import (
+    get_country_bounds,
+)
 from data_management.seed_data_management.admin_areas.admin_area_source_config import (
     ADMIN_AREA_LEVELS,
     MAPSHAPER_SIMPLIFICATION_P90_THRESHOLDS_BYTES,
     MAPSHAPER_SIMPLIFICATION_PERCENTAGES,
+    MINIMUM_LAKE_AREA_KM2,
 )
+from data_management.seed_data_management.load_lakes import load_lake_geometries
+from shapely import prepare, union_all
 from shapely.geometry import mapping, MultiPolygon, Polygon, shape
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 from shared.data_helpers import get_seed_data_repo_path
@@ -35,14 +42,20 @@ def get_mapshaper_executable() -> str:
     return executable
 
 
-def simplify_with_mapshaper(filepath: Path, simplification_percentage: str) -> dict:
+def simplify_with_mapshaper(
+    feature_collection: dict, filename: str, simplification_percentage: str
+) -> dict:
     executable = get_mapshaper_executable()
     with tempfile.TemporaryDirectory() as temporary_directory:
-        output_path = Path(temporary_directory) / filepath.name
+        input_path = Path(temporary_directory) / "input" / filename
+        output_path = Path(temporary_directory) / filename
+        input_path.parent.mkdir()
+        with open(input_path, "w", encoding="utf-8") as file:
+            json.dump(feature_collection, file, ensure_ascii=False)
         subprocess.run(
             [
                 executable,
-                str(filepath),
+                str(input_path),
                 "-simplify",
                 simplification_percentage,
                 "keep-shapes",
@@ -71,6 +84,27 @@ def to_multipolygon(geometry: dict) -> dict:
         )
 
     return dict(mapping(repaired_geometry))
+
+
+def erase_lakes(features: list[dict], level: int, lake_geometry: BaseGeometry) -> int:
+    erased_count = 0
+    for feature in features:
+        geometry = shape(to_multipolygon(feature["geometry"]))
+        if not geometry.intersects(lake_geometry):
+            continue
+
+        land_geometry = geometry.difference(lake_geometry)
+        if math.isclose(land_geometry.area, geometry.area):
+            continue
+        if land_geometry.is_empty:
+            pcode = feature["properties"].get(f"ADM{level}_PCODE")
+            print(f"  WARNING: {pcode} is entirely lake, keeping it unchanged")
+            continue
+
+        feature["geometry"] = to_multipolygon(dict(mapping(land_geometry)))
+        erased_count += 1
+
+    return erased_count
 
 
 def merge_duplicate_place_codes(
@@ -136,25 +170,25 @@ def get_simplification_percentage(level: int, features: list[dict]) -> str | Non
     return MAPSHAPER_SIMPLIFICATION_PERCENTAGES[level]
 
 
-def prepare_file(country: str, level: int) -> None:
+def prepare_file(country: str, level: int, lake_geometry: BaseGeometry) -> None:
     filepath = PROCESSED_DIR / f"{country}_adm{level}.json"
     if not filepath.exists():
         print(f"  WARNING: Processed file missing: {filepath}")
         return
 
     with open(filepath, encoding="utf-8") as file:
-        original_feature_collection = json.load(file)
+        feature_collection = json.load(file)
+
+    erased_count = erase_lakes(feature_collection["features"], level, lake_geometry)
 
     simplification_percentage = get_simplification_percentage(
         level,
-        original_feature_collection["features"],
+        feature_collection["features"],
     )
     if simplification_percentage is not None:
         feature_collection = simplify_with_mapshaper(
-            filepath, simplification_percentage
+            feature_collection, filepath.name, simplification_percentage
         )
-    else:
-        feature_collection = original_feature_collection
 
     repaired_count = 0
     for feature in feature_collection["features"]:
@@ -178,15 +212,27 @@ def prepare_file(country: str, level: int) -> None:
 
     print(
         f"  {country} adm{level}: prepared {len(feature_collection['features'])} features; "
-        f"changed {repaired_count}; merged {merged_count}; "
+        f"erased lakes from {erased_count}; changed {repaired_count}; merged {merged_count}; "
         f"mapshaper={simplification_percentage or 'no'}"
     )
 
 
+def load_country_lake_geometry(country: str) -> BaseGeometry:
+    lake_geometry = union_all(
+        load_lake_geometries(
+            get_country_bounds(Path(BASE_SEED_REPO_DIR), country),
+            MINIMUM_LAKE_AREA_KM2,
+        )
+    )
+    prepare(lake_geometry)
+    return lake_geometry
+
+
 def main() -> None:
     for country, levels in ADMIN_AREA_LEVELS.items():
+        lake_geometry = load_country_lake_geometry(country)
         for level in sorted(levels):
-            prepare_file(country, level)
+            prepare_file(country, level, lake_geometry)
 
 
 if __name__ == "__main__":

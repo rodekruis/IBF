@@ -76,6 +76,9 @@ MAPSHAPER_SIMPLIFICATION_PERCENTAGES: dict[int, str] = {
     2: "50%",
 }
 
+# Large lakes are erased from admin areas, which officially often extend into them (e.g. Lake Victoria)
+MINIMUM_LAKE_AREA_KM2 = 100
+
 
 def get_countries_for_source(source: AdminAreaSource) -> dict[str, list[int]]:
     result: dict[str, list[int]] = {}
