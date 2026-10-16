@@ -37,7 +37,7 @@ function buildForecastMetadata(
   return {
     countryCodeIso3: 'ETH',
     hazardType: HazardType.floods,
-    forecastSources: [ForecastSource.glofas],
+    forecastSources: [ForecastSource.glofasRiverDischarge],
     issuedAt: new Date(),
     ...overrides,
   };
@@ -158,7 +158,7 @@ describe('AlertToEventService', () => {
         countryCodeIso3: 'ETH',
         eventName: 'station-A',
         hazardType: HazardType.floods,
-        forecastSources: [ForecastSource.glofas],
+        forecastSources: [ForecastSource.glofasRiverDischarge],
         alertClass: AlertClass.medium,
         trigger: false,
         centroid: { latitude: 0.35, longitude: 32.6 },
@@ -182,13 +182,22 @@ describe('AlertToEventService', () => {
 
       const result = await service.matchAndStore({
         alert: buildAlert(),
-        forecast: buildForecastMetadata(),
+        forecast: buildForecastMetadata({
+          forecastSources: [
+            ForecastSource.worldpop,
+            ForecastSource.glofasRiverDischarge,
+          ],
+        }),
       });
 
       expect(result).toBe(42);
       expect(repository.updateEvent).toHaveBeenCalledWith({
         id: 42,
         data: {
+          forecastSources: [
+            ForecastSource.worldpop,
+            ForecastSource.glofasRiverDischarge,
+          ],
           alertClass: AlertClass.high,
           trigger: true,
           startAt: new Date('2026-04-08T00:00:00Z'),
@@ -223,7 +232,7 @@ describe('AlertToEventService', () => {
         countryCodeIso3: 'ETH',
         eventName: 'station-A',
         hazardType: HazardType.floods,
-        forecastSources: [ForecastSource.glofas],
+        forecastSources: [ForecastSource.glofasRiverDischarge],
         alertClass: AlertClass.medium,
         trigger: false,
         centroid: { latitude: 0.35, longitude: 32.6 },

@@ -58,14 +58,14 @@ def extract_wind_speed(
     lead_hour_spectrum = _parse_lead_hour_spectrum(temporal_extent)
     max_lead_hour = lead_hour_spectrum[-1]
 
-    if country_config.forecast_source == ForecastSource.GEFS:
+    if country_config.forecast_source == ForecastSource.GEFS_TROPICAL_CYCLONE:
         native_step_hours = constants.GEFS_NATIVE_LEAD_TIME_STEP_HOURS
         rasters_by_member_and_lead_hour, forecast_cycle_datetime = (
             _load_gefs_wind_rasters(
                 wind_member_paths, bounds, conversion_factor, max_lead_hour
             )
         )
-    elif country_config.forecast_source == ForecastSource.ECMWF:
+    elif country_config.forecast_source == ForecastSource.ECMWF_TROPICAL_CYCLONE:
         native_step_hours = constants.ECMWF_NATIVE_LEAD_TIME_STEP_HOURS
         rasters_by_member_and_lead_hour, forecast_cycle_datetime = (
             _load_ecmwf_wind_rasters(

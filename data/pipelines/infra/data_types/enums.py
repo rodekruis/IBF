@@ -14,10 +14,12 @@ class EnsembleMemberType(StrEnum):
 
 
 class ForecastSource(StrEnum):
-    GLOFAS = "glofas"
-    ECMWF = "ECMWF"
-    GEFS = "GEFS"
-    COMPOUND_FLOODS_SOURCE = "compoundFloodsSource"
+    GLOFAS_RIVER_DISCHARGE = "glofasRiverDischarge"
+    GLOFAS_FLOOD_HAZARD_MAPS = "glofasFloodHazardMaps"
+    WORLDPOP = "worldpop"
+    GEFS_TROPICAL_CYCLONE = "gefsTropicalCyclone"
+    ECMWF_TROPICAL_CYCLONE = "ecmwfTropicalCyclone"
+    DESTIN_E = "DestinE"
 
 
 class HazardType(StrEnum):

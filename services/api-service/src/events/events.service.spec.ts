@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { Event } from '@prisma/client';
 
+import { FORECAST_SOURCE_DETAILS } from '@api-service/src/events/const/forecast-source-details.const';
 import {
   EventFloodsDetailsService,
   FloodsDetailsContext,
@@ -13,6 +14,7 @@ import { EventsService } from '@api-service/src/events/events.service';
 import {
   AlertClass,
   EventStatus,
+  ForecastSource,
   HazardType,
   LayerName,
 } from '@api-service/src/shared-enums';
@@ -25,7 +27,7 @@ function buildEvent(overrides: Partial<Event> = {}): Event {
     countryCodeIso3: 'ETH',
     eventName: 'station-A',
     hazardType: HazardType.floods,
-    forecastSources: ['glofas'],
+    forecastSources: [ForecastSource.glofasRiverDischarge],
     alertClass: AlertClass.medium,
     trigger: false,
     centroid: { latitude: 0.35, longitude: 32.6 },
@@ -125,6 +127,38 @@ describe('EventsService', () => {
       });
 
       expect(result[0].hazardType).toEqual(HazardType.floods);
+    });
+
+    it('should return forecastSources with their details, in stored order', async () => {
+      // Arrange
+      repository.getEvents.mockResolvedValue([
+        buildEvent({
+          forecastSources: [
+            ForecastSource.worldpop,
+            ForecastSource.glofasRiverDischarge,
+          ],
+        }),
+      ]);
+      repository.getExposedAdminAreasForLatestAlerts.mockResolvedValue(
+        new Map(),
+      );
+
+      // Act
+      const result = await service.getEvents({
+        viewTime: new Date('2026-03-25T12:00:00Z'),
+      });
+
+      // Assert
+      expect(result[0].forecastSources).toEqual([
+        {
+          name: ForecastSource.worldpop,
+          ...FORECAST_SOURCE_DETAILS[ForecastSource.worldpop],
+        },
+        {
+          name: ForecastSource.glofasRiverDischarge,
+          ...FORECAST_SOURCE_DETAILS[ForecastSource.glofasRiverDischarge],
+        },
+      ]);
     });
 
     it('should return exposedAdminAreas grouped by adminLevel', async () => {

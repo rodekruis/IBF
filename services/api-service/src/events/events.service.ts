@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { Event } from '@prisma/client';
 import { Layer } from '@prisma/client';
 
+import { FORECAST_SOURCE_DETAILS } from '@api-service/src/events/const/forecast-source-details.const';
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
+import { EventForecastSourceDto } from '@api-service/src/events/dto/event-forecast-source.dto';
 import { EventHazardTypeDetailsDto as EventHazardTypeDetailsDto } from '@api-service/src/events/dto/event-hazard-type-details.dto';
 import { EventResponseDto } from '@api-service/src/events/dto/event-response.dto';
 import {
@@ -16,6 +18,7 @@ import {
 import { EventLayerDto } from '@api-service/src/layers/dto/event-layer.dto';
 import {
   EventStatus,
+  ForecastSource,
   HazardType,
   LayerType,
 } from '@api-service/src/shared-enums';
@@ -101,7 +104,7 @@ export class EventsService {
       eventName: event.eventName,
       eventLabel: this.deriveEventLabel(event.eventName),
       hazardType: event.hazardType,
-      forecastSources: event.forecastSources,
+      forecastSources: this.mapForecastSources(event.forecastSources),
       alertClass: event.alertClass,
       trigger: event.trigger,
       centroid: event.centroid as { latitude: number; longitude: number },
@@ -134,6 +137,15 @@ export class EventsService {
       return EventStatus.imminent;
     }
     return EventStatus.ongoing;
+  }
+
+  private mapForecastSources(
+    forecastSources: ForecastSource[],
+  ): EventForecastSourceDto[] {
+    return forecastSources.map((forecastSource) => ({
+      name: forecastSource,
+      ...FORECAST_SOURCE_DETAILS[forecastSource],
+    }));
   }
 
   private mapExposedAdminAreas(

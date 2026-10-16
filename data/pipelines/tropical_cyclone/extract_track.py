@@ -109,9 +109,9 @@ def extract_track(
     GEFS only. ECMWF stores tracks completely differently (BUFR, one file per run, one message per
     storm, members as subsets) and is not implemented - see the raise below.
     """
-    if forecast_source != ForecastSource.GEFS:
+    if forecast_source != ForecastSource.GEFS_TROPICAL_CYCLONE:
         raise NotImplementedError(
-            f"Multi-storm track extraction is implemented for {ForecastSource.GEFS} only, "
+            f"Multi-storm track extraction is implemented for {ForecastSource.GEFS_TROPICAL_CYCLONE} only, "
             f"got '{forecast_source}'. Notes for whoever picks up ECMWF: its BUFR file already "
             f"holds one message per storm, so grouping needs no interleaved-row parsing - one "
             f"message maps to one StormTrack. _load_ecmwf_track_fixes/_read_ecmwf_track_fixes are "

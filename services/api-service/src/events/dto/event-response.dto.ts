@@ -1,12 +1,12 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
+import { EventForecastSourceDto } from '@api-service/src/events/dto/event-forecast-source.dto';
 import { EventHazardTypeDetailsDto } from '@api-service/src/events/dto/event-hazard-type-details.dto';
 import { EventLayerDto } from '@api-service/src/layers/dto/event-layer.dto';
 import {
   AlertClass,
   EventStatus,
-  ForecastSource,
   HazardType,
 } from '@api-service/src/shared-enums';
 
@@ -27,8 +27,8 @@ export class EventResponseDto {
   @ApiProperty({ enum: HazardType })
   public readonly hazardType: HazardType;
 
-  @ApiProperty({ enum: ForecastSource, isArray: true })
-  public readonly forecastSources: ForecastSource[];
+  @ApiProperty({ type: [EventForecastSourceDto] })
+  public readonly forecastSources: EventForecastSourceDto[];
 
   @ApiProperty({ enum: AlertClass })
   public readonly alertClass: AlertClass;

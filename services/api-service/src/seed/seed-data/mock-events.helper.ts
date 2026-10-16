@@ -48,58 +48,69 @@ interface MockHazardConfig {
   builder: MockCountryBuilder;
 }
 
+const FLOODS_FORECAST_SOURCES: ForecastSource[] = [
+  ForecastSource.worldpop,
+  ForecastSource.glofasFloodHazardMaps,
+  ForecastSource.glofasRiverDischarge,
+];
+
+const TROPICAL_CYCLONE_FORECAST_SOURCES: ForecastSource[] = [
+  ForecastSource.worldpop,
+  ForecastSource.gefsTropicalCyclone,
+];
+
 const MOCK_BUILDERS: Record<string, MockHazardConfig[]> = {
   ETH: [
     {
       hazardType: HazardType.floods,
-      forecastSources: [ForecastSource.glofas],
+      forecastSources: FLOODS_FORECAST_SOURCES,
       builder: buildEthiopiaFloodAlerts,
     },
   ],
   UGA: [
     {
       hazardType: HazardType.floods,
-      forecastSources: [ForecastSource.glofas],
+      forecastSources: FLOODS_FORECAST_SOURCES,
       builder: buildUgandaFloodAlerts,
     },
   ],
   MWI: [
     {
       hazardType: HazardType.floods,
-      forecastSources: [ForecastSource.glofas],
+      forecastSources: FLOODS_FORECAST_SOURCES,
       builder: buildMalawiFloodAlerts,
     },
   ],
   KEN: [
     {
       hazardType: HazardType.floods,
-      forecastSources: [ForecastSource.glofas],
+      forecastSources: FLOODS_FORECAST_SOURCES,
       builder: buildKenyaFloodAlerts,
     },
   ],
   PHL: [
     {
       hazardType: HazardType.floods,
-      forecastSources: [ForecastSource.glofas],
+      forecastSources: FLOODS_FORECAST_SOURCES,
       builder: buildPhilippinesFloodAlerts,
     },
     {
       hazardType: HazardType.tropicalCyclone,
-      forecastSources: [ForecastSource.GEFS],
+      forecastSources: TROPICAL_CYCLONE_FORECAST_SOURCES,
       builder: buildPhilippinesTropicalCycloneAlerts,
     },
   ],
   SSD: [
     {
       hazardType: HazardType.floods,
-      forecastSources: [ForecastSource.glofas],
+      forecastSources: FLOODS_FORECAST_SOURCES,
       builder: buildSouthSudanFloodAlerts,
     },
   ],
   ZMB: [
     {
       hazardType: HazardType.floods,
-      forecastSources: [ForecastSource.glofas],
+      forecastSources: FLOODS_FORECAST_SOURCES,
       builder: buildZambiaFloodAlerts,
     },
   ],

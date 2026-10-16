@@ -67,11 +67,13 @@ class TestResolveConversionFactor:
         return CountryConfig(
             exposure_class=exposure,
             sustained_wind_averaging_period=period,
-            forecast_source=ForecastSource.GEFS,
+            forecast_source=ForecastSource.GEFS_TROPICAL_CYCLONE,
         )
 
     def test_ten_minute_is_a_noop(self):
-        assert _resolve_conversion_factor(self._config(AveragingPeriod.TEN_MINUTE)) == 1.0
+        assert (
+            _resolve_conversion_factor(self._config(AveragingPeriod.TEN_MINUTE)) == 1.0
+        )
 
     def test_one_minute_uses_the_exposure_gust_factor(self):
         config = self._config(AveragingPeriod.ONE_MINUTE, ExposureClass.IN_LAND)
@@ -104,9 +106,7 @@ class TestResolveConfiguredIntervalHours:
 
     def test_falls_back_to_native_step_for_single_point_spectrum(self):
         assert (
-            _resolve_configured_interval_hours(
-                [0], GEFS_NATIVE_LEAD_TIME_STEP_HOURS
-            )
+            _resolve_configured_interval_hours([0], GEFS_NATIVE_LEAD_TIME_STEP_HOURS)
             == GEFS_NATIVE_LEAD_TIME_STEP_HOURS
         )
 
