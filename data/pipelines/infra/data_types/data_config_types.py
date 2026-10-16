@@ -57,7 +57,6 @@ class DataSource(StrEnum):
     TODO_DATA_SOURCE = "todo_data_source"
 
 
-# ##TODO: discuss in review: this mapping vs a fixed list per hazard type.
 # Data sources not listed here are not reported as forecast source to the API.
 FORECAST_SOURCE_BY_DATA_SOURCE: dict[DataSource, ForecastSource] = {
     # Generic
