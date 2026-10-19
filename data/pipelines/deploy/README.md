@@ -83,7 +83,7 @@ Test and staging share their Batch, storage, Key Vault and Application Insights 
 ## How a job runs
 
 - The scheduler Function App submits a job named `nrw-<hazard>-<yyyymmdd-HHMMSS>` with a single task running `pipeline --config pipelines/infra/configs/<hazard>.yaml` in the image `pipelines:<IBF_ENVIRONMENT>`.
-- The task gets its environment variables from the Function App settings (`TASK_ENVIRONMENT_VARIABLES` in [batch_client.py](function/batch_client.py)). Secrets are Key Vault references in those settings; other settings are plain values.
+- The task gets its environment variables from the Function App settings (`TASK_ENVIRONMENT_VARIABLES` in [batch_client.py](function/batch_client.py)). Secrets are Key Vault references in those settings; other settings are plain values. All these values, including secrets, are readable by anyone with access to the Batch account.
 - The pipeline only talks to the NRW API; it has no direct database access.
 - The pool scales up from 0 nodes when a task is queued (max 2 nodes) and pre-pulls the image, so tasks start quickly.
 - `DATA_CACHE_DIR` is a blobfuse mount of the `nrw-data-cache` blob container, so downloads and intermediate files are kept between runs.
@@ -114,7 +114,7 @@ A daily set of global GloFAS downloads is about 50 files of about 600 MB each (a
 
 Staging and production are deployed through `deploy_staging_all.yml` (on release) and `deploy_prod_all.yml` (manually), together with the api-service. All workflows can also be started manually.
 
-Production promotes the image that was last released to staging, so production runs exactly what was tested on staging.
+Production does not build a new image, but copies whatever `pipelines:staging` holds at that moment. Normally that is the last release, but a manual run of the staging publish workflow overwrites it. So only deploy to production right after the release you want has been deployed to staging.
 
 ## Logging and alerts
 
