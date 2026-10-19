@@ -10,8 +10,8 @@
 # reuses function/batch_client.py.
 #
 # Prerequisites:
-#   - Azure CLI logged in (`az login`) with the grants listed in
-#     readme-implementation.md.
+#   - Azure CLI logged in (`az login`) with the roles listed in
+#     data/pipelines/deploy/operations.md.
 #   - uv installed (provides azure-batch/azure-identity via `uv run --with`).
 #
 # Expects DATA_DIR and TARGET_ENVIRONMENT to be set by the calling script.
@@ -34,18 +34,13 @@ SETTING_NAMES=(
   APPLICATIONINSIGHTS_CONNECTION_STRING
 )
 
-# TODO: remove 'poc' once those resources are removed.
 case "${TARGET_ENVIRONMENT}" in
-  poc)
-    FUNCTION_APP_NAME="nrw-batch-scheduler"
-    RESOURCE_GROUP="nrw-batch-poc"
-    ;;
   test | staging | prod)
     FUNCTION_APP_NAME="nrw-batch-scheduler-${TARGET_ENVIRONMENT}"
     RESOURCE_GROUP="NRW"
     ;;
   *)
-    echo "Invalid environment '${TARGET_ENVIRONMENT}'. Use one of: poc, test, staging, prod." >&2
+    echo "Invalid environment '${TARGET_ENVIRONMENT}'. Use one of: test, staging, prod." >&2
     exit 1
     ;;
 esac

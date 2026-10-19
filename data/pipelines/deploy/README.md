@@ -1,142 +1,125 @@
-# Pipelines deploy guide
+# Pipeline deployment
 
-This is the user-facing guide to help with running jobs, debugging, etc.
+How the forecast pipelines run in Azure: what triggers them, what runs where, and how code gets deployed.
 
-See [readme-implementation.md](readme-implementation.md) for the current actual implementation overview.
-See [readme-requirements.md](readme-requirements.md) for the initial requirements of the work.
+- To run, monitor or debug deployed pipeline jobs, see [operations.md](operations.md).
+- To run pipelines locally, see the [pipelines README](../README.md).
+- The Azure resources are defined as Bicep in the (private) `NRW-infra` repository. Its README describes the resources, their permissions and how to deploy them.
 
-## Manually starting a deployed pipeline job
+## Overview
 
-These commands submit a one-off job to the deployed Azure Batch infrastructure of an environment (`poc`, `test`, `staging` or `prod`). They do not run the pipeline in a local Docker container. The job gets the same settings as the scheduled run of that environment: they are read from its scheduler Function App, with Key Vault references resolved from the vault.
+Every day, the scheduler Function App of each environment submits one Azure Batch job per hazard. Each job runs a single container task with the pipeline Docker image. The task loads its input data, runs the forecast per country and submits the results to the NRW API of the same environment.
 
-### Prerequisites
+```mermaid
+flowchart LR
+    subgraph github[GitHub Actions]
+        publish[publish_&lt;env&gt;_pipeline_docker_image]
+        deploy[deploy_&lt;env&gt;_pipeline_scheduler]
+    end
 
-- Log in with `az login` using an identity that has, for the target environment, `Azure Batch Job Submitter` on the Batch account, `Key Vault Secrets User` on the Key Vault, and permission to list the scheduler Function App's app settings (e.g. `Website Contributor`).
-- Install `uv`.
+    subgraph azure[Azure, per environment]
+        func[Scheduler Function App<br/>daily timer]
+        batch[Batch account + pool]
+        task[Container task<br/>pipeline --config ...]
+        storage[Blob container<br/>nrw-data-cache]
+        insights[Application Insights]
+    end
 
-### Live data run
+    acr[Container registry<br/>pipelines:&lt;env&gt;]
+    glofas[GloFAS FTP]
+    seed[IBF-seed-data]
+    api[NRW API]
 
-This is the manual way to kick off the scheduled jobs. It uses live data, such as Glofas for floods.
-From `data/pipelines/deploy/`, run `./function/run_pipeline_job.sh <environment> <hazard name>`, such as
-
-```bash
-./function/run_pipeline_job.sh test floods
+    publish -- "build / promote image" --> acr
+    deploy -- "deploy function code" --> func
+    func -- "submit job" --> batch
+    batch -- "runs" --> task
+    task -- "pull image" --> acr
+    task -- "download forecasts" --> glofas
+    task -- "static data" --> seed
+    task -- "DATA_CACHE_DIR mount, task logs" --> storage
+    task -- "submit results" --> api
+    func -- telemetry --> insights
+    task -- telemetry --> insights
 ```
 
-The script prints the submitted Batch job ID. Use the Azure Batch account to monitor the job and its task logs.
+## Entry points
 
-### Mock data run
+| Entry point                   | Where                                                                                                            | Trigger                                                                   |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Scheduled run                 | `daily_pipeline_scheduler` in [function/function_app.py](function/function_app.py)                               | Daily at 12:00 UTC; one job per entry in `PIPELINE_CONFIGS` (now: floods) |
+| Manual live run               | [function/run_pipeline_job.sh](function/run_pipeline_job.sh)                                                     | By hand, see [operations.md](operations.md#manually-starting-a-job)       |
+| Manual mock run               | [function/mock_run_pipeline_job.sh](function/mock_run_pipeline_job.sh)                                           | By hand, see [operations.md](operations.md#manually-starting-a-job)       |
+| Publish pipeline image        | `.github/workflows/publish_<env>_pipeline_docker_image.yml` → [build-and-push-image.sh](build-and-push-image.sh) | See [CI/CD](#cicd)                                                        |
+| Deploy scheduler Function App | `.github/workflows/deploy_<env>_pipeline_scheduler.yml`                                                          | See [CI/CD](#cicd)                                                        |
 
-For a mock-data job, use the separate mock launcher. It requires `--mock` and passes the remaining pipeline flags through unchanged:
+## Files in this folder
 
-```bash
-./function/mock_run_pipeline_job.sh test floods --mock 1 --country KEN
-```
+| File                                                                                                                                 | Purpose                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| [Dockerfile](Dockerfile)                                                                                                             | Image run by the Batch tasks. Build context is `data/`. YAML configs are baked in, so config changes need a new image. |
+| [build-and-push-image.sh](build-and-push-image.sh)                                                                                   | Builds and pushes the image (`test`, `staging`) or promotes `staging` to `production`. Used by the publish workflows.  |
+| [function/function_app.py](function/function_app.py)                                                                                 | Timer trigger of the scheduler Function App.                                                                           |
+| [function/batch_client.py](function/batch_client.py)                                                                                 | Builds and submits the Batch job and container task. Shared by scheduled and manual runs, so both behave the same.     |
+| [function/submit_pipeline_job.py](function/submit_pipeline_job.py)                                                                   | CLI used by the manual run scripts.                                                                                    |
+| [function/run_pipeline_job.sh](function/run_pipeline_job.sh), [function/mock_run_pipeline_job.sh](function/mock_run_pipeline_job.sh) | Manual live and mock runs.                                                                                             |
+| [function/pipeline_job_common.sh](function/pipeline_job_common.sh)                                                                   | Shared setup of the manual run scripts: reads the settings of the target environment's scheduler Function App.         |
+| [function/requirements.txt](function/requirements.txt), [function/host.json](function/host.json)                                     | Function App packaging.                                                                                                |
 
-## Getting files for local debugging
+## Environments
 
-You can get Glofas data from Azure for debugging local runs. Here are examples with Glofas data after it has been split into individual countries.
+|                                              | test                                | staging                       | production                          |
+| -------------------------------------------- | ----------------------------------- | ----------------------------- | ----------------------------------- |
+| Scheduler Function App                       | `nrw-batch-scheduler-test`          | `nrw-batch-scheduler-staging` | `nrw-batch-scheduler-prod`          |
+| `IBF_ENVIRONMENT`                            | `test`                              | `staging`                     | `production`                        |
+| Image                                        | `pipelines:test`                    | `pipelines:staging`           | `pipelines:production`              |
+| Batch account / pool                         | `nrwbatchtest` / `nrwbatchtestpool` | shared with test              | `nrwbatchprod` / `nrwbatchprodpool` |
+| Storage account (container `nrw-data-cache`) | `nrwbatchtest`                      | shared with test              | `nrwbatchprod`                      |
+| Application Insights                         | `nrw-batch-scheduler-test`          | shared with test              | `nrw-batch-scheduler-prod`          |
+| Environment name for the manual run scripts  | `test`                              | `staging`                     | `prod`                              |
 
-From the azure portal:
-[Azure → nrwbatchpoc storage account → Containers → nrw-data-cache → browse into glofas/country_split/.](https://portal.azure.com/#view/Microsoft_Azure_Storage/ContainerMenuBlade/~/overview/storageAccountId/%2Fsubscriptions%2F57b0d17a-5429-4dbb-8366-35c928e3ed94%2FresourceGroups%2Fnrw-batch-poc%2Fproviders%2FMicrosoft.Storage%2FstorageAccounts%2Fnrwbatchpoc/path/nrw-data-cache/etag/%220x8DEF2D384D83E43%22/defaultId//publicAccessVal/None)
-You can select multiple, click '...' -> 'download' for one file, and it will download for all of them.
+Test and staging share their Batch, storage, Key Vault and Application Insights resources. They differ only in their scheduler Function App, whose settings (environment, API URL, API key) are passed on to the job, and in the image tag.
 
-From the command line, after logging in with `az login`, you can download with something like the following command. This fetches all MWI data for Aug 22, 2026. Set the timestamp and country as needed.
+## How a job runs
 
-```
-az storage blob download-batch \
-  --account-name nrwbatchpoc \
-  --source nrw-data-cache \
-  --pattern "glofas/country_split/20260822/*MWI*" \
-  --destination data/data \
-  --auth-mode key
-```
+- The scheduler Function App submits a job named `nrw-<hazard>-<yyyymmdd-HHMMSS>` with a single task running `pipeline --config pipelines/infra/configs/<hazard>.yaml` in the image `pipelines:<IBF_ENVIRONMENT>`.
+- The task gets its environment variables from the Function App settings (`TASK_ENVIRONMENT_VARIABLES` in [batch_client.py](function/batch_client.py)). Secrets are Key Vault references in those settings; other settings are plain values.
+- The pipeline only talks to the NRW API; it has no direct database access.
+- The pool scales up from 0 nodes when a task is queued (max 2 nodes) and pre-pulls the image, so tasks start quickly.
+- `DATA_CACHE_DIR` is a blobfuse mount of the `nrw-data-cache` blob container, so downloads and intermediate files are kept between runs.
+- A failed task is not retried by Batch. Retries happen inside the pipeline, e.g. for downloads and for countries that failed to load their data.
+- A task is stopped after 10 hours.
+- On completion, the task's `stdout.txt` and `stderr.txt` are uploaded to `nrw-data-cache/task-logs/<hazard>/<job-id>/`.
 
-The files should be placed in `{DATA_CACHE_DIR}/glofas/country_split/{date}/`. The above command would do that automatically if ran from repo root.
+### Blob storage retention
 
-To use these, from `./data` run something like this with the correct country and timestamp.
+The pipeline writes to these prefixes under `DATA_CACHE_DIR` (see `pipelines/infra/utils/storage_helpers.py`). Retention is set by lifecycle rules on the storage account in `NRW-infra`.
 
-```
-uv run pipeline --config pipelines/infra/configs/floods.yaml \
-  --country MWI \
-  --local-data country \
-  --local-data-date 20260822
-```
+| Prefix                                        | Content                                  | Retention |
+| --------------------------------------------- | ---------------------------------------- | --------- |
+| `glofas/raw/{forecast_date}/`                 | Global GloFAS downloads                  | 30 days   |
+| `glofas/country_split/{forecast_date}/`       | Country-split GloFAS data                | No limit  |
+| `glofas/country_split_alert/{forecast_date}/` | Country-split data that triggered alerts | No limit  |
+| `glofas/country_mock_data/{country}/`         | Mock GloFAS data for `--mock` runs       | No limit  |
+| `task-logs/{hazard_type}/{job_id}/`           | Batch task stdout/stderr                 | 90 days   |
 
-## Getting Logs
+A daily set of global GloFAS downloads is about 50 files of about 600 MB each (about 30 GB). The pipeline loads one file at a time, so it needs about 0.6–1 GB of working memory for them.
 
-### From App Insights
+## CI/CD
 
-- In the portal, go to the [nrw-batch-scheduler App Insights → Logs](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Insights/components/nrw-batch-scheduler/logs)
+| Workflow                                  | test                                                           | staging                               | production                                           |
+| ----------------------------------------- | -------------------------------------------------------------- | ------------------------------------- | ---------------------------------------------------- |
+| `publish_<env>_pipeline_docker_image.yml` | Builds `pipelines:test` on push to `main` touching `data/**`   | Builds `pipelines:staging` on release | Copies `pipelines:staging` to `pipelines:production` |
+| `deploy_<env>_pipeline_scheduler.yml`     | On push to `main` touching `data/pipelines/deploy/function/**` | On release                            | Manually                                             |
 
-You can see live metrics and performance, as well as see logs.
+Staging and production are deployed through `deploy_staging_all.yml` (on release) and `deploy_prod_all.yml` (manually), together with the api-service. All workflows can also be started manually.
 
-Example query:
+Production promotes the image that was last released to staging, so production runs exactly what was tested on staging.
 
-```kusto
-union traces, exceptions
-| where timestamp between (datetime(2026-08-21T14:30Z) .. datetime(2026-08-21T15:45Z))
-| where severityLevel >= 2
-| order by timestamp asc
-```
+## Logging and alerts
 
-This component's Logs blade shows only the pipeline's telemetry, so the query above needs no extra filter.
+- Pipeline logs go to the environment's Application Insights component with role name `nrw-pipeline`. Each log message starts with a tag (`tag_<name>`, see `LogTag` in `pipelines/infra/utils/nrw_logger.py`) and a live-or-mock marker (`data_live` / `data_mock`). The run origin (`scheduled`, `manual`, `local`) is in `customDimensions.run_origin`.
+- The Application Insights components are backed by the shared `nrw-app-law` Log Analytics workspace, so pipeline and backend logs can be queried together.
+- A metric alert on each Batch account emails the team when a task fails.
 
-Each pipeline log carries its 'run origin' (`scheduled`, `manual`, `local`) as a `customDimensions` field, plus a live-or-mock marker (`data_live` / `data_mock`) inline in the message, so logs can be filtered by provenance. For example, to find scheduled live runs:
-
-```kusto
-traces
-| where message has "data_live"
-| where customDimensions.run_origin == "scheduled"
-| order by timestamp desc
-```
-
-The live-or-mock value and run origin are also sent to the backend as
-`x-nrw-pipeline-source-target` and `x-nrw-pipeline-run-origin` request headers.
-
-### From the shared nrw-app-law workspace
-
-You can also see the same logs in the shared NRW workspace at [nrw-app-law → Logs](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/NRW/providers/Microsoft.OperationalInsights/workspaces/nrw-app-law/logs). This lets you see it next to backend logs within the same query. Filter by the `AppRoleName` fields to see the different apps. The name changes based on the environment. Here is a sample query for `test` with the following app names:
-
-- `nrw-test`: the NRW backend. See request logs in the `AppRequests` table and application logs in the `AppTraces` table.
-- `nrw-pipeline`: the pipeline logs
-
-```kusto
-union
-    (AppRequests
-     | where AppRoleName == "nrw-test"
-     | where OperationName has "POST /api/alerts"
-     | extend Component = "Backend API",
-              Message = strcat(Name, " -> ", ResultCode)),
-    (AppTraces
-     | where AppRoleName == "nrw-test"
-     | where Message has "/api/alerts"
-     | extend Component = "Backend API"),
-    (AppTraces
-     | where AppRoleName == "nrw-pipeline"
-     | where Message has "KEN"
-     | extend Component = "Pipeline")
-| where TimeGenerated > ago(2d)
-| order by TimeGenerated asc
-| project TimeGenerated, Component, Message
-```
-
-### Raw logs
-
-These are raw logs where you can see the error output, while the job is running or shortly after it completed. These are useful since you can grab all logs quickly for one job, and then parse them yourself.
-
-For ongoing jobs, go to [Azure -> nrwbatchpoc (batch account)](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Batch/batchAccounts/nrwbatchpoc/accountOverview) -> Features -> Jobs -> select job -> select task -> stderr.txt. These will be delete here once the job stops and the node it is running on is deallocated.
-
-For completed jobs, the logs are stored in blob storage. Go to the [nrwbatchpoc storage account](https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Storage/storageAccounts/nrwbatchpoc/overview) -> Containers -> nrw-data-cache, under `task-logs/<hazard-type>/<job-id>/`.
-
-## Resource deployment logs and current job status
-
-You can see the current status of jobs and errors from before the jobs starts in nrwbatchpoc (the batch account)(https://portal.azure.com/#@rodekruis.onmicrosoft.com/resource/subscriptions/57b0d17a-5429-4dbb-8366-35c928e3ed94/resourceGroups/nrw-batch-poc/providers/Microsoft.Batch/batchAccounts/nrwbatchpoc/accountOverview).
-
-From there go to 'Pools' for resource allocation errors, or 'Jobs' for the current status of jobs.
-
-## Email error notifications
-
-When an alert email comes in, it just says what failed, not why. You still need to look into the Application Insights logs for more information.
-
-These auto resolve, but this is just the notification turning itself off so it can refire if the next run fails. If you want to turn off the auto-resolve state, you can do so in the main.bicep file (`autoMitigate: false` on the `TaskFailEvent` alert — but then the alert only emails again after someone manually resolves it in Azure Monitor -> Alerts).
+See [operations.md](operations.md) for how to use these.
