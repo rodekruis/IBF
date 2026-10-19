@@ -25,8 +25,7 @@ export const FORECAST_SOURCE_DETAILS: Record<
     lastUpdated: 'daily',
     description:
       'This dataset provides forecasts of river discharge, based on a combination of meteorological, hydrological modelling and forecasts. It is used for early awareness of potential riverine floods.',
-    moreInfoLabel:
-      'Medium-range Forecasts | Copernicus EMS - Global Flood Awareness System',
+    moreInfoLabel: 'GloFAS: Medium-range Forecasts',
     moreInfoUrl:
       'https://global-flood.emergency.copernicus.eu/technical-information/glofas-30day/',
   },
@@ -38,7 +37,7 @@ export const FORECAST_SOURCE_DETAILS: Record<
     lastUpdated: '2025',
     description:
       'These maps represent inundation along the river network for different flood magnitude scenarios (i.e. return periods). They are derived from hydrological, hydrodynamic and inundation simulations.',
-    moreInfoLabel: 'JRC Data Catalogue - Dataset - European Commission',
+    moreInfoLabel: 'JRC Data Catalogue: Global River Flood Hazard Maps',
     moreInfoUrl:
       'https://data.jrc.ec.europa.eu/dataset/jrc-floods-floodmapgl_rp50y-tif',
   },
@@ -49,7 +48,7 @@ export const FORECAST_SOURCE_DETAILS: Record<
     lastUpdated: '2026',
     description:
       'This dataset provides high-resolution estimates of population, showing how people are distributed across space. It is produced using census data combined with satellite imagery and geospatial modelling.',
-    moreInfoLabel: 'WorldPop :: Population Counts',
+    moreInfoLabel: 'WorldPop: Population Counts',
     moreInfoUrl: 'https://hub.worldpop.org/project/categories?id=3',
   },
   [ForecastSource.gefsTropicalCyclone]: TO_BE_DETERMINED_DETAILS,

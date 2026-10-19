@@ -2580,7 +2580,7 @@
           },
           "moreInfoLabel": {
             "type": "string",
-            "example": "WorldPop :: Population Counts"
+            "example": "WorldPop: Population Counts"
           },
           "moreInfoUrl": {
             "type": "string",

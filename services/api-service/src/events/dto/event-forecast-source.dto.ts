@@ -30,7 +30,7 @@ export class EventForecastSourceDto {
   @ApiProperty()
   public readonly description: string;
 
-  @ApiProperty({ example: 'WorldPop :: Population Counts' })
+  @ApiProperty({ example: 'WorldPop: Population Counts' })
   public readonly moreInfoLabel: string;
 
   @ApiProperty({ example: 'https://hub.worldpop.org/project/categories?id=3' })
