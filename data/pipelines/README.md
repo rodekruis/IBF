@@ -49,8 +49,8 @@ uv run pipeline --config pipelines/infra/configs/floods.yaml --country ETH --moc
 The `--local-data` flag lets you re-run the pipeline using locally cached GloFAS
 data instead of downloading from FTP. It accepts two modes:
 
-- `--local-data global` — loads raw global files from `DATA_CACHE_DIR/glofas/raw/{date}/` (still slices to country bounds). Global data is retained for about a week after a production run.
-- `--local-data country` — loads pre-sliced country-split files from `DATA_CACHE_DIR/glofas/country_split/{date}/` (skips slicing). Country-split data is retained longer.
+- `--local-data global` — loads raw global files from `DATA_CACHE_DIR/glofas/raw/{date}/` (still slices to country bounds). Global data of deployed runs is kept for 30 days.
+- `--local-data country` — loads pre-sliced country-split files from `DATA_CACHE_DIR/glofas/country_split/{date}/` (skips slicing). Country-split data of deployed runs is kept indefinitely.
 
 This is useful when:
 
@@ -60,7 +60,7 @@ This is useful when:
 
 The workflow is:
 
-1. Obtain data from cloud storage (global raw or country-split, depending on what's available)
+1. Obtain data from cloud storage (global raw or country-split, depending on what's available), see [getting data for local debugging](deploy/operations.md#getting-data-for-local-debugging)
 2. Place it in the corresponding `DATA_CACHE_DIR/glofas/` subfolder
 3. Run with `--local-data global` or `--local-data country`
 

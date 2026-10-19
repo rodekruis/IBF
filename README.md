@@ -5,7 +5,7 @@
 
 A system that forecasts Early Warning alerts, disseminates notifications, and visualizes exposure information to support decision making, following the country advisory. It has:
 
-- [data pipelines](./pipelines) producing forecasts
+- [data pipelines](./data/pipelines) producing forecasts, deployed to Azure Batch (see [pipeline deployment](./data/pipelines/deploy/README.md))
 - [back-end services](./services) ingesting and processing forecast data via API and publishing this - alongside seed data - via APIs
 - to e.g. a React front-end, which is developed and run in the separate [go-web-app repo](https://github.com/rodekruis/go-web-app/tree/nrw-develop).
 
