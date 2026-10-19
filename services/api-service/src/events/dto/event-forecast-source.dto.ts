@@ -23,7 +23,7 @@ export class EventForecastSourceDto {
   @ApiProperty({
     description:
       'Update frequency for forecasts, or year of data for static datasets',
-    example: 'updated daily',
+    example: 'daily',
   })
   public readonly lastUpdated: string;
 
