@@ -49,7 +49,7 @@ export const FORECAST_SOURCE_DETAILS: Record<
     lastUpdated: '2026',
     description:
       'This dataset provides high-resolution estimates of population, showing how people are distributed across space. It is produced using census data combined with satellite imagery and geospatial modelling.',
-    moreInfoLabel: 'WorldPop: Population Counts',
+    moreInfoLabel: 'WorldPop :: Population Counts',
     moreInfoUrl: 'https://hub.worldpop.org/project/categories?id=3',
   },
   [ForecastSource.gefsTropicalCyclone]: TO_BE_DETERMINED_DETAILS,
