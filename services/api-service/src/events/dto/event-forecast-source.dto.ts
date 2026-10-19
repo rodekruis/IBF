@@ -23,14 +23,14 @@ export class EventForecastSourceDto {
   @ApiProperty({
     description:
       'Update frequency for forecasts, or year of data for static datasets',
-    example: 'updated daily',
+    example: 'daily',
   })
   public readonly lastUpdated: string;
 
   @ApiProperty()
   public readonly description: string;
 
-  @ApiProperty({ example: 'WorldPop :: Population Counts' })
+  @ApiProperty({ example: 'WorldPop: Population Counts' })
   public readonly moreInfoLabel: string;
 
   @ApiProperty({ example: 'https://hub.worldpop.org/project/categories?id=3' })
