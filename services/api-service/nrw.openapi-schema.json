@@ -2573,14 +2573,14 @@
           "lastUpdated": {
             "type": "string",
             "description": "Update frequency for forecasts, or year of data for static datasets",
-            "example": "updated daily"
+            "example": "daily"
           },
           "description": {
             "type": "string"
           },
           "moreInfoLabel": {
             "type": "string",
-            "example": "WorldPop :: Population Counts"
+            "example": "WorldPop: Population Counts"
           },
           "moreInfoUrl": {
             "type": "string",
