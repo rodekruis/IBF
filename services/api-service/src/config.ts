@@ -7,12 +7,9 @@ export const IS_PRODUCTION = env.NODE_ENV === 'production';
 // ---------------------------------------------------------------------------
 export const APP_VERSION = env.GLOBAL_IBF_VERSION!;
 
-let appTitle = 'api-service';
+let appTitle = 'NRW Swagger';
 if (env.ENV_NAME) {
-  appTitle += ` [${env.ENV_NAME}]`;
-}
-if (IS_DEVELOPMENT) {
-  appTitle = 'Swagger ' + appTitle;
+  appTitle = `[${env.ENV_NAME}] ${appTitle}`;
 }
 export const APP_TITLE = appTitle;
 
@@ -21,7 +18,7 @@ let favIconUrl = '';
 
 if (env.ENV_ICON) {
   favIconUrl = env.ENV_ICON;
-  headerStyle = `url("${env.ENV_ICON}")`;
+  headerStyle += ` url("${env.ENV_ICON}") no-repeat 1rem center`;
 }
 
 export const APP_FAVICON = favIconUrl;
