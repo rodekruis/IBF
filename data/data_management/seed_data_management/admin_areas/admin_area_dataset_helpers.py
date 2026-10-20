@@ -13,6 +13,8 @@ from shapely.validation import make_valid
 ADMIN_AREAS_DIRECTORY = Path("admin-areas/processed")
 DEFAULT_SEED_REPOSITORY_URL = "https://github.com/rodekruis/IBF-seed-data.git"
 
+Bounds = tuple[float, float, float, float]
+
 
 def load_json(filepath: Path) -> dict | list:
     with filepath.open(encoding="utf-8") as file:
@@ -26,6 +28,11 @@ def load_admin_features(seed_repo_path: Path, country: str, level: int) -> list[
 
 def get_feature_geometry(feature: dict) -> BaseGeometry:
     return make_valid(shape(feature["geometry"]))
+
+
+def get_country_bounds(seed_repo_path: Path, country: str) -> Bounds:
+    features = load_admin_features(seed_repo_path, country, level=0)
+    return union_all([get_feature_geometry(feature) for feature in features]).bounds
 
 
 def get_pcode(feature: dict, level: int) -> str:
