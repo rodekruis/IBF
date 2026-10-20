@@ -4,6 +4,7 @@ Helper functions for downloading
 
 import json
 import logging
+from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
 
@@ -49,6 +50,18 @@ def download_object(url: str) -> bytes | None:
 
     log_error(logger, LogTag.INFRA, f"All {max_retries} attempts failed for '{url}'")
     return None
+
+
+def download_file(url: str, path: Path) -> Path:
+    if path.exists():
+        return path
+
+    content = download_object(url)
+    if content is None:
+        raise RuntimeError(f"Could not download '{url}'")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(content)
+    return path
 
 
 def download_json_source(url: str, check_count: bool = True):

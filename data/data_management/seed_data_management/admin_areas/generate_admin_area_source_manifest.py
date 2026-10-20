@@ -13,7 +13,9 @@ from data_management.seed_data_management.admin_areas.admin_area_source_config i
     HDX_DATASET_IDS,
     MAPSHAPER_SIMPLIFICATION_P90_THRESHOLDS_BYTES,
     MAPSHAPER_SIMPLIFICATION_PERCENTAGES,
+    MINIMUM_LAKE_AREA_KM2,
 )
+from data_management.seed_data_management.load_lakes import LAKES_SOURCE_URL
 from shared.data_helpers import get_seed_data_repo_path
 
 BASE_SEED_REPO_DIR = get_seed_data_repo_path()
@@ -66,6 +68,10 @@ def build_manifest() -> dict:
         "processedDirectory": "admin-areas/processed",
         "processing": {
             "rawHdxSources": "local-cache-only",
+            "lakeErasing": {
+                "source": LAKES_SOURCE_URL,
+                "minimumLakeAreaKm2": MINIMUM_LAKE_AREA_KM2,
+            },
             "geometrySimplification": {
                 "mapshaperPercentages": MAPSHAPER_SIMPLIFICATION_PERCENTAGES,
                 "mapshaperP90ThresholdBytes": MAPSHAPER_SIMPLIFICATION_P90_THRESHOLDS_BYTES,

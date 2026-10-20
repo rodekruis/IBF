@@ -7,40 +7,33 @@ from contextlib import ExitStack
 from dataclasses import dataclass
 from pathlib import Path
 
-import fiona
 import numpy as np
 import rasterio
 from data_management.seed_data_management.admin_areas.admin_area_dataset_helpers import (
-    get_feature_geometry,
-    load_admin_features,
+    Bounds,
+    get_country_bounds,
 )
+from data_management.seed_data_management.load_lakes import load_lake_geometries
 from rasterio.features import geometry_mask
 from rasterio.io import DatasetReader
 from rasterio.merge import merge
 from rasterio.profiles import Profile
-from shapely import union_all
 from shapely.geometry import box, shape
 from shapely.geometry.base import BaseGeometry
 from shared.data_helpers import get_seed_data_repo_path, target_countries_iso_a3
-from shared.download_helpers import download_object
+from shared.download_helpers import download_file
 
 # When rebuilding from a new version, also update the flood hazard maps entry in api-service FORECAST_SOURCE_DETAILS.
 JRC_FLOOD_HAZARD_URL = (
     "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard"
 )
 TILE_EXTENTS_FILENAME = "tile_extents.geojson"
-HYDROLAKES_URL = (
-    "https://data.hydrosheds.org/file/hydrolakes/HydroLAKES_polys_v10.gdb.zip"
-)
-HYDROLAKES_LAYER_PATH = "HydroLAKES_polys_v10.gdb"
 DEFAULT_RETURN_PERIODS = [10, 20, 50, 75, 100, 200, 500]
 DEFAULT_CACHE_DIRECTORY = (
     Path(__file__).parents[3] / "data" / "flood-depth-sources-cache"
 )
 SOURCES_TIF_DIRECTORY = Path("hazard/flood/flood-extents/sources-tif")
 NODATA = -9999.0
-
-Bounds = tuple[float, float, float, float]
 
 
 @dataclass(frozen=True)
@@ -63,10 +56,6 @@ def main() -> None:
     output_directory.mkdir(parents=True, exist_ok=True)
     tile_cache_directory = arguments.cache_directory / "jrc"
     tiles = load_tiles(tile_cache_directory)
-    lakes_path = download_file(
-        HYDROLAKES_URL,
-        arguments.cache_directory / "hydrolakes" / Path(HYDROLAKES_URL).name,
-    )
 
     for country in arguments.countries:
         build_country_flood_depths(
@@ -75,7 +64,6 @@ def main() -> None:
             return_periods=arguments.return_periods,
             tiles=tiles,
             tile_cache_directory=tile_cache_directory,
-            lakes_path=lakes_path,
             output_directory=output_directory,
         )
 
@@ -116,14 +104,13 @@ def build_country_flood_depths(
     return_periods: list[int],
     tiles: list[Tile],
     tile_cache_directory: Path,
-    lakes_path: Path,
     output_directory: Path,
 ) -> None:
     country_bounds = get_country_bounds(seed_repo_path, country)
     country_tiles = [
         tile for tile in tiles if tile.geometry.intersects(box(*country_bounds))
     ]
-    lake_geometries = load_lake_geometries(lakes_path, country_bounds)
+    lake_geometries = load_lake_geometries(country_bounds)
     print(f"{country}: {len(country_tiles)} tiles, {len(lake_geometries)} lakes")
 
     written_paths: set[Path] = set()
@@ -153,32 +140,10 @@ def remove_stale_flood_depths(
             print(f"  removed stale {path.name}")
 
 
-def get_country_bounds(seed_repo_path: Path, country: str) -> Bounds:
-    features = load_admin_features(seed_repo_path, country, level=0)
-    return union_all([get_feature_geometry(feature) for feature in features]).bounds
-
-
-def load_lake_geometries(lakes_path: Path, bounds: Bounds) -> list[BaseGeometry]:
-    with fiona.open(f"zip://{lakes_path}!{HYDROLAKES_LAYER_PATH}") as lakes:
-        return [shape(lake.geometry) for lake in lakes.filter(bbox=bounds)]
-
-
 def download_jrc_file(relative_path: str, cache_directory: Path) -> Path:
     return download_file(
         f"{JRC_FLOOD_HAZARD_URL}/{relative_path}", cache_directory / relative_path
     )
-
-
-def download_file(url: str, path: Path) -> Path:
-    if path.exists():
-        return path
-
-    content = download_object(url)
-    if content is None:
-        raise RuntimeError(f"Could not download '{url}'")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(content)
-    return path
 
 
 def merge_tiles(tile_paths: list[Path], bounds: Bounds) -> tuple[np.ndarray, Profile]:

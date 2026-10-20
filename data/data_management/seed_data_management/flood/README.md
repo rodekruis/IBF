@@ -13,7 +13,7 @@ Per country and return period, it:
 Where files go:
 
 - **Output**: written directly into the local seed repo (`SEED_DATA_REPO_ROOT` in `data/.env`), overwriting `sources-tif/`. Use `--output-directory` to write elsewhere for review.
-- **Downloads**: cached in this repo under `data/data/flood-depth-sources-cache/` (gitignored, several GB for all countries).
+- **Downloads**: cached in this repo under `data/data/flood-depth-sources-cache/` and `data/data/lakes/` (gitignored, several GB for all countries).
 
 Afterwards, `convert_flood_depth_to_png.py` converts `sources-tif/` into `data-png/` (plus metadata and manifests), also in the seed repo.
 
