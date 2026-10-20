@@ -22,7 +22,7 @@ on:
 env:
   AZURE_FUNCTIONAPP_NAME: 'nrw-batch-scheduler-prod'
   AZURE_FUNCTIONAPP_PROJECT_PATH: 'data/pipelines/deploy/function'
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: '3.14'
   BUILD_ARTIFACT_NAME: 'pipeline-scheduler'
 
 jobs:
@@ -40,8 +40,6 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: 'Install project dependencies'
-        run: pip install -r requirements.txt --target ".python_packages/lib/site-packages"
       - name: 'Upload artifact for the deployment job'
         uses: actions/upload-artifact@v7
         with:
@@ -73,3 +71,5 @@ jobs:
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
           package: '${{ env.AZURE_FUNCTIONAPP_PROJECT_PATH }}/downloaded-artifact'
+          scm-do-build-during-deployment: true
+          enable-oryx-build: true
