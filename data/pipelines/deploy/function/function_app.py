@@ -67,10 +67,11 @@ elif IBF_ENVIRONMENT in ["test", "staging"]:
     @app.function_name("manual_pipeline_scheduler")
     @app.route(
         route="pipeline-jobs",
+        trigger_arg_name="_request",
         methods=["POST"],
         auth_level=func.AuthLevel.ANONYMOUS,
     )
-    def manual_pipeline_scheduler(request: func.HttpRequest) -> func.HttpResponse:
+    def manual_pipeline_scheduler(_request: func.HttpRequest) -> func.HttpResponse:
         job_ids = schedule_pipeline_jobs()
         return func.HttpResponse(
             json.dumps({"job_ids": job_ids}),
