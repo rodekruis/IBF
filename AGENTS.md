@@ -102,9 +102,6 @@ Use imperative mood ("Add feature", not "Added feature").
 - **Stay current**: Regularly re-read these instructions as they evolve with the codebase
 - **Surface issues**: Report any unexpected errors, access issues, or limitations encountered during code analysis or generation
 
-Don't add docstrings
-(https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) or
-JSDoc (https://jsdoc.app) by default. But: do use them for code (functions,
-classes, or methods) that is **complex or non-obvious**.
+Don't add [docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) or [JSDoc](https://jsdoc.app) by default. But: do use them for code (functions, classes, or methods) that is **complex or non-obvious**.
 
 Remember: This platform serves humanitarian aid operations. Code quality and reliability directly impact people in need. Write code that is secure, maintainable, and well-tested.
