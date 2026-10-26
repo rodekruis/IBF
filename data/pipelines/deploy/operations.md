@@ -8,9 +8,13 @@ How to start, monitor and debug pipeline jobs in Azure. See the [deployment READ
 
 ### Prerequisites
 
-- Membership of the developer group assigned to the scheduler's Entra ID enterprise application. No Azure roles are needed.
-- `NRW_ENTRA_TENANT_ID`, `NRW_SUBSCRIPTION_ID`, `NRW_SCHEDULER_TEST_CLIENT_ID` and `NRW_SCHEDULER_STAGING_CLIENT_ID` set in `data/.env` (see `data/.env.example`).
+- Membership of the security group 'NRW developers'.
+- `NRW_ENTRA_TENANT_ID`, `NRW_SUBSCRIPTION_ID`, `NRW_SCHEDULER_TEST_CLIENT_ID` and `NRW_SCHEDULER_STAGING_CLIENT_ID` set in `data/.env`. You can find these in the Bitwarden collection 'Product - Impact based forecast platform/Development'.
 - Azure CLI installed. The script calls the route with `az rest`, and runs `az login` for the scheduler's tenant and scope when there is no valid login yet.
+
+```zsh
+brew update && brew install azure-cli
+```
 
 ### Starting a run
 
@@ -46,9 +50,6 @@ Test and staging share a Batch account. To see which environment a job belongs t
 ### Application Insights
 
 Open **Logs** on the environment's Application Insights component. It contains both the pipeline logs (role name `nrw-pipeline`) and the scheduler Function App logs (role name = Function App name).
-
-> [!NOTE]
-> Test and staging share one Application Insights component, and their pipeline logs both have role name `nrw-pipeline`, so these cannot be told apart in the logs yet.
 
 All warnings and errors in a time range:
 
