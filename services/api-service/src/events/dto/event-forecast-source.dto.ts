@@ -12,7 +12,7 @@ export class EventForecastSourceDto {
   @ApiProperty({ example: 'Forecast River Discharge' })
   public readonly title: string;
 
-  @ApiProperty({ example: 'GloFAS Medium-range flood forecasts' })
+  @ApiProperty({ example: 'GloFAS medium-range flood forecasts' })
   public readonly dataset: string;
 
   @ApiProperty({

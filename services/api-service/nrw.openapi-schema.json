@@ -2564,7 +2564,7 @@
           },
           "dataset": {
             "type": "string",
-            "example": "GloFAS Medium-range flood forecasts"
+            "example": "GloFAS medium-range flood forecasts"
           },
           "provider": {
             "type": "string",

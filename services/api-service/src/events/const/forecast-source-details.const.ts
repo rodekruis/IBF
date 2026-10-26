@@ -19,13 +19,13 @@ export const FORECAST_SOURCE_DETAILS: Record<
   Omit<EventForecastSourceDto, 'name'>
 > = {
   [ForecastSource.glofasRiverDischarge]: {
-    dataset: 'GloFAS Medium-range flood forecasts',
     title: 'Forecast river discharge',
+    dataset: 'GloFAS medium-range flood forecasts',
     provider: 'Copernicus Emergency Management Service (GloFAS, ECMWF)',
     lastUpdated: 'daily',
     description:
       'This dataset provides forecasts of river discharge, based on a combination of meteorological, hydrological modelling and forecasts. It is used for early awareness of potential riverine floods.',
-    moreInfoLabel: 'GloFAS: Medium-range Forecasts',
+    moreInfoLabel: 'GloFAS: medium-range Forecasts',
     moreInfoUrl:
       'https://global-flood.emergency.copernicus.eu/technical-information/glofas-30day/',
   },
