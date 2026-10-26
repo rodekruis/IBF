@@ -11,7 +11,7 @@
 # Prerequisites:
 #   - Membership of the developer group assigned to the scheduler's Entra ID
 #     enterprise application.
-#   - Azure CLI installed. The script logs in when needed.
+#   - Azure CLI 2.86.0 or newer installed. The script logs in when needed.
 #   - NRW_ENTRA_TENANT_ID, NRW_SUBSCRIPTION_ID and
 #     NRW_SCHEDULER_<ENVIRONMENT>_CLIENT_ID set in data/.env (see
 #     data/.env.example) or in the shell environment.
@@ -26,6 +26,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="${SCRIPT_DIR}/../../../.env"
+# First version with `az login --subscription`.
+MINIMUM_AZURE_CLI_VERSION="2.86.0"
 
 main() {
   local environment="test"
@@ -45,6 +47,7 @@ main() {
   done
 
   validate_options "${environment}" "${hazard_type}" "${mock}" "${countries}"
+  require_azure_cli_version "${MINIMUM_AZURE_CLI_VERSION}"
 
   local environment_upper
   environment_upper="$(printf '%s' "${environment}" | tr '[:lower:]' '[:upper:]')"
@@ -58,14 +61,11 @@ main() {
   request_body="$(build_request_body "${hazard_type}" "${mock}" "${countries}")"
 
   echo "Starting pipeline run on '${environment}' with request ${request_body}."
-  ensure_logged_in "${tenant_id}" "${client_id}"
-  # --subscription pins the token to that subscription's tenant, even if
-  # another tenant's subscription is the default.
+  ensure_logged_in "${tenant_id}" "${subscription_id}" "${client_id}"
   if ! az rest \
     --method post \
     --url "${url}" \
     --resource "api://${client_id}" \
-    --subscription "${subscription_id}" \
     --headers "Content-Type=application/json" \
     --body "${request_body}"; then
     echo "Pipeline run was not started." >&2
@@ -77,7 +77,7 @@ main() {
 # Logs in interactively only when no token for the scheduler can be acquired
 # silently, e.g. on first use or after the refresh token expired.
 ensure_logged_in() {
-  local tenant_id="$1" client_id="$2"
+  local tenant_id="$1" subscription_id="$2" client_id="$3"
   if az account get-access-token \
     --tenant "${tenant_id}" \
     --resource "api://${client_id}" \
@@ -87,12 +87,42 @@ ensure_logged_in() {
   echo "No valid Azure CLI login for the scheduler. Logging in..."
   az login \
     --tenant "${tenant_id}" \
+    --subscription "${subscription_id}" \
     --scope "api://${client_id}/user_impersonation" \
     --output none
 }
 
+require_azure_cli_version() {
+  local minimum_version="$1"
+  if ! command -v az >/dev/null; then
+    echo "Azure CLI not found. Install version ${minimum_version} or newer: https://learn.microsoft.com/cli/azure/install-azure-cli" >&2
+    exit 1
+  fi
+  local installed_version
+  installed_version="$(az version --query '"azure-cli"' --output tsv)"
+  if ! is_version_at_least "${installed_version}" "${minimum_version}"; then
+    echo "Azure CLI ${installed_version} is too old; version ${minimum_version} or newer is needed. Update with 'az upgrade'." >&2
+    exit 1
+  fi
+}
+
+is_version_at_least() {
+  local installed_version="$1" minimum_version="$2"
+  local -a installed_parts minimum_parts
+  IFS=. read -r -a installed_parts <<<"${installed_version}"
+  IFS=. read -r -a minimum_parts <<<"${minimum_version}"
+  local index
+  for index in 0 1 2; do
+    local installed_part="${installed_parts[index]:-0}" minimum_part="${minimum_parts[index]:-0}"
+    if ((10#${installed_part} != 10#${minimum_part})); then
+      ((10#${installed_part} > 10#${minimum_part}))
+      return
+    fi
+  done
+}
+
 print_usage() {
-  sed -n '18,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '/^# Usage:/,/^[^#]/{/^#/p;}' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 fail_with_usage() {

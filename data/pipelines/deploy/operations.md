@@ -10,7 +10,7 @@ How to start, monitor and debug pipeline jobs in Azure. See the [deployment READ
 
 - Membership of the security group 'NRW developers'.
 - `NRW_ENTRA_TENANT_ID`, `NRW_SUBSCRIPTION_ID`, `NRW_SCHEDULER_TEST_CLIENT_ID` and `NRW_SCHEDULER_STAGING_CLIENT_ID` set in `data/.env`. You can find these in the Bitwarden collection 'Product - Impact based forecast platform/Development'.
-- Azure CLI installed. The script calls the route with `az rest`, and runs `az login` for the scheduler's tenant and scope when there is no valid login yet.
+- Azure CLI 2.86.0 or newer installed. The script calls the route with `az rest`, and runs `az login` for the scheduler's tenant and scope when there is no valid login yet.
 
 ```zsh
 brew update && brew install azure-cli
