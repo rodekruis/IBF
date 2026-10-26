@@ -25,7 +25,7 @@ export const FORECAST_SOURCE_DETAILS: Record<
     lastUpdated: 'daily',
     description:
       'This dataset provides forecasts of river discharge, based on a combination of meteorological, hydrological modelling and forecasts. It is used for early awareness of potential riverine floods.',
-    moreInfoLabel: 'GloFAS: medium-range Forecasts',
+    moreInfoLabel: 'GloFAS: Medium-range Forecasts',
     moreInfoUrl:
       'https://global-flood.emergency.copernicus.eu/technical-information/glofas-30day/',
   },
