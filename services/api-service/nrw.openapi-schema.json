@@ -2560,7 +2560,7 @@
           },
           "title": {
             "type": "string",
-            "example": "Forecast River Discharge"
+            "example": "Forecast river discharge"
           },
           "dataset": {
             "type": "string",

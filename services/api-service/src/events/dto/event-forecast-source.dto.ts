@@ -9,7 +9,7 @@ export class EventForecastSourceDto {
   })
   public readonly name: ForecastSource;
 
-  @ApiProperty({ example: 'Forecast River Discharge' })
+  @ApiProperty({ example: 'Forecast river discharge' })
   public readonly title: string;
 
   @ApiProperty({ example: 'GloFAS medium-range flood forecasts' })
