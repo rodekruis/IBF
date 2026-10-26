@@ -87,8 +87,9 @@ class PipelineConfig:
             self.config_path
         ):
             raise ValueError(f"Invalid config path '{self.config_path}'.")
-        if self.mock is not None and self.mock < 0:
+        if self.mock is not None and self.mock not in (0, 1):
             raise ValueError(f"Invalid mock alert count '{self.mock}'.")
+
         for country in self.countries:
             if not COUNTRY_CODE_PATTERN.fullmatch(country):
                 raise ValueError(f"Invalid country '{country}'.")
