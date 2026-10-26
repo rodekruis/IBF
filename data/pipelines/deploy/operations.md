@@ -36,6 +36,19 @@ All options are optional. `--environment` defaults to `test`. Without the other 
 
 The script prints the IDs of the submitted Batch jobs.
 
+## Re-running a failed production job
+
+The manual route is not available in production, but the daily timer function can be triggered by hand:
+
+1. Check in the Batch account that the earlier job really failed (see [Checking job status](#checking-job-status)). A re-run starts a new job and does not resume the failed one, so re-running a job that is still running or succeeded processes the same data twice.
+2. In the Azure Portal, open the production scheduler Function App (`nrw-batch-scheduler-prod`) → **Functions** → `daily_pipeline_scheduler` → **Code + Test** → **Test/Run** → **Run**. This needs Contributor access on the Function App.
+3. Open the new job in the Batch account to follow it.
+
+Limitations:
+
+- It submits exactly the jobs of the daily schedule, with live data. You cannot select a hazard or country.
+- The run has run origin `scheduled`, like the regular daily run. Note the time of the re-run to tell the two apart in the logs.
+
 ## Checking job status
 
 In the environment's Batch account:
@@ -177,11 +190,11 @@ The email only says that a task failed, not why: check the logs above. The alert
 
 ## Common problems
 
-| Symptom                                                                                          | Cause and fix                                                                                                                                                                                                                            |
-| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No job was submitted at the scheduled time                                                       | Check the scheduler's logs in Application Insights (role name = Function App name) and the Function App's **Environment variables**: every Key Vault reference must show as resolved. After rotating a secret, restart the Function App. |
-| Task fails immediately with an image pull error                                                  | The image `pipelines:<IBF_ENVIRONMENT>` does not exist in `nrwdockerregistry`. Run the `publish_<env>_pipeline_docker_image` workflow.                                                                                                   |
-| Job stays queued; no node starts                                                                 | Check the pool's resize errors. `AllocationFailed` with "subnet has delegation" means the pool subnet (`BatchPools-<env>`) has a subnet delegation, which must be removed in `NRW-infra`.                                                |
-| Task ends with exit code 137                                                                     | The pipeline ran out of memory on the node.                                                                                                                                                                                              |
-| Task is terminated after 10 hours                                                                | The task hit its maximum run time (`TASK_MAX_WALL_CLOCK_TIME` in [batch_client.py](function/batch_client.py)).                                                                                                                           |
-| Manual run script fails with `App setting '...' not found on Function App` or a permission error | Check the [prerequisites](#prerequisites) for the target environment.                                                                                                                                                                    |
+| Symptom                                         | Cause and fix                                                                                                                                                                                                                            |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No job was submitted at the scheduled time      | Check the scheduler's logs in Application Insights (role name = Function App name) and the Function App's **Environment variables**: every Key Vault reference must show as resolved. After rotating a secret, restart the Function App. |
+| Task fails immediately with an image pull error | The image `pipelines:<IBF_ENVIRONMENT>` does not exist in `nrwdockerregistry`. Run the `publish_<env>_pipeline_docker_image` workflow.                                                                                                   |
+| Job stays queued; no node starts                | Check the pool's resize errors. `AllocationFailed` with "subnet has delegation" means the pool subnet (`BatchPools-<env>`) has a subnet delegation, which must be removed in `NRW-infra`.                                                |
+| Task ends with exit code 137                    | The pipeline ran out of memory on the node.                                                                                                                                                                                              |
+| Task is terminated after 10 hours               | The task hit its maximum run time (`TASK_MAX_WALL_CLOCK_TIME` in [batch_client.py](function/batch_client.py)).                                                                                                                           |
+| Manual run script fails with a permission error | Check the [prerequisites](#prerequisites) for the target environment.                                                                                                                                                                    |

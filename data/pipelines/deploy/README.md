@@ -74,7 +74,7 @@ flowchart LR
 | Batch account / pool                         | `nrwbatchtest` / `nrwbatchtestpool` | `nrwbatchtest` / `nrwbatchstagingpool` | `nrwbatchprod` / `nrwbatchprodpool` |
 | Storage account (container `nrw-data-cache`) | `nrwbatchtest`                      | shared with test                       | `nrwbatchprod`                      |
 | Application Insights                         | `nrw-batch-scheduler-test`          | `nrw-batch-scheduler-staging`          | `nrw-batch-scheduler-prod`          |
-| Environment name for the manual run scripts  | `test`                              | `staging`                              | `prod`                              |
+| Environment name for the manual run scripts  | `test`                              | `staging`                              | N/A                                 |
 
 Test and staging share their Batch, storage, Key Vault and Application Insights resources. They differ only in their scheduler Function App, whose settings (environment, API URL, API key) are passed on to the job, and in the image tag.
 

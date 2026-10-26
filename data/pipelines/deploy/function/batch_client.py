@@ -33,6 +33,7 @@ from azure.batch.models import (
 )
 from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
+from pipeline_run_request import COUNTRY_CODE_PATTERN
 
 CONTAINER_IMAGE_TAG = os.environ.get("IBF_ENVIRONMENT")
 CONTAINER_IMAGE = f"nrwdockerregistry.azurecr.io/pipelines:{CONTAINER_IMAGE_TAG}"
@@ -64,7 +65,6 @@ TASK_ENVIRONMENT_VARIABLES = (
 # command line, so reject anything outside a conservative allowlist of characters.
 HAZARD_TYPE_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 CONFIG_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_./-]+$")
-COUNTRY_CODE_PATTERN = re.compile(r"^[A-Z]{3}$")
 
 
 @dataclass(frozen=True)
