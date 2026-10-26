@@ -19,8 +19,8 @@ export const FORECAST_SOURCE_DETAILS: Record<
   Omit<EventForecastSourceDto, 'name'>
 > = {
   [ForecastSource.glofasRiverDischarge]: {
-    title: 'Forecast River Discharge',
     dataset: 'GloFAS Medium-range flood forecasts',
+    title: 'Forecast river discharge',
     provider: 'Copernicus Emergency Management Service (GloFAS, ECMWF)',
     lastUpdated: 'daily',
     description:
@@ -42,7 +42,7 @@ export const FORECAST_SOURCE_DETAILS: Record<
       'https://data.jrc.ec.europa.eu/dataset/jrc-floods-floodmapgl_rp50y-tif',
   },
   [ForecastSource.worldpop]: {
-    title: 'Population Counts',
+    title: 'Population counts',
     dataset: 'WorldPop Population Counts',
     provider: 'WorldPop, University of Southampton',
     lastUpdated: '2026',
