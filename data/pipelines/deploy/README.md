@@ -72,7 +72,7 @@ flowchart LR
 | `IBF_ENVIRONMENT`                            | `test`                              | `staging`                              | `production`                        |
 | Image                                        | `pipelines:test`                    | `pipelines:staging`                    | `pipelines:production`              |
 | Batch account / pool                         | `nrwbatchtest` / `nrwbatchtestpool` | `nrwbatchtest` / `nrwbatchstagingpool` | `nrwbatchprod` / `nrwbatchprodpool` |
-| Storage account (container `nrw-data-cache`) | `nrwbatchtest`                      | shared with test                       | `nrwbatchprod`                      |
+| Storage account (container `nrw-data-cache`) | `nrwbatchtest`                      | `nrwbatchstaging`                      | `nrwbatchprod`                      |
 | Application Insights                         | `nrw-batch-scheduler-test`          | `nrw-batch-scheduler-staging`          | `nrw-batch-scheduler-prod`          |
 | Environment name for the manual run scripts  | `test`                              | `staging`                              | N/A                                 |
 
