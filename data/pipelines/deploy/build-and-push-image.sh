@@ -2,11 +2,11 @@
 #
 # build-and-push-image.sh — Build the pipeline Docker image and push it to ACR.
 #
-# Deploy step. Rerun on every image change (dependency, config or pipeline code
-# change), or use the publish_pipeline_docker_image workflow.
+# Deploy step, run by the publish_<env>_pipeline_docker_image workflows. Can also
+# be run locally.
 #
-# Builds and pushes commit and environment tags for test and staging. Production
-# promotes an already-published staging commit image to the production tag.
+# Builds and pushes the environment tag for test and staging. Production
+# promotes the current staging image to the production tag.
 #
 # Prerequisites:
 #   - Azure CLI logged in (`az login`) with rights to push to the ACR.

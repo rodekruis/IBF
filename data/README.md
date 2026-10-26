@@ -115,6 +115,9 @@ After changing `pyproject.toml`/`uv.lock`, nothing extra is needed in developmen
 
 ### Deployable image
 
+> [!NOTE]
+> The deployed pipelines in Azure Batch do not use this image, but the one built from [pipelines/deploy/Dockerfile](pipelines/deploy/Dockerfile). See the [pipeline deployment README](pipelines/deploy/README.md).
+
 The `production` target contains the code and dependencies only — no bind mounts, no build tooling — and runs as a non-root user:
 
 ```bash
@@ -142,7 +145,7 @@ All variables are read from `data/.env` (see [.env.example](.env.example)). `loa
 
 | Variable                    | Example                                                                     | Description                                                                                                                                                                 |
 | --------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `IBF_ENVIRONMENT`           | `development`                                                               | Deployment environment (`development` / `test` / `production`). Mock runs are disallowed in `production`.                                                                   |
+| `IBF_ENVIRONMENT`           | `development`                                                               | Deployment environment (`development` / `test` / `staging` / `production`). Mock runs are disallowed in `production`.                                                       |
 | `IBF_API_URL`               | `http://localhost:4000`                                                     | Base URL of the IBF API. Same value on the host and inside containers (they run with `--network=host`); point at a deployed API URL to submit elsewhere.                    |
 | `IBF_PIPELINE_API_KEY`      | `a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`                                          | API key for submitting forecasts. Must equal `PIPELINE_API_KEY` in `services/.env`.                                                                                         |
 | `GITHUB_DATA_BASE_URL`      | `https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main` | Base URL of the seed-data repo, used to download mock/static input data.                                                                                                    |
