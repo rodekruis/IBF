@@ -45,26 +45,24 @@ flowchart LR
 
 ## Entry points
 
-| Entry point                   | Where                                                                                                            | Trigger                                                                   |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Scheduled run                 | `daily_pipeline_scheduler` in [function/function_app.py](function/function_app.py)                               | Daily at 12:00 UTC; one job per entry in `PIPELINE_CONFIGS` (now: floods) |
-| Manual live run               | [function/run_pipeline_job.sh](function/run_pipeline_job.sh)                                                     | By hand, see [operations.md](operations.md#manually-starting-a-job)       |
-| Manual mock run               | [function/mock_run_pipeline_job.sh](function/mock_run_pipeline_job.sh)                                           | By hand, see [operations.md](operations.md#manually-starting-a-job)       |
-| Publish pipeline image        | `.github/workflows/publish_<env>_pipeline_docker_image.yml` → [build-and-push-image.sh](build-and-push-image.sh) | See [CI/CD](#cicd)                                                        |
-| Deploy scheduler Function App | `.github/workflows/deploy_<env>_pipeline_scheduler.yml`                                                          | See [CI/CD](#cicd)                                                        |
+| Entry point                   | Where                                                                                                                                                                                     | Trigger                                                                          |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Scheduled run                 | `daily_pipeline_scheduler` in [function/function_app.py](function/function_app.py) (production only)                                                                                      | Daily at 12:00 UTC; one job per hazard in `SCHEDULED_HAZARD_TYPES` (now: floods) |
+| Manual run                    | `manual_pipeline_scheduler` route in [function/function_app.py](function/function_app.py) (test and staging only), called by [function/run_pipeline_job.sh](function/run_pipeline_job.sh) | By hand, see [operations.md](operations.md#manually-starting-a-job)              |
+| Publish pipeline image        | `.github/workflows/publish_<env>_pipeline_docker_image.yml` → [build-and-push-image.sh](build-and-push-image.sh)                                                                          | See [CI/CD](#cicd)                                                               |
+| Deploy scheduler Function App | `.github/workflows/deploy_<env>_pipeline_scheduler.yml`                                                                                                                                   | See [CI/CD](#cicd)                                                               |
 
 ## Files in this folder
 
-| File                                                                                                                                 | Purpose                                                                                                                |
-| ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| [Dockerfile](Dockerfile)                                                                                                             | Image run by the Batch tasks. Build context is `data/`. YAML configs are baked in, so config changes need a new image. |
-| [build-and-push-image.sh](build-and-push-image.sh)                                                                                   | Builds and pushes the image (`test`, `staging`) or promotes `staging` to `production`. Used by the publish workflows.  |
-| [function/function_app.py](function/function_app.py)                                                                                 | Timer trigger of the scheduler Function App.                                                                           |
-| [function/batch_client.py](function/batch_client.py)                                                                                 | Builds and submits the Batch job and container task. Shared by scheduled and manual runs, so both behave the same.     |
-| [function/submit_pipeline_job.py](function/submit_pipeline_job.py)                                                                   | CLI used by the manual run scripts.                                                                                    |
-| [function/run_pipeline_job.sh](function/run_pipeline_job.sh), [function/mock_run_pipeline_job.sh](function/mock_run_pipeline_job.sh) | Manual live and mock runs.                                                                                             |
-| [function/pipeline_job_common.sh](function/pipeline_job_common.sh)                                                                   | Shared setup of the manual run scripts: reads the settings of the target environment's scheduler Function App.         |
-| [function/requirements.txt](function/requirements.txt), [function/host.json](function/host.json)                                     | Function App packaging.                                                                                                |
+| File                                                                                             | Purpose                                                                                                                |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| [Dockerfile](Dockerfile)                                                                         | Image run by the Batch tasks. Build context is `data/`. YAML configs are baked in, so config changes need a new image. |
+| [build-and-push-image.sh](build-and-push-image.sh)                                               | Builds and pushes the image (`test`, `staging`) or promotes `staging` to `production`. Used by the publish workflows.  |
+| [function/function_app.py](function/function_app.py)                                             | Timer trigger (production) or Entra-protected HTTP route (test, staging) of the scheduler Function App.                |
+| [function/batch_client.py](function/batch_client.py)                                             | Builds and submits the Batch job and container task. Shared by scheduled and manual runs, so both behave the same.     |
+| [function/pipeline_run_request.py](function/pipeline_run_request.py)                             | Validates the optional JSON body of the manual run route.                                                              |
+| [function/run_pipeline_job.sh](function/run_pipeline_job.sh)                                     | Starts a manual run on test or staging through the HTTP route.                                                         |
+| [function/requirements.txt](function/requirements.txt), [function/host.json](function/host.json) | Function App packaging.                                                                                                |
 
 ## Environments
 

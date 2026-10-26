@@ -4,33 +4,33 @@ How to start, monitor and debug pipeline jobs in Azure. See the [deployment READ
 
 ## Manually starting a job
 
-The scripts below submit a one-off job to the Azure Batch pool of an environment (`test`, `staging` or `prod`). The job gets exactly the same settings as the scheduled run of that environment: the scripts read them from its scheduler Function App. No local `.env` is needed. Logs of these jobs have run origin `manual`.
+`function/run_pipeline_job.sh` starts a one-off run on the `test` or `staging` environment. It calls the `POST /api/pipeline-jobs` route of the environment's scheduler Function App, which submits the Batch job(s) with its own settings and managed identity. Logs of these jobs have run origin `manual`. In production, jobs are only started by the daily schedule.
 
 ### Prerequisites
 
-- `az login` with an identity that has, for the target environment:
-  - `Azure Batch Job Submitter` on the Batch account
-  - `Key Vault Secrets User` on the Batch Key Vault
-  - `Website Contributor` on the scheduler Function App (listing app settings is a write-level action)
-- `uv` installed.
+- Membership of the developer group assigned to the scheduler's Entra ID enterprise application. No Azure roles are needed.
+- `NRW_ENTRA_TENANT_ID`, `NRW_SUBSCRIPTION_ID`, `NRW_SCHEDULER_TEST_CLIENT_ID` and `NRW_SCHEDULER_STAGING_CLIENT_ID` set in `data/.env` (see `data/.env.example`).
+- Azure CLI installed. The script calls the route with `az rest`, and runs `az login` for the scheduler's tenant and scope when there is no valid login yet.
 
-### Live data run
+### Starting a run
 
-Runs the same job as the scheduled run, with live data (e.g. GloFAS for floods). From `data/pipelines/deploy/`:
+From `data/pipelines/deploy/`:
 
 ```bash
-./function/run_pipeline_job.sh test floods
+./function/run_pipeline_job.sh [--environment test|staging] [--hazard-type <hazard>] [--mock 0|1] [--country <ISO3>[,<ISO3>...]]
 ```
 
-### Mock data run
-
-`--mock` is required; all other arguments are passed to the pipeline unchanged (see the [pipelines README](../README.md#running-a-pipeline) for the flags). Mock runs are rejected in production.
+All options are optional. `--environment` defaults to `test`. Without the other options, the Function App submits exactly the jobs of the daily schedule, with live data (e.g. GloFAS for floods). For example:
 
 ```bash
-./function/mock_run_pipeline_job.sh test floods --mock 1 --country KEN
+# Same jobs as the daily schedule, on test
+./function/run_pipeline_job.sh
+
+# Floods only, with mock data containing an alert, for Kenya, on staging
+./function/run_pipeline_job.sh --environment staging --hazard-type floods --mock 1 --country KEN
 ```
 
-Both scripts print the ID of the submitted Batch job.
+The script prints the IDs of the submitted Batch jobs.
 
 ## Checking job status
 

@@ -57,7 +57,6 @@ TASK_ENVIRONMENT_VARIABLES = (
     # Set by main.bicep on the Function App; enables pipeline log export to
     # Application Insights inside the Batch task containers.
     "APPLICATIONINSIGHTS_CONNECTION_STRING",
-    "PIPELINE_RUN_ORIGIN",
 )
 
 
@@ -65,21 +64,21 @@ TASK_ENVIRONMENT_VARIABLES = (
 # command line, so reject anything outside a conservative allowlist of characters.
 HAZARD_TYPE_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 CONFIG_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_./-]+$")
-EXTRA_ARG_PATTERN = re.compile(r"^[A-Za-z0-9_./:,=+-]+$")
+COUNTRY_CODE_PATTERN = re.compile(r"^[A-Z]{3}$")
 
 
 @dataclass(frozen=True)
 class PipelineConfig:
     """A pipeline YAML config baked into the pipeline container image.
 
-    extra_args carries extra pipeline flags (see pipelines/infra/run_forecasts.py)
-    for manual debug/test reruns; each token is validated against
-    EXTRA_ARG_PATTERN and extra_args requires --mock.
+    mock and countries map to the pipeline's --mock and --country flags (see
+    pipelines/infra/run_forecasts.py), for manual test runs.
     """
 
     hazard_type: str
     config_path: str
-    extra_args: tuple[str, ...] = ()
+    mock: int | None = None
+    countries: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not HAZARD_TYPE_PATTERN.fullmatch(self.hazard_type):
@@ -88,19 +87,18 @@ class PipelineConfig:
             self.config_path
         ):
             raise ValueError(f"Invalid config path '{self.config_path}'.")
-        for extra_arg in self.extra_args:
-            if not EXTRA_ARG_PATTERN.fullmatch(extra_arg):
-                raise ValueError(f"Invalid extra argument '{extra_arg}'.")
-        if self.extra_args and not any(
-            arg == "--mock" or arg.startswith("--mock=") for arg in self.extra_args
-        ):
-            raise ValueError("extra_args requires --mock to be set.")
+        if self.mock is not None and self.mock < 0:
+            raise ValueError(f"Invalid mock alert count '{self.mock}'.")
+        for country in self.countries:
+            if not COUNTRY_CODE_PATTERN.fullmatch(country):
+                raise ValueError(f"Invalid country '{country}'.")
 
 
 def submit_pipeline_job(
     batch_client: BatchClient,
     pipeline_config: PipelineConfig,
     run_started_at: datetime,
+    run_origin: str,
 ) -> str:
     """Create one Batch job with a single container task for the given hazard."""
     job_id = build_job_id(pipeline_config, run_started_at)
@@ -111,7 +109,9 @@ def submit_pipeline_job(
             all_tasks_complete_mode=BatchAllTasksCompleteMode.TERMINATE_JOB,
         )
     )
-    batch_client.create_task(job_id, build_container_task(pipeline_config, job_id))
+    batch_client.create_task(
+        job_id, build_container_task(pipeline_config, job_id, run_origin)
+    )
     return job_id
 
 
@@ -129,7 +129,7 @@ def build_job_id(pipeline_config: PipelineConfig, run_started_at: datetime) -> s
 
 
 def build_container_task(
-    pipeline_config: PipelineConfig, job_id: str
+    pipeline_config: PipelineConfig, job_id: str, run_origin: str
 ) -> BatchTaskCreateOptions:
     """Container task mirroring local invocation: `pipeline --config <path>`."""
     return BatchTaskCreateOptions(
@@ -141,7 +141,7 @@ def build_container_task(
             # path resolves; Batch otherwise defaults to the task working directory.
             working_directory=ContainerWorkingDirectory.CONTAINER_IMAGE_DEFAULT,
         ),
-        environment_settings=task_environment_settings(),
+        environment_settings=task_environment_settings(run_origin),
         constraints=BatchTaskConstraints(
             max_wall_clock_time=TASK_MAX_WALL_CLOCK_TIME,
             max_task_retry_count=TASK_MAX_RETRY_COUNT,
@@ -159,16 +159,22 @@ def build_command_line(pipeline_config: PipelineConfig) -> str:
         pipeline_config.config_path,
         "--output-path",
         f"{data_cache_dir}/pipeline-output",
-        *pipeline_config.extra_args,
     ]
+    if pipeline_config.mock is not None:
+        parts += ["--mock", str(pipeline_config.mock)]
+    if pipeline_config.countries:
+        parts += ["--country", ",".join(pipeline_config.countries)]
     return " ".join(parts)
 
 
-def task_environment_settings() -> list[EnvironmentSetting]:
+def task_environment_settings(run_origin: str) -> list[EnvironmentSetting]:
     """Read the pipeline environment variables from the Function App settings."""
     return [
-        EnvironmentSetting(name=name, value=require_app_setting(name))
-        for name in TASK_ENVIRONMENT_VARIABLES
+        *(
+            EnvironmentSetting(name=name, value=require_app_setting(name))
+            for name in TASK_ENVIRONMENT_VARIABLES
+        ),
+        EnvironmentSetting(name="PIPELINE_RUN_ORIGIN", value=run_origin),
     ]
 
 
