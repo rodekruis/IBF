@@ -522,6 +522,22 @@ def test_download_ftp_file_retries_failed_reconnect() -> None:
     assert ftp is reconnected_ftp
 
 
+def test_download_ftp_file_closes_new_connection_on_permanent_rejection() -> None:
+    # Arrange
+    new_ftp = MagicMock()
+    new_ftp.retrbinary.side_effect = ftplib.error_perm("550 No such file")
+
+    # Act
+    with (
+        patch(f"{PROVIDER_MODULE}._connect_ftp", return_value=new_ftp),
+        pytest.raises(FileNotFoundError, match="FTP server rejected"),
+    ):
+        _download_ftp_file(None, "dis_04.nc", "host", "user", "pass", "remote_dir")
+
+    # Assert
+    new_ftp.quit.assert_called_once()
+
+
 def test_download_ensemble_files_raises_connection_error_when_reconnects_fail(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

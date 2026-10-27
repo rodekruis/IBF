@@ -372,6 +372,8 @@ def _download_ftp_file(
             ftp.retrbinary(f"RETR {filename}", buffer.write)
             return buffer.getvalue(), ftp
         except ftplib.error_perm as exc:
+            if ftp is not None:
+                _close_ftp(ftp)
             raise FileNotFoundError(f"FTP server rejected '{filename}': {exc}") from exc
         except ftplib.all_errors as exc:
             log_warning(
