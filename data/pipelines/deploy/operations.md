@@ -4,33 +4,50 @@ How to start, monitor and debug pipeline jobs in Azure. See the [deployment READ
 
 ## Manually starting a job
 
-The scripts below submit a one-off job to the Azure Batch pool of an environment (`test`, `staging` or `prod`). The job gets exactly the same settings as the scheduled run of that environment: the scripts read them from its scheduler Function App. No local `.env` is needed. Logs of these jobs have run origin `manual`.
+`function/run_pipeline_job.sh` starts a one-off run on the `test` or `staging` environment. It calls the `POST /api/pipeline-jobs` route of the environment's scheduler Function App, which submits the Batch job(s) with its own settings and managed identity. Logs of these jobs have run origin `manual`. In production, jobs are only started by the daily schedule.
 
 ### Prerequisites
 
-- `az login` with an identity that has, for the target environment:
-  - `Azure Batch Job Submitter` on the Batch account
-  - `Key Vault Secrets User` on the Batch Key Vault
-  - `Website Contributor` on the scheduler Function App (listing app settings is a write-level action)
-- `uv` installed.
+- Membership of the security group 'NRW developers'.
+- `NRW_ENTRA_TENANT_ID`, `NRW_SUBSCRIPTION_ID` and `NRW_SCHEDULER_<ENVIRONMENT>_CLIENT_ID` set in `data/.env` or exported in your shell (shell values take precedence). Replace the `<fill-in>` placeholders from `data/.env.example` with the UUIDs from the Bitwarden collection 'Product - Impact based forecast platform/Development'. Only the scheduler client ID for the selected environment is required. The script rejects missing or invalid IDs before calling Azure CLI.
+- Azure CLI 2.86.0 or newer installed. The script calls the route with `az rest`, and runs `az login` for the scheduler's tenant and scope when there is no valid login yet.
 
-### Live data run
-
-Runs the same job as the scheduled run, with live data (e.g. GloFAS for floods). From `data/pipelines/deploy/`:
-
-```bash
-./function/run_pipeline_job.sh test floods
+```zsh
+brew update && brew install azure-cli
 ```
 
-### Mock data run
+### Starting a run
 
-`--mock` is required; all other arguments are passed to the pipeline unchanged (see the [pipelines README](../README.md#running-a-pipeline) for the flags). Mock runs are rejected in production.
+From `data/pipelines/deploy/`:
 
 ```bash
-./function/mock_run_pipeline_job.sh test floods --mock 1 --country KEN
+./function/run_pipeline_job.sh [--environment test|staging] [--hazard-type <hazard>] [--mock 0|1] [--country <ISO3>[,<ISO3>...]]
 ```
 
-Both scripts print the ID of the submitted Batch job.
+All options are optional. `--environment` defaults to `test`. Without the other options, the Function App submits exactly the jobs of the daily schedule, with live data (e.g. GloFAS for floods). For example:
+
+```bash
+# Same jobs as the daily schedule, on test
+./function/run_pipeline_job.sh
+
+# Floods only, with mock data containing an alert, for Kenya, on staging
+./function/run_pipeline_job.sh --environment staging --hazard-type floods --mock 1 --country KEN
+```
+
+The script prints the IDs of the submitted Batch jobs.
+
+## Re-running a failed production job
+
+The manual route is not available in production, but the daily timer function can be triggered by hand:
+
+1. Check in the Batch account that the earlier job really failed (see [Checking job status](#checking-job-status)). A re-run starts a new job and does not resume the failed one, so re-running a job that is still running or succeeded processes the same data twice.
+2. In the Azure Portal, open the production scheduler Function App (`nrw-batch-scheduler-prod`) → **Functions** → `daily_pipeline_scheduler` → **Code + Test** → **Test/Run** → **Run**. This needs Contributor access on the Function App.
+3. Open the new job in the Batch account to follow it.
+
+Limitations:
+
+- It submits exactly the jobs of the daily schedule, with live data. You cannot select a hazard or country.
+- The run has run origin `scheduled`, like the regular daily run. Note the time of the re-run to tell the two apart in the logs.
 
 ## Checking job status
 
@@ -46,9 +63,6 @@ Test and staging share a Batch account. To see which environment a job belongs t
 ### Application Insights
 
 Open **Logs** on the environment's Application Insights component. It contains both the pipeline logs (role name `nrw-pipeline`) and the scheduler Function App logs (role name = Function App name).
-
-> [!NOTE]
-> Test and staging share one Application Insights component, and their pipeline logs both have role name `nrw-pipeline`, so these cannot be told apart in the logs yet.
 
 All warnings and errors in a time range:
 
@@ -176,11 +190,11 @@ The email only says that a task failed, not why: check the logs above. The alert
 
 ## Common problems
 
-| Symptom                                                                                          | Cause and fix                                                                                                                                                                                                                            |
-| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| No job was submitted at the scheduled time                                                       | Check the scheduler's logs in Application Insights (role name = Function App name) and the Function App's **Environment variables**: every Key Vault reference must show as resolved. After rotating a secret, restart the Function App. |
-| Task fails immediately with an image pull error                                                  | The image `pipelines:<IBF_ENVIRONMENT>` does not exist in `nrwdockerregistry`. Run the `publish_<env>_pipeline_docker_image` workflow.                                                                                                   |
-| Job stays queued; no node starts                                                                 | Check the pool's resize errors. `AllocationFailed` with "subnet has delegation" means the pool subnet (`BatchPools-<env>`) has a subnet delegation, which must be removed in `NRW-infra`.                                                |
-| Task ends with exit code 137                                                                     | The pipeline ran out of memory on the node.                                                                                                                                                                                              |
-| Task is terminated after 10 hours                                                                | The task hit its maximum run time (`TASK_MAX_WALL_CLOCK_TIME` in [batch_client.py](function/batch_client.py)).                                                                                                                           |
-| Manual run script fails with `App setting '...' not found on Function App` or a permission error | Check the [prerequisites](#prerequisites) for the target environment.                                                                                                                                                                    |
+| Symptom                                         | Cause and fix                                                                                                                                                                                                                            |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No job was submitted at the scheduled time      | Check the scheduler's logs in Application Insights (role name = Function App name) and the Function App's **Environment variables**: every Key Vault reference must show as resolved. After rotating a secret, restart the Function App. |
+| Task fails immediately with an image pull error | The image `pipelines:<IBF_ENVIRONMENT>` does not exist in `nrwdockerregistry`. Run the `publish_<env>_pipeline_docker_image` workflow.                                                                                                   |
+| Job stays queued; no node starts                | Check the pool's resize errors. `AllocationFailed` with "subnet has delegation" means the pool subnet (`BatchPools-<env>`) has a subnet delegation, which must be removed in `NRW-infra`.                                                |
+| Task ends with exit code 137                    | The pipeline ran out of memory on the node.                                                                                                                                                                                              |
+| Task is terminated after 10 hours               | The task hit its maximum run time (`TASK_MAX_WALL_CLOCK_TIME` in [batch_client.py](function/batch_client.py)).                                                                                                                           |
+| Manual run script fails with a permission error | Check the [prerequisites](#prerequisites) for the target environment.                                                                                                                                                                    |
