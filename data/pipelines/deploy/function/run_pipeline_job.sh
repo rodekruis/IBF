@@ -47,7 +47,6 @@ main() {
   done
 
   validate_options "${environment}" "${hazard_type}" "${mock}" "${countries}"
-  require_azure_cli_version "${MINIMUM_AZURE_CLI_VERSION}"
 
   local environment_upper
   environment_upper="$(printf '%s' "${environment}" | tr '[:lower:]' '[:upper:]')"
@@ -55,6 +54,7 @@ main() {
   tenant_id="$(read_setting NRW_ENTRA_TENANT_ID)"
   subscription_id="$(read_setting NRW_SUBSCRIPTION_ID)"
   client_id="$(read_setting "NRW_SCHEDULER_${environment_upper}_CLIENT_ID")"
+  require_azure_cli_version "${MINIMUM_AZURE_CLI_VERSION}"
 
   local url="https://nrw-batch-scheduler-${environment}.azurewebsites.net/api/pipeline-jobs"
   local request_body
@@ -168,7 +168,11 @@ read_setting() {
     value="${value#\'}"; value="${value%\'}"
   fi
   if [[ -z "${value}" ]]; then
-    echo "Setting '${name}' is not set. Add it to data/.env (see data/.env.example)." >&2
+    echo "Setting '${name}' is not set. Get the value from Bitwarden and set it in your /data ENV file." >&2
+    exit 1
+  fi
+  if [[ ! "${value}" =~ ^[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}$ ]]; then
+    echo "Setting '${name}' must be a UUID. Get the value from Bitwarden and set it in your /data ENV file." >&2
     exit 1
   fi
   printf '%s' "${value}"
