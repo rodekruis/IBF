@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ftplib
 import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -7,6 +8,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from pipelines.infra.data_types.glofas_discharge_provider import (
+    _download_ensemble_files,
+    _download_ftp_file,
     _get_highest_ensemble_index,
     _resolve_forecast_date,
     _validate_ensemble_count,
@@ -484,3 +487,65 @@ def test_resolve_forecast_date_fails_after_retries_exhausted_in_production(
 
         with pytest.raises(FileNotFoundError, match="after 14 attempts"):
             _resolve_forecast_date("20260707", "user", "pass", "host")
+
+
+# ---------------------------------------------------------------------------
+# FTP download retries
+# ---------------------------------------------------------------------------
+
+PROVIDER_MODULE = "pipelines.infra.data_types.glofas_discharge_provider"
+
+
+def test_download_ftp_file_retries_failed_reconnect() -> None:
+    # Arrange
+    dropped_ftp = MagicMock()
+    dropped_ftp.retrbinary.side_effect = EOFError()
+    reconnected_ftp = MagicMock()
+    reconnected_ftp.retrbinary.side_effect = lambda _command, callback: callback(
+        b"content"
+    )
+
+    # Act
+    with (
+        patch(
+            f"{PROVIDER_MODULE}._connect_ftp",
+            side_effect=[ConnectionResetError(), reconnected_ftp],
+        ),
+        patch(f"{PROVIDER_MODULE}.time.sleep"),
+    ):
+        content, ftp = _download_ftp_file(
+            dropped_ftp, "dis_04.nc", "host", "user", "pass", "remote_dir"
+        )
+
+    # Assert
+    assert content == b"content"
+    assert ftp is reconnected_ftp
+
+
+def test_download_ensemble_files_raises_connection_error_when_reconnects_fail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Arrange
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+    dropping_ftp = ftplib.FTP()
+
+    # Act & Assert
+    with (
+        patch.object(dropping_ftp, "cwd"),
+        patch.object(dropping_ftp, "retrbinary", side_effect=[None, EOFError()]),
+        patch(
+            f"{PROVIDER_MODULE}._connect_ftp",
+            side_effect=[dropping_ftp, ConnectionResetError(), ConnectionResetError()],
+        ),
+        patch(f"{PROVIDER_MODULE}.time.sleep"),
+        pytest.raises(ConnectionError, match="after 3 attempts"),
+    ):
+        _download_ensemble_files(
+            "host",
+            "user",
+            "pass",
+            FORECAST_DATE,
+            ensemble_count=2,
+            start_index=0,
+            country="ETH",
+        )

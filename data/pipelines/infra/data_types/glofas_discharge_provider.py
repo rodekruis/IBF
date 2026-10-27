@@ -135,8 +135,7 @@ def _download_ensemble_files(
     downloaded_paths: list[str] = list(cached_files) if cached_files is not None else []
 
     download_start = time.monotonic()
-    ftp = _connect_ftp(host, user, password)
-    ftp.cwd(remote_dir)
+    ftp: ftplib.FTP | None = None
 
     try:
         # Grab new ensemble files, starting from the highest index found in cached files
@@ -160,10 +159,8 @@ def _download_ensemble_files(
 
             downloaded_paths.append(local_path)
     finally:
-        try:
-            ftp.quit()
-        except ftplib.all_errors:
-            ftp.close()
+        if ftp is not None:
+            _close_ftp(ftp)
 
     download_duration_seconds = time.monotonic() - download_start
     log_with_tag(
@@ -341,15 +338,25 @@ def _connect_ftp(host: str, user: str, password: str, timeout: int = 60) -> ftpl
     return ftp
 
 
+def _close_ftp(ftp: ftplib.FTP) -> None:
+    # quit() on an already closed connection raises AttributeError
+    if ftp.sock is None:
+        return
+    try:
+        ftp.quit()
+    except ftplib.all_errors:
+        ftp.close()
+
+
 def _download_ftp_file(
-    ftp: ftplib.FTP,
+    ftp: ftplib.FTP | None,
     filename: str,
     host: str,
     user: str,
     password: str,
     remote_dir: str,
 ) -> tuple[bytes, ftplib.FTP]:
-    """Download a single file, reconnecting on transient errors.
+    """Download a single file, (re)connecting on transient errors.
     Returns the file content together with the (possibly re-established) FTP
     connection, so the caller continues with a live connection.
     """
@@ -358,6 +365,9 @@ def _download_ftp_file(
     max_retries = 3
     for attempt in range(1, max_retries + 1):
         try:
+            if ftp is None:
+                ftp = _connect_ftp(host, user, password)
+                ftp.cwd(remote_dir)
             buffer = io.BytesIO()
             ftp.retrbinary(f"RETR {filename}", buffer.write)
             return buffer.getvalue(), ftp
@@ -367,22 +377,21 @@ def _download_ftp_file(
             log_warning(
                 logger,
                 LogTag.INFRA,
-                f"Attempt {attempt}/{max_retries} failed for '{filename}': {exc}",
+                f"Attempt {attempt}/{max_retries} failed for '{filename}': {exc!r}",
             )
+            # The connection might be dead
+            # Rebuild it before retrying
+            if ftp is not None:
+                try:
+                    ftp.close()
+                except ftplib.all_errors:
+                    pass
+                ftp = None
             if attempt == max_retries:
                 raise ConnectionError(
                     f"Failed to download '{filename}' after {max_retries} attempts"
                 ) from exc
-
-            # The connection might be dead
-            # Rebuild it before retrying
-            try:
-                ftp.close()
-            except ftplib.all_errors:
-                pass
             time.sleep(retry_backoff_seconds * attempt)
-            ftp = _connect_ftp(host, user, password)
-            ftp.cwd(remote_dir)
 
     raise ConnectionError(
         f"Failed to download '{filename}' after {max_retries} attempts"
@@ -413,10 +422,7 @@ def _check_forecast_date_available(
         ftp.cwd(GLOFAS_FTP_BASE_PATH)
         available_dates = sorted(ftp.nlst())
     finally:
-        try:
-            ftp.quit()
-        except ftplib.all_errors:
-            ftp.close()
+        _close_ftp(ftp)
 
     if today in available_dates:
         return today
@@ -443,10 +449,7 @@ def _resolve_forecast_date_with_retry(
             ftp.cwd(GLOFAS_FTP_BASE_PATH)
             available_dates = sorted(ftp.nlst())
         finally:
-            try:
-                ftp.quit()
-            except ftplib.all_errors:
-                ftp.close()
+            _close_ftp(ftp)
 
         if today in available_dates:
             return today
