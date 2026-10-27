@@ -22,6 +22,7 @@ from pipeline_run_request import (
 )
 
 logger = logging.getLogger(__name__)
+logging.getLogger("azure").setLevel(logging.WARNING)
 
 IBF_ENVIRONMENT = os.environ.get("IBF_ENVIRONMENT")
 
@@ -102,6 +103,10 @@ elif IBF_ENVIRONMENT in ["test", "staging"]:
         auth_level=func.AuthLevel.ANONYMOUS,
     )
     def manual_pipeline_scheduler(request: func.HttpRequest) -> func.HttpResponse:
+        logger.info(
+            "Manual pipeline scheduler invoked by: %s.",
+            request.headers.get("X-MS-CLIENT-PRINCIPAL-NAME", "unknown"),
+        )
         try:
             run_request = parse_pipeline_run_request(request.get_body())
         except InvalidPipelineRunRequest as error:
