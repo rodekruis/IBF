@@ -67,6 +67,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Get Ubuntu version
+        id: ubuntu-version
+        run: |
+          . /etc/os-release
+          echo "version=${VERSION_ID}" >> "$GITHUB_OUTPUT"
+
       - name: Set apt cache permissions
         run: sudo chown -R "$(id -u)" /var/cache/apt/archives
 
@@ -74,7 +80,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: /var/cache/apt/archives
-          key: apt-gdal
+          key: apt-gdal-${{ runner.os }}-${{ steps.ubuntu-version.outputs.version }}
 
       - name: Install system dependencies
         run: |
