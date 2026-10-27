@@ -81,7 +81,6 @@ jobs:
         with:
           path: /var/cache/apt/archives
           key: apt-gdal-${{ runner.os }}-${{ steps.ubuntu-version.outputs.version }}
-          restore-keys: apt-gdal
 
       - name: Install system dependencies
         run: |
