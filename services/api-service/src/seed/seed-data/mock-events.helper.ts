@@ -130,42 +130,134 @@ export function getMockCountriesForHazards(
 
 const MOCK_FORECAST_DAY_COUNT = 8;
 
-// Every flood event carries a basic waterDischarge time series on its GloFAS station.
-// Values are basic (same per day), but real station-threshold-based.
-// Individual events may override with richer, hand-crafted data (see 'Tendaho' below).
-// Events starting later than day 0 get a discharge below the station's lowest threshold before their start day.
+// Relative half-width of the default forecast range around the median, growing linearly with lead time
+const MOCK_DISCHARGE_SPREAD_FIRST_DAY = 0.05;
+const MOCK_DISCHARGE_SPREAD_LAST_DAY = 0.25;
+// Default discharge on day 0 relative to dischargeBeforeStart, rising linearly towards the onset
+const MOCK_DISCHARGE_PRE_ONSET_START_RATIO = 0.85;
+// Default peak day relative to the start day, after which the discharge recedes
+const MOCK_DISCHARGE_PEAK_OFFSET_DAYS = 1;
+// Max relative dip from the peak (= medianDischarge) after onset. Must stay below the smallest
+// headroom between a mock medianDischarge and its return-period threshold (currently 3.9% at G1904).
+const MOCK_DISCHARGE_MAX_DIP_AFTER_ONSET = 0.03;
+
+interface MockWaterDischargeDay {
+  day: number;
+  median: number;
+  // 10th/90th percentile of the ensemble; defaults to a range widening with lead time (see withDefaultRange)
+  low?: number;
+  high?: number;
+}
+
+// Every flood event carries a waterDischarge time series on its GloFAS station.
+// By default it is derived from a real station-threshold-based medianDischarge (see buildDefaultMedianDischarge).
+// Individual events may override with hand-crafted data via waterDischarge (see 'Tendaho' below).
 function buildBasicGlofasStationGeoFeature({
   issuedAt,
   geoFeatureId,
-  discharge,
-  onset,
+  ...discharge
 }: {
   issuedAt: Date;
   geoFeatureId: string;
-  discharge: { median: number; low: number; high: number };
-  onset?: { startDay: number; dischargeBeforeStart: number };
-}) {
+} & (
+  | {
+      medianDischarge: number;
+      onset?: { startDay: number; dischargeBeforeStart: number };
+    }
+  | { waterDischarge: MockWaterDischargeDay[] }
+)) {
+  const waterDischarge =
+    'waterDischarge' in discharge
+      ? discharge.waterDischarge
+      : buildDefaultMedianDischarge(discharge);
   return {
     geoFeatureId,
     layer: LayerName.glofasStations,
     attributes: {
-      waterDischarge: Array.from(
-        { length: MOCK_FORECAST_DAY_COUNT },
-        (_, day) => {
-          const isBeforeStart = onset !== undefined && day < onset.startDay;
-          return {
-            start: addDays(issuedAt, day).toISOString(),
-            end: addDays(issuedAt, day + 1).toISOString(),
-            median: isBeforeStart
-              ? onset.dischargeBeforeStart
-              : discharge.median,
-            low: isBeforeStart ? onset.dischargeBeforeStart : discharge.low,
-            high: isBeforeStart ? onset.dischargeBeforeStart : discharge.high,
-          };
-        },
-      ),
+      waterDischarge: waterDischarge.map((entry) => ({
+        start: addDays(issuedAt, entry.day).toISOString(),
+        end: addDays(issuedAt, entry.day + 1).toISOString(),
+        ...withDefaultRange(entry),
+      })),
     },
   };
+}
+
+// Before the start day the median rises towards dischargeBeforeStart, which is below the station's lowest threshold.
+// From the start day it forms a hump peaking at medianDischarge, with dips small enough to never cross
+// the event's return-period thresholds.
+function buildDefaultMedianDischarge({
+  medianDischarge,
+  onset,
+}: {
+  medianDischarge: number;
+  onset?: { startDay: number; dischargeBeforeStart: number };
+}): MockWaterDischargeDay[] {
+  const startDay = onset?.startDay ?? 0;
+  return Array.from({ length: MOCK_FORECAST_DAY_COUNT }, (_, day) => ({
+    day,
+    median:
+      onset !== undefined && day < onset.startDay
+        ? getPreOnsetDischarge({ day, ...onset })
+        : roundToTwoDecimals(
+            medianDischarge * getPostOnsetRatio({ day, startDay }),
+          ),
+  }));
+}
+
+function withDefaultRange({ day, median, low, high }: MockWaterDischargeDay): {
+  median: number;
+  low: number;
+  high: number;
+} {
+  const spread =
+    MOCK_DISCHARGE_SPREAD_FIRST_DAY +
+    ((MOCK_DISCHARGE_SPREAD_LAST_DAY - MOCK_DISCHARGE_SPREAD_FIRST_DAY) * day) /
+      (MOCK_FORECAST_DAY_COUNT - 1);
+  return {
+    median,
+    low: low ?? roundToTwoDecimals(median * (1 - spread)),
+    high: high ?? roundToTwoDecimals(median * (1 + spread)),
+  };
+}
+
+function getPreOnsetDischarge({
+  day,
+  startDay,
+  dischargeBeforeStart,
+}: {
+  day: number;
+  startDay: number;
+  dischargeBeforeStart: number;
+}): number {
+  const progress = startDay > 1 ? day / (startDay - 1) : 1;
+  const ratio =
+    MOCK_DISCHARGE_PRE_ONSET_START_RATIO +
+    (1 - MOCK_DISCHARGE_PRE_ONSET_START_RATIO) * progress;
+  return roundToTwoDecimals(dischargeBeforeStart * ratio);
+}
+
+function getPostOnsetRatio({
+  day,
+  startDay,
+}: {
+  day: number;
+  startDay: number;
+}): number {
+  const lastDay = MOCK_FORECAST_DAY_COUNT - 1;
+  const peakDay = Math.min(startDay + MOCK_DISCHARGE_PEAK_OFFSET_DAYS, lastDay);
+  if (day === peakDay) {
+    return 1;
+  }
+  const dipFraction =
+    day < peakDay
+      ? (peakDay - day) / (peakDay - startDay + 1)
+      : (day - peakDay) / (lastDay - peakDay);
+  return 1 - MOCK_DISCHARGE_MAX_DIP_AFTER_ONSET * dipFraction;
+}
+
+function roundToTwoDecimals(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 // Days before startDay get no severity, as the pipeline only outputs time intervals above its minimum return period.
@@ -250,7 +342,7 @@ function buildPartialExceedanceFloodSeverity({
 // ─── Country alert builders ──────────────────────────────────────────────────
 
 function buildEthiopiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
-  // The 'Tendaho' event overrides the basic waterDischarge with richer per-day severity variation.
+  // The 'Tendaho' event overrides the default waterDischarge medians to match its per-day severity variation.
   const tendahoPerDaySeverities: {
     day: number;
     median: number;
@@ -265,14 +357,14 @@ function buildEthiopiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
     { day: 7, median: 2, runs: Array<number>(10).fill(2) },
   ];
   const tendahoWaterDischarge = [
-    { day: 0, median: 955, low: 901, high: 1008 },
-    { day: 1, median: 1102, low: 1081, high: 1135 },
-    { day: 2, median: 1245, low: 1081, high: 1326 },
-    { day: 3, median: 1245, low: 1194, high: 1326 },
-    { day: 4, median: 1413, low: 1081, high: 1467 },
-    { day: 5, median: 1413, low: 1194, high: 1467 },
-    { day: 6, median: 1413, low: 1380, high: 1467 },
-    { day: 7, median: 1245, low: 1194, high: 1326 },
+    { day: 0, median: 955 },
+    { day: 1, median: 1102 },
+    { day: 2, median: 1245 },
+    { day: 3, median: 1245 },
+    { day: 4, median: 1413 },
+    { day: 5, median: 1413 },
+    { day: 6, median: 1413 },
+    { day: 7, median: 1245 },
   ];
 
   return [
@@ -375,7 +467,7 @@ function buildEthiopiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G1053',
-            discharge: { median: 1251.16, low: 1251.16, high: 1251.16 },
+            medianDischarge: 1251.16,
             onset: { startDay: 4, dischargeBeforeStart: 958.77 },
           }),
         ],
@@ -480,21 +572,11 @@ function buildEthiopiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           },
         ],
         geoFeatures: [
-          {
+          buildBasicGlofasStationGeoFeature({
+            issuedAt,
             geoFeatureId: 'G1045',
-            layer: LayerName.glofasStations,
-            attributes: {
-              waterDischarge: tendahoWaterDischarge.map(
-                ({ day, median, low, high }) => ({
-                  start: addDays(issuedAt, day).toISOString(),
-                  end: addDays(issuedAt, day + 1).toISOString(),
-                  median,
-                  low,
-                  high,
-                }),
-              ),
-            },
-          },
+            waterDischarge: tendahoWaterDischarge,
+          }),
         ],
         rasters: [
           {
@@ -572,7 +654,7 @@ function buildEthiopiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G1904',
-            discharge: { median: 1426.93, low: 1426.93, high: 1426.93 },
+            medianDischarge: 1426.93,
           }),
         ],
         rasters: [
@@ -759,7 +841,7 @@ function buildUgandaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G5317',
-            discharge: { median: 87.42, low: 87.42, high: 87.42 },
+            medianDischarge: 87.42,
             onset: { startDay: 1, dischargeBeforeStart: 73.85 },
           }),
         ],
@@ -1344,7 +1426,7 @@ function buildUgandaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G5075',
-            discharge: { median: 323.01, low: 323.01, high: 323.01 },
+            medianDischarge: 323.01,
             onset: { startDay: 3, dischargeBeforeStart: 230.74 },
           }),
         ],
@@ -1892,7 +1974,7 @@ function buildUgandaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G5160',
-            discharge: { median: 123.98, low: 123.98, high: 123.98 },
+            medianDischarge: 123.98,
           }),
         ],
         rasters: [
@@ -2159,7 +2241,7 @@ function buildUgandaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G5220',
-            discharge: { median: 257.23, low: 257.23, high: 257.23 },
+            medianDischarge: 257.23,
             onset: { startDay: 6, dischargeBeforeStart: 152.83 },
           }),
         ],
@@ -2234,7 +2316,7 @@ function buildMalawiFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G5694',
-            discharge: { median: 3860.89, low: 3860.89, high: 3860.89 },
+            medianDischarge: 3860.89,
             onset: { startDay: 2, dischargeBeforeStart: 1580.98 },
           }),
         ],
@@ -2398,7 +2480,7 @@ function buildKenyaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G5142',
-            discharge: { median: 8.16, low: 8.16, high: 8.16 },
+            medianDischarge: 8.16,
             onset: { startDay: 1, dischargeBeforeStart: 2.17 },
           }),
         ],
@@ -2670,7 +2752,7 @@ function buildPhilippinesFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G4611',
-            discharge: { median: 1083.58, low: 1083.58, high: 1083.58 },
+            medianDischarge: 1083.58,
             onset: { startDay: 2, dischargeBeforeStart: 400.95 },
           }),
         ],
@@ -2998,7 +3080,7 @@ function buildSouthSudanFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G5100',
-            discharge: { median: 11363.64, low: 11363.64, high: 11363.64 },
+            medianDischarge: 11363.64,
             onset: { startDay: 3, dischargeBeforeStart: 5391.47 },
           }),
         ],
@@ -3190,7 +3272,7 @@ function buildZambiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G1323',
-            discharge: { median: 725.24, low: 725.24, high: 725.24 },
+            medianDischarge: 725.24,
             onset: { startDay: 4, dischargeBeforeStart: 324.45 },
           }),
         ],
@@ -3641,7 +3723,7 @@ function buildZambiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G1361',
-            discharge: { median: 4716.61, low: 4716.61, high: 4716.61 },
+            medianDischarge: 4716.61,
             onset: { startDay: 2, dischargeBeforeStart: 2484.66 },
           }),
         ],
@@ -4801,7 +4883,7 @@ function buildZambiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G1352',
-            discharge: { median: 2623.5, low: 2623.5, high: 2623.5 },
+            medianDischarge: 2623.5,
           }),
         ],
         rasters: [
