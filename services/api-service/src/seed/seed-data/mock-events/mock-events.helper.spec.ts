@@ -2,7 +2,7 @@ import {
   buildMockForecasts,
   MockConfigError,
   SUPPORTED_MOCK_COUNTRIES,
-} from '@api-service/src/seed/seed-data/mock-events.helper';
+} from '@api-service/src/seed/seed-data/mock-events/mock-events.helper';
 import { HazardType } from '@api-service/src/shared-enums';
 
 describe('buildMockForecasts', () => {
