@@ -4,12 +4,14 @@ import ftplib
 import io
 import logging
 import os
+import ssl
 import time
 from datetime import datetime, UTC
 
 from pipelines.flood.constants import GLOFAS_MIN_ENSEMBLE_COUNT
 from pipelines.infra.environment import load_environment_settings
 from pipelines.infra.utils.nrw_logger import log_info, log_warning, log_with_tag, LogTag
+from pipelines.infra.utils.retry import retry
 from pipelines.infra.utils.storage_helpers import (
     find_latest_forecast_date_in_cache,
     get_cached_glofas_country_split_files,
@@ -23,6 +25,17 @@ from pipelines.infra.utils.storage_helpers import (
 logger = logging.getLogger(__name__)
 
 GLOFAS_FTP_BASE_PATH = "DATA/CEMS_Flood_Glofas/fc_netcdf"
+
+# Retryable FTP errors: transient protocol errors and dead connections.
+# Permanent rejections (error_perm) will never succeed on retry.
+FTP_RETRYABLE_ERRORS = (
+    ftplib.error_temp,
+    ftplib.error_reply,
+    ftplib.error_proto,
+    EOFError,
+    OSError,
+    ssl.SSLError,
+)
 
 
 def download_glofas_discharge_from_ftp(country: str) -> list[str]:
@@ -348,6 +361,51 @@ def _close_ftp(ftp: ftplib.FTP) -> None:
         ftp.close()
 
 
+class FtpConnection:
+    """FTP connection wrapper that lazily connects and rebuilds itself after failures."""
+
+    def __init__(
+        self,
+        host: str,
+        user: str,
+        password: str,
+        remote_dir: str,
+        ftp: ftplib.FTP | None = None,
+    ) -> None:
+        self.host = host
+        self.user = user
+        self.password = password
+        self.remote_dir = remote_dir
+        self.ftp = ftp
+
+    def get(self) -> ftplib.FTP:
+        if self.ftp is None:
+            self.ftp = _connect_ftp(self.host, self.user, self.password)
+            self.ftp.cwd(self.remote_dir)
+        return self.ftp
+
+    def reset(self) -> None:
+        """Drop the current connection so the next get() reconnects."""
+        if self.ftp is not None:
+            try:
+                self.ftp.close()
+            except ftplib.all_errors:
+                pass
+            self.ftp = None
+
+    def close(self) -> None:
+        if self.ftp is not None:
+            _close_ftp(self.ftp)
+            self.ftp = None
+
+
+def _retr_ftp_file(ftp: ftplib.FTP, filename: str) -> bytes:
+    """Download a single file over an open FTP connection."""
+    buffer = io.BytesIO()
+    ftp.retrbinary(f"RETR {filename}", buffer.write)
+    return buffer.getvalue()
+
+
 def _download_ftp_file(
     ftp: ftplib.FTP | None,
     filename: str,
@@ -360,44 +418,26 @@ def _download_ftp_file(
     Returns the file content together with the (possibly re-established) FTP
     connection, so the caller continues with a live connection.
     """
-    # attempt n waits RETRY_BACKOFF_SECONDS * n before reconnecting.
-    retry_backoff_seconds = 5
-    max_retries = 3
-    for attempt in range(1, max_retries + 1):
-        try:
-            if ftp is None:
-                ftp = _connect_ftp(host, user, password)
-                ftp.cwd(remote_dir)
-            buffer = io.BytesIO()
-            ftp.retrbinary(f"RETR {filename}", buffer.write)
-            return buffer.getvalue(), ftp
-        except ftplib.error_perm as exc:
-            if ftp is not None:
-                _close_ftp(ftp)
-            raise FileNotFoundError(f"FTP server rejected '{filename}': {exc}") from exc
-        except ftplib.all_errors as exc:
-            log_warning(
-                logger,
-                LogTag.INFRA,
-                f"Attempt {attempt}/{max_retries} failed for '{filename}': {exc!r}",
-            )
-            # The connection might be dead
-            # Rebuild it before retrying
-            if ftp is not None:
-                try:
-                    ftp.close()
-                except ftplib.all_errors:
-                    pass
-                ftp = None
-            if attempt == max_retries:
-                raise ConnectionError(
-                    f"Failed to download '{filename}' after {max_retries} attempts"
-                ) from exc
-            time.sleep(retry_backoff_seconds * attempt)
+    connection = FtpConnection(host, user, password, remote_dir, ftp)
 
-    raise ConnectionError(
-        f"Failed to download '{filename}' after {max_retries} attempts"
+    @retry(
+        max_attempts=3,
+        backoff_seconds=5,
+        exceptions=FTP_RETRYABLE_ERRORS,
+        on_retry=lambda _attempt, _exc: connection.reset(),
+        description=f"download '{filename}'",
     )
+    def download() -> bytes:
+        return _retr_ftp_file(connection.get(), filename)
+
+    try:
+        content = download()
+    except ftplib.error_perm as exc:
+        connection.close()
+        raise FileNotFoundError(f"FTP server rejected '{filename}': {exc}") from exc
+
+    assert connection.ftp is not None
+    return content, connection.ftp
 
 
 def _resolve_forecast_date(today: str, user: str, password: str, host: str) -> str:

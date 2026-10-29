@@ -494,6 +494,7 @@ def test_resolve_forecast_date_fails_after_retries_exhausted_in_production(
 # ---------------------------------------------------------------------------
 
 PROVIDER_MODULE = "pipelines.infra.data_types.glofas_discharge_provider"
+RETRY_MODULE = "pipelines.infra.utils.retry"
 
 
 def test_download_ftp_file_retries_failed_reconnect() -> None:
@@ -511,7 +512,7 @@ def test_download_ftp_file_retries_failed_reconnect() -> None:
             f"{PROVIDER_MODULE}._connect_ftp",
             side_effect=[ConnectionResetError(), reconnected_ftp],
         ),
-        patch(f"{PROVIDER_MODULE}.time.sleep"),
+        patch(f"{RETRY_MODULE}.time.sleep"),
     ):
         content, ftp = _download_ftp_file(
             dropped_ftp, "dis_04.nc", "host", "user", "pass", "remote_dir"
@@ -553,7 +554,7 @@ def test_download_ensemble_files_raises_connection_error_when_reconnects_fail(
             f"{PROVIDER_MODULE}._connect_ftp",
             side_effect=[dropping_ftp, ConnectionResetError(), ConnectionResetError()],
         ),
-        patch(f"{PROVIDER_MODULE}.time.sleep"),
+        patch(f"{RETRY_MODULE}.time.sleep"),
         pytest.raises(ConnectionError, match="after 3 attempts"),
     ):
         _download_ensemble_files(
