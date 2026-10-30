@@ -31,6 +31,7 @@ import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
 // - 'peak' (default): rises to the event's return period on its start day, peaks the next day, then recedes slightly.
 //   Start day varies per event, e.g. ongoing from day 0 (ETH G1904) or starting late (UGA Manafwa at Butaleja).
 // - 'receding': peaks on day 0 and declines through the lower return periods until the alert ends (UGA Mayanja).
+// - 'rising': crosses several return periods before peaking, then recedes (ETH Tendaho).
 // - Exceedance probability below 100%, from a forecast range that dips below the threshold (e.g. ZMB Kelongwa, Senanga).
 //   Use rangeScale to narrow the range where an event must stay above the country's minimum probability (e.g. ETH).
 
