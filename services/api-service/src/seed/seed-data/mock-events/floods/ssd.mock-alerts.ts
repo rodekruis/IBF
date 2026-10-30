@@ -1,21 +1,26 @@
-import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import {
   buildBasicGlofasStationGeoFeature,
-  buildFloodSeverity,
+  MockFloodAlert,
 } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-alert-builders.helper';
 import { SSD_G5100_FLOOD_DEPTH_BASE64 } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-rasters.const';
 import { LayerName } from '@api-service/src/shared-enums';
 
-export function buildSouthSudanFloodAlerts(issuedAt: Date): AlertCreateDto[] {
+export function buildSouthSudanFloodAlerts(issuedAt: Date): MockFloodAlert[] {
   return [
     {
       eventName: 'G5100',
       centroid: { latitude: 6.606, longitude: 31.5314 },
-      severity: buildFloodSeverity({
-        issuedAt,
-        startDay: 3,
-        medianReturnPeriod: 20,
-      }),
+      stationThresholds: {
+        1.5: 5990.52,
+        2: 6691.53,
+        5: 8416.7,
+        10: 9558.91,
+        20: 10654.54,
+        50: 12072.73,
+        100: 13135.46,
+        200: 14194.32,
+        500: 15591.27,
+      },
       exposure: {
         adminAreas: [
           {

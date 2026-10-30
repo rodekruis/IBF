@@ -11,10 +11,10 @@ import { CountriesService } from '@api-service/src/countries/countries.service';
 import { EventsService } from '@api-service/src/events/events.service';
 import { TeamsNotificationsService } from '@api-service/src/notifications/teams-notifications.service';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
+import { MockConfigError } from '@api-service/src/seed/seed-data/mock-events/mock-config.error';
 import {
   buildMockForecasts,
   getMockCountriesForHazards,
-  MockConfigError,
   SUPPORTED_MOCK_COUNTRIES,
 } from '@api-service/src/seed/seed-data/mock-events/mock-events.helper';
 import { SeedInit } from '@api-service/src/seed/seed-init';

@@ -28,7 +28,7 @@ You can seed the database by using the `POST api/reset` endpoint from the Swagge
 
 The `POST /api/mock` endpoint generates fake forecast events so the portal can be tested without running real pipelines.
 
-- To add or edit mock data for a country for the `events` scenario, edit its file in the hazard-type folder in `src/seed/seed-data/mock-events/` (e.g. `floods/eth.mock-alerts.ts`). Each file has a builder function (e.g. `buildEthiopiaFloodAlerts`) that returns alerts with severity and exposure. Shared flood builders (e.g. GloFAS station water discharge, flood severity) are in `src/seed/seed-data/mock-events/floods/mock-flood-alert-builders.helper.ts`.
+- To add or edit mock data for a country for the `events` scenario, edit its file in the hazard-type folder in `src/seed/seed-data/mock-events/` (e.g. `floods/eth.mock-alerts.ts`). Each file has a builder function (e.g. `buildEthiopiaFloodAlerts`) that returns alerts with exposure (and severity, except for floods). Flood severity is derived from the GloFAS station water discharge (median and forecast range) and the station's return-period thresholds (hardcoded per event, copied from the seed-data repo), so it stays consistent with the line chart. Shared flood builders are in `src/seed/seed-data/mock-events/floods/mock-flood-alert-builders.helper.ts`.
 - To add a new country, add a file in the hazard-type folder and register its builder in the `MOCK_BUILDERS` map in `src/seed/seed-data/mock-events/mock-events.helper.ts`.
 - TODO: facilitate other hazard-types and other scenarios than just `events` and `no-events` (see `src/seed/enum/mock-scenario.enum`)
 
