@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ftplib
 import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -7,9 +8,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from pipelines.infra.data_types.glofas_discharge_provider import (
+    _download_ensemble_files,
+    _download_ftp_file,
     _get_highest_ensemble_index,
     _resolve_forecast_date,
     _validate_ensemble_count,
+    FtpConnection,
     GLOFAS_MIN_ENSEMBLE_COUNT,
     load_glofas_discharge_from_local_country_files,
     load_glofas_discharge_from_local_global_files,
@@ -395,6 +399,7 @@ def test_highest_ensemble_index_ignores_unparsable_names() -> None:
 
 def _mock_ftp_with_dates(available_dates: list[str]) -> MagicMock:
     mock_ftp = MagicMock()
+    mock_ftp.__enter__.return_value = mock_ftp
     mock_ftp.nlst.return_value = available_dates
     return mock_ftp
 
@@ -484,3 +489,97 @@ def test_resolve_forecast_date_fails_after_retries_exhausted_in_production(
 
         with pytest.raises(FileNotFoundError, match="after 14 attempts"):
             _resolve_forecast_date("20260707", "user", "pass", "host")
+
+
+# ---------------------------------------------------------------------------
+# FTP download retries
+# ---------------------------------------------------------------------------
+
+PROVIDER_MODULE = "pipelines.infra.data_types.glofas_discharge_provider"
+RETRY_MODULE = "pipelines.infra.utils.retry"
+
+
+def test_download_ftp_file_retries_failed_reconnect() -> None:
+    # Arrange
+    dropped_ftp = MagicMock()
+    dropped_ftp.retrbinary.side_effect = EOFError()
+    reconnected_ftp = MagicMock()
+    reconnected_ftp.retrbinary.side_effect = lambda _command, callback: callback(
+        b"content"
+    )
+
+    connection = FtpConnection("host", "user", "pass", "remote_dir")
+    connection.ftp = dropped_ftp
+
+    # Act
+    with (
+        patch(
+            f"{PROVIDER_MODULE}._connect_ftp",
+            side_effect=[ConnectionResetError(), reconnected_ftp],
+        ),
+        patch(f"{RETRY_MODULE}.time.sleep"),
+    ):
+        content = _download_ftp_file(connection, "dis_04.nc")
+
+    # Assert
+    assert content == b"content"
+    assert connection.ftp is reconnected_ftp
+    dropped_ftp.close.assert_called_once()
+
+
+def test_download_ftp_file_closes_new_connection_on_permanent_rejection() -> None:
+    # Arrange
+    new_ftp = MagicMock()
+    new_ftp.retrbinary.side_effect = ftplib.error_perm("550 No such file")
+
+    # Act
+    with (
+        patch(f"{PROVIDER_MODULE}._connect_ftp", return_value=new_ftp),
+        pytest.raises(FileNotFoundError, match="FTP server rejected"),
+        FtpConnection("host", "user", "pass", "remote_dir") as connection,
+    ):
+        _download_ftp_file(connection, "dis_04.nc")
+
+    # Assert
+    new_ftp.quit.assert_called_once()
+
+
+def test_download_ensemble_files_raises_connection_error_when_connection_drops_and_reconnects_fail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Arrange
+    monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
+    # Real FTP (not a MagicMock): closing an already-closed real connection used to
+    # raise AttributeError during cleanup, masking the ConnectionError
+    dropping_ftp = ftplib.FTP()
+    first_file_succeeds_then_connection_drops = [None, EOFError()]
+    connect_once_then_reconnects_fail = [
+        dropping_ftp,
+        ConnectionResetError(),
+        ConnectionResetError(),
+    ]
+
+    # Act & Assert
+    with (
+        patch.object(dropping_ftp, "cwd"),
+        patch.object(
+            dropping_ftp,
+            "retrbinary",
+            side_effect=first_file_succeeds_then_connection_drops,
+        ),
+        patch(
+            f"{PROVIDER_MODULE}._connect_ftp",
+            side_effect=connect_once_then_reconnects_fail,
+        ),
+        patch(f"{RETRY_MODULE}.time.sleep"),
+        pytest.raises(ConnectionError, match="after 3 attempts"),
+    ):
+        _download_ensemble_files(
+            "host",
+            "user",
+            "pass",
+            FORECAST_DATE,
+            ensemble_count=2,
+            start_index=0,
+            country="ETH",
+        )
