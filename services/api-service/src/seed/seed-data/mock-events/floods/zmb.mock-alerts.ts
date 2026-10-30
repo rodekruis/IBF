@@ -1,8 +1,6 @@
-import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import {
   buildBasicGlofasStationGeoFeature,
-  buildFloodSeverity,
-  buildPartialExceedanceFloodSeverity,
+  MockFloodAlert,
 } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-alert-builders.helper';
 import {
   ZMB_ITEZHI_TEZHI_FLOOD_DEPTH_BASE64,
@@ -11,20 +9,23 @@ import {
 } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-rasters.const';
 import { LayerName } from '@api-service/src/shared-enums';
 
-export function buildZambiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
+export function buildZambiaFloodAlerts(issuedAt: Date): MockFloodAlert[] {
   return [
     {
       eventName: 'KelongwaSchool60334550',
       centroid: { latitude: -13.7077, longitude: 26.2303 },
+      stationThresholds: {
+        1.5: 360.5,
+        2: 422.62,
+        5: 575.49,
+        10: 676.7,
+        20: 773.79,
+        50: 899.45,
+        100: 993.62,
+        200: 1087.45,
+        500: 1211.23,
+      },
       // 13/20 runs exceed RP10 (65%) → 'low'
-      severity: buildPartialExceedanceFloodSeverity({
-        issuedAt,
-        startDay: 4,
-        medianReturnPeriod: 10,
-        nonExceedingReturnPeriod: 5,
-        exceedingRunCount: 13,
-        totalRunCount: 20,
-      }),
       exposure: {
         adminAreas: [
           {
@@ -203,15 +204,18 @@ export function buildZambiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
     {
       eventName: 'Senanga60370001',
       centroid: { latitude: -16.4753, longitude: 24.1023 },
+      stationThresholds: {
+        1.5: 2760.73,
+        2: 3093.83,
+        5: 3913.57,
+        10: 4456.31,
+        20: 4976.92,
+        50: 5650.79,
+        100: 6155.76,
+        200: 6658.9,
+        500: 7322.68,
+      },
       // 15/20 runs exceed RP10 (75%) → 'medium'
-      severity: buildPartialExceedanceFloodSeverity({
-        issuedAt,
-        startDay: 2,
-        medianReturnPeriod: 10,
-        nonExceedingReturnPeriod: 5,
-        exceedingRunCount: 15,
-        totalRunCount: 20,
-      }),
       exposure: {
         adminAreas: [
           {
@@ -635,6 +639,8 @@ export function buildZambiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
             geoFeatureId: 'G1361',
             medianDischarge: 4716.61,
             onset: { startDay: 2, dischargeBeforeStart: 2484.66 },
+            // Slightly narrower than default, to keep the last day above ZMB's minimum exceedance probability
+            rangeScale: 0.9,
           }),
         ],
         rasters: [
@@ -654,10 +660,17 @@ export function buildZambiaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
     {
       eventName: 'ItezhiTezhi',
       centroid: { latitude: -16.204, longitude: 26.9598 },
-      severity: buildFloodSeverity({
-        issuedAt,
-        medianReturnPeriod: 10,
-      }),
+      stationThresholds: {
+        1.5: 814.79,
+        2: 1122.82,
+        5: 1880.88,
+        10: 2382.78,
+        20: 2864.21,
+        50: 3487.38,
+        100: 3954.35,
+        200: 4419.63,
+        500: 5033.46,
+      },
       exposure: {
         adminAreas: [
           {

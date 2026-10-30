@@ -1,22 +1,27 @@
-import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import {
   buildBasicGlofasStationGeoFeature,
-  buildFloodSeverity,
+  MockFloodAlert,
 } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-alert-builders.helper';
 import { MWI_CHIKWAWA_FLOOD_DEPTH_BASE64 } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-rasters.const';
 import { LayerName } from '@api-service/src/shared-enums';
 
-export function buildMalawiFloodAlerts(issuedAt: Date): AlertCreateDto[] {
+export function buildMalawiFloodAlerts(issuedAt: Date): MockFloodAlert[] {
   // NOTE: MWI currently has single threshold for both severity and probability, and therefore only 'high' alert-class is possible. Therefore only 1 event is mocked here.
   return [
     {
       eventName: 'Chikwawa',
       centroid: { latitude: -16.0636, longitude: 34.7915 },
-      severity: buildFloodSeverity({
-        issuedAt,
-        startDay: 2,
-        medianReturnPeriod: 20,
-      }),
+      stationThresholds: {
+        1.5: 1756.65,
+        2: 2031.18,
+        5: 2706.8,
+        10: 3154.11,
+        20: 3583.19,
+        50: 4138.59,
+        100: 4554.78,
+        200: 4969.45,
+        500: 5516.53,
+      },
       exposure: {
         adminAreas: [
           {

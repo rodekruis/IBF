@@ -1,7 +1,6 @@
-import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import {
   buildBasicGlofasStationGeoFeature,
-  buildFloodSeverity,
+  MockFloodAlert,
 } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-alert-builders.helper';
 import {
   UGA_MANAFWA_FLOOD_DEPTH_BASE64,
@@ -11,16 +10,22 @@ import {
 } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-rasters.const';
 import { LayerName } from '@api-service/src/shared-enums';
 
-export function buildUgandaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
+export function buildUgandaFloodAlerts(issuedAt: Date): MockFloodAlert[] {
   return [
     {
       eventName: 'Mitano (84267)',
       centroid: { latitude: -0.7038, longitude: 29.8275 },
-      severity: buildFloodSeverity({
-        issuedAt,
-        startDay: 1,
-        medianReturnPeriod: 1.5,
-      }),
+      stationThresholds: {
+        1.5: 82.06,
+        2: 92.79,
+        5: 119.2,
+        10: 136.68,
+        20: 153.45,
+        50: 175.16,
+        100: 191.43,
+        200: 207.64,
+        500: 229.02,
+      },
       exposure: {
         adminAreas: [
           {
@@ -199,11 +204,17 @@ export function buildUgandaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
     {
       eventName: 'Mpologoma at Budumba (82217)',
       centroid: { latitude: 0.9869, longitude: 33.5821 },
-      severity: buildFloodSeverity({
-        issuedAt,
-        startDay: 3,
-        medianReturnPeriod: 2,
-      }),
+      stationThresholds: {
+        1.5: 256.37,
+        2: 286.25,
+        5: 359.77,
+        10: 408.45,
+        20: 455.14,
+        50: 515.58,
+        100: 560.87,
+        200: 605.99,
+        500: 665.53,
+      },
       exposure: {
         adminAreas: [
           {
@@ -784,10 +795,17 @@ export function buildUgandaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
     {
       eventName: 'Mayanja (83218)',
       centroid: { latitude: 0.7684, longitude: 32.08 },
-      severity: buildFloodSeverity({
-        issuedAt,
-        medianReturnPeriod: 10,
-      }),
+      stationThresholds: {
+        1.5: 64.18,
+        2: 74.36,
+        5: 99.43,
+        10: 116.02,
+        20: 131.94,
+        50: 152.55,
+        100: 167.99,
+        200: 183.37,
+        500: 203.67,
+      },
       exposure: {
         adminAreas: [
           {
@@ -1311,7 +1329,17 @@ export function buildUgandaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
           buildBasicGlofasStationGeoFeature({
             issuedAt,
             geoFeatureId: 'G5160',
-            medianDischarge: 123.98,
+            // Scenario 'receding': peaks on day 0 and declines through the lower return periods until the alert ends
+            waterDischarge: [
+              { day: 0, median: 123.98 },
+              { day: 1, median: 118 },
+              { day: 2, median: 108 },
+              { day: 3, median: 97 },
+              { day: 4, median: 86 },
+              { day: 5, median: 80 },
+              { day: 6, median: 68 },
+              { day: 7, median: 62 },
+            ],
           }),
         ],
         rasters: [
@@ -1331,12 +1359,18 @@ export function buildUgandaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
     {
       eventName: 'Manafwa at Butaleja (82212)',
       centroid: { latitude: 0.9533, longitude: 34.0556 },
+      stationThresholds: {
+        1.5: 169.82,
+        2: 184.7,
+        5: 221.34,
+        10: 245.6,
+        20: 268.87,
+        50: 298.98,
+        100: 321.55,
+        200: 344.04,
+        500: 373.71,
+      },
       // Only reaches 'high' from day 6, beyond the UGA trigger lead time (P5D), so it does not trigger.
-      severity: buildFloodSeverity({
-        issuedAt,
-        startDay: 6,
-        medianReturnPeriod: 10,
-      }),
       exposure: {
         adminAreas: [
           {

@@ -2,34 +2,46 @@ import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { ForecastCreateDto } from '@api-service/src/alerts/dto/forecast-create.dto';
 import { buildEthiopiaFloodAlerts } from '@api-service/src/seed/seed-data/mock-events/floods/eth.mock-alerts';
 import { buildKenyaFloodAlerts } from '@api-service/src/seed/seed-data/mock-events/floods/ken.mock-alerts';
+import {
+  MockFloodAlert,
+  withDerivedFloodSeverity,
+} from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-alert-builders.helper';
 import { buildMalawiFloodAlerts } from '@api-service/src/seed/seed-data/mock-events/floods/mwi.mock-alerts';
 import { buildPhilippinesFloodAlerts } from '@api-service/src/seed/seed-data/mock-events/floods/phl.mock-alerts';
 import { buildSouthSudanFloodAlerts } from '@api-service/src/seed/seed-data/mock-events/floods/ssd.mock-alerts';
 import { buildUgandaFloodAlerts } from '@api-service/src/seed/seed-data/mock-events/floods/uga.mock-alerts';
 import { buildZambiaFloodAlerts } from '@api-service/src/seed/seed-data/mock-events/floods/zmb.mock-alerts';
+import { MockConfigError } from '@api-service/src/seed/seed-data/mock-events/mock-config.error';
 import { buildPhilippinesTropicalCycloneAlerts } from '@api-service/src/seed/seed-data/mock-events/tropical-cyclone/phl.mock-alerts';
 import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
 
 // Mock events per country & hazard-type:
-// - Event data lives in one file per country in a folder per hazard-type (e.g. ./floods/eth.mock-alerts.ts); shared flood builders (e.g. discharge, severity) in ./floods/mock-flood-alert-builders.helper.ts.
+// - Event data lives in one file per country in a folder per hazard-type (e.g. ./floods/eth.mock-alerts.ts); shared flood builders (e.g. discharge, derived severity) in ./floods/mock-flood-alert-builders.helper.ts.
 // - Floods: events are hand-picked (for demo purposes) from pipeline output of the flood station sweep, which simulates
 // GloFAS discharge just above a given return-period threshold for every configured station:
 // `uv run python pipelines/test/manual_checks/flood_station_sweep.py --country <country> [--station <code>] --return-period <rp>`.
 // Let an LLM copy the values from data/pipelines/output/manual-flood-station-sweep/<country>/<station>/forecast.json into the country file.
-// Not pipeline-based: the water discharge time series shape (see buildBasicGlofasStationGeoFeature) and hand-crafted overrides (e.g. 'Tendaho').
+// Not pipeline-based: the water discharge time series shape (see buildBasicGlofasStationGeoFeature) and hand-crafted overrides (see scenarios below).
+// Severity (incl. exceedance probability) is not copied, but derived from the discharge and the station thresholds hardcoded per event (see withDerivedFloodSeverity).
 // - Tropical cyclone: copied from the regular pipeline mock run
 // (`uv run pipeline --config pipelines/infra/configs/tropicalCyclone.yaml --mock 1 --output-mode local`),
 // from data/pipelines/output/tropicalCyclone/<country>/<run>/forecast.json.
+//
+// Flood discharge scenarios (keep at least one event per scenario, to review the line chart):
+// - 'peak' (default): rises to the event's return period on its start day, peaks the next day, then recedes slightly.
+//   Start day varies per event, e.g. ongoing from day 0 (ETH G1904) or starting late (UGA Manafwa at Butaleja).
+// - 'receding': peaks on day 0 and declines through the lower return periods until the alert ends (UGA Mayanja).
+// - 'rising': crosses several return periods before peaking, then recedes (ETH Tendaho).
+// - Exceedance probability below 100%, from a forecast range that dips below the threshold (e.g. ZMB Kelongwa, Senanga).
+//   Use rangeScale to narrow the range where an event must stay above the country's minimum probability (e.g. ETH).
 
 // TODO: move the mock data to a code-free format (e.g. JSON per event, possibly in the seed-data repo,
 // with rasters as separate assets) so non-developers can add/edit mock events.
 
-type MockCountryBuilder = (issuedAt: Date) => AlertCreateDto[];
-
 interface MockHazardConfig {
   hazardType: HazardType;
   forecastSources: ForecastSource[];
-  builder: MockCountryBuilder;
+  builder: (issuedAt: Date) => AlertCreateDto[];
 }
 
 const FLOODS_FORECAST_SOURCES: ForecastSource[] = [
@@ -44,61 +56,31 @@ const TROPICAL_CYCLONE_FORECAST_SOURCES: ForecastSource[] = [
 ];
 
 const MOCK_BUILDERS: Record<string, MockHazardConfig[]> = {
-  ETH: [
-    {
-      hazardType: HazardType.floods,
-      forecastSources: FLOODS_FORECAST_SOURCES,
-      builder: buildEthiopiaFloodAlerts,
-    },
-  ],
-  UGA: [
-    {
-      hazardType: HazardType.floods,
-      forecastSources: FLOODS_FORECAST_SOURCES,
-      builder: buildUgandaFloodAlerts,
-    },
-  ],
-  MWI: [
-    {
-      hazardType: HazardType.floods,
-      forecastSources: FLOODS_FORECAST_SOURCES,
-      builder: buildMalawiFloodAlerts,
-    },
-  ],
-  KEN: [
-    {
-      hazardType: HazardType.floods,
-      forecastSources: FLOODS_FORECAST_SOURCES,
-      builder: buildKenyaFloodAlerts,
-    },
-  ],
+  ETH: [floodsConfig(buildEthiopiaFloodAlerts)],
+  UGA: [floodsConfig(buildUgandaFloodAlerts)],
+  MWI: [floodsConfig(buildMalawiFloodAlerts)],
+  KEN: [floodsConfig(buildKenyaFloodAlerts)],
   PHL: [
-    {
-      hazardType: HazardType.floods,
-      forecastSources: FLOODS_FORECAST_SOURCES,
-      builder: buildPhilippinesFloodAlerts,
-    },
+    floodsConfig(buildPhilippinesFloodAlerts),
     {
       hazardType: HazardType.tropicalCyclone,
       forecastSources: TROPICAL_CYCLONE_FORECAST_SOURCES,
       builder: buildPhilippinesTropicalCycloneAlerts,
     },
   ],
-  SSD: [
-    {
-      hazardType: HazardType.floods,
-      forecastSources: FLOODS_FORECAST_SOURCES,
-      builder: buildSouthSudanFloodAlerts,
-    },
-  ],
-  ZMB: [
-    {
-      hazardType: HazardType.floods,
-      forecastSources: FLOODS_FORECAST_SOURCES,
-      builder: buildZambiaFloodAlerts,
-    },
-  ],
+  SSD: [floodsConfig(buildSouthSudanFloodAlerts)],
+  ZMB: [floodsConfig(buildZambiaFloodAlerts)],
 };
+
+function floodsConfig(
+  buildAlerts: (issuedAt: Date) => MockFloodAlert[],
+): MockHazardConfig {
+  return {
+    hazardType: HazardType.floods,
+    forecastSources: FLOODS_FORECAST_SOURCES,
+    builder: (issuedAt) => withDerivedFloodSeverity(buildAlerts(issuedAt)),
+  };
+}
 
 export const SUPPORTED_MOCK_COUNTRIES = Object.keys(MOCK_BUILDERS);
 
@@ -113,8 +95,6 @@ export function getMockCountriesForHazards(
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
-
-export class MockConfigError extends Error {}
 
 export function buildMockForecasts({
   countryCodeIso3,
