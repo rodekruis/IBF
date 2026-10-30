@@ -10,17 +10,6 @@ import {
 import { LayerName } from '@api-service/src/shared-enums';
 
 export function buildEthiopiaFloodAlerts(issuedAt: Date): MockFloodAlert[] {
-  const tendahoWaterDischarge = [
-    { day: 0, median: 955 },
-    { day: 1, median: 1102 },
-    { day: 2, median: 1245 },
-    { day: 3, median: 1245 },
-    { day: 4, median: 1413 },
-    { day: 5, median: 1413 },
-    { day: 6, median: 1413 },
-    { day: 7, median: 1245 },
-  ];
-
   return [
     {
       eventName: 'Adaitu',
@@ -241,7 +230,16 @@ export function buildEthiopiaFloodAlerts(issuedAt: Date): MockFloodAlert[] {
             issuedAt,
             geoFeatureId: 'G1045',
             // Scenario 'rising': crosses several return periods (1.5, 2, 5) before peaking, then recedes
-            waterDischarge: tendahoWaterDischarge,
+            waterDischarge: [
+              { day: 0, median: 955 },
+              { day: 1, median: 1102 },
+              { day: 2, median: 1245 },
+              { day: 3, median: 1245 },
+              { day: 4, median: 1413 },
+              { day: 5, median: 1413 },
+              { day: 6, median: 1413 },
+              { day: 7, median: 1245 },
+            ],
             // Narrower than default, to stay above ETH's minimum exceedance probability on all alert days
             rangeScale: 0.35,
           }),
