@@ -24,7 +24,7 @@ import { IS_PRODUCTION } from '@api-service/src/config';
 import { env } from '@api-service/src/env';
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import { SeedService } from '@api-service/src/seed/seed.service';
-import { SUPPORTED_MOCK_COUNTRIES } from '@api-service/src/seed/seed-data/mock-events.helper';
+import { SUPPORTED_MOCK_COUNTRIES } from '@api-service/src/seed/seed-data/mock-events/mock-events.helper';
 import { HazardType } from '@api-service/src/shared-enums';
 import { getNormalizedStringList } from '@api-service/src/utils/normalize-string-list.helper';
 

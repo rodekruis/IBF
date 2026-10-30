@@ -16,7 +16,7 @@ import {
   getMockCountriesForHazards,
   MockConfigError,
   SUPPORTED_MOCK_COUNTRIES,
-} from '@api-service/src/seed/seed-data/mock-events.helper';
+} from '@api-service/src/seed/seed-data/mock-events/mock-events.helper';
 import { SeedInit } from '@api-service/src/seed/seed-init';
 import { HazardType } from '@api-service/src/shared-enums';
 
