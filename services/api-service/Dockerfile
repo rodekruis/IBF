@@ -15,12 +15,14 @@ HEALTHCHECK \
   --timeout=300s \
   CMD curl --fail http://0.0.0.0:${PORT_API_SERVICE}/api/health/health || exit 1
 
-FROM base AS production
+FROM base AS dependencies
 
 COPY ./package*.json ./
 COPY ./.npmrc ./
 
 RUN npm ci
+
+FROM dependencies AS production
 
 COPY . .
 
@@ -28,7 +30,7 @@ RUN npm run build
 
 CMD ["npm", "start"]
 
-FROM base AS development
+FROM dependencies AS development
 
 COPY . .
 
