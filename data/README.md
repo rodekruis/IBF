@@ -38,7 +38,7 @@ Classes and utils shared between the python projects.
 
 To update the [seed data repo](https://github.com/rodekruis/NRW-seed-data), you need a local copy. You make changes to the local copy and push those like normal changes. Follow these steps to set this up:
 
-It's recommended to clone the repo into the same parent dir as the IBF/ repo. If not, you'll need to change the `SEED_DATA_REPO_ROOT` .env var to point to the different location.
+It's recommended to clone the repo into the same parent dir as the NRW/ repo. If not, you'll need to change the `SEED_DATA_REPO_ROOT` .env var to point to the different location.
 
 ## Updating the dependencies
 

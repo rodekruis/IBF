@@ -26,10 +26,10 @@ SCHEMA="api-service"
 
 if [[ -f "services/.env" ]]; then
     ENV_FILE="services/.env"
-elif [[ -f "IBF/services/.env" ]]; then
-    ENV_FILE="IBF/services/.env"
+elif [[ -f "NRW/services/.env" ]]; then
+    ENV_FILE="NRW/services/.env"
 else
-    echo "Error: Cannot find services/.env. Run this script from the IBF repo root or from the directory containing IBF/."
+    echo "Error: Cannot find services/.env. Run this script from the NRW repo root or from the directory containing NRW/."
     exit 1
 fi
 

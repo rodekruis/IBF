@@ -35,7 +35,7 @@ dependencies = [
 pipeline = "pipelines.infra.run_forecasts:main"
 
 [project.urls]
-Homepage = "https://github.com/rodekruis/IBF/tree/main/pipelines"
+Homepage = "https://github.com/rodekruis/NRW/tree/main/pipelines"
 
 [tool.hatch.build.targets.sdist]
 include = [
