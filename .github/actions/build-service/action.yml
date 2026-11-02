@@ -42,10 +42,7 @@ runs:
       with:
         inlineScript: |
           # Install necessary packages for `rdbms-connect` extension. Use Tiny DNF as the Azure-CLI container-image is based on Azure Linux
-          tdnf install -y build-essential python3-devel postgresql-devel gcc --quiet
-
-          # Ensure the `rdbms-connect` extension is installed for Azure CLI
-          az extension add -n rdbms-connect
+          tdnf install -y postgresql-devel --quiet
 
           # Retrieve the public IP address of the deployment runner
           COUNT=1
