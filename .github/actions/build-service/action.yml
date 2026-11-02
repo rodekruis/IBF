@@ -35,7 +35,7 @@ runs:
         npm ci
 
     - name: Add firewall rule for database
-      uses: azure/cli@v1
+      uses: azure/cli@v3
       env:
         DATABASE_URL: ${{ inputs.databaseUrl }}
         RUN_ID: ${{ github.run_id }}_${{ github.run_attempt }}
@@ -113,7 +113,7 @@ runs:
 
     - name: Remove firewall rule for database
       if: ${{ always() }}
-      uses: azure/cli@v1
+      uses: azure/cli@v3
       env:
         DATABASE_URL: ${{ inputs.databaseUrl }}
         RUN_ID: ${{ github.run_id }}_${{ github.run_attempt }}
