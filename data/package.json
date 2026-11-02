@@ -1,6 +1,6 @@
 {
   "private": true,
   "dependencies": {
-    "mapshaper": "0.7.59"
+    "mapshaper": "0.7.101"
   }
 }
