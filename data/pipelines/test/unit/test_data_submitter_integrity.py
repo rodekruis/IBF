@@ -237,7 +237,7 @@ def test_naive_datetime_is_rejected(tmp_output: Path):
     """A naive (no timezone) issued_at datetime is rejected during integrity checks."""
     submitter = DataSubmitter(MagicMock())
     submitter.set_forecast_metadata(
-        issued_at=datetime(2026, 3, 20, 12, 0, 0),  # noqa: DTZ001
+        issued_at=datetime(2026, 3, 20, 12, 0, 0),
         hazard_type=HazardType.FLOODS,
         forecast_sources=[ForecastSource.GLOFAS_RIVER_DISCHARGE],
         country_code_iso3="ETH",
