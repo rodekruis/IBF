@@ -27,7 +27,7 @@ flowchart LR
 
     acr[Container registry<br/>pipelines:&lt;env&gt;]
     glofas[GloFAS FTP]
-    seed[IBF-seed-data]
+    seed[NRW-seed-data]
     api[NRW API]
 
     publish -- "build / promote image" --> acr

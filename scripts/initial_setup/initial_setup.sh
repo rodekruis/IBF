@@ -119,7 +119,7 @@ cd "${TARGET_DIR}"
 print_header "Cloning Repositories"
 git clone git@github.com:rodekruis/IBF.git
 git clone git@github.com:rodekruis/go-web-app.git
-git clone git@github.com:rodekruis/IBF-seed-data.git
+git clone git@github.com:rodekruis/NRW-seed-data.git
 
 
 print_header "Backend"

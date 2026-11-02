@@ -11,7 +11,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.validation import make_valid
 
 ADMIN_AREAS_DIRECTORY = Path("admin-areas/processed")
-DEFAULT_SEED_REPOSITORY_URL = "https://github.com/rodekruis/IBF-seed-data.git"
+DEFAULT_SEED_REPOSITORY_URL = "https://github.com/rodekruis/NRW-seed-data.git"
 
 Bounds = tuple[float, float, float, float]
 

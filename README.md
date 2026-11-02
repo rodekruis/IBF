@@ -33,7 +33,7 @@ Because IBF needs 3 repositories you'll probably want to have them in an umbrell
 
 - backend (including pipelines): https://github.com/rodekruis/IBF
 - frontend (etc): https://github.com/rodekruis/go-web-app/tree/nrw-develop
-- seed data: https://github.com/rodekruis/IBF-seed-data
+- seed data: https://github.com/rodekruis/NRW-seed-data
 
 #### Backend (`IBF` repository)
 
@@ -71,9 +71,9 @@ See the [e2e README](/e2e/README.md) for the full setup.
 
 The code for the pipelines lives in the `IBF` repository under `/data`. See the [readme](/data/README.md) for setup.
 
-#### Seed data (`ibf-seed-data`)
+#### Seed data (`nrw-seed-data`)
 
-The backend reset endpoint seeds static data from the `IBF-seed-data` repository, including admin areas, population rasters, and other reference data. Use the mock endpoint after a reset to create test forecast events for local portal testing.
+The backend reset endpoint seeds static data from the `NRW-seed-data` repository, including admin areas, population rasters, and other reference data. Use the mock endpoint after a reset to create test forecast events for local portal testing.
 
 ## Troubleshooting
 

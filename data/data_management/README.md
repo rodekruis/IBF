@@ -4,7 +4,7 @@ This directory has scripts for data management/transform/fetching for the seed d
 
 See the [data/README](../README.md) for setup.
 
-For specific notes on the data being used, see the [seed data repo readme](https://github.com/rodekruis/IBF-seed-data/blob/main/README.md).
+For specific notes on the data being used, see the [seed data repo readme](https://github.com/rodekruis/NRW-seed-data/blob/main/README.md).
 
 ## Directories
 

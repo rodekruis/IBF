@@ -25,7 +25,7 @@ target_countries_iso_a3 = {
 }
 
 """
-Get the root dir of the local IBF-seed-data repo so files can be written there.
+Get the root dir of the local NRW-seed-data repo so files can be written there.
 This looks for the SEED_DATA_REPO_ROOT var in the /data/.env dir
 """
 
