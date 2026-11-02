@@ -6,9 +6,9 @@ hazard_type: tropicalCyclone
 # Entries with `source_target` are loaded only for that source target
 # Selected by --mock and skipped when --infra-only is set
 _data_sources: &data_sources
-  - source: alert_configs_ibf_api
-  - source: admin_area_ibf_api
-  - source: population_ibf_api
+  - source: alert_configs_nrw_api
+  - source: admin_area_nrw_api
+  - source: population_nrw_api
   - source: gefs_wind_seed_repo_alert
     source_target: mock_alert # --mock 1
   - source: gefs_track_seed_repo_alert

@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-import { env } from '@ibf-e2e/env';
+import { env } from '@nrw-e2e/env';
 
 export default defineConfig({
   tsconfig: './tsconfig.json',

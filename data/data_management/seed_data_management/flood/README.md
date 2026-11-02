@@ -57,17 +57,17 @@ parent area legitimately contains sub-areas draining to different stations.
 The source repository can be materialized from a Git ref and the target repository can be the currently checked-out seed-data branch:
 
 ```bash
-rm -rf /tmp/ibf-seed-old-main /tmp/ibf-glofas-migration
-mkdir -p /tmp/ibf-seed-old-main /tmp/ibf-glofas-migration
-git -C /path/to/NRW-seed-data archive origin/main | tar -x -C /tmp/ibf-seed-old-main
+rm -rf /tmp/nrw-seed-old-main /tmp/nrw-glofas-migration
+mkdir -p /tmp/nrw-seed-old-main /tmp/nrw-glofas-migration
+git -C /path/to/NRW-seed-data archive origin/main | tar -x -C /tmp/nrw-seed-old-main
 
 cd data
 uv run python -m data_management.seed_data_management.flood.migrate_glofas_station_area_mapping \
-  --old-seed-repo /tmp/ibf-seed-old-main \
+  --old-seed-repo /tmp/nrw-seed-old-main \
   --new-seed-repo /path/to/NRW-seed-data \
   --old-seed-revision cb5bda2d8b80984b5bfff8d7c4f451468e0e6a94 \
   --new-seed-revision "$(git -C /path/to/NRW-seed-data rev-parse HEAD)" \
-  --output-directory /tmp/ibf-glofas-migration \
+  --output-directory /tmp/nrw-glofas-migration \
   --minimum-new-area-overlap 0.25 \
   --minimum-old-footprint-coverage 0.9
 ```

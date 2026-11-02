@@ -1,5 +1,5 @@
-import { apiRequest } from '@ibf-e2e/nrw/helpers/api-request';
-import { HttpMethod } from '@ibf-e2e/nrw/helpers/enums';
+import { apiRequest } from '@nrw-e2e/nrw/helpers/api-request';
+import { HttpMethod } from '@nrw-e2e/nrw/helpers/enums';
 
 export type NrwEvent = {
   eventId: number;

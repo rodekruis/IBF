@@ -106,9 +106,9 @@ We avoid "feature branches" (long-lived branches with multiple/no owners). For P
 When a change spans both repos (e.g. a new or changed API contract), create "sibling PRs"
 
 1. Try to minimize the "shared" parts, and postpone other changes on both sides to follow-up PRs.
-2. Prepare sibling PRs in both repos as ready-to-merge. Only expect the e2e test on IBF-repo to potentially fail. (as it uses nrw-develop, and not the sibling feature branch.)
+2. Prepare sibling PRs in both repos as ready-to-merge. Only expect the e2e test on NRW-repo to potentially fail. (as it uses nrw-develop, and not the sibling feature branch.)
 3. Merge the **front-end PR first** (go-web-app → nrw-develop)
-4. Re-run any failing e2e tests on the back-end PR (IBF) — they clone `nrw-develop` HEAD and should now pick up the updated FE.
+4. Re-run any failing e2e tests on the back-end PR (NRW) — they clone `nrw-develop` HEAD and should now pick up the updated FE.
 5. Merge the back-end PR if e2e passes
 6. If e2e still fails: fix the back-end PR or create a follow-up front-end PR and repeat this process.
 

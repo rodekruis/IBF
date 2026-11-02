@@ -24,13 +24,13 @@ class ApiClient:
     def __init__(
         self, run_origin: RunOrigin = RunOrigin.LOCAL, source_target: str = "unknown"
     ) -> None:
-        base_url = os.environ.get("IBF_API_URL", "")
+        base_url = os.environ.get("NRW_API_URL", "")
         if not base_url:
-            raise ValueError("IBF_API_URL environment variable must be set")
+            raise ValueError("NRW_API_URL environment variable must be set")
 
-        api_key = os.environ.get("IBF_PIPELINE_API_KEY", "")
+        api_key = os.environ.get("NRW_PIPELINE_API_KEY", "")
         if not api_key:
-            raise ValueError("IBF_PIPELINE_API_KEY environment variable must be set")
+            raise ValueError("NRW_PIPELINE_API_KEY environment variable must be set")
 
         self._base_url = base_url.rstrip("/")
         self._session = requests.Session()

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 
-class IbfEnvironment(StrEnum):
+class NrwEnvironment(StrEnum):
     DEVELOPMENT = "development"
     TEST = "test"
     STAGING = "staging"
@@ -14,29 +14,29 @@ class IbfEnvironment(StrEnum):
 
 @dataclass(frozen=True)
 class EnvironmentSettings:
-    environment: IbfEnvironment
+    environment: NrwEnvironment
 
     @property
     def is_production(self) -> bool:
-        return self.environment == IbfEnvironment.PRODUCTION
+        return self.environment == NrwEnvironment.PRODUCTION
 
     @property
     def is_development(self) -> bool:
-        return self.environment == IbfEnvironment.DEVELOPMENT
+        return self.environment == NrwEnvironment.DEVELOPMENT
 
 
 def load_environment_settings() -> EnvironmentSettings:
-    raw = os.environ.get("IBF_ENVIRONMENT")
+    raw = os.environ.get("NRW_ENVIRONMENT")
     if not raw:
         raise ValueError(
-            "IBF_ENVIRONMENT must be set to 'development', 'test', 'staging' or 'production'"
+            "NRW_ENVIRONMENT must be set to 'development', 'test', 'staging' or 'production'"
         )
 
     try:
-        environment = IbfEnvironment(raw)
+        environment = NrwEnvironment(raw)
     except ValueError as exc:
         raise ValueError(
-            f"IBF_ENVIRONMENT must be 'development', 'test', 'staging' or 'production' (got {raw!r})"
+            f"NRW_ENVIRONMENT must be 'development', 'test', 'staging' or 'production' (got {raw!r})"
         ) from exc
 
     return EnvironmentSettings(environment=environment)

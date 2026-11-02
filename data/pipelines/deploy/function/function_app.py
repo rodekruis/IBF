@@ -24,7 +24,7 @@ from pipeline_run_request import (
 logger = logging.getLogger(__name__)
 logging.getLogger("azure").setLevel(logging.WARNING)
 
-IBF_ENVIRONMENT = os.environ.get("IBF_ENVIRONMENT")
+NRW_ENVIRONMENT = os.environ.get("NRW_ENVIRONMENT")
 
 CONFIG_DIRECTORY = "pipelines/infra/configs"
 # One Batch job is created per scheduled hazard. Only floods is scheduled for
@@ -81,7 +81,7 @@ def build_pipeline_configs(
     )
 
 
-if IBF_ENVIRONMENT == "production":
+if NRW_ENVIRONMENT == "production":
 
     @app.function_name("daily_pipeline_scheduler")
     @app.timer_trigger(schedule="0 0 12 * * *", arg_name="timer", run_on_startup=False)
@@ -93,7 +93,7 @@ if IBF_ENVIRONMENT == "production":
         )
         schedule_pipeline_jobs(PipelineRunRequest(), SCHEDULED_RUN_ORIGIN)
 
-elif IBF_ENVIRONMENT in ["test", "staging"]:
+elif NRW_ENVIRONMENT in ["test", "staging"]:
 
     @app.function_name("manual_pipeline_scheduler")
     @app.route(
@@ -121,4 +121,4 @@ elif IBF_ENVIRONMENT in ["test", "staging"]:
         )
 
 else:
-    raise ValueError(f"Unsupported IBF_ENVIRONMENT: {IBF_ENVIRONMENT}")
+    raise ValueError(f"Unsupported NRW_ENVIRONMENT: {NRW_ENVIRONMENT}")

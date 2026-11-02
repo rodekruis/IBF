@@ -32,7 +32,7 @@
       "tree": { "group": "Azure DevOps backlog items" },
       "editor": [
         {
-          "link": "https://dev.azure.com/redcrossnl/IBF/_workitems/edit/$1",
+          "link": "https://dev.azure.com/redcrossnl/National%20Risk%20Watch/_workitems/edit/$1",
           "hoverMessage": "Azure DevOps backlog item: **$1**"
         }
       ]

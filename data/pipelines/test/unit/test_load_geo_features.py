@@ -6,13 +6,13 @@ from pipelines.infra.data_types.data_config_types import DataSource, DataSourceC
 from pipelines.infra.data_types.enums import HazardType
 from pipelines.infra.data_types.loaded_data_types import DataType, LoadedDataSource
 from pipelines.infra.data_types.location_point import LocationPoint
-from pipelines.infra.utils.data_provider_fetchers import _load_ibf_api_glofas_stations
+from pipelines.infra.utils.data_provider_fetchers import _load_nrw_api_glofas_stations
 
 
 def _make_container() -> LoadedDataSource:
     return LoadedDataSource(
         data_type=DataType.UNSPECIFIED,
-        data_source=DataSource.GLOFAS_STATIONS_IBF_API,
+        data_source=DataSource.GLOFAS_STATIONS_NRW_API,
     )
 
 
@@ -41,12 +41,12 @@ def test_parses_geo_features_into_location_points():
 
     config = DataSourceConfig(
         country_code_iso_3=CountryCodeIso3.ETH,
-        source=DataSource.GLOFAS_STATIONS_IBF_API,
+        source=DataSource.GLOFAS_STATIONS_NRW_API,
         hazard_type=HazardType.FLOODS,
     )
     container = _make_container()
 
-    _load_ibf_api_glofas_stations(container, api_client, config)
+    _load_nrw_api_glofas_stations(container, api_client, config)
 
     assert container.data_type == DataType.LOCATION_POINT_DICT
     stations = container.data
@@ -74,12 +74,12 @@ def test_handles_empty_stations():
 
     config = DataSourceConfig(
         country_code_iso_3=CountryCodeIso3.ETH,
-        source=DataSource.GLOFAS_STATIONS_IBF_API,
+        source=DataSource.GLOFAS_STATIONS_NRW_API,
         hazard_type=HazardType.FLOODS,
     )
     container = _make_container()
 
-    _load_ibf_api_glofas_stations(container, api_client, config)
+    _load_nrw_api_glofas_stations(container, api_client, config)
 
     assert isinstance(container.data, dict)
     assert len(container.data) == 0

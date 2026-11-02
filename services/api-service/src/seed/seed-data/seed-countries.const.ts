@@ -14,7 +14,7 @@ export interface SeedCountry {
   readonly hazardTypes: HazardType[];
 }
 
-// TODO: consider loading IBF countries from a dynamic source instead of a hardcoded const
+// TODO: consider loading NRW countries from a dynamic source instead of a hardcoded const
 export const SEED_COUNTRIES: SeedCountry[] = [
   {
     countryCodeIso3: 'ETH',

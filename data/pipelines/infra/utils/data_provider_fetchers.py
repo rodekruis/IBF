@@ -62,27 +62,27 @@ def load_data_container(
 
     match data_config.source:
         # --- Generic sources ---
-        case DataSource.ADMIN_AREA_IBF_API:
-            return _load_ibf_api_admin_areas(
+        case DataSource.ADMIN_AREA_NRW_API:
+            return _load_nrw_api_admin_areas(
                 container,
                 api_client,
                 data_config.country_code_iso_3,
                 country_config.target_admin_level,
             )
-        case DataSource.ALERT_CONFIGS_IBF_API:
-            return _load_ibf_api_alert_configs(
+        case DataSource.ALERT_CONFIGS_NRW_API:
+            return _load_nrw_api_alert_configs(
                 container,
                 api_client,
                 data_config,
             )
-        case DataSource.POPULATION_IBF_API:
-            return _load_ibf_api_population_data(data_config, container, api_client)
+        case DataSource.POPULATION_NRW_API:
+            return _load_nrw_api_population_data(data_config, container, api_client)
 
         # --- Flood sources ---
         case DataSource.FLOOD_DEPTH_SEED_REPO:
             return _load_seed_repo_flood_depth(data_config, container)
-        case DataSource.GLOFAS_STATIONS_IBF_API:
-            return _load_ibf_api_glofas_stations(
+        case DataSource.GLOFAS_STATIONS_NRW_API:
+            return _load_nrw_api_glofas_stations(
                 container,
                 api_client,
                 data_config,
@@ -132,7 +132,7 @@ def load_data_container(
 # =============================================================================
 
 
-def _load_ibf_api_admin_areas(
+def _load_nrw_api_admin_areas(
     container: LoadedDataSource,
     api_client: ApiClient,
     country_code_iso_3: str,
@@ -173,7 +173,7 @@ def _validate_parent_pcodes(
         )
 
 
-def _load_ibf_api_alert_configs(
+def _load_nrw_api_alert_configs(
     container: LoadedDataSource,
     api_client: ApiClient,
     data_config: DataSourceConfig,
@@ -185,7 +185,7 @@ def _load_ibf_api_alert_configs(
     )
 
 
-def _load_ibf_api_population_data(
+def _load_nrw_api_population_data(
     config: DataSourceConfig, container: LoadedDataSource, api_client: ApiClient
 ):
     container.data_type = DataType.RASTER_DATA
@@ -257,7 +257,7 @@ def _load_seed_repo_flood_depth(config: DataSourceConfig, container: LoadedDataS
 # =============================================================================
 
 
-def _load_ibf_api_glofas_stations(
+def _load_nrw_api_glofas_stations(
     container: LoadedDataSource,
     api_client: ApiClient,
     data_config: DataSourceConfig,

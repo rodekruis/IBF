@@ -17,9 +17,9 @@ class TestGetForecastSources:
     def test_maps_forecast_inputs_and_skips_other_data_sources(self) -> None:
         # Arrange
         source_configs = [
-            _make_source_config(DataSource.ALERT_CONFIGS_IBF_API),
-            _make_source_config(DataSource.ADMIN_AREA_IBF_API),
-            _make_source_config(DataSource.POPULATION_IBF_API),
+            _make_source_config(DataSource.ALERT_CONFIGS_NRW_API),
+            _make_source_config(DataSource.ADMIN_AREA_NRW_API),
+            _make_source_config(DataSource.POPULATION_NRW_API),
             _make_source_config(DataSource.FLOOD_DEPTH_SEED_REPO),
             _make_source_config(DataSource.GLOFAS_DISCHARGE_FTP),
         ]

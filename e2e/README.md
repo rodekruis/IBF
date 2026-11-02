@@ -1,6 +1,6 @@
-# IBF End-to-End (E2E) Tests
+# NRW End-to-End (E2E) Tests
 
-End-to-end tests for the IBF platform using [Playwright](https://playwright.dev/).
+End-to-end tests for the NRW platform using [Playwright](https://playwright.dev/).
 
 ## Layout
 

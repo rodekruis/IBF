@@ -5,7 +5,7 @@ export const IS_PRODUCTION = env.NODE_ENV === 'production';
 
 // Configure Swagger UI appearance:
 // ---------------------------------------------------------------------------
-export const APP_VERSION = env.GLOBAL_IBF_VERSION!;
+export const APP_VERSION = env.GLOBAL_NRW_VERSION!;
 
 let appTitle = 'NRW Swagger';
 if (env.ENV_NAME) {

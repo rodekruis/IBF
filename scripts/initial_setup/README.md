@@ -1,6 +1,6 @@
 # Initial setup
 
-Run the `initial_setup.sh` script to create a completely new IBF environment:
+Run the `initial_setup.sh` script to create a completely new NRW environment:
 
 ```shell
 initial_setup.sh {TARGET_DIRECTORY}

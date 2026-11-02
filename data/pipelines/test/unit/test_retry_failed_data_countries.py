@@ -297,10 +297,10 @@ class TestRunCountryRetryableFlag:
         # Arrange
         country = _make_country(
             "KEN",
-            [_make_source("KEN", DataSource.POPULATION_IBF_API, retryable=False)],
+            [_make_source("KEN", DataSource.POPULATION_NRW_API, retryable=False)],
         )
         loaded_data: dict[DataSource, object] = {
-            DataSource.POPULATION_IBF_API: SimpleNamespace(error="not found"),
+            DataSource.POPULATION_NRW_API: SimpleNamespace(error="not found"),
         }
         monkeypatch.setattr(
             run_forecasts_module,
@@ -323,13 +323,13 @@ class TestHasRetryableSourceFailure:
             "KEN",
             [
                 _make_source("KEN", DataSource.GLOFAS_DISCHARGE_FTP, retryable=True),
-                _make_source("KEN", DataSource.POPULATION_IBF_API, retryable=False),
+                _make_source("KEN", DataSource.POPULATION_NRW_API, retryable=False),
             ],
         )
         data_provider = _FakeDataProvider(
             {
                 DataSource.GLOFAS_DISCHARGE_FTP: SimpleNamespace(error=None),
-                DataSource.POPULATION_IBF_API: SimpleNamespace(error="not found"),
+                DataSource.POPULATION_NRW_API: SimpleNamespace(error="not found"),
             }
         )
 

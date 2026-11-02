@@ -13,7 +13,7 @@ downloaded + cached - see `infra/data_types/gefs_product_provider.py`). The rema
 directory (`tropical_cyclone/bronze/ecmwf_*`) - still `# TODO AB#44097` pending a real
 `DataSource.ECMWF_WIND`/`DataSource.ECMWF_TRACK` fetcher.
 
-Step 1 now fetches `AlertConfig`s (spatial + temporal extents) from `DataSource.ALERT_CONFIGS_IBF_API`
+Step 1 now fetches `AlertConfig`s (spatial + temporal extents) from `DataSource.ALERT_CONFIGS_NRW_API`
 instead of synthesizing one locally - PR #307 seeded a real per-country config
 (`spatial_extent_name="National"`, one `"lead-time-spectrum"` temporal extent, currently 3-hour
 steps up to 168 hours). Step 6 loops over `alert_configs` x `config.temporal_extents` (each has
@@ -100,13 +100,13 @@ def calculate_tropical_cyclone_forecasts(
 ) -> None:
     ### Step 1 - Load data from the data provider ###
     target_admin_areas = data_provider.get_data(
-        DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
+        DataSource.ADMIN_AREA_NRW_API, AdminAreasSet
     )
     alert_configs: list[AlertConfig] = data_provider.get_data(
-        DataSource.ALERT_CONFIGS_IBF_API, list
+        DataSource.ALERT_CONFIGS_NRW_API, list
     )
     population_raster: RasterData | None = data_provider.get_data(
-        DataSource.POPULATION_IBF_API, RasterData
+        DataSource.POPULATION_NRW_API, RasterData
     )
     if not target_admin_areas or not alert_configs or population_raster is None:
         data_submitter.add_error(

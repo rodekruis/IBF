@@ -69,7 +69,7 @@ flowchart LR
 |                                              | test                                | staging                                | production                          |
 | -------------------------------------------- | ----------------------------------- | -------------------------------------- | ----------------------------------- |
 | Scheduler Function App                       | `nrw-batch-scheduler-test`          | `nrw-batch-scheduler-staging`          | `nrw-batch-scheduler-prod`          |
-| `IBF_ENVIRONMENT`                            | `test`                              | `staging`                              | `production`                        |
+| `NRW_ENVIRONMENT`                            | `test`                              | `staging`                              | `production`                        |
 | Image                                        | `pipelines:test`                    | `pipelines:staging`                    | `pipelines:production`              |
 | Batch account / pool                         | `nrwbatchtest` / `nrwbatchtestpool` | `nrwbatchtest` / `nrwbatchstagingpool` | `nrwbatchprod` / `nrwbatchprodpool` |
 | Storage account (container `nrw-data-cache`) | `nrwbatchtest`                      | `nrwbatchstaging`                      | `nrwbatchprod`                      |
@@ -80,7 +80,7 @@ Test and staging share their Batch, storage, Key Vault and Application Insights 
 
 ## How a job runs
 
-- The scheduler Function App submits a job named `nrw-<hazard>-<yyyymmdd-HHMMSS>` with a single task running `pipeline --config pipelines/infra/configs/<hazard>.yaml` in the image `pipelines:<IBF_ENVIRONMENT>`.
+- The scheduler Function App submits a job named `nrw-<hazard>-<yyyymmdd-HHMMSS>` with a single task running `pipeline --config pipelines/infra/configs/<hazard>.yaml` in the image `pipelines:<NRW_ENVIRONMENT>`.
 - The task gets its environment variables from the Function App settings (`TASK_ENVIRONMENT_VARIABLES` in [batch_client.py](function/batch_client.py)). Secrets are Key Vault references in those settings; other settings are plain values. All these values, including secrets, are readable by anyone with access to the Batch account.
 - The pipeline only talks to the NRW API; it has no direct database access.
 - The pool scales up from 0 nodes when a task is queued (max 2 nodes) and pre-pulls the image, so tasks start quickly.

@@ -1,7 +1,4 @@
-# IBF
-
-> [!IMPORTANT]
-> This is the repo for IBF v2, which is not in MVP-state yet. Find the old IBF-system repo [here](https://github.com/rodekruis/IBF-system).
+# NRW
 
 A system that forecasts Early Warning alerts, disseminates notifications, and visualizes exposure information to support decision making, following the country advisory. It has:
 
@@ -9,11 +6,11 @@ A system that forecasts Early Warning alerts, disseminates notifications, and vi
 - [back-end services](./services) ingesting and processing forecast data via API and publishing this - alongside seed data - via APIs
 - to e.g. a React front-end, which is developed and run in the separate [go-web-app repo](https://github.com/rodekruis/go-web-app/tree/nrw-develop).
 
-Read our [public documentation](https://github.com/rodekruis/IBF-documentation).
+Read our [public documentation](https://github.com/rodekruis/NRW-documentation).
 
 ## Getting started
 
-To get IBF installed locally run this script and follow any instructions it gives `scripts/initial_setup/initial_setup.sh`.
+To get NRW installed locally run this script and follow any instructions it gives `scripts/initial_setup/initial_setup.sh`.
 
 This guide is a text version of that script which will help you troubleshoot or fix a broken local installation, although a wipe and reinstall shouldn't take more than 5 minutes.
 
@@ -29,15 +26,15 @@ This guide is a text version of that script which will help you troubleshoot or 
 
 ### 2. Clone and install dependencies
 
-Because IBF needs 3 repositories you'll probably want to have them in an umbrella folder next to each other.
+Because NRW needs 3 repositories you'll probably want to have them in an umbrella folder next to each other.
 
 - backend (including pipelines): https://github.com/rodekruis/NRW
 - frontend (etc): https://github.com/rodekruis/go-web-app/tree/nrw-develop
 - seed data: https://github.com/rodekruis/NRW-seed-data
 
-#### Backend (`IBF` repository)
+#### Backend (`NRW` repository)
 
-In the `IBF` repository
+In the `NRW` repository
 
 - `cp services/.env.example services/.env`
 - `npm install`
@@ -69,7 +66,7 @@ See the [e2e README](/e2e/README.md) for the full setup.
 
 #### Pipelines (`NRW/data`)
 
-The code for the pipelines lives in the `IBF` repository under `/data`. See the [readme](/data/README.md) for setup.
+The code for the pipelines lives in the `NRW` repository under `/data`. See the [readme](/data/README.md) for setup.
 
 #### Seed data (`nrw-seed-data`)
 
@@ -87,4 +84,4 @@ This can happen if you run `docker compose up` to start the backend services, si
 
 ---
 
-IBF is published under the open-source [Apache-2.0 license](./LICENSE).
+NRW is published under the open-source [Apache-2.0 license](./LICENSE).

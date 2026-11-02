@@ -402,7 +402,7 @@ def _mock_ftp_with_dates(available_dates: list[str]) -> MagicMock:
 def test_resolve_forecast_date_returns_today_when_available(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("IBF_ENVIRONMENT", "development")
+    monkeypatch.setenv("NRW_ENVIRONMENT", "development")
 
     with patch(
         "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp"
@@ -417,7 +417,7 @@ def test_resolve_forecast_date_returns_today_when_available(
 def test_resolve_forecast_date_fails_immediately_in_development(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("IBF_ENVIRONMENT", "development")
+    monkeypatch.setenv("NRW_ENVIRONMENT", "development")
 
     with patch(
         "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp"
@@ -431,7 +431,7 @@ def test_resolve_forecast_date_fails_immediately_in_development(
 def test_resolve_forecast_date_fails_immediately_in_test(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("IBF_ENVIRONMENT", "test")
+    monkeypatch.setenv("NRW_ENVIRONMENT", "test")
 
     with patch(
         "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp"
@@ -445,7 +445,7 @@ def test_resolve_forecast_date_fails_immediately_in_test(
 def test_resolve_forecast_date_retries_in_production(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("IBF_ENVIRONMENT", "production")
+    monkeypatch.setenv("NRW_ENVIRONMENT", "production")
 
     call_count = 0
 
@@ -472,7 +472,7 @@ def test_resolve_forecast_date_retries_in_production(
 def test_resolve_forecast_date_fails_after_retries_exhausted_in_production(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("IBF_ENVIRONMENT", "production")
+    monkeypatch.setenv("NRW_ENVIRONMENT", "production")
 
     with (
         patch(
