@@ -72,6 +72,24 @@ def test_retry_does_not_catch_other_exceptions() -> None:
     function.assert_called_once()
 
 
+def test_retry_raises_value_error_for_zero_max_attempts() -> None:
+    # Arrange
+    function = MagicMock(return_value="result")
+
+    # Act & Assert
+    with pytest.raises(ValueError, match="max_attempts needs to be larger than 0"):
+        retry(max_attempts=0, backoff_seconds=5, exceptions=(OSError,))(function)
+
+
+def test_retry_raises_value_error_for_negative_max_attempts() -> None:
+    # Arrange
+    function = MagicMock(return_value="result")
+
+    # Act & Assert
+    with pytest.raises(ValueError, match="max_attempts needs to be larger than 0"):
+        retry(max_attempts=-1, backoff_seconds=5, exceptions=(OSError,))(function)
+
+
 def test_retry_logs_every_failed_attempt() -> None:
     # Arrange
     function = MagicMock(side_effect=OSError("boom"))

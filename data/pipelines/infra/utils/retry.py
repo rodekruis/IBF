@@ -24,6 +24,11 @@ def retry[**Parameters, Result](
     attempts are exhausted.
     """
 
+    if max_attempts < 1:
+        raise ValueError(
+            f"max_attempts needs to be larger than 0 but is {max_attempts}"
+        )
+
     def decorator(
         function: Callable[Parameters, Result],
     ) -> Callable[Parameters, Result]:
@@ -34,26 +39,29 @@ def retry[**Parameters, Result](
                 if description is not None
                 else getattr(function, "__qualname__", "operation")
             )
-            for attempt in range(1, max_attempts + 1):
+            attempt = 1
+            while True:
                 try:
                     return function(*args, **kwargs)
                 except exceptions as exc:
                     failure = (
                         f"Attempt {attempt}/{max_attempts} failed for {label}: {exc!r}"
                     )
-                    if attempt == max_attempts:
+                    is_final_attempt = attempt == max_attempts
+                    if not is_final_attempt:
+                        delay_seconds = backoff_seconds * attempt
+                        log_warning(
+                            logger,
+                            LogTag.INFRA,
+                            f"{failure}. Retrying in {delay_seconds:g}s",
+                        )
+                        time.sleep(delay_seconds)
+                        attempt += 1
+                    else:
                         log_warning(logger, LogTag.INFRA, failure)
                         raise ConnectionError(
                             f"Failed to {label} after {max_attempts} attempts"
                         ) from exc
-                    delay_seconds = backoff_seconds * attempt
-                    log_warning(
-                        logger,
-                        LogTag.INFRA,
-                        f"{failure}. Retrying in {delay_seconds:g}s",
-                    )
-                    time.sleep(delay_seconds)
-            raise AssertionError("retry loop exited unexpectedly")
 
         return wrapper
 
