@@ -1,6 +1,6 @@
 # Admin Areas
 
-This directory contains the repeatable, manually orchestrated workflow for updating administrative-area data in the sibling `IBF-seed-data` repository. When admin-area data changes, the workflow processes and validates the target admin-area dataset, then translates dependent mapping data from the source admin-area version so it references the target areas. A single command to orchestrate all stages is a possible follow-up.
+This directory contains the repeatable, manually orchestrated workflow for updating administrative-area data in the sibling `NRW-seed-data` repository. When admin-area data changes, the workflow processes and validates the target admin-area dataset, then translates dependent mapping data from the source admin-area version so it references the target areas. A single command to orchestrate all stages is a possible follow-up.
 
 The active configuration is defined in `admin_area_source_config.py`. Each country uses one source for all configured admin levels.
 
@@ -16,14 +16,14 @@ The active configuration is defined in `admin_area_source_config.py`. Each count
 
 ## Prerequisites
 
-- The `data/.env` file must define `SEED_DATA_REPO_ROOT` for the local `IBF-seed-data` checkout.
+- The `data/.env` file must define `SEED_DATA_REPO_ROOT` for the local `NRW-seed-data` checkout.
 - Run commands from the `data/` directory with the project virtual environment active.
 - Run `npm ci` from the `data/` directory before geometry processing to install the local Mapshaper dependency.
-- The configured WorldPop population PNG and metadata files must be present in `IBF-seed-data/exposure/population/data-png/` before running the script to add population to the admin-area data.
+- The configured WorldPop population PNG and metadata files must be present in `NRW-seed-data/exposure/population/data-png/` before running the script to add population to the admin-area data.
 
 ## Update Workflow
 
-Run stages in this order. The commands are currently run manually, and each stage writes to the local `IBF-seed-data` repository.
+Run stages in this order. The commands are currently run manually, and each stage writes to the local `NRW-seed-data` repository.
 
 ```bash
 python -m data_management.seed_data_management.admin_areas.fetch_gadm_admin_areas

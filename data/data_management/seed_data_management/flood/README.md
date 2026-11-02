@@ -59,14 +59,14 @@ The source repository can be materialized from a Git ref and the target reposito
 ```bash
 rm -rf /tmp/ibf-seed-old-main /tmp/ibf-glofas-migration
 mkdir -p /tmp/ibf-seed-old-main /tmp/ibf-glofas-migration
-git -C /path/to/IBF-seed-data archive origin/main | tar -x -C /tmp/ibf-seed-old-main
+git -C /path/to/NRW-seed-data archive origin/main | tar -x -C /tmp/ibf-seed-old-main
 
 cd data
 uv run python -m data_management.seed_data_management.flood.migrate_glofas_station_area_mapping \
   --old-seed-repo /tmp/ibf-seed-old-main \
-  --new-seed-repo /path/to/IBF-seed-data \
+  --new-seed-repo /path/to/NRW-seed-data \
   --old-seed-revision cb5bda2d8b80984b5bfff8d7c4f451468e0e6a94 \
-  --new-seed-revision "$(git -C /path/to/IBF-seed-data rev-parse HEAD)" \
+  --new-seed-revision "$(git -C /path/to/NRW-seed-data rev-parse HEAD)" \
   --output-directory /tmp/ibf-glofas-migration \
   --minimum-new-area-overlap 0.25 \
   --minimum-old-footprint-coverage 0.9

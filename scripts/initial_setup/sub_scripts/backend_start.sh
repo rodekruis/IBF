@@ -1,5 +1,5 @@
 #!/bin/bash
 set -Eeuo pipefail
 
-cd IBF
+cd NRW
 npm run start:services

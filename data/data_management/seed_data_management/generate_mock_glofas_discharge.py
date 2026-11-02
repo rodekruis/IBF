@@ -6,7 +6,7 @@ Two variants are generated per country:
   - alert: discharge values above threshold at one station
 
 Output files are named: {COUNTRY}_glofas_discharge_{variant}.nc
-They should be committed to the IBF-seed-data repo under mock-forecasts/flood/glofas-discharge/
+They should be committed to the NRW-seed-data repo under mock-forecasts/flood/glofas-discharge/
 
 Usage:
     cd data
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 SEED_REPO_OUTPUT_DIR = (
     Path(__file__).resolve().parent.parent.parent.parent.parent
-    / "IBF-seed-data"
+    / "NRW-seed-data"
     / "mock-forecasts"
     / "flood"
     / "glofas-discharge"
@@ -230,7 +230,7 @@ def main() -> None:
     parser.add_argument(
         "--output-dir",
         default=str(SEED_REPO_OUTPUT_DIR),
-        help="Directory to write output files (default: IBF-seed-data repo sibling directory)",
+        help="Directory to write output files (default: NRW-seed-data repo sibling directory)",
     )
     parser.add_argument(
         "--alert-lead-times",

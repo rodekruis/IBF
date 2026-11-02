@@ -1,11 +1,11 @@
 {
   "name": "api-service",
   "author": "IBF",
-  "homepage": "https://github.com/rodekruis/IBF/",
+  "homepage": "https://github.com/rodekruis/NRW/",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rodekruis/IBF.git",
+    "url": "https://github.com/rodekruis/NRW.git",
     "directory": "services/api-service"
   },
   "main": "index.mjs",

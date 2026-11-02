@@ -15,7 +15,7 @@ Some countries use an empty `placeCodes` array, meaning national scope, so bound
 cd data
 uv run python -m data_management.seed_data_management.drought.migrate_drought_region_area_mapping \
   --old-seed-repo /tmp/ibf-seed-old-main \
-  --new-seed-repo /path/to/IBF-seed-data \
+  --new-seed-repo /path/to/NRW-seed-data \
   --old-seed-revision <sha> \
   --output-directory /tmp/ibf-drought-migration
 ```

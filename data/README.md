@@ -36,9 +36,9 @@ Classes and utils shared between the python projects.
 
 ### Additional setup for updating the seed repo
 
-To update the [seed data repo](https://github.com/rodekruis/IBF-seed-data), you need a local copy. You make changes to the local copy and push those like normal changes. Follow these steps to set this up:
+To update the [seed data repo](https://github.com/rodekruis/NRW-seed-data), you need a local copy. You make changes to the local copy and push those like normal changes. Follow these steps to set this up:
 
-It's recommended to clone the repo into the same parent dir as the IBF/ repo. If not, you'll need to change the `SEED_DATA_REPO_ROOT` .env var to point to the different location.
+It's recommended to clone the repo into the same parent dir as the NRW/ repo. If not, you'll need to change the `SEED_DATA_REPO_ROOT` .env var to point to the different location.
 
 ## Updating the dependencies
 
@@ -130,7 +130,7 @@ docker run --rm --init \
   --env=IBF_ENVIRONMENT=development \
   --env=IBF_API_URL=https://<deployed-api-host> \
   --env=IBF_PIPELINE_API_KEY=<PIPELINE_API_KEY of the target API> \
-  --env=GITHUB_DATA_BASE_URL=https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main \
+  --env=GITHUB_DATA_BASE_URL=https://raw.githubusercontent.com/rodekruis/NRW-seed-data/refs/heads/main \
   --env=DATA_CACHE_DIR=./data/ \
   pipelines pipeline --config pipelines/infra/configs/floods.yaml --country ETH --mock 1
 ```
@@ -148,8 +148,8 @@ All variables are read from `data/.env` (see [.env.example](.env.example)). `loa
 | `IBF_ENVIRONMENT`           | `development`                                                               | Deployment environment (`development` / `test` / `staging` / `production`). Mock runs are disallowed in `production`.                                                       |
 | `IBF_API_URL`               | `http://localhost:4000`                                                     | Base URL of the IBF API. Same value on the host and inside containers (they run with `--network=host`); point at a deployed API URL to submit elsewhere.                    |
 | `IBF_PIPELINE_API_KEY`      | `a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4`                                          | API key for submitting forecasts. Must equal `PIPELINE_API_KEY` in `services/.env`.                                                                                         |
-| `GITHUB_DATA_BASE_URL`      | `https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main` | Base URL of the seed-data repo, used to download mock/static input data.                                                                                                    |
-| `SEED_DATA_REPO_ROOT`       | `../../IBF-seed-data/`                                                      | Path to a local clone of the seed-data repo. Only used by `data_management` scripts on the host; not needed inside the container.                                           |
+| `GITHUB_DATA_BASE_URL`      | `https://raw.githubusercontent.com/rodekruis/NRW-seed-data/refs/heads/main` | Base URL of the seed-data repo, used to download mock/static input data.                                                                                                    |
+| `SEED_DATA_REPO_ROOT`       | `../../NRW-seed-data/`                                                      | Path to a local clone of the seed-data repo. Only used by `data_management` scripts on the host; not needed inside the container.                                           |
 | `GLOFAS_FTP_HOST`           | `aux.ecmwf.int`                                                             | GloFAS FTP host. Only needed for LIVE flood runs (no `--mock`).                                                                                                             |
 | `GLOFAS_FTP_USER`           | `<fill-in>`                                                                 | GloFAS FTP username (LIVE flood runs).                                                                                                                                      |
 | `GLOFAS_FTP_PASSWORD`       | `<fill-in>`                                                                 | GloFAS FTP password (LIVE flood runs).                                                                                                                                      |

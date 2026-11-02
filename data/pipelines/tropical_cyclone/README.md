@@ -109,7 +109,7 @@ The sections below describe each piece in more technical detail.
   scenario manifests - `manifest.alert.json` (the over-threshold cycle, `--mock 1`) and
   `manifest.no-alert.json` (the under-threshold cycle, `--mock 0`) - each listing that cycle's
   files as paths relative to the product dir. The seed fixtures are maintained by hand in the
-  IBF-seed-data repo (no publish script here); each cycle keeps its real NOAA
+  NRW-seed-data repo (no publish script here); each cycle keeps its real NOAA
   `gefs.<date>/<HH>/atmos/pgrb2sp25/` (wind) and `.../tctrack/` (track) layout, which the
   extractors parse for the forecast cycle datetime.
 - **ECMWF** wind/track aren't wired through `DataProvider` yet (`# TODO AB#44097`): `forecast.py`

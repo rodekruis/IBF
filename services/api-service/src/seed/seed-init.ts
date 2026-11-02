@@ -51,7 +51,7 @@ interface StationThresholdEntry {
 }
 
 const SEED_REPO_RAW_BASE_URL =
-  'https://raw.githubusercontent.com/rodekruis/IBF-seed-data/refs/heads/main';
+  'https://raw.githubusercontent.com/rodekruis/NRW-seed-data/refs/heads/main';
 
 const ADMIN_AREAS_PATH = '/admin-areas/processed';
 const STATION_THRESHOLDS_PATH = '/hazard/flood/glofas-stations';
