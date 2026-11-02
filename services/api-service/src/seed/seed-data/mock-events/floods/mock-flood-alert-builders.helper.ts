@@ -9,10 +9,10 @@ import {
   SeverityKey,
 } from '@api-service/src/shared-enums';
 
-// Flood mock events define discharge only; severity is derived from it (see withDerivedFloodSeverity)
 export type MockFloodAlert = Omit<AlertCreateDto, 'severity'> & {
   // Discharge (m3/s) per return period of the event's GloFAS station, copied once from the seed-data repo
   // (hazard/flood/glofas-stations/<country>_station_thresholds.json); not posted to the API.
+  // KEEP IN SYNC: update manually when the seed-data thresholds change.
   stationThresholds: StationThresholds;
 };
 
@@ -21,7 +21,6 @@ type StationThresholds = Record<number, number>;
 const MOCK_FORECAST_DAY_COUNT = 8;
 const MOCK_ENSEMBLE_RUN_COUNT = 10;
 
-// Default forecast range per lead-time day, relative to the median: low = median * (1 - below), high = median * (1 + above).
 // Derived from prod GloFAS runs (26-29 Oct 2026, 73 stations, 51 ensemble members): ensemble members share their
 // initial state, so the range is near zero on day 0, widens fast over days 1-3 and levels off after day 4, with
 // P90 about 1.5-2x further from the median than P10. As we are mocking alerts here, not no-alerts, we base values on the more uncertain stations (e.g. UGA G5230, most of PHL) rather than the near-zero spread of large, slow rivers.
@@ -54,8 +53,7 @@ interface MockWaterDischargeDay {
 // Every flood event carries a waterDischarge time series on its GloFAS station.
 // By default it is derived from a real station-threshold-based medianDischarge (see buildDefaultMedianDischarge).
 // Individual events may override with hand-crafted medians via waterDischarge (see the scenario overview in mock-events.helper.ts).
-// rangeScale narrows (< 1) or widens (> 1) the default forecast range, e.g. to reach the exceedance probability
-// an event needs to be an alert, as the probability is derived from this range (see withDerivedFloodSeverity).
+// rangeScale tunes the default forecast range, from which the exceedance probability is derived.
 export function buildBasicGlofasStationGeoFeature({
   issuedAt,
   geoFeatureId,
@@ -170,8 +168,8 @@ function roundToTwoDecimals(value: number): number {
 }
 
 // Severity is not mocked separately, but derived from the station's waterDischarge and its return-period
-// thresholds, the same way the pipeline does (see data/pipelines/flood/determine_alerts.py). This keeps the
-// exceedance probability consistent with the forecast range shown in the line chart.
+// thresholds, so that the exceedance probability is consistent with the forecast range shown in the line chart.
+// KEEP IN SYNC: data/pipelines/flood/determine_alerts.py
 export function withDerivedFloodSeverity(
   alerts: MockFloodAlert[],
 ): AlertCreateDto[] {
@@ -198,7 +196,6 @@ export function withDerivedFloodSeverity(
   });
 }
 
-// Like the pipeline, time intervals with a median below the lowest threshold get no severity.
 function deriveSeverityForTimeInterval({
   entry,
   thresholds,
@@ -251,7 +248,6 @@ function getMockRunDischarges({
   });
 }
 
-// Highest return period whose threshold the discharge exceeds, or 0 if none (as in the pipeline).
 function matchReturnPeriod({
   discharge,
   thresholds,

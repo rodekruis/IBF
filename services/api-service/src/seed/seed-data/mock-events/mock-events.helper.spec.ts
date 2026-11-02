@@ -10,18 +10,12 @@ describe('buildMockForecasts', () => {
 
   it('should throw for unsupported country', () => {
     expect(() =>
-      buildMockForecasts({
-        countryCodeIso3: 'XXX',
-        issuedAt,
-      }),
+      buildMockForecasts({ countryCodeIso3: 'XXX', issuedAt }),
     ).toThrow('No mock event configuration for country');
   });
 
   it('should return forecasts for all hazard types when no filter given', () => {
-    const forecasts = buildMockForecasts({
-      countryCodeIso3: 'PHL',
-      issuedAt,
-    });
+    const forecasts = buildMockForecasts({ countryCodeIso3: 'PHL', issuedAt });
 
     const hazardTypes = forecasts.map((f) => f.hazardType);
     expect(hazardTypes).toContain(HazardType.floods);

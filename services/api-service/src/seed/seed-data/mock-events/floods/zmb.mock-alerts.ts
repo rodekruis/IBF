@@ -25,7 +25,7 @@ export function buildZambiaFloodAlerts(issuedAt: Date): MockFloodAlert[] {
         200: 1087.45,
         500: 1211.23,
       },
-      // 13/20 runs exceed RP10 (65%) → 'low'
+      // Forecast range dips well below RP10, so only part of the runs exceed it → 'low' (see mock-flood-alerts.spec.ts)
       exposure: {
         adminAreas: [
           {
@@ -215,7 +215,8 @@ export function buildZambiaFloodAlerts(issuedAt: Date): MockFloodAlert[] {
         200: 6658.9,
         500: 7322.68,
       },
-      // 15/20 runs exceed RP10 (75%) → 'medium'
+      // Forecast range dips below RP10, so only part of the runs exceed it → 'medium' on the first days,
+      // 'low' later as the range widens (see mock-flood-alerts.spec.ts)
       exposure: {
         adminAreas: [
           {

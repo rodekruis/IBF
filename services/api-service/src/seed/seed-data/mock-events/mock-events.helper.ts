@@ -34,6 +34,7 @@ import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
 // - 'rising': crosses several return periods before peaking, then recedes (ETH Tendaho).
 // - Exceedance probability below 100%, from a forecast range that dips below the threshold (e.g. ZMB Kelongwa, Senanga).
 //   Use rangeScale to narrow the range where an event must stay above the country's minimum probability (e.g. ETH).
+// The resulting alert class and alert days per flood event are pinned in ./floods/mock-flood-alerts.spec.ts.
 
 // TODO: move the mock data to a code-free format (e.g. JSON per event, possibly in the seed-data repo,
 // with rasters as separate assets) so non-developers can add/edit mock events.
