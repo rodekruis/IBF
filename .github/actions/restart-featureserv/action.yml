@@ -1,0 +1,46 @@
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+# More specific about composite actions: https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions
+
+name: 'Restart featureserv'
+description: Restarts the featureserv container app.
+
+inputs:
+  environment:
+    description: Environment of the featureserv container app.
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Restart featureserv container
+      uses: azure/cli@v1
+      with:
+        inlineScript: |
+          az rest --method post --url https://management.azure.com/subscriptions/${{ env.AZURE_SUBSCRIPTION_ID }}/resourceGroups/NRW/providers/Microsoft.App/containerApps/nrw-featureserv-${{ inputs.environment }}/stop?api-version=2026-07-01
+          COUNT=1
+          STATUS=$( az containerapp show -n nrw-featureserv-${{ inputs.environment }} -g NRW --query properties.provisioningState -o tsv )
+          until [[ $STATUS == "InProgress" ]]; do
+            ((COUNT++))
+            STATUS=$( az containerapp show -n nrw-featureserv-${{ inputs.environment }} -g NRW --query properties.provisioningState -o tsv )
+            if [[ $COUNT -gt 30 ]]; then
+              echo "Error: Container app did not reach 'InProgress' status after $COUNT attempts"
+              break
+            else
+              echo "Retrying in $COUNT seconds..."
+              sleep $COUNT
+            fi
+          done
+          COUNT=1
+          STATUS=$( az containerapp show -n nrw-featureserv-${{ inputs.environment }} -g NRW --query properties.provisioningState -o tsv )
+          until [[ $STATUS == "Succeeded" ]]; do
+            ((COUNT++))
+            STATUS=$( az containerapp show -n nrw-featureserv-${{ inputs.environment }} -g NRW --query properties.provisioningState -o tsv )
+            if [[ $COUNT -gt 30 ]]; then
+              echo "Error: Container app did not reach 'Succeeded' status after $COUNT attempts"
+              break
+            else
+              echo "Retrying in $COUNT seconds..."
+              sleep $COUNT
+            fi
+          done
+          az rest --method post --url https://management.azure.com/subscriptions/${{ env.AZURE_SUBSCRIPTION_ID }}/resourceGroups/NRW/providers/Microsoft.App/containerApps/nrw-featureserv-${{ inputs.environment }}/start?api-version=2026-07-01
