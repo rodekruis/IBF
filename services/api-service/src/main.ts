@@ -84,7 +84,7 @@ function generateNrwOpenApiSwagger(app: INestApplication<any>): void {
     ignoreGlobalPrefix: true,
   });
   const document = JSON.stringify(openApiDocument, null, 2);
-  writeFileSync('nrw.openapi-schema.json', document);
+  writeFileSync('nrw.openapi-schema.json', `${document}\n`);
 }
 
 function setupAppInsights(): void {

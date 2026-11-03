@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import ftplib
-import io
 import logging
 import os
 import time
@@ -9,6 +7,11 @@ from datetime import datetime, UTC
 
 from pipelines.flood.constants import GLOFAS_MIN_ENSEMBLE_COUNT
 from pipelines.infra.environment import load_environment_settings
+from pipelines.infra.utils.ftp_connection import (
+    connect_ftp,
+    download_ftp_file,
+    FtpConnection,
+)
 from pipelines.infra.utils.nrw_logger import log_info, log_warning, log_with_tag, LogTag
 from pipelines.infra.utils.storage_helpers import (
     find_latest_forecast_date_in_cache,
@@ -135,10 +138,8 @@ def _download_ensemble_files(
     downloaded_paths: list[str] = list(cached_files) if cached_files is not None else []
 
     download_start = time.monotonic()
-    ftp = _connect_ftp(host, user, password)
-    ftp.cwd(remote_dir)
 
-    try:
+    with FtpConnection(host, user, password, remote_dir) as connection:
         # Grab new ensemble files, starting from the highest index found in cached files
         for ensemble_index in range(start_index, ensemble_count):
             ensemble_label = f"{ensemble_index:02d}"
@@ -150,20 +151,13 @@ def _download_ensemble_files(
                 f"Downloading GloFAS ensemble {ensemble_label}/{ensemble_count} for {country}",
             )
 
-            content, ftp = _download_ftp_file(
-                ftp, filename, host, user, password, remote_dir
-            )
+            content = download_ftp_file(connection, filename)
 
             local_path = os.path.join(output_dir, filename)
             with open(local_path, "wb") as f:
                 f.write(content)
 
             downloaded_paths.append(local_path)
-    finally:
-        try:
-            ftp.quit()
-        except ftplib.all_errors:
-            ftp.close()
 
     download_duration_seconds = time.monotonic() - download_start
     log_with_tag(
@@ -335,60 +329,6 @@ def _get_highest_ensemble_index(files: list[str]) -> int:
     return highest_index
 
 
-def _connect_ftp(host: str, user: str, password: str, timeout: int = 60) -> ftplib.FTP:
-    ftp = ftplib.FTP(host, timeout=timeout)
-    ftp.login(user, password)
-    return ftp
-
-
-def _download_ftp_file(
-    ftp: ftplib.FTP,
-    filename: str,
-    host: str,
-    user: str,
-    password: str,
-    remote_dir: str,
-) -> tuple[bytes, ftplib.FTP]:
-    """Download a single file, reconnecting on transient errors.
-    Returns the file content together with the (possibly re-established) FTP
-    connection, so the caller continues with a live connection.
-    """
-    # attempt n waits RETRY_BACKOFF_SECONDS * n before reconnecting.
-    retry_backoff_seconds = 5
-    max_retries = 3
-    for attempt in range(1, max_retries + 1):
-        try:
-            buffer = io.BytesIO()
-            ftp.retrbinary(f"RETR {filename}", buffer.write)
-            return buffer.getvalue(), ftp
-        except ftplib.error_perm as exc:
-            raise FileNotFoundError(f"FTP server rejected '{filename}': {exc}") from exc
-        except ftplib.all_errors as exc:
-            log_warning(
-                logger,
-                LogTag.INFRA,
-                f"Attempt {attempt}/{max_retries} failed for '{filename}': {exc}",
-            )
-            if attempt == max_retries:
-                raise ConnectionError(
-                    f"Failed to download '{filename}' after {max_retries} attempts"
-                ) from exc
-
-            # The connection might be dead
-            # Rebuild it before retrying
-            try:
-                ftp.close()
-            except ftplib.all_errors:
-                pass
-            time.sleep(retry_backoff_seconds * attempt)
-            ftp = _connect_ftp(host, user, password)
-            ftp.cwd(remote_dir)
-
-    raise ConnectionError(
-        f"Failed to download '{filename}' after {max_retries} attempts"
-    )
-
-
 def _resolve_forecast_date(today: str, user: str, password: str, host: str) -> str:
     """Resolve the forecast date to download from FTP.
 
@@ -408,15 +348,9 @@ def _check_forecast_date_available(
     today: str, user: str, password: str, host: str
 ) -> str:
     """Check if today's data is available on FTP. Fails immediately if not."""
-    ftp = _connect_ftp(host, user, password, timeout=15)
-    try:
+    with connect_ftp(host, user, password, timeout=15) as ftp:
         ftp.cwd(GLOFAS_FTP_BASE_PATH)
         available_dates = sorted(ftp.nlst())
-    finally:
-        try:
-            ftp.quit()
-        except ftplib.all_errors:
-            ftp.close()
 
     if today in available_dates:
         return today
@@ -438,15 +372,9 @@ def _resolve_forecast_date_with_retry(
 
     available_dates: list[str] = []
     for attempt in range(max_retries + 1):
-        ftp = _connect_ftp(host, user, password, timeout=15)
-        try:
+        with connect_ftp(host, user, password, timeout=15) as ftp:
             ftp.cwd(GLOFAS_FTP_BASE_PATH)
             available_dates = sorted(ftp.nlst())
-        finally:
-            try:
-                ftp.quit()
-            except ftplib.all_errors:
-                ftp.close()
 
         if today in available_dates:
             return today
