@@ -1,4 +1,8 @@
-import { buildBasicGlofasStationGeoFeature } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-alert-builders.helper';
+import {
+  buildBasicGlofasStationGeoFeature,
+  withDerivedFloodSeverity,
+} from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-alert-builders.helper';
+import { EnsembleMemberType } from '@api-service/src/shared-enums';
 
 describe('buildBasicGlofasStationGeoFeature', () => {
   const issuedAt = new Date('2026-08-25T12:00:00Z');
@@ -59,6 +63,31 @@ describe('buildBasicGlofasStationGeoFeature', () => {
     }
   });
 
+  it('should scale the default forecast range with rangeScale', () => {
+    // Arrange
+    const rangeScale = 0.5;
+
+    // Act
+    const [defaultRange, scaledRange] = [1, rangeScale].map(
+      (scale) =>
+        buildBasicGlofasStationGeoFeature({
+          issuedAt,
+          geoFeatureId,
+          medianDischarge: 1000,
+          rangeScale: scale,
+        }).attributes.waterDischarge,
+    );
+
+    // Assert
+    defaultRange.forEach((entry, day) => {
+      expect(scaledRange[day].median).toBe(entry.median);
+      expect(scaledRange[day].high - scaledRange[day].low).toBeCloseTo(
+        (entry.high - entry.low) * rangeScale,
+        1,
+      );
+    });
+  });
+
   it('should keep overridden medians and ranges, and default only missing ranges', () => {
     // Arrange
     const waterDischarge = [
@@ -79,5 +108,80 @@ describe('buildBasicGlofasStationGeoFeature', () => {
     expect(secondEntry.median).toBe(120);
     expect(secondEntry.low).toBeLessThan(120);
     expect(secondEntry.high).toBeGreaterThan(120);
+  });
+});
+
+describe('withDerivedFloodSeverity', () => {
+  const issuedAt = new Date('2026-08-25T12:00:00Z');
+  const geoFeatureId = 'G0001';
+  const stationThresholds = { 1.5: 100, 2: 200, 5: 300 };
+
+  function buildAlert(
+    waterDischarge: {
+      day: number;
+      median: number;
+      low: number;
+      high: number;
+    }[],
+  ) {
+    return {
+      eventName: 'Test event',
+      centroid: { latitude: 0, longitude: 0 },
+      stationThresholds,
+      exposure: {
+        adminAreas: [],
+        geoFeatures: [
+          buildBasicGlofasStationGeoFeature({
+            issuedAt,
+            geoFeatureId,
+            waterDischarge,
+          }),
+        ],
+      },
+    };
+  }
+
+  it('should derive median and run return periods consistent with the forecast range', () => {
+    // Arrange
+    const alert = buildAlert([
+      { day: 0, median: 90, low: 80, high: 95 },
+      { day: 1, median: 250, low: 210, high: 290 },
+      { day: 2, median: 250, low: 150, high: 350 },
+    ]);
+
+    // Act
+    const [{ severity }] = withDerivedFloodSeverity([alert]);
+
+    // Assert
+    const severityForDay = (day: number) => {
+      const atDay = severity.filter(
+        (entry) =>
+          new Date(entry.timeInterval.start).getTime() ===
+          new Date(
+            alert.exposure.geoFeatures[0].attributes.waterDischarge[day].start,
+          ).getTime(),
+      );
+      return {
+        median: atDay.find(
+          (entry) => entry.ensembleMemberType === EnsembleMemberType.median,
+        )?.severityValue,
+        runs: atDay
+          .filter(
+            (entry) => entry.ensembleMemberType === EnsembleMemberType.run,
+          )
+          .map((entry) => entry.severityValue),
+      };
+    };
+    // Median below the lowest threshold: no severity, like the pipeline
+    expect(severityForDay(0).median).toBeUndefined();
+    // Whole range between the 2 and 5 year thresholds: all runs exceed 2 years
+    expect(severityForDay(1)).toEqual({
+      median: 2,
+      runs: Array<number>(10).fill(2),
+    });
+    // Range dips below the 2 year threshold: 7 of 10 runs exceed 2 years
+    const dayWithWideRange = severityForDay(2);
+    expect(dayWithWideRange.median).toBe(2);
+    expect(dayWithWideRange.runs.filter((run) => run >= 2)).toHaveLength(7);
   });
 });

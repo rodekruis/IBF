@@ -1,21 +1,26 @@
-import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import {
   buildBasicGlofasStationGeoFeature,
-  buildFloodSeverity,
+  MockFloodAlert,
 } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-alert-builders.helper';
 import { KEN_ATHI_MUNYU_3DA02_FLOOD_DEPTH_BASE64 } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-rasters.const';
 import { LayerName } from '@api-service/src/shared-enums';
 
-export function buildKenyaFloodAlerts(issuedAt: Date): AlertCreateDto[] {
+export function buildKenyaFloodAlerts(issuedAt: Date): MockFloodAlert[] {
   return [
     {
       eventName: 'ATHI MUNYU (3DA02)',
       centroid: { latitude: -3.1789, longitude: 39.3795 },
-      severity: buildFloodSeverity({
-        issuedAt,
-        startDay: 1,
-        medianReturnPeriod: 10,
-      }),
+      stationThresholds: {
+        1.5: 2.41,
+        2: 3.29,
+        5: 5.44,
+        10: 6.86,
+        20: 8.23,
+        50: 9.99,
+        100: 11.32,
+        200: 12.64,
+        500: 14.38,
+      },
       exposure: {
         adminAreas: [
           {

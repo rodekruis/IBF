@@ -1,6 +1,6 @@
+import { MockConfigError } from '@api-service/src/seed/seed-data/mock-events/mock-config.error';
 import {
   buildMockForecasts,
-  MockConfigError,
   SUPPORTED_MOCK_COUNTRIES,
 } from '@api-service/src/seed/seed-data/mock-events/mock-events.helper';
 import { HazardType } from '@api-service/src/shared-enums';

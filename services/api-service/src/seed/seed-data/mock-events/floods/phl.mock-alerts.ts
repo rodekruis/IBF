@@ -1,21 +1,26 @@
-import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import {
   buildBasicGlofasStationGeoFeature,
-  buildFloodSeverity,
+  MockFloodAlert,
 } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-alert-builders.helper';
 import { PHL_NABUA_FLOOD_DEPTH_BASE64 } from '@api-service/src/seed/seed-data/mock-events/floods/mock-flood-rasters.const';
 import { LayerName } from '@api-service/src/shared-enums';
 
-export function buildPhilippinesFloodAlerts(issuedAt: Date): AlertCreateDto[] {
+export function buildPhilippinesFloodAlerts(issuedAt: Date): MockFloodAlert[] {
   return [
     {
       eventName: 'Nabua',
       centroid: { latitude: 13.3964, longitude: 123.3779 },
-      severity: buildFloodSeverity({
-        issuedAt,
-        startDay: 2,
-        medianReturnPeriod: 20,
-      }),
+      stationThresholds: {
+        1.5: 445.5,
+        2: 528.75,
+        5: 733.62,
+        10: 869.26,
+        20: 999.38,
+        50: 1167.79,
+        100: 1293.99,
+        200: 1419.74,
+        500: 1585.63,
+      },
       exposure: {
         adminAreas: [
           {
