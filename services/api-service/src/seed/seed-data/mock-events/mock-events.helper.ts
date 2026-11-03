@@ -12,7 +12,6 @@ import { buildSouthSudanFloodAlerts } from '@api-service/src/seed/seed-data/mock
 import { buildUgandaFloodAlerts } from '@api-service/src/seed/seed-data/mock-events/floods/uga.mock-alerts';
 import { buildZambiaFloodAlerts } from '@api-service/src/seed/seed-data/mock-events/floods/zmb.mock-alerts';
 import { MockConfigError } from '@api-service/src/seed/seed-data/mock-events/mock-config.error';
-import { buildPhilippinesTropicalCycloneAlerts } from '@api-service/src/seed/seed-data/mock-events/tropical-cyclone/phl.mock-alerts';
 import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
 
 // Mock events per country & hazard-type:
@@ -51,24 +50,12 @@ const FLOODS_FORECAST_SOURCES: ForecastSource[] = [
   ForecastSource.glofasRiverDischarge,
 ];
 
-const TROPICAL_CYCLONE_FORECAST_SOURCES: ForecastSource[] = [
-  ForecastSource.worldpop,
-  ForecastSource.gefsTropicalCyclone,
-];
-
 const MOCK_BUILDERS: Record<string, MockHazardConfig[]> = {
   ETH: [floodsConfig(buildEthiopiaFloodAlerts)],
   UGA: [floodsConfig(buildUgandaFloodAlerts)],
   MWI: [floodsConfig(buildMalawiFloodAlerts)],
   KEN: [floodsConfig(buildKenyaFloodAlerts)],
-  PHL: [
-    floodsConfig(buildPhilippinesFloodAlerts),
-    {
-      hazardType: HazardType.tropicalCyclone,
-      forecastSources: TROPICAL_CYCLONE_FORECAST_SOURCES,
-      builder: buildPhilippinesTropicalCycloneAlerts,
-    },
-  ],
+  PHL: [floodsConfig(buildPhilippinesFloodAlerts)],
   SSD: [floodsConfig(buildSouthSudanFloodAlerts)],
   ZMB: [floodsConfig(buildZambiaFloodAlerts)],
 };

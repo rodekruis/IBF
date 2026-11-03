@@ -19,18 +19,17 @@ describe('buildMockForecasts', () => {
 
     const hazardTypes = forecasts.map((f) => f.hazardType);
     expect(hazardTypes).toContain(HazardType.floods);
-    expect(hazardTypes).toContain(HazardType.tropicalCyclone);
   });
 
   it('should filter by hazardTypes when provided', () => {
     const forecasts = buildMockForecasts({
       countryCodeIso3: 'PHL',
       issuedAt,
-      hazardTypes: [HazardType.tropicalCyclone],
+      hazardTypes: [HazardType.floods],
     });
 
     expect(forecasts).toHaveLength(1);
-    expect(forecasts[0].hazardType).toBe(HazardType.tropicalCyclone);
+    expect(forecasts[0].hazardType).toBe(HazardType.floods);
     expect(forecasts[0].countryCodeIso3).toBe('PHL');
     expect(forecasts[0].alerts.length).toBeGreaterThan(0);
   });

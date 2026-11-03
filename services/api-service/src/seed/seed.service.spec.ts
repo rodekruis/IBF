@@ -186,7 +186,7 @@ describe('SeedService', () => {
           scenario: MockScenario.events,
           clearEvents: false,
           issuedAt,
-          hazardTypes: [HazardType.tropicalCyclone],
+          hazardTypes: [HazardType.floods],
         };
 
         // Act
@@ -204,7 +204,7 @@ describe('SeedService', () => {
           scenario: MockScenario.events,
           clearEvents: false,
           issuedAt,
-          hazardTypes: [HazardType.tropicalCyclone],
+          hazardTypes: [HazardType.floods],
           notify: true,
         };
 
@@ -216,7 +216,7 @@ describe('SeedService', () => {
         expect(createAlertsAndNotifyMock).toHaveBeenCalledTimes(1);
         expect(createAlertsAndNotifyMock).toHaveBeenCalledWith(
           expect.objectContaining({
-            hazardType: HazardType.tropicalCyclone,
+            hazardType: HazardType.floods,
             countryCodeIso3: 'PHL',
           }),
         );
@@ -250,7 +250,7 @@ describe('SeedService', () => {
             scenario: MockScenario.events,
             clearEvents: false,
             issuedAt,
-            hazardTypes: [HazardType.tropicalCyclone],
+            hazardTypes: [HazardType.floods],
           };
 
           // Act
@@ -260,7 +260,7 @@ describe('SeedService', () => {
           expect(createAlertsMock).toHaveBeenCalledTimes(1);
           expect(createAlertsMock).toHaveBeenCalledWith(
             expect.objectContaining({
-              hazardType: HazardType.tropicalCyclone,
+              hazardType: HazardType.floods,
               countryCodeIso3: 'PHL',
             }),
           );
@@ -297,15 +297,12 @@ describe('SeedService', () => {
           await service.mockEvents(params);
 
           // Assert
-          expect(createAlertsMock).toHaveBeenCalledTimes(2);
+          expect(createAlertsMock).toHaveBeenCalledTimes(1);
           const hazardTypesCalled = createAlertsMock.mock.calls.map(
             (call) => (call[0] as { hazardType: HazardType }).hazardType,
           );
           expect(hazardTypesCalled).toEqual(
-            expect.arrayContaining([
-              HazardType.floods,
-              HazardType.tropicalCyclone,
-            ]),
+            expect.arrayContaining([HazardType.floods]),
           );
         });
       });
@@ -334,13 +331,7 @@ describe('SeedService', () => {
           await service.mockEvents(params);
 
           // Assert
-          expect(createAlertsMock).toHaveBeenCalledTimes(1);
-          expect(createAlertsMock).toHaveBeenCalledWith(
-            expect.objectContaining({
-              hazardType: HazardType.tropicalCyclone,
-              countryCodeIso3: 'PHL',
-            }),
-          );
+          expect(createAlertsMock).not.toHaveBeenCalled();
         });
       });
 
@@ -357,8 +348,8 @@ describe('SeedService', () => {
           await service.mockEvents(params);
 
           // Assert
-          // ETH: floods, PHL: floods + tropicalCyclone, MWI: floods
-          expect(createAlertsMock).toHaveBeenCalledTimes(4);
+          // ETH: floods, PHL: floods, MWI: floods
+          expect(createAlertsMock).toHaveBeenCalledTimes(3);
           const callArgs = createAlertsMock.mock.calls.map(
             (call) =>
               call[0] as {
@@ -375,10 +366,6 @@ describe('SeedService', () => {
               expect.objectContaining({
                 countryCodeIso3: 'PHL',
                 hazardType: HazardType.floods,
-              }),
-              expect.objectContaining({
-                countryCodeIso3: 'PHL',
-                hazardType: HazardType.tropicalCyclone,
               }),
               expect.objectContaining({
                 countryCodeIso3: 'MWI',
