@@ -2,7 +2,7 @@
 
 [pg_featureserv](https://github.com/CrunchyData/pg_featureserv) is a lightweight OGC API Features server that reads directly from PostgreSQL. It auto-discovers tables and views that have a PostGIS geometry column and serves them as GeoJSON feature collections.
 
-## How it works in IBF
+## How it works in NRW
 
 The `admin-area` table in the `api-service` schema stores geometry as JSONB (for Prisma compatibility).
 

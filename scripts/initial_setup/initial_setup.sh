@@ -148,7 +148,7 @@ chmod +x "${TARGET_DIR}/"*.sh
 
 print_header "Done!"
 
-echo "The IBF application has been set up in '${TARGET_DIR}'."
+echo "The NRW application has been set up in '${TARGET_DIR}'."
 echo "Run 'frontend_start.sh' to start the frontend"
 echo "Run 'backend_start.sh' to start the backend services"
 echo "Run 'backend_reset_and_seed.sh' to reset and seed the database with mock data (make sure backend is running first)"

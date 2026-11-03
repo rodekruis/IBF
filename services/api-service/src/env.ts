@@ -30,7 +30,7 @@ export const env = createEnv({
     ENV_NAME: z.string().optional(),
     ENV_ICON: z.url().or(z.string().startsWith('data:')).optional(),
     NODE_ENV: z.enum(['test', 'production', 'development']),
-    GLOBAL_IBF_VERSION: z.string().optional(),
+    GLOBAL_NRW_VERSION: z.string().optional(),
 
     // API set up
     PORT_API_SERVICE: z.coerce.number().default(8080),
@@ -45,7 +45,7 @@ export const env = createEnv({
     HIGH_THROTTLING_TTL: z.coerce.number().optional().default(60),
 
     // Database
-    POSTGRES_CONTAINER_NAME: z.string().default('ibf-db'),
+    POSTGRES_CONTAINER_NAME: z.string().default('nrw-db'),
     POSTGRES_PORT: z.coerce.number().default(5432),
     POSTGRES_USER: z.string(),
     POSTGRES_PASSWORD: z.string(),

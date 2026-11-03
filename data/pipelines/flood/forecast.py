@@ -54,13 +54,13 @@ def calculate_flood_forecasts(
 ) -> None:
     ### Step 1 - Load data from the data provider ###
     alert_configs: list[AlertConfig] = data_provider.get_data(
-        DataSource.ALERT_CONFIGS_IBF_API, list
+        DataSource.ALERT_CONFIGS_NRW_API, list
     )
     glofas_stations: dict[str, LocationPoint] = data_provider.get_data(
-        DataSource.GLOFAS_STATIONS_IBF_API, dict
+        DataSource.GLOFAS_STATIONS_NRW_API, dict
     )
     target_admin_areas = data_provider.get_data(
-        DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
+        DataSource.ADMIN_AREA_NRW_API, AdminAreasSet
     )
     flood_depth_provider: FloodDepthProvider = data_provider.get_data(
         DataSource.FLOOD_DEPTH_SEED_REPO, FloodDepthProvider
@@ -195,7 +195,7 @@ def calculate_flood_forecasts(
             # TODO: this is not actually lazy-loading at the moment, only lazy-reading earlier downloaded data. Consider true lazy loading.
             if population_raster is None:
                 population_raster = data_provider.get_data(
-                    DataSource.POPULATION_IBF_API, RasterData
+                    DataSource.POPULATION_NRW_API, RasterData
                 )
 
             population_exposed_raster = compute_population_exposed(

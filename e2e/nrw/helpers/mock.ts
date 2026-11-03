@@ -1,9 +1,9 @@
-import { apiRequest } from '@ibf-e2e/nrw/helpers/api-request';
+import { apiRequest } from '@nrw-e2e/nrw/helpers/api-request';
 import {
   HazardType,
   HttpMethod,
   MockScenario,
-} from '@ibf-e2e/nrw/helpers/enums';
+} from '@nrw-e2e/nrw/helpers/enums';
 
 export async function mockDb({
   scenario,

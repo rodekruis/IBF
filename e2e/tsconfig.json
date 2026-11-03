@@ -14,7 +14,7 @@
     "typeRoots": ["./node_modules/@types"],
     "baseUrl": ".",
     "paths": {
-      "@ibf-e2e/*": ["./*"]
+      "@nrw-e2e/*": ["./*"]
     }
   },
   "include": ["**/*.ts", "**/*.mjs"],

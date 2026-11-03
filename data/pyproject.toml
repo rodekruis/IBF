@@ -2,7 +2,7 @@
 name = "pipelines"
 version = "0.1.0"
 description = "Forecast hazards impact on people and assets."
-authors = [{ name = "IBF", email = "ibf-devops@redcross.nl" }]
+authors = [{ name = "NRW", email = "ibf-devops@redcross.nl" }]
 requires-python = ">=3.12,<4"
 readme = "README.md"
 license = "Apache-2.0"

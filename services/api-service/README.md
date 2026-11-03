@@ -1,6 +1,6 @@
 # API-Service
 
-The API-Service is the backend of IBF, which is called by the IBF-pipelines to post hazard forecast data, and by the IBF-portal to retrieve data.
+The API-Service is the backend of NRW, which is called by the NRW pipelines to post hazard forecast data, and by the NRW portal to retrieve data.
 
 ---
 
@@ -131,7 +131,7 @@ Which translates to these commands (after setting `COVERAGE_DEV_STARTUP_SUFFIX` 
 
 ```bash
 # step #1
-cd IBF
+cd NRW
 npm run start:services:detach
 # step #2
 cd services/api-service

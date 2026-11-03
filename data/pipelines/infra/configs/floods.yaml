@@ -6,10 +6,10 @@ hazard_type: floods
 # Entries with `source_target` are loaded only for that source target
 # Selected by --mock and skipped when --infra-only is set
 _data_sources: &data_sources
-  - source: alert_configs_ibf_api
-  - source: glofas_stations_ibf_api
-  - source: admin_area_ibf_api
-  - source: population_ibf_api
+  - source: alert_configs_nrw_api
+  - source: glofas_stations_nrw_api
+  - source: admin_area_nrw_api
+  - source: population_nrw_api
   - source: flood_depth_seed_repo
   - source: glofas_discharge_ftp
     source_target: live # production (GloFAS FTP), or local cache with --local-data

@@ -15,7 +15,7 @@ from pipelines.infra.data_types.loaded_data_types import (
     LoadedDataSource,
     RasterData,
 )
-from pipelines.infra.utils.data_provider_fetchers import _load_ibf_api_population_data
+from pipelines.infra.utils.data_provider_fetchers import _load_nrw_api_population_data
 
 
 def _make_config(
@@ -23,7 +23,7 @@ def _make_config(
 ) -> DataSourceConfig:
     return DataSourceConfig(
         country_code_iso_3=country,
-        source=DataSource.POPULATION_IBF_API,
+        source=DataSource.POPULATION_NRW_API,
         hazard_type=HazardType.FLOODS,
     )
 
@@ -31,7 +31,7 @@ def _make_config(
 def _make_container() -> LoadedDataSource:
     return LoadedDataSource(
         data_type=DataType.UNSPECIFIED,
-        data_source=DataSource.POPULATION_IBF_API,
+        data_source=DataSource.POPULATION_NRW_API,
     )
 
 
@@ -68,7 +68,7 @@ def _make_api_metadata_response() -> dict:
     }
 
 
-class TestLoadIbfApiPopulationData:
+class TestLoadNrwApiPopulationData:
     def test_produces_raster_data_with_correct_values(self):
         population_values = np.array([[1.5, 2.0], [0.0, 3.5]], dtype=np.float64)
         png_bytes = _make_rgba_png_bytes(population_values)
@@ -81,7 +81,7 @@ class TestLoadIbfApiPopulationData:
         api_client.get_static_raster_metadata.return_value = api_metadata
         api_client.get_static_raster_data_image.return_value = png_bytes
 
-        _load_ibf_api_population_data(config, container, api_client)
+        _load_nrw_api_population_data(config, container, api_client)
 
         assert container.data_type == DataType.RASTER_DATA
         assert isinstance(container.data, RasterData)
@@ -100,7 +100,7 @@ class TestLoadIbfApiPopulationData:
         with pytest.raises(
             ValueError, match="Failed to download population raster metadata"
         ):
-            _load_ibf_api_population_data(config, container, api_client)
+            _load_nrw_api_population_data(config, container, api_client)
 
         assert container.error is not None
 
@@ -116,6 +116,6 @@ class TestLoadIbfApiPopulationData:
         with pytest.raises(
             ValueError, match="Failed to download population raster data"
         ):
-            _load_ibf_api_population_data(config, container, api_client)
+            _load_nrw_api_population_data(config, container, api_client)
 
         assert container.error is not None

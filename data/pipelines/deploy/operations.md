@@ -56,7 +56,7 @@ In the environment's Batch account:
 - **Jobs**: one job per run, named `nrw-<hazard>-<yyyymmdd-HHMMSS>`. Open the job, then its task, to see its state, exit code and (while the node is still running) its `stdout.txt` and `stderr.txt`.
 - **Pools**: node counts and resize errors, for jobs that stay queued without starting.
 
-Test and staging share a Batch account. To see which environment a job belongs to, check `IBF_ENVIRONMENT` in the task's environment settings.
+Test and staging share a Batch account. To see which environment a job belongs to, check `NRW_ENVIRONMENT` in the task's environment settings.
 
 ## Logs
 
@@ -193,7 +193,7 @@ The email only says that a task failed, not why: check the logs above. The alert
 | Symptom                                         | Cause and fix                                                                                                                                                                                                                            |
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | No job was submitted at the scheduled time      | Check the scheduler's logs in Application Insights (role name = Function App name) and the Function App's **Environment variables**: every Key Vault reference must show as resolved. After rotating a secret, restart the Function App. |
-| Task fails immediately with an image pull error | The image `pipelines:<IBF_ENVIRONMENT>` does not exist in `nrwdockerregistry`. Run the `publish_<env>_pipeline_docker_image` workflow.                                                                                                   |
+| Task fails immediately with an image pull error | The image `pipelines:<NRW_ENVIRONMENT>` does not exist in `nrwdockerregistry`. Run the `publish_<env>_pipeline_docker_image` workflow.                                                                                                   |
 | Job stays queued; no node starts                | Check the pool's resize errors. `AllocationFailed` with "subnet has delegation" means the pool subnet (`BatchPools-<env>`) has a subnet delegation, which must be removed in `NRW-infra`.                                                |
 | Task ends with exit code 137                    | The pipeline ran out of memory on the node.                                                                                                                                                                                              |
 | Task is terminated after 10 hours               | The task hit its maximum run time (`TASK_MAX_WALL_CLOCK_TIME` in [batch_client.py](function/batch_client.py)).                                                                                                                           |

@@ -97,7 +97,7 @@ def _generate_mock_alerts(
     alert_count: int,
 ) -> None:
     target_admin_areas = data_provider.get_data(
-        DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
+        DataSource.ADMIN_AREA_NRW_API, AdminAreasSet
     )
     if not target_admin_areas:
         data_submitter.add_error("Missing admin area data for mock alert")

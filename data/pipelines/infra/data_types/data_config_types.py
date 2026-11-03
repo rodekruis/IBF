@@ -41,10 +41,10 @@ class DataSource(StrEnum):
     See the readme for more details on how to add to this.
     """
 
-    ADMIN_AREA_IBF_API = "admin_area_ibf_api"
-    ALERT_CONFIGS_IBF_API = "alert_configs_ibf_api"
-    GLOFAS_STATIONS_IBF_API = "glofas_stations_ibf_api"
-    POPULATION_IBF_API = "population_ibf_api"
+    ADMIN_AREA_NRW_API = "admin_area_nrw_api"
+    ALERT_CONFIGS_NRW_API = "alert_configs_nrw_api"
+    GLOFAS_STATIONS_NRW_API = "glofas_stations_nrw_api"
+    POPULATION_NRW_API = "population_nrw_api"
     FLOOD_DEPTH_SEED_REPO = "flood_depth_seed_repo"
     GLOFAS_DISCHARGE_FTP = "glofas_discharge_ftp"
     GLOFAS_DISCHARGE_SEED_REPO_ALERT = "glofas_discharge_seed_repo_alert"
@@ -60,7 +60,7 @@ class DataSource(StrEnum):
 # Data sources not listed here are not reported as forecast source to the API.
 FORECAST_SOURCE_BY_DATA_SOURCE: dict[DataSource, ForecastSource] = {
     # Generic
-    DataSource.POPULATION_IBF_API: ForecastSource.WORLDPOP,
+    DataSource.POPULATION_NRW_API: ForecastSource.WORLDPOP,
     # Floods
     DataSource.FLOOD_DEPTH_SEED_REPO: ForecastSource.GLOFAS_FLOOD_HAZARD_MAPS,
     DataSource.GLOFAS_DISCHARGE_FTP: ForecastSource.GLOFAS_RIVER_DISCHARGE,

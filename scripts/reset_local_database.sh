@@ -19,9 +19,9 @@ print_header() {
     echo ""
 }
 
-DB_NAME="ibf"
+DB_NAME="nrw"
 DB_PORT="5436"
-DB_USER="ibf"
+DB_USER="nrw"
 SCHEMA="api-service"
 
 if [[ -f "services/.env" ]]; then

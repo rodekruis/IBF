@@ -1,5 +1,5 @@
-import { env } from '@ibf-e2e/env';
-import { HttpMethod } from '@ibf-e2e/nrw/helpers/enums';
+import { env } from '@nrw-e2e/env';
+import { HttpMethod } from '@nrw-e2e/nrw/helpers/enums';
 
 export async function apiRequest({
   method,

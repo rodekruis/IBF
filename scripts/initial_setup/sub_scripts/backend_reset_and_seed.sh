@@ -38,7 +38,7 @@ if ! curl --silent --fail 'http://localhost:4000/api/health' > /dev/null; then
 fi
 echo "✅ Backend is running"
 
-print_header "Resetting IBF instance"
+print_header "Resetting NRW instance"
 
 curl --silent --show-error --fail -X 'POST' \
   'http://localhost:4000/api/reset?countryCodes=MWI' \

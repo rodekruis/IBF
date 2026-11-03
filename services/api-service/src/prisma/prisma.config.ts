@@ -28,7 +28,7 @@ const composedUrl =
 export const DATABASE_URL = process.env.DATABASE_URL ?? composedUrl;
 
 // This is needed for diffing the migrations with Prisma
-const shadowDbName = 'ibf-shadow-db';
+const shadowDbName = 'nrw-shadow-db';
 const encodedShadowDbName = encodeURIComponent(shadowDbName);
 const SHADOW_DATABASE_URL = `${baseUrl}/${encodedShadowDbName}?schema=${schemaName}`;
 

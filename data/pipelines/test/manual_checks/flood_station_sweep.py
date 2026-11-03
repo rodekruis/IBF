@@ -64,7 +64,7 @@ from pipelines.infra.utils.alert_admin_aggregation import (
 )
 from pipelines.infra.utils.alert_centroid import compute_alert_centroid
 from pipelines.infra.utils.api_client import ApiClient
-from pipelines.infra.utils.data_provider_fetchers import _load_ibf_api_population_data
+from pipelines.infra.utils.data_provider_fetchers import _load_nrw_api_population_data
 from pipelines.infra.utils.nrw_logger import log_info, LogTag
 from rasterio.transform import Affine
 
@@ -127,7 +127,7 @@ def run_station_sweep(
 
     all_results: list[dict[str, object]] = []
     with patch(
-        "pipelines.infra.utils.data_provider_fetchers._load_ibf_api_population_data",
+        "pipelines.infra.utils.data_provider_fetchers._load_nrw_api_population_data",
         side_effect=lambda config, container, client: _load_population_raster_cached(
             config,
             container,
@@ -203,9 +203,9 @@ def _run_country_sweep(
         return [_result(country_code, "", "load_error", load_errors)]
 
     alert_configs: list[AlertConfig] = data_provider.get_data(
-        DataSource.ALERT_CONFIGS_IBF_API, list
+        DataSource.ALERT_CONFIGS_NRW_API, list
     )
-    admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_IBF_API, AdminAreasSet)
+    admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_NRW_API, AdminAreasSet)
 
     station_results: list[dict[str, object]] = []
     for alert_config in alert_configs:
@@ -363,7 +363,7 @@ def _calculate_alerts(
     return_period: float | None,
 ) -> DataSubmitter:
     country_code = str(country_config.country_code_iso_3)
-    data_provider.loaded_data[DataSource.ALERT_CONFIGS_IBF_API].data = alert_configs
+    data_provider.loaded_data[DataSource.ALERT_CONFIGS_NRW_API].data = alert_configs
     submitter = DataSubmitter(api_client)
     submitter.set_forecast_metadata(
         issued_at=datetime.now(UTC),
@@ -476,7 +476,7 @@ def _load_population_raster_cached(
         log_info(logger, LogTag.INFRA, f"Loaded cached population raster {cache_path}")
         return
 
-    _load_ibf_api_population_data(config, container, api_client)
+    _load_nrw_api_population_data(config, container, api_client)
     raster = container.data
     if not isinstance(raster, RasterData):
         raise TypeError(

@@ -101,7 +101,7 @@ The sections below describe each piece in more technical detail.
 
 ## Forecast-source data
 
-- **Alert config**: spatial + temporal extent (`"lead-time-spectrum"`), fetched from the IBF API.
+- **Alert config**: spatial + temporal extent (`"lead-time-spectrum"`), fetched from the NRW API.
 - **Wind** (GRIB2) and **track** (ATCF) for **GEFS** are wired through `DataProvider`:
   `DataSource.GEFS_WIND_SEED_REPO_*` / `GEFS_TRACK_SEED_REPO_*` download the cycle from the
   seed-data repo (like floods' GloFAS mock data) and cache it under `DATA_CACHE_DIR` - see

@@ -114,7 +114,7 @@ def _run_country(
     )
 
     # --- Post-processing: derive the event centroid and aggregate admin area data upward ---
-    admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_IBF_API, AdminAreasSet)
+    admin_areas = data_provider.get_data(DataSource.ADMIN_AREA_NRW_API, AdminAreasSet)
     for alert in data_submitter.get_alerts():
         alert.centroid = compute_alert_centroid(alert, admin_areas)
         aggregate_to_parent_admin_levels(alert, admin_areas)
@@ -420,7 +420,7 @@ def configure_app_insights() -> None:
     type=click.Choice([mode.value for mode in OutputMode]),
     default=OutputMode.API.value,
     show_default=True,
-    help="Where to send pipeline results: 'api' submits to the IBF API, 'local' writes to disk.",
+    help="Where to send pipeline results: 'api' submits to the NRW API, 'local' writes to disk.",
 )
 @click.option(
     "--output-path",

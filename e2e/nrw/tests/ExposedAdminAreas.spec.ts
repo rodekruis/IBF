@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-import { MockScenario } from '@ibf-e2e/nrw/helpers/enums';
-import { mockDb } from '@ibf-e2e/nrw/helpers/mock';
-import { resetDb } from '@ibf-e2e/nrw/helpers/reset';
-import { freezeEventsViewTime } from '@ibf-e2e/nrw/helpers/view-time';
-import { NrwMapPage } from '@ibf-e2e/nrw/pages/NrwMapPage';
+import { MockScenario } from '@nrw-e2e/nrw/helpers/enums';
+import { mockDb } from '@nrw-e2e/nrw/helpers/mock';
+import { resetDb } from '@nrw-e2e/nrw/helpers/reset';
+import { freezeEventsViewTime } from '@nrw-e2e/nrw/helpers/view-time';
+import { NrwMapPage } from '@nrw-e2e/nrw/pages/NrwMapPage';
 
 // The exposure of the South Sudan event splits into two states, so the event
 // card opens at the states and can drill down into their counties.

@@ -1,4 +1,4 @@
-export const INTERFACE_NAME_HEADER = 'x-IBF-interface';
+export const INTERFACE_NAME_HEADER = 'x-nrw-interface';
 
 export enum InterfaceNames {
   portal = 'portal', // Hard-coded, used in: interfaces/portal/src/logout/logout.js (make sure to keep in sync)

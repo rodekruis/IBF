@@ -35,7 +35,7 @@ from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
 from pipeline_run_request import COUNTRY_CODE_PATTERN
 
-CONTAINER_IMAGE_TAG = os.environ.get("IBF_ENVIRONMENT")
+CONTAINER_IMAGE_TAG = os.environ.get("NRW_ENVIRONMENT")
 CONTAINER_IMAGE = f"nrwdockerregistry.azurecr.io/pipelines:{CONTAINER_IMAGE_TAG}"
 TASK_MAX_WALL_CLOCK_TIME = timedelta(hours=10)
 TASK_MAX_RETRY_COUNT = 0
@@ -47,9 +47,9 @@ TASK_MAX_RETRY_COUNT = 0
 # These secrets are not very sensitive and can already be read from github by more users,
 # so this is not considered an issue.
 TASK_ENVIRONMENT_VARIABLES = (
-    "IBF_ENVIRONMENT",
-    "IBF_API_URL",
-    "IBF_PIPELINE_API_KEY",
+    "NRW_ENVIRONMENT",
+    "NRW_API_URL",
+    "NRW_PIPELINE_API_KEY",
     "GITHUB_DATA_BASE_URL",
     "GLOFAS_FTP_HOST",
     "GLOFAS_FTP_USER",

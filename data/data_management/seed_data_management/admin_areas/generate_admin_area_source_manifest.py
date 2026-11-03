@@ -64,7 +64,7 @@ def get_country_manifest(country: str) -> dict:
 def build_manifest() -> dict:
     return {
         "generatedAt": datetime.now(UTC).date().isoformat(),
-        "generatedBy": "IBF/data/data_management/seed_data_management/admin_areas",
+        "generatedBy": "NRW/data/data_management/seed_data_management/admin_areas",
         "processedDirectory": "admin-areas/processed",
         "processing": {
             "rawHdxSources": "local-cache-only",

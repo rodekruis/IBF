@@ -80,7 +80,7 @@ export default [
       'simple-import-sort/imports': [
         'error',
         {
-          groups: [['^@?\\w'], ['^@ibf-e2e'], ['^\\.']],
+          groups: [['^@?\\w'], ['^@nrw-e2e'], ['^\\.']],
         },
       ],
       'simple-import-sort/exports': 'error',

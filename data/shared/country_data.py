@@ -3,7 +3,7 @@ from enum import StrEnum
 
 # ISO-3 codes for countries present in both the WorldPop and GADM datasets.
 # This includes all generally recognized countries.
-# For purposes of IBF and GO, this should contain all in-scope countries,
+# For purposes of NRW and GO, this should contain all in-scope countries,
 # as well as some that are not.
 # Sources:
 # - https://data.worldpop.org/GIS/Population/Global_2015_2030/R2024A/2024/

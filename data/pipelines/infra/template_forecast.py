@@ -30,10 +30,10 @@ def calculate_forecasts(
     # For early prototyping, fetch a new data source here directly.
     # Once stable, inform software-dev to add it to the data provider config.
     alert_configs: list[AlertConfig] = data_provider.get_data(
-        DataSource.ALERT_CONFIGS_IBF_API, list
+        DataSource.ALERT_CONFIGS_NRW_API, list
     )
     target_admin_areas = data_provider.get_data(
-        DataSource.ADMIN_AREA_IBF_API, AdminAreasSet
+        DataSource.ADMIN_AREA_NRW_API, AdminAreasSet
     )
 
     if not alert_configs or not target_admin_areas:
