@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-import ftplib
-import io
 import logging
 import os
 import time
 from datetime import datetime, UTC
-from typing import Self
 
 from pipelines.flood.constants import GLOFAS_MIN_ENSEMBLE_COUNT
 from pipelines.infra.environment import load_environment_settings
+from pipelines.infra.utils.ftp_connection import (
+    connect_ftp,
+    download_ftp_file,
+    FtpConnection,
+)
 from pipelines.infra.utils.nrw_logger import log_info, log_warning, log_with_tag, LogTag
-from pipelines.infra.utils.retry import retry
 from pipelines.infra.utils.storage_helpers import (
     find_latest_forecast_date_in_cache,
     get_cached_glofas_country_split_files,
@@ -25,16 +26,6 @@ from pipelines.infra.utils.storage_helpers import (
 logger = logging.getLogger(__name__)
 
 GLOFAS_FTP_BASE_PATH = "DATA/CEMS_Flood_Glofas/fc_netcdf"
-
-# Transient protocol errors and dead connections. Permanent rejections
-# (error_perm) will never succeed on retry.
-FTP_RETRYABLE_ERRORS = (
-    ftplib.error_temp,
-    ftplib.error_reply,
-    ftplib.error_proto,
-    EOFError,
-    OSError,
-)
 
 
 def download_glofas_discharge_from_ftp(country: str) -> list[str]:
@@ -160,7 +151,7 @@ def _download_ensemble_files(
                 f"Downloading GloFAS ensemble {ensemble_label}/{ensemble_count} for {country}",
             )
 
-            content = _download_ftp_file(connection, filename)
+            content = download_ftp_file(connection, filename)
 
             local_path = os.path.join(output_dir, filename)
             with open(local_path, "wb") as f:
@@ -338,87 +329,6 @@ def _get_highest_ensemble_index(files: list[str]) -> int:
     return highest_index
 
 
-def _connect_ftp(host: str, user: str, password: str, timeout: int = 60) -> ftplib.FTP:
-    ftp = ftplib.FTP(host, timeout=timeout)
-    try:
-        ftp.login(user, password)
-    except ftplib.all_errors:
-        ftp.close()
-        raise
-    return ftp
-
-
-def _close_ftp(ftp: ftplib.FTP | None) -> None:
-    # quit() on an already closed connection raises AttributeError
-    if ftp is None or ftp.sock is None:
-        return
-    try:
-        ftp.quit()
-    except ftplib.all_errors:
-        ftp.close()
-
-
-class FtpConnection:
-    """FTP connection that connects lazily and drops itself after transport errors,
-    so the next call reconnects. Closes the connection when used as a context manager.
-    """
-
-    def __init__(self, host: str, user: str, password: str, remote_dir: str) -> None:
-        self.host = host
-        self.user = user
-        self.password = password
-        self.remote_dir = remote_dir
-        self.ftp: ftplib.FTP | None = None
-
-    def __enter__(self) -> Self:
-        return self
-
-    def __exit__(self, *_: object) -> None:
-        _close_ftp(self.ftp)
-        self.ftp = None
-
-    def retrieve(self, filename: str) -> bytes:
-        try:
-            ftp = self._get()
-            buffer = io.BytesIO()
-            ftp.retrbinary(f"RETR {filename}", buffer.write)
-            return buffer.getvalue()
-        except FTP_RETRYABLE_ERRORS:
-            self._reset()
-            raise
-
-    def _get(self) -> ftplib.FTP:
-        if self.ftp is None:
-            self.ftp = _connect_ftp(self.host, self.user, self.password)
-            self.ftp.cwd(self.remote_dir)
-        return self.ftp
-
-    def _reset(self) -> None:
-        # The connection might be dead, so close() rather than quit()
-        if self.ftp is not None:
-            self.ftp.close()
-            self.ftp = None
-
-
-def _download_ftp_file(connection: FtpConnection, filename: str) -> bytes:
-    # Convert outside the retried function: FileNotFoundError is an OSError
-    # and would otherwise be retried.
-    try:
-        return _retrieve_with_retry(connection, filename)
-    except ftplib.error_perm as exc:
-        raise FileNotFoundError(f"FTP server rejected '{filename}': {exc}") from exc
-
-
-@retry(
-    max_attempts=3,
-    backoff_seconds=5,
-    exceptions=FTP_RETRYABLE_ERRORS,
-    description=lambda connection, filename: f"download '{filename}'",
-)
-def _retrieve_with_retry(connection: FtpConnection, filename: str) -> bytes:
-    return connection.retrieve(filename)
-
-
 def _resolve_forecast_date(today: str, user: str, password: str, host: str) -> str:
     """Resolve the forecast date to download from FTP.
 
@@ -438,7 +348,7 @@ def _check_forecast_date_available(
     today: str, user: str, password: str, host: str
 ) -> str:
     """Check if today's data is available on FTP. Fails immediately if not."""
-    with _connect_ftp(host, user, password, timeout=15) as ftp:
+    with connect_ftp(host, user, password, timeout=15) as ftp:
         ftp.cwd(GLOFAS_FTP_BASE_PATH)
         available_dates = sorted(ftp.nlst())
 
@@ -462,7 +372,7 @@ def _resolve_forecast_date_with_retry(
 
     available_dates: list[str] = []
     for attempt in range(max_retries + 1):
-        with _connect_ftp(host, user, password, timeout=15) as ftp:
+        with connect_ftp(host, user, password, timeout=15) as ftp:
             ftp.cwd(GLOFAS_FTP_BASE_PATH)
             available_dates = sorted(ftp.nlst())
 

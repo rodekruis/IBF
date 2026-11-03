@@ -9,11 +9,9 @@ import pytest
 
 from pipelines.infra.data_types.glofas_discharge_provider import (
     _download_ensemble_files,
-    _download_ftp_file,
     _get_highest_ensemble_index,
     _resolve_forecast_date,
     _validate_ensemble_count,
-    FtpConnection,
     GLOFAS_MIN_ENSEMBLE_COUNT,
     load_glofas_discharge_from_local_country_files,
     load_glofas_discharge_from_local_global_files,
@@ -410,7 +408,7 @@ def test_resolve_forecast_date_returns_today_when_available(
     monkeypatch.setenv("IBF_ENVIRONMENT", "development")
 
     with patch(
-        "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp"
+        "pipelines.infra.data_types.glofas_discharge_provider.connect_ftp"
     ) as mock_connect:
         mock_connect.return_value = _mock_ftp_with_dates(["20260706", "20260707"])
 
@@ -425,7 +423,7 @@ def test_resolve_forecast_date_fails_immediately_in_development(
     monkeypatch.setenv("IBF_ENVIRONMENT", "development")
 
     with patch(
-        "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp"
+        "pipelines.infra.data_types.glofas_discharge_provider.connect_ftp"
     ) as mock_connect:
         mock_connect.return_value = _mock_ftp_with_dates(["20260705", "20260706"])
 
@@ -439,7 +437,7 @@ def test_resolve_forecast_date_fails_immediately_in_test(
     monkeypatch.setenv("IBF_ENVIRONMENT", "test")
 
     with patch(
-        "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp"
+        "pipelines.infra.data_types.glofas_discharge_provider.connect_ftp"
     ) as mock_connect:
         mock_connect.return_value = _mock_ftp_with_dates(["20260705", "20260706"])
 
@@ -463,7 +461,7 @@ def test_resolve_forecast_date_retries_in_production(
 
     with (
         patch(
-            "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp",
+            "pipelines.infra.data_types.glofas_discharge_provider.connect_ftp",
             side_effect=ftp_factory,
         ),
         patch("pipelines.infra.data_types.glofas_discharge_provider.time.sleep"),
@@ -481,7 +479,7 @@ def test_resolve_forecast_date_fails_after_retries_exhausted_in_production(
 
     with (
         patch(
-            "pipelines.infra.data_types.glofas_discharge_provider._connect_ftp"
+            "pipelines.infra.data_types.glofas_discharge_provider.connect_ftp"
         ) as mock_connect,
         patch("pipelines.infra.data_types.glofas_discharge_provider.time.sleep"),
     ):
@@ -495,53 +493,8 @@ def test_resolve_forecast_date_fails_after_retries_exhausted_in_production(
 # FTP download retries
 # ---------------------------------------------------------------------------
 
-PROVIDER_MODULE = "pipelines.infra.data_types.glofas_discharge_provider"
+FTP_CONNECTION_MODULE = "pipelines.infra.utils.ftp_connection"
 RETRY_MODULE = "pipelines.infra.utils.retry"
-
-
-def test_download_ftp_file_retries_failed_reconnect() -> None:
-    # Arrange
-    dropped_ftp = MagicMock()
-    dropped_ftp.retrbinary.side_effect = EOFError()
-    reconnected_ftp = MagicMock()
-    reconnected_ftp.retrbinary.side_effect = lambda _command, callback: callback(
-        b"content"
-    )
-
-    connection = FtpConnection("host", "user", "pass", "remote_dir")
-    connection.ftp = dropped_ftp
-
-    # Act
-    with (
-        patch(
-            f"{PROVIDER_MODULE}._connect_ftp",
-            side_effect=[ConnectionResetError(), reconnected_ftp],
-        ),
-        patch(f"{RETRY_MODULE}.time.sleep"),
-    ):
-        content = _download_ftp_file(connection, "dis_04.nc")
-
-    # Assert
-    assert content == b"content"
-    assert connection.ftp is reconnected_ftp
-    dropped_ftp.close.assert_called_once()
-
-
-def test_download_ftp_file_closes_new_connection_on_permanent_rejection() -> None:
-    # Arrange
-    new_ftp = MagicMock()
-    new_ftp.retrbinary.side_effect = ftplib.error_perm("550 No such file")
-
-    # Act
-    with (
-        patch(f"{PROVIDER_MODULE}._connect_ftp", return_value=new_ftp),
-        pytest.raises(FileNotFoundError, match="FTP server rejected"),
-        FtpConnection("host", "user", "pass", "remote_dir") as connection,
-    ):
-        _download_ftp_file(connection, "dis_04.nc")
-
-    # Assert
-    new_ftp.quit.assert_called_once()
 
 
 def test_download_ensemble_files_raises_connection_error_when_connection_drops_and_reconnects_fail(
@@ -549,8 +502,7 @@ def test_download_ensemble_files_raises_connection_error_when_connection_drops_a
 ) -> None:
     # Arrange
     monkeypatch.setenv("DATA_CACHE_DIR", str(tmp_path))
-    # Real FTP (not a MagicMock): closing an already-closed real connection used to
-    # raise AttributeError during cleanup, masking the ConnectionError
+    # Real FTP, not a MagicMock: cleanup must handle an already-closed real connection
     dropping_ftp = ftplib.FTP()
     first_file_succeeds_then_connection_drops = [None, EOFError()]
     connect_once_then_reconnects_fail = [
@@ -568,7 +520,7 @@ def test_download_ensemble_files_raises_connection_error_when_connection_drops_a
             side_effect=first_file_succeeds_then_connection_drops,
         ),
         patch(
-            f"{PROVIDER_MODULE}._connect_ftp",
+            f"{FTP_CONNECTION_MODULE}.connect_ftp",
             side_effect=connect_once_then_reconnects_fail,
         ),
         patch(f"{RETRY_MODULE}.time.sleep"),

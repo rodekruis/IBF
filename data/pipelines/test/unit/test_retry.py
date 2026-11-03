@@ -41,7 +41,7 @@ def test_retry_retries_until_success() -> None:
     assert mock_sleep.call_count == 2
 
 
-def test_retry_raises_connection_error_after_attempts_exhausted() -> None:
+def test_retry_raises_connection_error_labelled_by_description() -> None:
     # Arrange
     function = MagicMock(side_effect=OSError("boom"))
     decorated = retry(
@@ -54,9 +54,33 @@ def test_retry_raises_connection_error_after_attempts_exhausted() -> None:
     # Act & Assert
     with (
         patch(f"{RETRY_MODULE}.time.sleep"),
-        pytest.raises(ConnectionError, match="download 'file.nc' after 3 attempts"),
+        pytest.raises(
+            ConnectionError,
+            match=r"^Failed to download 'file\.nc' after 3 attempts$",
+        ),
     ):
         decorated("file.nc")
+
+
+def test_retry_raises_connection_error_labelled_by_function_name() -> None:
+    # Arrange
+    decorated = retry(max_attempts=3, backoff_seconds=5, exceptions=(OSError,))(
+        _failing_download
+    )
+
+    # Act & Assert
+    with (
+        patch(f"{RETRY_MODULE}.time.sleep"),
+        pytest.raises(
+            ConnectionError,
+            match=r"^Failed to _failing_download after 3 attempts$",
+        ),
+    ):
+        decorated()
+
+
+def _failing_download() -> None:
+    raise OSError("boom")
 
 
 def test_retry_does_not_catch_other_exceptions() -> None:
@@ -90,12 +114,45 @@ def test_retry_raises_value_error_for_negative_max_attempts() -> None:
         retry(max_attempts=-1, backoff_seconds=5, exceptions=(OSError,))(function)
 
 
-def test_retry_logs_every_failed_attempt() -> None:
+def test_retry_logs_retry_delay_for_each_non_final_failed_attempt() -> None:
     # Arrange
     function = MagicMock(side_effect=OSError("boom"))
-    decorated = retry(max_attempts=3, backoff_seconds=5, exceptions=(OSError,))(
-        function
+    decorated = retry(
+        max_attempts=3,
+        backoff_seconds=5,
+        exceptions=(OSError,),
+        description=lambda: "download",
+    )(function)
+
+    # Act
+    with (
+        patch(f"{RETRY_MODULE}.time.sleep"),
+        patch(f"{RETRY_MODULE}.log_warning") as mock_log_warning,
+        pytest.raises(ConnectionError),
+    ):
+        decorated()
+
+    # Assert
+    messages = [call.args[2] for call in mock_log_warning.call_args_list]
+    assert (
+        messages[0]
+        == "Attempt 1/3 failed for download: OSError('boom'). Retrying in 5s"
     )
+    assert (
+        messages[1]
+        == "Attempt 2/3 failed for download: OSError('boom'). Retrying in 10s"
+    )
+
+
+def test_retry_logs_final_failed_attempt_without_retry_delay() -> None:
+    # Arrange
+    function = MagicMock(side_effect=OSError("boom"))
+    decorated = retry(
+        max_attempts=3,
+        backoff_seconds=5,
+        exceptions=(OSError,),
+        description=lambda: "download",
+    )(function)
 
     # Act
     with (
@@ -108,9 +165,7 @@ def test_retry_logs_every_failed_attempt() -> None:
     # Assert
     messages = [call.args[2] for call in mock_log_warning.call_args_list]
     assert len(messages) == 3
-    assert messages[0].endswith("Retrying in 5s")
-    assert messages[1].endswith("Retrying in 10s")
-    assert "Retrying" not in messages[2]
+    assert messages[2] == "Attempt 3/3 failed for download: OSError('boom')"
 
 
 def test_retry_uses_linear_backoff() -> None:
