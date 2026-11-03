@@ -10,9 +10,6 @@ permissions:
 
 on:
   workflow_dispatch:
-  merge_group:
-    types: [checks_requested]
-  pull_request:
 
 env:
   e2eTestsPath: './e2e'
