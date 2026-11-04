@@ -81,6 +81,9 @@ describe('GET /events', () => {
   }
 
   describe('active filter', () => {
+    // After the forecast of 24 Mar 12:00 is stale (26.4h for floods), so 'station-ended' has ended by time
+    const activeFilterViewTimestamp = '2026-03-25T15:00:00Z';
+
     beforeEach(async () => {
       await seedEventsForReadTests();
     });
@@ -90,7 +93,7 @@ describe('GET /events', () => {
         accessToken,
         countryCodesIso3: ['MWI'],
         query: {
-          timestamp: viewTimestamp,
+          timestamp: activeFilterViewTimestamp,
         },
       });
 
@@ -109,7 +112,7 @@ describe('GET /events', () => {
         countryCodesIso3: ['MWI'],
         query: {
           active: true,
-          timestamp: viewTimestamp,
+          timestamp: activeFilterViewTimestamp,
         },
       });
 
@@ -128,7 +131,7 @@ describe('GET /events', () => {
         countryCodesIso3: ['MWI'],
         query: {
           active: false,
-          timestamp: viewTimestamp,
+          timestamp: activeFilterViewTimestamp,
         },
       });
 
