@@ -1,4 +1,18 @@
 import { ParseArrayPipe } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
+
+import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
+import { SeedController } from '@api-service/src/seed/seed.controller';
+import { SeedService } from '@api-service/src/seed/seed.service';
+import { HazardType } from '@api-service/src/shared-enums';
+
+jest.mock('@api-service/src/env', () => ({
+  env: { RESET_SECRET: 'test-secret' },
+}));
+
+jest.mock('@api-service/src/config', () => ({
+  IS_PRODUCTION: false,
+}));
 
 describe('SeedController – countryCodes parsing', () => {
   const pipe = new ParseArrayPipe({ items: String, optional: true });
@@ -37,5 +51,115 @@ describe('SeedController – countryCodes parsing', () => {
       data: 'countryCodes',
     });
     expect(result).toBeUndefined();
+  });
+});
+
+describe('SeedController – hazardTypes parsing', () => {
+  const mockSeedService = { mockEvents: jest.fn() };
+  const controller = new SeedController(
+    mockSeedService as unknown as SeedService,
+  );
+  const body = { secret: 'test-secret' };
+  const defaultArgs = {
+    body,
+    countryCodes: undefined,
+    scenario: MockScenario.events,
+    clearEvents: false,
+    issuedAt: undefined,
+    notify: false,
+  };
+
+  beforeEach(() => {
+    mockSeedService.mockEvents.mockReset();
+  });
+
+  it('should default to floods when hazardTypes is undefined', async () => {
+    // Act
+    await controller.mockEvents(
+      defaultArgs.body,
+      defaultArgs.countryCodes,
+      undefined,
+      defaultArgs.scenario,
+      defaultArgs.clearEvents,
+      defaultArgs.issuedAt,
+      defaultArgs.notify,
+    );
+
+    // Assert
+    expect(mockSeedService.mockEvents).toHaveBeenCalledWith(
+      expect.objectContaining({ hazardTypes: [HazardType.floods] }),
+    );
+  });
+
+  it('should pass through a single valid hazard type', async () => {
+    // Act
+    await controller.mockEvents(
+      defaultArgs.body,
+      defaultArgs.countryCodes,
+      [HazardType.tropicalCyclone],
+      defaultArgs.scenario,
+      defaultArgs.clearEvents,
+      defaultArgs.issuedAt,
+      defaultArgs.notify,
+    );
+
+    // Assert
+    expect(mockSeedService.mockEvents).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hazardTypes: [HazardType.tropicalCyclone],
+      }),
+    );
+  });
+
+  it('should pass through multiple valid hazard types', async () => {
+    // Act
+    await controller.mockEvents(
+      defaultArgs.body,
+      defaultArgs.countryCodes,
+      [HazardType.floods, HazardType.tropicalCyclone],
+      defaultArgs.scenario,
+      defaultArgs.clearEvents,
+      defaultArgs.issuedAt,
+      defaultArgs.notify,
+    );
+
+    // Assert
+    expect(mockSeedService.mockEvents).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hazardTypes: [HazardType.floods, HazardType.tropicalCyclone],
+      }),
+    );
+  });
+
+  it('should throw BadRequestException for an invalid hazard type', async () => {
+    // Act & Assert
+    await expect(
+      controller.mockEvents(
+        defaultArgs.body,
+        defaultArgs.countryCodes,
+        ['not-a-hazard'],
+        defaultArgs.scenario,
+        defaultArgs.clearEvents,
+        defaultArgs.issuedAt,
+        defaultArgs.notify,
+      ),
+    ).rejects.toThrow(BadRequestException);
+    expect(mockSeedService.mockEvents).not.toHaveBeenCalled();
+  });
+
+  it('should throw BadRequestException when one of multiple hazard types is invalid', async () => {
+    // Act & Assert
+    await expect(
+      controller.mockEvents(
+        defaultArgs.body,
+        defaultArgs.countryCodes,
+        [HazardType.floods, 'not-a-hazard'],
+        defaultArgs.scenario,
+        defaultArgs.clearEvents,
+        defaultArgs.issuedAt,
+        defaultArgs.notify,
+      ),
+    ).rejects.toThrow(BadRequestException);
+    expect(mockSeedService.mockEvents).not.toHaveBeenCalled();
   });
 });
