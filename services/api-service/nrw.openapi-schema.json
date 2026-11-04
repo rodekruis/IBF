@@ -386,7 +386,7 @@
             "name": "hazardTypes",
             "required": false,
             "in": "query",
-            "description": "Hazard types to mock. Select one or more. If omitted, all hazard types configured for the country are mocked.",
+            "description": "Hazard types to mock. Select one or more. If omitted, only 'floods' is mocked.",
             "schema": {
               "type": "array",
               "items": {
