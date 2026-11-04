@@ -245,7 +245,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       });
     });
 
-    it('should exclude events where endAt <= view-timestamp', async () => {
+    it('should exclude events where endAt <= view-timestamp and a newer forecast is overdue', async () => {
       const viewTimestamp = '2026-03-24T12:00:00Z';
       const endViewTimestamp = '2026-03-25T00:00:00Z';
 
@@ -290,6 +290,90 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       });
       expect(responseAfterEnd.status).toBe(HttpStatus.OK);
       expect(responseAfterEnd.body).toHaveLength(0);
+    });
+
+    it('should keep an event ongoing after endAt until a newer forecast is overdue, and let a newer forecast extend it', async () => {
+      // Arrange
+      const eventName = 'station-next-morning';
+      const nextMorningViewTimestamp = '2026-03-25T06:00:00Z';
+      const newerForecastOverdueViewTimestamp = '2026-03-25T14:30:00Z';
+
+      const alertEndingToday = buildAlert({
+        eventName,
+        severity: buildSeverityData({
+          start: new Date('2026-03-24T00:00:00Z'),
+          end: new Date('2026-03-25T00:00:00Z'),
+          medianValue: 25,
+          runValues: [25, 25, 25],
+        }),
+      });
+      const alertExtendedNextDay = buildAlert({
+        eventName,
+        severity: buildSeverityData({
+          start: new Date('2026-03-25T00:00:00Z'),
+          end: new Date('2026-03-26T00:00:00Z'),
+          medianValue: 25,
+          runValues: [25, 25, 25],
+        }),
+      });
+
+      await createAlerts({
+        forecast: buildForecast({
+          alerts: [alertEndingToday],
+          overrides: {
+            countryCodeIso3,
+            issuedAt: new Date('2026-03-24T12:00:00Z'),
+          },
+        }),
+      });
+
+      // Act
+      const responseNextMorning = await getActiveEvents({
+        accessToken,
+        countryCodesIso3: [countryCodeIso3],
+        timestamp: nextMorningViewTimestamp,
+      });
+      const responseWhenNewerForecastOverdue = await getActiveEvents({
+        accessToken,
+        countryCodesIso3: [countryCodeIso3],
+        timestamp: newerForecastOverdueViewTimestamp,
+      });
+
+      await createAlerts({
+        forecast: buildForecast({
+          alerts: [alertExtendedNextDay],
+          overrides: {
+            countryCodeIso3,
+            issuedAt: new Date('2026-03-25T12:00:00Z'),
+          },
+        }),
+      });
+      const responseAfterNewerForecast = await getActiveEvents({
+        accessToken,
+        countryCodesIso3: [countryCodeIso3],
+        timestamp: newerForecastOverdueViewTimestamp,
+      });
+
+      // Assert
+      expect(responseNextMorning.status).toBe(HttpStatus.OK);
+      expect(responseNextMorning.body).toHaveLength(1);
+      expect(responseNextMorning.body[0]).toMatchObject({
+        eventName,
+        endAt: '2026-03-25T00:00:00.000Z',
+        eventStatus: EventStatus.ongoing,
+      });
+
+      expect(responseWhenNewerForecastOverdue.status).toBe(HttpStatus.OK);
+      expect(responseWhenNewerForecastOverdue.body).toHaveLength(0);
+
+      expect(responseAfterNewerForecast.status).toBe(HttpStatus.OK);
+      expect(responseAfterNewerForecast.body).toHaveLength(1);
+      expect(responseAfterNewerForecast.body[0]).toMatchObject({
+        eventName,
+        endAt: '2026-03-26T00:00:00.000Z',
+        lastUpdatedAt: '2026-03-25T12:00:00.000Z',
+        eventStatus: EventStatus.ongoing,
+      });
     });
   });
 
