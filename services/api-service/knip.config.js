@@ -5,10 +5,6 @@ module.exports = {
   ignoreBinaries: [
     'open', // Default available on macOS
   ],
-  ignore: [
-    // Kept for reference; not wired into default mock events (see MOCK_BUILDERS).
-    'src/seed/seed-data/mock-events/tropical-cyclone/**',
-  ],
   ignoreDependencies: [
     // Known issues with devDependencies:
     '@automock/adapters.nestjs', // Auto-loaded by @automock/jest
