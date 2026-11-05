@@ -3,8 +3,10 @@ import { Event } from '@prisma/client';
 
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
-import { EventAlertHistoryRecord } from '@api-service/src/events/events.repository';
-import { EventsRepository } from '@api-service/src/events/events.repository';
+import {
+  EventAlertHistoryRecord,
+  EventsRepository,
+} from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
 import { ForecastSource, HazardType } from '@api-service/src/shared-enums';
 

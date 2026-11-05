@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Event } from '@prisma/client';
-import { Layer } from '@prisma/client';
+import { Event, Layer } from '@prisma/client';
 
 import { FORECAST_SOURCE_DETAILS } from '@api-service/src/events/const/forecast-source-details.const';
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
