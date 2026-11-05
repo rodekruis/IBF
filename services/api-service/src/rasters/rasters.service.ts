@@ -73,7 +73,7 @@ export class RastersService {
     metadata: StaticRasterSourceMetadataDto;
   }): Promise<StaticRasterResponseDto> {
     const { colouredBase64, metadata: rasterMetadata } =
-      processPopulationRaster({ dataPngBuffer, metadata });
+      await processPopulationRaster({ dataPngBuffer, metadata });
 
     return this.rastersRepository.upsertStaticRaster({
       countryCodeIso3,

@@ -1,3 +1,6 @@
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { createInflate } from 'node:zlib';
 import { PNG } from 'pngjs';
 
 import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
@@ -62,7 +65,7 @@ type RelativeColorizationConfig =
 type ColorizationConfig =
   RelativeColorizationConfig | FixedScaleColorizationConfig;
 
-interface Downsampling {
+export interface Downsampling {
   factor: number;
   // 'sum' for counts per pixel (e.g. population), 'mean' for intensities (e.g. flood depth).
   aggregation: 'sum' | 'mean';
@@ -286,18 +289,18 @@ function computeRasterMetadata({
   };
 }
 
-export function processPopulationRaster({
+export async function processPopulationRaster({
   dataPngBuffer,
   metadata,
 }: {
   dataPngBuffer: Buffer;
   metadata: { transform: number[]; crs: EPSG };
-}): PopulationRasterResult {
+}): Promise<PopulationRasterResult> {
   if (metadata.crs !== EPSG.WGS84) {
     throw new Error('Only WGS84 population rasters are supported');
   }
   const rasterMetadata = computeRasterMetadata({ dataPngBuffer, metadata });
-  const colouredBase64 = colorizeRgbaEncodedPng({
+  const colouredBase64 = await colorizeRgbaEncodedPng({
     inputBuffer: dataPngBuffer,
     config: POPULATION_CONFIG,
     downsampling: POPULATION_DOWNSAMPLING,
@@ -318,22 +321,22 @@ export function processPopulationRaster({
 // value = (R * 16777216 + G * 65536 + B * 256 + A) / 1000
 // (This treats RGBA as digits of a single base-256 number.
 // Divide by 1000 since the number was encoded with 3 decimal places of precision.)
-// This function decodes those values (optionally downsampling) and colorizes based on population.
-// It allocates a Float32Array for decoded values and uses three passes (decode, max scan, render).
-// Peak memory is roughly input + output + decoded, so keep the downsampling factor in mind for large rasters.
-function colorizeRgbaEncodedPng({
+// This function decodes those values into a Float32Array, optionally downsampling.
+//
+// The PNG is decoded as a stream: IDAT chunks are inflated incrementally and each
+// row is unfiltered and folded into the (downsampled) output as soon as it is
+// complete. Memory use is therefore bounded by the compressed input plus two
+// rows and the output, independent of image height. This matters because
+// country-sized population rasters decode to ~1 GB of RGBA (e.g. ETH is
+// 18001x13788 px), which must never be materialised in the API process.
+export async function decodeRgbaEncodedPng({
   inputBuffer,
-  config,
   downsampling = { factor: 1, aggregation: 'mean' },
 }: {
   inputBuffer: Buffer;
-  config: RelativeColorizationConfig;
   downsampling?: Downsampling;
-}): string {
-  const { zeroIsTransparent, useLogScale } = config;
-
-  const png = PNG.sync.read(inputBuffer);
-  const { width, height, data } = png;
+}): Promise<{ width: number; height: number; decoded: Float32Array }> {
+  const { width, height, idatChunks } = parsePngStructure(inputBuffer);
 
   const effectiveFactor =
     width >= downsampling.factor && height >= downsampling.factor
@@ -341,44 +344,220 @@ function colorizeRgbaEncodedPng({
       : 1;
   const outWidth = Math.floor(width / effectiveFactor);
   const outHeight = Math.floor(height / effectiveFactor);
-  const outPixelCount = outWidth * outHeight;
+  const decoded = new Float32Array(outWidth * outHeight);
 
-  const decoded = new Float32Array(outPixelCount);
+  const bytesPerPixel = 4;
+  const rowLength = 1 + width * bytesPerPixel;
+  let currentRow = Buffer.alloc(rowLength);
+  let previousRow = Buffer.alloc(rowLength);
+  let rowFill = 0;
+  let rowIndex = 0;
 
-  if (effectiveFactor <= 1) {
-    for (let i = 0; i < outPixelCount; i++) {
-      const idx = i * 4;
-      decoded[i] =
-        (data[idx] * 16777216 +
-          data[idx + 1] * 65536 +
-          data[idx + 2] * 256 +
-          data[idx + 3]) /
-        1000;
-    }
-  } else {
-    for (let oy = 0; oy < outHeight; oy++) {
-      for (let ox = 0; ox < outWidth; ox++) {
-        let sum = 0;
-        for (let dy = 0; dy < effectiveFactor; dy++) {
-          for (let dx = 0; dx < effectiveFactor; dx++) {
-            const srcX = ox * effectiveFactor + dx;
-            const srcY = oy * effectiveFactor + dy;
-            const idx = (srcY * width + srcX) * 4;
-            sum +=
-              (data[idx] * 16777216 +
-                data[idx + 1] * 65536 +
-                data[idx + 2] * 256 +
-                data[idx + 3]) /
-              1000;
-          }
+  const usedWidth = outWidth * effectiveFactor;
+  const usedHeight = outHeight * effectiveFactor;
+  const blockSums = new Float64Array(outWidth);
+
+  const consumeRow = (): void => {
+    unfilterRow({ row: currentRow, previousRow, bytesPerPixel });
+
+    if (rowIndex < usedHeight) {
+      for (let x = 0; x < usedWidth; x++) {
+        const idx = 1 + x * bytesPerPixel;
+        blockSums[Math.floor(x / effectiveFactor)] +=
+          (currentRow[idx] * 16777216 +
+            currentRow[idx + 1] * 65536 +
+            currentRow[idx + 2] * 256 +
+            currentRow[idx + 3]) /
+          1000;
+      }
+
+      if ((rowIndex + 1) % effectiveFactor === 0) {
+        const outRowOffset = Math.floor(rowIndex / effectiveFactor) * outWidth;
+        const divisor = effectiveFactor * effectiveFactor;
+        for (let ox = 0; ox < outWidth; ox++) {
+          decoded[outRowOffset + ox] =
+            downsampling.aggregation === 'sum'
+              ? blockSums[ox]
+              : blockSums[ox] / divisor;
         }
-        decoded[oy * outWidth + ox] =
-          downsampling.aggregation === 'sum'
-            ? sum
-            : sum / (effectiveFactor * effectiveFactor);
+        blockSums.fill(0);
+      }
+    }
+
+    [previousRow, currentRow] = [currentRow, previousRow];
+    rowFill = 0;
+    rowIndex++;
+  };
+
+  const inflate = createInflate();
+  const feed = pipeline(Readable.from(idatChunks), inflate);
+  for await (const chunk of inflate) {
+    let offset = 0;
+    while (offset < chunk.length) {
+      const take = Math.min(rowLength - rowFill, chunk.length - offset);
+      chunk.copy(currentRow, rowFill, offset, offset + take);
+      rowFill += take;
+      offset += take;
+      if (rowFill === rowLength) {
+        consumeRow();
       }
     }
   }
+  await feed;
+
+  if (rowIndex !== height) {
+    throw new Error(
+      `PNG image data is truncated: expected ${height} rows, got ${rowIndex}`,
+    );
+  }
+
+  return { width: outWidth, height: outHeight, decoded };
+}
+
+const PNG_SIGNATURE = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+]);
+const PNG_COLOR_TYPE_RGBA = 6;
+
+function parsePngStructure(buffer: Buffer): {
+  width: number;
+  height: number;
+  idatChunks: Buffer[];
+} {
+  if (!buffer.subarray(0, 8).equals(PNG_SIGNATURE)) {
+    throw new Error('Not a PNG file');
+  }
+
+  let width = 0;
+  let height = 0;
+  const idatChunks: Buffer[] = [];
+  let offset = 8;
+  while (offset + 8 <= buffer.length) {
+    const length = buffer.readUInt32BE(offset);
+    const type = buffer.toString('latin1', offset + 4, offset + 8);
+    const data = buffer.subarray(offset + 8, offset + 8 + length);
+
+    if (type === 'IHDR') {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      const bitDepth = data[8];
+      const colorType = data[9];
+      const interlaceMethod = data[12];
+      // Only what the pipeline produces for population rasters is supported:
+      // 8-bit RGBA, non-interlaced. Other variants (RGB without alpha,
+      // greyscale, palette, 16-bit, Adam7) cannot carry the 4-channel base-256
+      // encoding anyway, so rather than silently decoding garbage, reject them.
+      if (
+        bitDepth !== 8 ||
+        colorType !== PNG_COLOR_TYPE_RGBA ||
+        interlaceMethod !== 0
+      ) {
+        throw new Error(
+          `Unsupported PNG for RGBA-encoded raster: bitDepth=${bitDepth} colorType=${colorType} interlace=${interlaceMethod} (expected 8-bit RGBA, non-interlaced)`,
+        );
+      }
+    } else if (type === 'IDAT') {
+      idatChunks.push(data);
+    } else if (type === 'IEND') {
+      break;
+    }
+
+    offset += 12 + length;
+  }
+
+  if (width === 0 || height === 0) {
+    throw new Error('PNG is missing a valid IHDR chunk');
+  }
+
+  return { width, height, idatChunks };
+}
+
+// Reverses the per-row PNG filter in place (PNG spec section 9). Byte 0 of the
+// row is the filter type; previousRow must already be unfiltered.
+function unfilterRow({
+  row,
+  previousRow,
+  bytesPerPixel,
+}: {
+  row: Buffer;
+  previousRow: Buffer;
+  bytesPerPixel: number;
+}): void {
+  const filterType = row[0];
+  const length = row.length;
+
+  switch (filterType) {
+    case 0:
+      return;
+    case 1:
+      for (let i = 1 + bytesPerPixel; i < length; i++) {
+        row[i] = (row[i] + row[i - bytesPerPixel]) & 0xff;
+      }
+      return;
+    case 2:
+      for (let i = 1; i < length; i++) {
+        row[i] = (row[i] + previousRow[i]) & 0xff;
+      }
+      return;
+    case 3:
+      for (let i = 1; i < length; i++) {
+        const left = i > bytesPerPixel ? row[i - bytesPerPixel] : 0;
+        row[i] = (row[i] + ((left + previousRow[i]) >> 1)) & 0xff;
+      }
+      return;
+    case 4:
+      for (let i = 1; i < length; i++) {
+        const left = i > bytesPerPixel ? row[i - bytesPerPixel] : 0;
+        const up = previousRow[i];
+        const upLeft = i > bytesPerPixel ? previousRow[i - bytesPerPixel] : 0;
+        row[i] = (row[i] + paethPredictor({ left, up, upLeft })) & 0xff;
+      }
+      return;
+    default:
+      throw new Error(`Invalid PNG filter type ${filterType}`);
+  }
+}
+
+function paethPredictor({
+  left,
+  up,
+  upLeft,
+}: {
+  left: number;
+  up: number;
+  upLeft: number;
+}): number {
+  const p = left + up - upLeft;
+  const pa = Math.abs(p - left);
+  const pb = Math.abs(p - up);
+  const pc = Math.abs(p - upLeft);
+  if (pa <= pb && pa <= pc) {
+    return left;
+  }
+  if (pb <= pc) {
+    return up;
+  }
+  return upLeft;
+}
+
+// Colorizes an RGBA-encoded population PNG (see decodeRgbaEncodedPng) using two passes (max scan, render).
+async function colorizeRgbaEncodedPng({
+  inputBuffer,
+  config,
+  downsampling = { factor: 1, aggregation: 'mean' },
+}: {
+  inputBuffer: Buffer;
+  config: RelativeColorizationConfig;
+  downsampling?: Downsampling;
+}): Promise<string> {
+  const { zeroIsTransparent, useLogScale } = config;
+
+  const {
+    width: outWidth,
+    height: outHeight,
+    decoded,
+  } = await decodeRgbaEncodedPng({ inputBuffer, downsampling });
+  const outPixelCount = outWidth * outHeight;
 
   let max = 0;
   for (let i = 0; i < outPixelCount; i++) {
