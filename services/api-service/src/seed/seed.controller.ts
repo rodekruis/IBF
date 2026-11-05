@@ -234,7 +234,7 @@ export class SeedController {
       );
     }
 
-    // casting to string[] to be able to use .includes()z on it.
+    // casting to string[] to be able to use .includes() on it.
     const validHazardTypes = Object.values(HazardType) as string[];
 
     const submittedHazardTypes = getNormalizedStringList(hazardTypes) ?? [];
