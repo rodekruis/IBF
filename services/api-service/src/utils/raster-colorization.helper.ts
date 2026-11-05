@@ -418,6 +418,11 @@ const PNG_SIGNATURE = Buffer.from([
   0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
 ]);
 const PNG_COLOR_TYPE_RGBA = 6;
+// Largest raster we are willing to decode. The biggest real input so far is
+// ~300 Mpx (PHL flood extent); the header-declared size is checked before any
+// buffer is sized from it so a corrupt or wrong file fails fast instead of
+// exhausting memory.
+const MAX_PNG_PIXELS = 500_000_000;
 
 function parsePngStructure(buffer: Buffer): {
   width: number;
@@ -440,6 +445,11 @@ function parsePngStructure(buffer: Buffer): {
     if (type === 'IHDR') {
       width = data.readUInt32BE(0);
       height = data.readUInt32BE(4);
+      if (width * height > MAX_PNG_PIXELS) {
+        throw new Error(
+          `PNG is too large: ${width}x${height} = ${width * height} pixels exceeds the maximum of ${MAX_PNG_PIXELS}`,
+        );
+      }
       const bitDepth = data[8];
       const colorType = data[9];
       const interlaceMethod = data[12];

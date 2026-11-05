@@ -1161,6 +1161,27 @@ describe('raster-colorization.helper', () => {
       // Assert
       await expect(act).rejects.toThrow('PNG image data is truncated');
     });
+
+    it('should reject PNGs whose header declares more than 500 Mpx', async () => {
+      // Arrange
+      const inputBuffer = patchIhdr({
+        pngBuffer: writePng({
+          width: 4,
+          height: 4,
+          data: createNoisyRgbaData({ width: 4, height: 4, seed: 7 }),
+        }),
+        patch: (ihdrData) => {
+          ihdrData.writeUInt32BE(30000, 0);
+          ihdrData.writeUInt32BE(20000, 4);
+        },
+      });
+
+      // Act
+      const act = decodeRgbaEncodedPng({ inputBuffer });
+
+      // Assert
+      await expect(act).rejects.toThrow('PNG is too large');
+    });
   });
 
   describe('reprojectPng4326To3857', () => {
