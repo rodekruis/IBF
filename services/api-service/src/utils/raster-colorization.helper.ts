@@ -391,19 +391,29 @@ export async function decodeRgbaEncodedPng({
 
   const inflate = createInflate();
   const feed = pipeline(Readable.from(idatChunks), inflate);
-  for await (const chunk of inflate) {
-    let offset = 0;
-    while (offset < chunk.length) {
-      const take = Math.min(rowLength - rowFill, chunk.length - offset);
-      chunk.copy(currentRow, rowFill, offset, offset + take);
-      rowFill += take;
-      offset += take;
-      if (rowFill === rowLength) {
-        consumeRow();
+  try {
+    // try-catch because the inflate can be invalid
+    for await (const chunk of inflate) {
+      let offset = 0;
+      while (offset < chunk.length) {
+        const take = Math.min(rowLength - rowFill, chunk.length - offset);
+        chunk.copy(currentRow, rowFill, offset, offset + take);
+        rowFill += take;
+        offset += take;
+        if (rowFill === rowLength) {
+          consumeRow();
+        }
       }
     }
+    await feed;
+  } catch (error) {
+    // When the loop throws, feed rejects too and for the same reason. If we
+    // don't do anything here we get an unhandled rejection which can crash
+    // Node. Solution: add a catch handler to feed which does nothing. This
+    // handles the rejection.
+    await feed.catch(() => undefined);
+    throw error;
   }
-  await feed;
 
   if (rowIndex !== height) {
     throw new Error(

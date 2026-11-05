@@ -1182,6 +1182,34 @@ describe('raster-colorization.helper', () => {
       // Assert
       await expect(act).rejects.toThrow('PNG is too large');
     });
+
+    it('should reject corrupt image data without leaving an unhandled rejection', async () => {
+      // Arrange
+      const inputBuffer = writePng({
+        width: 4,
+        height: 4,
+        data: createNoisyRgbaData({ width: 4, height: 4, seed: 7 }),
+      });
+      const idatOffset = inputBuffer.indexOf('IDAT', 8, 'latin1') + 4;
+      inputBuffer.fill(0xff, idatOffset, idatOffset + 8);
+      const unhandled: unknown[] = [];
+      const onUnhandled = (reason: unknown): void => {
+        unhandled.push(reason);
+      };
+      process.on('unhandledRejection', onUnhandled);
+
+      // Act
+      const act = decodeRgbaEncodedPng({ inputBuffer });
+
+      // Assert
+      try {
+        await expect(act).rejects.toThrow();
+        await new Promise((resolve) => setImmediate(resolve));
+        expect(unhandled).toEqual([]);
+      } finally {
+        process.off('unhandledRejection', onUnhandled);
+      }
+    });
   });
 
   describe('reprojectPng4326To3857', () => {
