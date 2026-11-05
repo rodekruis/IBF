@@ -1,5 +1,4 @@
-import { ParseArrayPipe } from '@nestjs/common';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ParseArrayPipe } from '@nestjs/common';
 
 import { MockScenario } from '@api-service/src/seed/enum/mock-scenario.enum';
 import { SeedController } from '@api-service/src/seed/seed.controller';
