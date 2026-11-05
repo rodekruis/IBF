@@ -150,9 +150,10 @@ export class SeedController {
     required: false,
     enum: HazardType,
     isArray: true,
+    schema: { default: [HazardType.floods] },
     description:
       'Hazard types to mock. Select one or more. ' +
-      `If omitted, only '${HazardType.floods}' is mocked.`,
+      'If omitted, all hazard types are mocked.',
   })
   @ApiQuery({
     name: 'scenario',
@@ -250,12 +251,10 @@ export class SeedController {
       );
     }
 
-    const defaultHazardTypes: HazardType[] = [HazardType.floods];
-
     const hazardTypesToMock =
       validSubmittedHazardTypes.length > 0
         ? validSubmittedHazardTypes
-        : defaultHazardTypes;
+        : undefined; // === all hazard types
 
     await this.seedService.mockEvents({
       countryCodes: resolvedCountryCodes,

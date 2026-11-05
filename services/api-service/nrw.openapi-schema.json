@@ -386,8 +386,10 @@
             "name": "hazardTypes",
             "required": false,
             "in": "query",
-            "description": "Hazard types to mock. Select one or more. If omitted, only 'floods' is mocked.",
             "schema": {
+              "default": [
+                "floods"
+              ],
               "type": "array",
               "items": {
                 "type": "string",
@@ -398,7 +400,8 @@
                   "compoundFloods"
                 ]
               }
-            }
+            },
+            "description": "Hazard types to mock. Select one or more. If omitted, all hazard types are mocked."
           },
           {
             "name": "countryCodes",

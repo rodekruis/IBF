@@ -72,7 +72,7 @@ describe('SeedController – hazardTypes parsing', () => {
     mockSeedService.mockEvents.mockReset();
   });
 
-  it('should default to floods when hazardTypes is undefined', async () => {
+  it('should pass undefined when hazardTypes is omitted, mocking all hazard types', async () => {
     // Act
     await controller.mockEvents(
       defaultArgs.body,
@@ -86,7 +86,7 @@ describe('SeedController – hazardTypes parsing', () => {
 
     // Assert
     expect(mockSeedService.mockEvents).toHaveBeenCalledWith(
-      expect.objectContaining({ hazardTypes: [HazardType.floods] }),
+      expect.objectContaining({ hazardTypes: undefined }), // === all hazard types
     );
   });
 
