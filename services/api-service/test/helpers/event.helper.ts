@@ -41,3 +41,19 @@ export async function getActiveEvents({
     query: { active: true, timestamp },
   });
 }
+
+export async function getEndedEvents({
+  accessToken,
+  countryCodesIso3 = ['MWI'],
+  timestamp,
+}: {
+  accessToken: string;
+  countryCodesIso3?: string[];
+  timestamp?: string;
+}): Promise<request.Response> {
+  return readEvents({
+    accessToken,
+    countryCodesIso3,
+    query: { active: false, timestamp },
+  });
+}
