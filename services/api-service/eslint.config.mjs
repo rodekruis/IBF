@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
+import importX from 'eslint-plugin-import-x';
 import n from 'eslint-plugin-n';
 import prettier from 'eslint-plugin-prettier';
 import promise from 'eslint-plugin-promise';
@@ -62,6 +63,7 @@ export default [
       'simple-import-sort': simpleImportSort,
       n,
       'custom-rules': customRules,
+      'import-x': importX,
     },
     rules: {
       ...typescript.configs.recommended.rules,
@@ -131,6 +133,7 @@ export default [
         },
       ],
       'simple-import-sort/exports': 'error',
+      'import-x/no-duplicates': 'error',
       '@eslint-community/eslint-comments/disable-enable-pair': [
         'error',
         { allowWholeFile: true },
