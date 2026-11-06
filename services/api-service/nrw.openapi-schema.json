@@ -2836,7 +2836,8 @@
           },
           "endAt": {
             "type": "string",
-            "example": "2026-03-20T23:59:59Z"
+            "example": "2026-03-20T23:59:59Z",
+            "description": "Until when the event is shown: the end of its last above-threshold forecast interval, or, if that is before the next forecast is due, the moment the forecast becomes stale."
           },
           "firstIssuedAt": {
             "type": "string",

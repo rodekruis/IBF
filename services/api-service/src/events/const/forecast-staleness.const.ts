@@ -15,18 +15,15 @@ const FORECAST_INTERVAL_HOURS: Record<HazardType, number> = {
 // Tolerance on top of the forecast interval, covering day-to-day variation in data availability and processing time.
 const FORECAST_INTERVAL_TOLERANCE_FACTOR = 1.1;
 
-// A newer forecast is overdue once this much time has passed since an event's last forecast update.
-// Until then, an event whose endAt has passed is not yet considered ended, as the next forecast may still extend it.
+// A newer forecast is overdue once this much time has passed since a forecast was issued.
 export function getForecastStaleAt({
   hazardType,
-  lastUpdatedAt,
+  issuedAt,
 }: {
   hazardType: HazardType;
-  lastUpdatedAt: Date;
+  issuedAt: Date;
 }): Date {
   const staleAfterHours =
     FORECAST_INTERVAL_HOURS[hazardType] * FORECAST_INTERVAL_TOLERANCE_FACTOR;
-  return new Date(
-    lastUpdatedAt.getTime() + staleAfterHours * MILLISECONDS_PER_HOUR,
-  );
+  return new Date(issuedAt.getTime() + staleAfterHours * MILLISECONDS_PER_HOUR);
 }

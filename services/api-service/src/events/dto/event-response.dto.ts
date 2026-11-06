@@ -45,7 +45,11 @@ export class EventResponseDto {
   @ApiProperty({ example: '2026-03-20T23:59:59Z' })
   public readonly reachesPeakAlertClassAt: string;
 
-  @ApiProperty({ example: '2026-03-20T23:59:59Z' })
+  @ApiProperty({
+    example: '2026-03-20T23:59:59Z',
+    description:
+      'Until when the event is shown: the end of its last above-threshold forecast interval, or, if that is before the next forecast is due, the moment the forecast becomes stale.',
+  })
   public readonly endAt: string;
 
   @ApiProperty({ example: '2026-03-20T23:59:59Z' })

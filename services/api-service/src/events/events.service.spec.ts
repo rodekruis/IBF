@@ -237,104 +237,16 @@ describe('EventsService', () => {
     });
 
     it('should return eventStatus ended when endAt equals the view time', async () => {
-      // Arrange
       repository.getEvents.mockResolvedValue([buildEvent()]);
       repository.getExposedAdminAreasForLatestAlerts.mockResolvedValue(
         new Map(),
       );
 
-      // Act
       const result = await service.getEvents({
         viewTime: new Date('2026-03-26T00:00:00Z'),
       });
 
-      // Assert
       expect(result[0].eventStatus).toBe(EventStatus.ended);
-    });
-
-    it('should return eventStatus ongoing when endAt has passed but a newer forecast is not yet overdue', async () => {
-      // Arrange
-      repository.getEvents.mockResolvedValue([
-        buildEvent({ lastUpdatedAt: new Date('2026-03-25T12:00:00Z') }),
-      ]);
-      repository.getExposedAdminAreasForLatestAlerts.mockResolvedValue(
-        new Map(),
-      );
-
-      // Act
-      const result = await service.getEvents({
-        viewTime: new Date('2026-03-26T06:00:00Z'),
-      });
-
-      // Assert
-      expect(result[0].eventStatus).toBe(EventStatus.ongoing);
-    });
-
-    it('should return eventStatus ended when the event is closed, even if endAt has not passed', async () => {
-      // Arrange
-      repository.getEvents.mockResolvedValue([
-        buildEvent({ closedAt: new Date('2026-03-24T12:00:00Z') }),
-      ]);
-      repository.getExposedAdminAreasForLatestAlerts.mockResolvedValue(
-        new Map(),
-      );
-
-      // Act
-      const result = await service.getEvents({
-        viewTime: new Date('2026-03-25T12:00:00Z'),
-      });
-
-      // Assert
-      expect(result[0].eventStatus).toBe(EventStatus.ended);
-    });
-  });
-
-  describe('getEvents – active filter', () => {
-    const viewTime = new Date('2026-03-26T06:00:00Z');
-    const eventWithinGracePeriod = buildEvent({
-      id: 1,
-      eventName: 'station-within-grace-period',
-      lastUpdatedAt: new Date('2026-03-25T12:00:00Z'),
-    });
-    const eventWithStaleForecast = buildEvent({
-      id: 2,
-      eventName: 'station-stale-forecast',
-    });
-
-    beforeEach(() => {
-      repository.getEvents.mockResolvedValue([
-        eventWithinGracePeriod,
-        eventWithStaleForecast,
-      ]);
-      repository.getExposedAdminAreasForLatestAlerts.mockResolvedValue(
-        new Map(),
-      );
-    });
-
-    it('should only fetch open events and return those that have not ended when active is true', async () => {
-      // Act
-      const result = await service.getEvents({ viewTime, active: true });
-
-      // Assert
-      expect(repository.getEvents).toHaveBeenCalledWith(
-        expect.objectContaining({ onlyOpen: true }),
-      );
-      expect(result.map((event) => event.eventName)).toEqual([
-        'station-within-grace-period',
-      ]);
-    });
-
-    it('should return only ended events when active is false', async () => {
-      // Act
-      const result = await service.getEvents({ viewTime, active: false });
-
-      // Assert
-      expect(repository.getEvents).toHaveBeenCalledWith(
-        expect.objectContaining({ onlyOpen: false }),
-      );
-      expect(result.map((event) => event.eventName)).toEqual([
-        'station-stale-forecast',
-      ]);
     });
   });
 

@@ -70,11 +70,13 @@ export class EventsRepository {
   public constructor(private readonly prisma: PrismaService) {}
 
   public async getEvents({
-    onlyOpen,
+    viewTime,
+    active,
     countryCodesIso3,
     lastUpdatedAt,
   }: {
-    onlyOpen: boolean;
+    viewTime: Date;
+    active?: boolean;
     countryCodesIso3?: string[];
     lastUpdatedAt?: Date;
   }): Promise<Event[]> {
@@ -86,10 +88,25 @@ export class EventsRepository {
       ? { ...countryFilter, lastUpdatedAt }
       : countryFilter;
 
-    return await this.prisma.event.findMany({
-      where: onlyOpen ? { ...baseFilter, closedAt: null } : baseFilter,
-      orderBy: eventsOrderBy,
-    });
+    if (active === undefined) {
+      return await this.prisma.event.findMany({
+        where: baseFilter,
+        orderBy: eventsOrderBy,
+      });
+    }
+
+    const where = active
+      ? {
+          ...baseFilter,
+          closedAt: null,
+          endAt: { gt: viewTime },
+        }
+      : {
+          ...baseFilter,
+          OR: [{ closedAt: { not: null } }, { endAt: { lte: viewTime } }],
+        };
+
+    return await this.prisma.event.findMany({ where, orderBy: eventsOrderBy });
   }
 
   public async getOpenEventByName(eventName: string): Promise<Event | null> {

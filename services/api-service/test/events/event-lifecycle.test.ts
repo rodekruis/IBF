@@ -248,7 +248,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       });
     });
 
-    it('should exclude events where endAt <= view-timestamp and a newer forecast is overdue', async () => {
+    it('should exclude events where endAt <= view-timestamp', async () => {
       const viewTimestamp = '2026-03-24T12:00:00Z';
       const endViewTimestamp = '2026-03-25T00:00:00Z';
 
@@ -295,9 +295,9 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
       expect(responseAfterEnd.body).toHaveLength(0);
     });
 
-    describe('next-morning gap between endAt and the next forecast', () => {
-      // Forecast issued at 12:00 on 24 Mar predicts the event to end at the end of that day.
-      // For floods the forecast is stale 26.4h later: 25 Mar 14:24.
+    describe('next-morning gap between the forecast end and the next forecast', () => {
+      // Forecast issued at 12:00 on 24 Mar predicts the event to end at the end of that day, before the next forecast is due.
+      // So endAt is set to when the forecast is stale instead, for floods 26.4h later: 25 Mar 14:24.
       const eventName = 'station-next-morning';
       const firstIssuedAt = new Date('2026-03-24T12:00:00Z');
       const newerIssuedAt = new Date('2026-03-25T12:00:00Z');
@@ -324,7 +324,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         });
       });
 
-      it('should keep an event ongoing after endAt until its forecast is stale, and end it after', async () => {
+      it('should keep an event ongoing after the forecast end until its forecast is stale, and end it after', async () => {
         // Act
         const activeNextMorning = await getActiveEvents({
           accessToken,
@@ -357,7 +357,7 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
         expect(activeNextMorning.body).toHaveLength(1);
         expect(activeNextMorning.body[0]).toMatchObject({
           eventName,
-          endAt: '2026-03-25T00:00:00.000Z',
+          endAt: '2026-03-25T14:24:00.000Z',
           eventStatus: EventStatus.ongoing,
         });
         expect(endedNextMorning.body).toHaveLength(0);
@@ -410,7 +410,8 @@ describe('GET /events - lifecycle across multiple forecasts', () => {
           eventName,
           firstIssuedAt: '2026-03-24T12:00:00.000Z',
           lastUpdatedAt: '2026-03-25T12:00:00.000Z',
-          endAt: '2026-03-26T00:00:00.000Z',
+          // The newer forecast also ends before the next forecast is due, so endAt is when it is stale.
+          endAt: '2026-03-26T14:24:00.000Z',
           eventStatus: EventStatus.ongoing,
         });
       });

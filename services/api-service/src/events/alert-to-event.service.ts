@@ -3,6 +3,7 @@ import { Event } from '@prisma/client';
 
 import { AlertCreateDto } from '@api-service/src/alerts/dto/alert-create.dto';
 import { AlertClassificationService } from '@api-service/src/events/alert-classification.service';
+import { getForecastStaleAt } from '@api-service/src/events/const/forecast-staleness.const';
 import { EventAlertHistoryRecord } from '@api-service/src/events/events.repository';
 import { EventsRepository } from '@api-service/src/events/events.repository';
 import { ClassificationResult } from '@api-service/src/events/interfaces/classification-result';
@@ -89,7 +90,7 @@ export class AlertToEventService {
       },
       startAt: classification.startAt,
       reachesPeakAlertClassAt: classification.reachesPeakAlertClassAt,
-      endAt: classification.endAt,
+      endAt: this.resolveEndAt({ classification, forecast }),
       firstIssuedAt: forecast.issuedAt,
       lastUpdatedAt: forecast.issuedAt,
     });
@@ -118,10 +119,28 @@ export class AlertToEventService {
         trigger: latestAlert.trigger,
         startAt,
         reachesPeakAlertClassAt: latestAlert.reachesPeakAlertClassAt,
-        endAt: latestAlert.endAt,
+        endAt: this.resolveEndAt({ classification: latestAlert, forecast }),
         lastUpdatedAt: forecast.issuedAt,
       },
     });
+  }
+
+  // endAt is when the event stops being visible, not strictly the forecast end: if the forecast ends before the next forecast is due
+  // (e.g. above threshold on lead time 0 only), keep the event until then, as the next forecast may still extend it.
+  private resolveEndAt({
+    classification,
+    forecast,
+  }: {
+    classification: ClassificationResult;
+    forecast: ForecastMetadata;
+  }): Date {
+    const forecastStaleAt = getForecastStaleAt({
+      hazardType: forecast.hazardType,
+      issuedAt: forecast.issuedAt,
+    });
+    return classification.endAt > forecastStaleAt
+      ? classification.endAt
+      : forecastStaleAt;
   }
 
   private async resolveStartAtFromAlertHistory({

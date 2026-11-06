@@ -38,7 +38,7 @@ function buildForecastMetadata(
     countryCodeIso3: 'ETH',
     hazardType: HazardType.floods,
     forecastSources: [ForecastSource.glofasRiverDischarge],
-    issuedAt: new Date(),
+    issuedAt: new Date('2026-03-30T00:00:00Z'),
     ...overrides,
   };
 }
@@ -136,6 +136,54 @@ describe('AlertToEventService', () => {
         firstIssuedAt: forecast.issuedAt,
         lastUpdatedAt: forecast.issuedAt,
       });
+    });
+
+    it('should set endAt to when the forecast is stale, if the forecast ends before that', async () => {
+      // Arrange
+      const classification = buildClassificationResult({
+        endAt: new Date('2026-03-24T23:59:59Z'),
+      });
+      classificationService.classifyAlert.mockResolvedValue(classification);
+      repository.getOpenEventByName.mockResolvedValue(null);
+      repository.createEvent.mockResolvedValue({ id: 99 } as Event);
+      const forecast = buildForecastMetadata({
+        hazardType: HazardType.floods,
+        issuedAt: new Date('2026-03-24T12:00:00Z'),
+      });
+
+      // Act
+      await service.matchAndStore({ alert: buildAlert(), forecast });
+
+      // Assert
+      expect(repository.createEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          endAt: new Date('2026-03-25T14:24:00Z'),
+        }),
+      );
+    });
+
+    it('should keep endAt as the forecast end, if the forecast ends after it is stale', async () => {
+      // Arrange
+      const classification = buildClassificationResult({
+        endAt: new Date('2026-03-28T23:59:59Z'),
+      });
+      classificationService.classifyAlert.mockResolvedValue(classification);
+      repository.getOpenEventByName.mockResolvedValue(null);
+      repository.createEvent.mockResolvedValue({ id: 99 } as Event);
+      const forecast = buildForecastMetadata({
+        hazardType: HazardType.floods,
+        issuedAt: new Date('2026-03-24T12:00:00Z'),
+      });
+
+      // Act
+      await service.matchAndStore({ alert: buildAlert(), forecast });
+
+      // Assert
+      expect(repository.createEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          endAt: classification.endAt,
+        }),
+      );
     });
 
     it('should set event startAt to latest alert startAt when no history is ongoing', async () => {

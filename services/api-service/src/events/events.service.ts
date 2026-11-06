@@ -3,7 +3,6 @@ import { Event } from '@prisma/client';
 import { Layer } from '@prisma/client';
 
 import { FORECAST_SOURCE_DETAILS } from '@api-service/src/events/const/forecast-source-details.const';
-import { getForecastStaleAt } from '@api-service/src/events/const/forecast-staleness.const';
 import { ExposedAdminAreaDto } from '@api-service/src/events/dto/event-exposed-admin-area.dto';
 import { EventForecastSourceDto } from '@api-service/src/events/dto/event-forecast-source.dto';
 import { EventHazardTypeDetailsDto as EventHazardTypeDetailsDto } from '@api-service/src/events/dto/event-hazard-type-details.dto';
@@ -46,7 +45,7 @@ export class EventsService {
     countryCodesIso3?: string[];
     lastUpdatedAt?: Date;
   }): Promise<EventResponseDto[]> {
-    const events = await this.getFilteredEvents({
+    const events = await this.eventsRepository.getEvents({
       viewTime,
       active,
       countryCodesIso3,
@@ -69,33 +68,6 @@ export class EventsService {
         hazardTypeDetailsContext,
       }),
     );
-  }
-
-  private async getFilteredEvents({
-    viewTime,
-    active,
-    countryCodesIso3,
-    lastUpdatedAt,
-  }: {
-    viewTime: Date;
-    active?: boolean;
-    countryCodesIso3?: string[];
-    lastUpdatedAt?: Date;
-  }): Promise<Event[]> {
-    const events = await this.eventsRepository.getEvents({
-      // Closed events are never active, so only open events need to be fetched
-      onlyOpen: active === true,
-      countryCodesIso3,
-      lastUpdatedAt,
-    });
-    if (active === undefined) {
-      return events;
-    }
-    return events.filter((event) => {
-      const isActive =
-        this.getEventStatus({ event, viewTime }) !== EventStatus.ended;
-      return active ? isActive : !isActive;
-    });
   }
 
   private async buildHazardTypeDetailsContext(
@@ -158,31 +130,13 @@ export class EventsService {
     event: Event;
     viewTime: Date;
   }): EventStatus {
-    // An event ends when a newer forecast closes it, or, as a fallback when forecasts stop arriving, once its endAt has passed and its forecast is stale.
-    if (
-      event.closedAt !== null ||
-      this.isPastEndAtAndForecastStale({ event, viewTime })
-    ) {
+    if (event.closedAt !== null || event.endAt <= viewTime) {
       return EventStatus.ended;
     }
     if (event.startAt > viewTime) {
       return EventStatus.imminent;
     }
     return EventStatus.ongoing;
-  }
-
-  private isPastEndAtAndForecastStale({
-    event,
-    viewTime,
-  }: {
-    event: Event;
-    viewTime: Date;
-  }): boolean {
-    const forecastStaleAt = getForecastStaleAt({
-      hazardType: event.hazardType,
-      lastUpdatedAt: event.lastUpdatedAt,
-    });
-    return event.endAt <= viewTime && forecastStaleAt <= viewTime;
   }
 
   private mapForecastSources(

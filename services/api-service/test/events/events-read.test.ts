@@ -81,7 +81,7 @@ describe('GET /events', () => {
   }
 
   describe('active filter', () => {
-    // After the forecast of 24 Mar 12:00 is stale (26.4h for floods), so 'station-ended' has ended by time
+    // After the endAt of 'station-ended', which is extended to when its forecast of 24 Mar 12:00 is stale (26.4h for floods)
     const activeFilterViewTimestamp = '2026-03-25T15:00:00Z';
 
     beforeEach(async () => {
