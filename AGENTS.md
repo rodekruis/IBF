@@ -54,6 +54,10 @@ cd data && uv run python python-knip.py
 
 Do not use `--no-verify`, `eslint-disable`, `@ts-ignore`, or `@ts-expect-error` to suppress errors unless explicitly told to do so.
 
+### Installing Dependencies
+
+When adding or updating npm packages, use the Node version specified in `.node-version` and the npm version that is bundled with that Node version.
+
 ### Commit Conventions
 
 Conventional Commits with Angular format (enforced by CI):
