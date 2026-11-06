@@ -1,15 +1,125 @@
-import { PNG } from 'pngjs';
+import { PackerOptions, PNG } from 'pngjs';
 
 import { EPSG } from '@api-service/src/shared/enum/epsg.enum';
 import { LayerName } from '@api-service/src/shared-enums';
 import {
   colorizeGrayscalePng,
+  decodeRgbaEncodedPng,
+  Downsampling,
   FLOOD_DEPTH_CONFIG,
   getColorizationConfig,
   processPopulationRaster,
   reprojectExtents4326To3857,
   reprojectPng4326To3857,
 } from '@api-service/src/utils/raster-colorization.helper';
+
+const CRC32_TABLE = Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) {
+    c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  }
+  return c >>> 0;
+});
+
+function crc32(buffer: Buffer): number {
+  let crc = 0xffffffff;
+  for (const byte of buffer) {
+    crc = CRC32_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function splitIdatChunks({
+  pngBuffer,
+  chunkSize,
+}: {
+  pngBuffer: Buffer;
+  chunkSize: number;
+}): Buffer {
+  const parts: Buffer[] = [pngBuffer.subarray(0, 8)];
+  let offset = 8;
+  while (offset < pngBuffer.length) {
+    const length = pngBuffer.readUInt32BE(offset);
+    const type = pngBuffer.toString('latin1', offset + 4, offset + 8);
+    const chunk = pngBuffer.subarray(offset, offset + 12 + length);
+    if (type !== 'IDAT') {
+      parts.push(chunk);
+    } else {
+      const payload = chunk.subarray(8, 8 + length);
+      for (let i = 0; i < payload.length; i += chunkSize) {
+        const piece = payload.subarray(i, i + chunkSize);
+        const header = Buffer.alloc(8);
+        header.writeUInt32BE(piece.length, 0);
+        header.write('IDAT', 4, 'latin1');
+        const crc = Buffer.alloc(4);
+        crc.writeUInt32BE(
+          crc32(Buffer.concat([header.subarray(4), piece])) >>> 0,
+          0,
+        );
+        parts.push(header, piece, crc);
+      }
+    }
+    offset += 12 + length;
+  }
+  return Buffer.concat(parts);
+}
+
+function patchIhdr({
+  pngBuffer,
+  patch,
+}: {
+  pngBuffer: Buffer;
+  patch: (ihdrData: Buffer) => void;
+}): Buffer {
+  const out = Buffer.from(pngBuffer);
+  const ihdrData = out.subarray(16, 29);
+  patch(ihdrData);
+  out.writeUInt32BE(crc32(out.subarray(12, 29)), 29);
+  return out;
+}
+
+function setInterlaced(pngBuffer: Buffer): Buffer {
+  return patchIhdr({
+    pngBuffer,
+    patch: (ihdrData) => {
+      ihdrData[12] = 1;
+    },
+  });
+}
+
+function setIhdrHeight({
+  pngBuffer,
+  height,
+}: {
+  pngBuffer: Buffer;
+  height: number;
+}): Buffer {
+  return patchIhdr({
+    pngBuffer,
+    patch: (ihdrData) => {
+      ihdrData.writeUInt32BE(height, 4);
+    },
+  });
+}
+
+function countChunks({
+  pngBuffer,
+  type,
+}: {
+  pngBuffer: Buffer;
+  type: string;
+}): number {
+  let count = 0;
+  let offset = 8;
+  while (offset < pngBuffer.length) {
+    const length = pngBuffer.readUInt32BE(offset);
+    if (pngBuffer.toString('latin1', offset + 4, offset + 8) === type) {
+      count++;
+    }
+    offset += 12 + length;
+  }
+  return count;
+}
 
 function createGrayscalePng({
   width,
@@ -431,9 +541,9 @@ describe('raster-colorization.helper', () => {
       return PNG.sync.write(png);
     }
 
-    it('should compute extent from transform and PNG dimensions', () => {
+    it('should compute extent from transform and PNG dimensions', async () => {
       const pngBuffer = createTestPngBuffer({ width: 10, height: 20 });
-      const result = processPopulationRaster({
+      const result = await processPopulationRaster({
         dataPngBuffer: pngBuffer,
         metadata: {
           transform: [0.5, 0, 33.0, 0, -0.25, 5.0],
@@ -447,9 +557,9 @@ describe('raster-colorization.helper', () => {
       expect(result.metadata.data.extent.ymin).toBe(5.0 - 0.25 * 20);
     });
 
-    it('should set data CRS from input metadata', () => {
+    it('should set data CRS from input metadata', async () => {
       const pngBuffer = createTestPngBuffer({ width: 2, height: 2 });
-      const result = processPopulationRaster({
+      const result = await processPopulationRaster({
         dataPngBuffer: pngBuffer,
         metadata: {
           transform: [1, 0, 0, 0, -1, 2],
@@ -460,9 +570,9 @@ describe('raster-colorization.helper', () => {
       expect(result.metadata.data.crs).toBe(EPSG.WGS84);
     });
 
-    it('should set nodata to 0', () => {
+    it('should set nodata to 0', async () => {
       const pngBuffer = createTestPngBuffer({ width: 2, height: 2 });
-      const result = processPopulationRaster({
+      const result = await processPopulationRaster({
         dataPngBuffer: pngBuffer,
         metadata: {
           transform: [1, 0, 0, 0, -1, 2],
@@ -473,9 +583,9 @@ describe('raster-colorization.helper', () => {
       expect(result.metadata.data.nodata).toBe(0);
     });
 
-    it('should reproject coloured extent to EPSG:3857 when input is EPSG:4326', () => {
+    it('should reproject coloured extent to EPSG:3857 when input is EPSG:4326', async () => {
       const pngBuffer = createTestPngBuffer({ width: 4, height: 4 });
-      const result = processPopulationRaster({
+      const result = await processPopulationRaster({
         dataPngBuffer: pngBuffer,
         metadata: {
           transform: [1, 0, 33.0, 0, -1, 5.0],
@@ -489,27 +599,28 @@ describe('raster-colorization.helper', () => {
       );
     });
 
-    it('should throw when input is not EPSG:4326', () => {
+    it('should throw when input is not EPSG:4326', async () => {
       // Arrange
       const pngBuffer = createTestPngBuffer({ width: 4, height: 4 });
 
       // Act
-      const act = () =>
-        processPopulationRaster({
-          dataPngBuffer: pngBuffer,
-          metadata: {
-            transform: [1000, 0, 500000, 0, -1000, 600000],
-            crs: EPSG.WebMercator,
-          },
-        });
+      const act = processPopulationRaster({
+        dataPngBuffer: pngBuffer,
+        metadata: {
+          transform: [1000, 0, 500000, 0, -1000, 600000],
+          crs: EPSG.WebMercator,
+        },
+      });
 
       // Assert
-      expect(act).toThrow('Only WGS84 population rasters are supported');
+      await expect(act).rejects.toThrow(
+        'Only WGS84 population rasters are supported',
+      );
     });
 
-    it('should return a valid base64 coloured PNG', () => {
+    it('should return a valid base64 coloured PNG', async () => {
       const pngBuffer = createTestPngBuffer({ width: 4, height: 4 });
-      const result = processPopulationRaster({
+      const result = await processPopulationRaster({
         dataPngBuffer: pngBuffer,
         metadata: {
           transform: [1, 0, 0, 0, -1, 4],
@@ -526,9 +637,9 @@ describe('raster-colorization.helper', () => {
       expect(decoded[3]).toBe(pngSignature[3]);
     });
 
-    it('should downsample a 20x20 input to 2x2', () => {
+    it('should downsample a 20x20 input to 2x2', async () => {
       const pngBuffer = createTestPngBuffer({ width: 20, height: 20 });
-      const result = processPopulationRaster({
+      const result = await processPopulationRaster({
         dataPngBuffer: pngBuffer,
         metadata: {
           transform: [1, 0, 0, 0, -1, 20],
@@ -542,9 +653,9 @@ describe('raster-colorization.helper', () => {
       expect(outputPng.height).toBe(2);
     });
 
-    it('should not downsample when input is smaller than the factor', () => {
+    it('should not downsample when input is smaller than the factor', async () => {
       const pngBuffer = createTestPngBuffer({ width: 4, height: 4 });
-      const result = processPopulationRaster({
+      const result = await processPopulationRaster({
         dataPngBuffer: pngBuffer,
         metadata: {
           transform: [1, 0, 0, 0, -1, 4],
@@ -558,7 +669,7 @@ describe('raster-colorization.helper', () => {
       expect(outputPng.height).toBe(4);
     });
 
-    it('should decode RGBA-encoded population values into palette bands', () => {
+    it('should decode RGBA-encoded population values into palette bands', async () => {
       // Arrange
       const pngBuffer = createEncodedPngBuffer({
         width: 3,
@@ -567,7 +678,7 @@ describe('raster-colorization.helper', () => {
       });
 
       // Act
-      const result = processPopulationRaster({
+      const result = await processPopulationRaster({
         dataPngBuffer: pngBuffer,
         metadata: {
           transform: [1, 0, 0, 0, -1, 1],
@@ -597,7 +708,7 @@ describe('raster-colorization.helper', () => {
       expect(pixelHigh.a).toBe(94);
     });
 
-    it('should average population values when downsampling', () => {
+    it('should average population values when downsampling', async () => {
       // Arrange
       const width = 20;
       const height = 10;
@@ -609,7 +720,7 @@ describe('raster-colorization.helper', () => {
       const pngBuffer = createEncodedPngBuffer({ width, height, values });
 
       // Act
-      const result = processPopulationRaster({
+      const result = await processPopulationRaster({
         dataPngBuffer: pngBuffer,
         metadata: {
           transform: [1, 0, 0, 0, -1, height],
@@ -624,6 +735,480 @@ describe('raster-colorization.helper', () => {
         pixelIndex: 1,
       });
       expect(pixelRight.a).toBe(20);
+    });
+  });
+
+  describe('decodeRgbaEncodedPng', () => {
+    // Deterministic pseudo-random RGBA data so every channel (and thus every
+    // PNG filter type) gets exercised. Mulberry32 PRNG.
+    function createNoisyRgbaData({
+      width,
+      height,
+      seed,
+    }: {
+      width: number;
+      height: number;
+      seed: number;
+    }): Buffer {
+      let state = seed;
+      const next = (): number => {
+        state = (state + 0x6d2b79f5) | 0;
+        let t = Math.imul(state ^ (state >>> 15), 1 | state);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return (t ^ (t >>> 14)) >>> 0;
+      };
+      const data = Buffer.alloc(width * height * 4);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = next() & 0xff;
+      }
+      return data;
+    }
+
+    function writePng({
+      width,
+      height,
+      data,
+      options,
+    }: {
+      width: number;
+      height: number;
+      data: Buffer;
+      options?: PackerOptions;
+    }): Buffer {
+      const png = new PNG({ width, height });
+      data.copy(png.data);
+      return PNG.sync.write(png, options);
+    }
+
+    // Expected output computed straight from the raw pixel buffer the test
+    // generated, independent of any PNG decoding.
+    function expectedFromRawPixels({
+      width,
+      height,
+      data,
+      downsampling,
+    }: {
+      width: number;
+      height: number;
+      data: Buffer;
+      downsampling: Downsampling;
+    }): { width: number; height: number; decoded: Float32Array } {
+      const factor =
+        width >= downsampling.factor && height >= downsampling.factor
+          ? downsampling.factor
+          : 1;
+      const outWidth = Math.floor(width / factor);
+      const outHeight = Math.floor(height / factor);
+      const decoded = new Float32Array(outWidth * outHeight);
+      const valueAt = (x: number, y: number): number => {
+        const idx = (y * width + x) * 4;
+        return (
+          (data[idx] * 16777216 +
+            data[idx + 1] * 65536 +
+            data[idx + 2] * 256 +
+            data[idx + 3]) /
+          1000
+        );
+      };
+      for (let oy = 0; oy < outHeight; oy++) {
+        for (let ox = 0; ox < outWidth; ox++) {
+          let sum = 0;
+          for (let dy = 0; dy < factor; dy++) {
+            for (let dx = 0; dx < factor; dx++) {
+              sum += valueAt(ox * factor + dx, oy * factor + dy);
+            }
+          }
+          decoded[oy * outWidth + ox] =
+            downsampling.aggregation === 'sum' ? sum : sum / (factor * factor);
+        }
+      }
+      return { width: outWidth, height: outHeight, decoded };
+    }
+
+    function toComparable({
+      width,
+      height,
+      decoded,
+    }: {
+      width: number;
+      height: number;
+      decoded: Float32Array;
+    }): { width: number; height: number; decoded: number[] } {
+      return { width, height, decoded: Array.from(decoded) };
+    }
+
+    const noisyWidth = 237;
+    const noisyHeight = 191;
+    const noisyData = createNoisyRgbaData({
+      width: noisyWidth,
+      height: noisyHeight,
+      seed: 42,
+    });
+    const meanBy10: Downsampling = { factor: 10, aggregation: 'mean' };
+    const noisyExpectedMeanBy10 = expectedFromRawPixels({
+      width: noisyWidth,
+      height: noisyHeight,
+      data: noisyData,
+      downsampling: meanBy10,
+    });
+
+    it('should decode and downsample (mean) noisy data', async () => {
+      // Arrange
+      const inputBuffer = writePng({
+        width: noisyWidth,
+        height: noisyHeight,
+        data: noisyData,
+      });
+
+      // Act
+      const result = await decodeRgbaEncodedPng({
+        inputBuffer,
+        downsampling: meanBy10,
+      });
+
+      // Assert
+      expect(toComparable(result)).toEqual(toComparable(noisyExpectedMeanBy10));
+    });
+
+    it('should decode noisy data without downsampling', async () => {
+      // Arrange
+      const inputBuffer = writePng({
+        width: noisyWidth,
+        height: noisyHeight,
+        data: noisyData,
+      });
+
+      // Act
+      const result = await decodeRgbaEncodedPng({ inputBuffer });
+
+      // Assert
+      expect(toComparable(result)).toEqual(
+        toComparable(
+          expectedFromRawPixels({
+            width: noisyWidth,
+            height: noisyHeight,
+            data: noisyData,
+            downsampling: { factor: 1, aggregation: 'mean' },
+          }),
+        ),
+      );
+    });
+
+    it('should decode and downsample (sum) noisy data', async () => {
+      // Arrange
+      const inputBuffer = writePng({
+        width: noisyWidth,
+        height: noisyHeight,
+        data: noisyData,
+      });
+      const sumBy10: Downsampling = { factor: 10, aggregation: 'sum' };
+
+      // Act
+      const result = await decodeRgbaEncodedPng({
+        inputBuffer,
+        downsampling: sumBy10,
+      });
+
+      // Assert
+      expect(toComparable(result)).toEqual(
+        toComparable(
+          expectedFromRawPixels({
+            width: noisyWidth,
+            height: noisyHeight,
+            data: noisyData,
+            downsampling: sumBy10,
+          }),
+        ),
+      );
+    });
+
+    // Real population PNGs use all five filter types (adaptive filtering per row).
+    it.each([
+      ['None', 0],
+      ['Sub', 1],
+      ['Up', 2],
+      ['Average', 3],
+      ['Paeth', 4],
+      ['adaptive', -1],
+    ])('should decode PNGs using filter type %s', async (_name, filterType) => {
+      // Arrange
+      const inputBuffer = writePng({
+        width: noisyWidth,
+        height: noisyHeight,
+        data: noisyData,
+        options: { filterType },
+      });
+
+      // Act
+      const result = await decodeRgbaEncodedPng({
+        inputBuffer,
+        downsampling: meanBy10,
+      });
+
+      // Assert
+      expect(toComparable(result)).toEqual(toComparable(noisyExpectedMeanBy10));
+    });
+
+    // Real population PNGs are split into hundreds of IDAT chunks whose
+    // boundaries do not align with row boundaries. pngjs's sync writer always
+    // emits a single IDAT, so re-chunk it manually.
+    it.each([
+      ['many small IDAT chunks', { deflateLevel: 6 }, 512],
+      ['stored (uncompressed) deflate blocks', { deflateLevel: 0 }, undefined],
+      ['stored blocks in small IDAT chunks', { deflateLevel: 0 }, 1024],
+    ])('should decode PNGs with %s', async (_name, options, idatChunkSize) => {
+      // Arrange
+      const singleIdat = writePng({
+        width: noisyWidth,
+        height: noisyHeight,
+        data: noisyData,
+        options,
+      });
+      const inputBuffer =
+        idatChunkSize === undefined
+          ? singleIdat
+          : splitIdatChunks({
+              pngBuffer: singleIdat,
+              chunkSize: idatChunkSize,
+            });
+
+      // Act
+      const result = await decodeRgbaEncodedPng({
+        inputBuffer,
+        downsampling: meanBy10,
+      });
+
+      // Assert
+      expect(toComparable(result)).toEqual(toComparable(noisyExpectedMeanBy10));
+    });
+
+    it('should produce a multi-IDAT fixture with splitIdatChunks', () => {
+      // Arrange
+      const singleIdat = writePng({
+        width: noisyWidth,
+        height: noisyHeight,
+        data: noisyData,
+      });
+
+      // Act
+      const inputBuffer = splitIdatChunks({
+        pngBuffer: singleIdat,
+        chunkSize: 512,
+      });
+
+      // Assert
+      expect(countChunks({ pngBuffer: singleIdat, type: 'IDAT' })).toBe(1);
+      expect(
+        countChunks({ pngBuffer: inputBuffer, type: 'IDAT' }),
+      ).toBeGreaterThan(1);
+      expect(PNG.sync.read(inputBuffer).data).toEqual(noisyData);
+    });
+
+    it.each([
+      ['width and height not multiples of the factor', 23, 17],
+      ['exactly one block', 10, 10],
+      ['one extra row', 10, 11],
+      ['one extra column', 11, 10],
+      ['single row below the factor', 25, 1],
+      ['single column below the factor', 1, 25],
+      ['single pixel', 1, 1],
+    ])('should handle dimensions: %s (%ix%i)', async (_name, width, height) => {
+      // Arrange
+      const data = createNoisyRgbaData({
+        width,
+        height,
+        seed: width * 31 + height,
+      });
+      const inputBuffer = writePng({ width, height, data });
+
+      // Act
+      const result = await decodeRgbaEncodedPng({
+        inputBuffer,
+        downsampling: meanBy10,
+      });
+
+      // Assert
+      expect(toComparable(result)).toEqual(
+        toComparable(
+          expectedFromRawPixels({
+            width,
+            height,
+            data,
+            downsampling: meanBy10,
+          }),
+        ),
+      );
+    });
+
+    it('should weight channels as base-256 digits (R most significant)', async () => {
+      // Arrange
+      const width = 4;
+      const height = 1;
+      const data = Buffer.from([
+        1,
+        0,
+        0,
+        0, // 16777216 / 1000
+        0,
+        1,
+        0,
+        0, // 65536 / 1000
+        0,
+        0,
+        1,
+        0, // 256 / 1000
+        0,
+        0,
+        0,
+        1, // 1 / 1000
+      ]);
+      const inputBuffer = writePng({ width, height, data });
+
+      // Act
+      const result = await decodeRgbaEncodedPng({ inputBuffer });
+
+      // Assert
+      expect(Array.from(result.decoded)).toEqual([
+        Math.fround(16777.216),
+        Math.fround(65.536),
+        Math.fround(0.256),
+        Math.fround(0.001),
+      ]);
+    });
+
+    it('should decode the maximum encodable value', async () => {
+      // Arrange
+      const inputBuffer = writePng({
+        width: 1,
+        height: 1,
+        data: Buffer.from([255, 255, 255, 255]),
+      });
+
+      // Act
+      const result = await decodeRgbaEncodedPng({ inputBuffer });
+
+      // Assert
+      expect(result.decoded[0]).toBe(Math.fround(4294967.295));
+    });
+
+    // Only what the pipeline emits is supported (8-bit RGBA, non-interlaced);
+    // anything else cannot carry the 4-channel encoding and is rejected.
+    it.each<[string, PackerOptions]>([
+      ['RGB without alpha', { colorType: 2 }],
+      ['greyscale', { colorType: 0 }],
+      ['greyscale with alpha', { colorType: 4 }],
+      ['16-bit RGBA', { bitDepth: 16 }],
+    ])('should reject %s PNGs', async (_name, options) => {
+      // Arrange
+      const inputBuffer = writePng({
+        width: 4,
+        height: 4,
+        data: createNoisyRgbaData({ width: 4, height: 4, seed: 7 }),
+        options,
+      });
+
+      // Act
+      const act = decodeRgbaEncodedPng({ inputBuffer });
+
+      // Assert
+      await expect(act).rejects.toThrow(
+        'Unsupported PNG for RGBA-encoded raster',
+      );
+    });
+
+    it('should reject interlaced PNGs', async () => {
+      // Arrange
+      const inputBuffer = setInterlaced(
+        writePng({
+          width: 4,
+          height: 4,
+          data: createNoisyRgbaData({ width: 4, height: 4, seed: 7 }),
+        }),
+      );
+
+      // Act
+      const act = decodeRgbaEncodedPng({ inputBuffer });
+
+      // Assert
+      await expect(act).rejects.toThrow(
+        'Unsupported PNG for RGBA-encoded raster',
+      );
+    });
+
+    it('should reject non-PNG input', async () => {
+      // Arrange
+      const inputBuffer = Buffer.from('definitely not a png');
+
+      // Act
+      const act = decodeRgbaEncodedPng({ inputBuffer });
+
+      // Assert
+      await expect(act).rejects.toThrow('Not a PNG file');
+    });
+
+    it('should reject truncated image data', async () => {
+      // Arrange
+      const inputBuffer = writePng({
+        width: 4,
+        height: 8,
+        data: createNoisyRgbaData({ width: 4, height: 8, seed: 7 }),
+      });
+      const truncated = setIhdrHeight({ pngBuffer: inputBuffer, height: 9 });
+
+      // Act
+      const act = decodeRgbaEncodedPng({ inputBuffer: truncated });
+
+      // Assert
+      await expect(act).rejects.toThrow('PNG image data is truncated');
+    });
+
+    it('should reject PNGs whose header declares more than 500 Mpx', async () => {
+      // Arrange
+      const inputBuffer = patchIhdr({
+        pngBuffer: writePng({
+          width: 4,
+          height: 4,
+          data: createNoisyRgbaData({ width: 4, height: 4, seed: 7 }),
+        }),
+        patch: (ihdrData) => {
+          ihdrData.writeUInt32BE(30000, 0);
+          ihdrData.writeUInt32BE(20000, 4);
+        },
+      });
+
+      // Act
+      const act = decodeRgbaEncodedPng({ inputBuffer });
+
+      // Assert
+      await expect(act).rejects.toThrow('PNG is too large');
+    });
+
+    it('should reject corrupt image data without leaving an unhandled rejection', async () => {
+      // Arrange
+      const inputBuffer = writePng({
+        width: 4,
+        height: 4,
+        data: createNoisyRgbaData({ width: 4, height: 4, seed: 7 }),
+      });
+      const idatOffset = inputBuffer.indexOf('IDAT', 8, 'latin1') + 4;
+      inputBuffer.fill(0xff, idatOffset, idatOffset + 8);
+      const unhandled: unknown[] = [];
+      const onUnhandled = (reason: unknown): void => {
+        unhandled.push(reason);
+      };
+      process.on('unhandledRejection', onUnhandled);
+
+      // Act
+      const act = decodeRgbaEncodedPng({ inputBuffer });
+
+      // Assert
+      try {
+        await expect(act).rejects.toThrow();
+        await new Promise((resolve) => setImmediate(resolve));
+        expect(unhandled).toEqual([]);
+      } finally {
+        process.off('unhandledRejection', onUnhandled);
+      }
     });
   });
 
