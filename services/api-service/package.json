@@ -63,8 +63,8 @@
     "@nestjs/terminus": "^12.1.0",
     "@nestjs/testing": "^12.2.0",
     "@nestjs/throttler": "^6.7.0",
-    "@prisma/adapter-pg": "^7.10.0",
-    "@prisma/client": "^7.10.0",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "@t3-oss/env-core": "^0.13.11",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
@@ -127,7 +127,7 @@
     "nodemon": "^3.1.14",
     "nyc": "^18.0.0",
     "prettier": "^3.9.4",
-    "prisma": "^7.10.0",
+    "prisma": "^7.10.1",
     "supertest": "^7.3.0"
   }
 }
