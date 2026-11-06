@@ -19,6 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
+import { partition } from 'lodash';
 
 import { IS_PRODUCTION } from '@api-service/src/config';
 import { env } from '@api-service/src/env';
@@ -149,9 +150,10 @@ export class SeedController {
     required: false,
     enum: HazardType,
     isArray: true,
+    schema: { default: [HazardType.floods] },
     description:
       'Hazard types to mock. Select one or more. ' +
-      'If omitted, all hazard types configured for the country are mocked.',
+      'If omitted, all hazard types are mocked.',
   })
   @ApiQuery({
     name: 'scenario',
@@ -233,27 +235,33 @@ export class SeedController {
       );
     }
 
-    const resolvedHazardTypes = getNormalizedStringList(hazardTypes) as
-      HazardType[] | undefined;
+    // casting to string[] to be able to use .includes() on it.
+    const validHazardTypes = Object.values(HazardType) as string[];
 
-    if (resolvedHazardTypes) {
-      const validHazardTypes = Object.values(HazardType) as string[];
-      const invalidTypes = resolvedHazardTypes.filter(
-        (h) => !validHazardTypes.includes(h),
+    const submittedHazardTypes = getNormalizedStringList(hazardTypes) ?? [];
+
+    const [validSubmittedHazardTypes, invalidSubmittedHazardTypes] = partition(
+      submittedHazardTypes,
+      (h): h is HazardType => validHazardTypes.includes(h),
+    );
+
+    if (invalidSubmittedHazardTypes.length > 0) {
+      throw new BadRequestException(
+        `Invalid hazard types: ${invalidSubmittedHazardTypes.join(', ')}. Supported: ${validHazardTypes.join(', ')}`,
       );
-      if (invalidTypes.length > 0) {
-        throw new BadRequestException(
-          `Invalid hazard types: ${invalidTypes.join(', ')}. Supported: ${validHazardTypes.join(', ')}`,
-        );
-      }
     }
+
+    const hazardTypesToMock =
+      validSubmittedHazardTypes.length > 0
+        ? validSubmittedHazardTypes
+        : undefined; // === all hazard types
 
     await this.seedService.mockEvents({
       countryCodes: resolvedCountryCodes,
       scenario: scenario as MockScenario,
       clearEvents: clearEvents ?? false,
       issuedAt: issuedAtDate,
-      hazardTypes: resolvedHazardTypes,
+      hazardTypes: hazardTypesToMock,
       notify: notify ?? false,
     });
 
