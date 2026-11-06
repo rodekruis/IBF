@@ -129,5 +129,10 @@
     "prettier": "^3.9.4",
     "prisma": "^7.10.1",
     "supertest": "^7.3.0"
+  },
+  "overrides": {
+    "istanbul-lib-processinfo": {
+      "uuid": "^11.1.1"
+    }
   }
 }
