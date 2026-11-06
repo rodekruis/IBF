@@ -2,6 +2,9 @@
 
 name: 'Test: Formatting (with Prettier)'
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   merge_group:

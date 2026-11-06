@@ -2,6 +2,10 @@
 
 name: PR linter
 
+permissions:
+  contents: read
+  pull-requests: read
+
 on:
   pull_request:
     types: [opened, reopened, edited, synchronize, labeled, unlabeled]
